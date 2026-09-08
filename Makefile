@@ -23,9 +23,9 @@ $(VENV)/.stamp: $(MD2HTML)/requirements.txt    ## 依赖装在项目局部 venv�
 html: $(VENV)/.stamp               ## research/ 下全部 .md → 同目录 .html（README.md → index.html；含文内链接检查）
 	$(VENV)/bin/python $(MD2HTML)/md2html.py build --all
 
-html-check: html                   ## html 必须与 md 同步：构建后 research/ 下的 .html 不能有改动或未追踪
-	@bad=$$(git status --porcelain -- 'research/**/*.html' 'research/*.html'); \
-	if [ -n "$$bad" ]; then echo "✗ index.html 与 README.md 不同步，跑 make html 后一起提交："; echo "$$bad"; exit 1; fi; \
+html-check: html                   ## html 必须与 md 同步：重建后 research/ 下的 .html 不能有未暂存的改动或未追踪文件（暂存过的算同步，本地提交前也能过）
+	@bad=$$(git diff --name-only -- 'research/**/*.html' 'research/*.html'; git ls-files --others --exclude-standard -- research | grep '\.html$$' || true); \
+	if [ -n "$$bad" ]; then echo "✗ html 与 md 不同步，跑 make html 后把这些文件一起 git add："; echo "$$bad" | sed 's/^/    /'; exit 1; fi; \
 	echo "✓ html 与 md 同步"
 
 release:                           ## make release VERSION=0.2.0 → 轮转 CHANGELOG、提交、打 tag（不 push）
