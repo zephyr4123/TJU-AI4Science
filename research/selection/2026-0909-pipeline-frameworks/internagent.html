@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InternAgent-1.5 代码级深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>InternAgent-1.5 代码级深读</h1>
+    <p class="subtitle">流水线层选型 · 上海 AI Lab InternScience</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目选型深读（只读代码，不跑、不装依赖）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-09</dd></div><div class="meta-row"><dt>范围</dt><dd>仓库 https://github.com/InternScience/InternAgent，克隆到 vendor/InternAgent，提交 fa8c3ee（v1.5.0 之后 4 个提交，2026-07-29）；tasks/*/code/ 下的第三方基线代码不深读；文中 文件:行 均相对该仓库根</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-结论">1. 结论</a></li>
+<li><a href="#2-仓库画像">2. 仓库画像</a></li>
+<li><a href="#3-流水线骨架">3. 流水线骨架</a><ul>
+<li><a href="#31-两层循环">3.1 两层循环</a></li>
+<li><a href="#32-内层状态机的实际语义">3.2 内层状态机的实际语义</a></li>
+<li><a href="#33-数据契约">3.3 数据契约</a></li>
+<li><a href="#34-记忆回流的三条链路及各自的断点">3.4 记忆回流的三条链路及各自的断点</a></li>
+<li><a href="#35-三个阶段类的可拆性">3.5 三个阶段类的可拆性</a></li>
+</ul>
+</li>
+<li><a href="#4-coding-agent-后端层">4. coding agent 后端层</a><ul>
+<li><a href="#41-三个后端实况">4.1 三个后端实况</a></li>
+<li><a href="#42-claudecode-到底怎么调">4.2 claudecode 到底怎么调</a></li>
+<li><a href="#43-成功--失败怎么判">4.3 成功 / 失败怎么判</a></li>
+<li><a href="#44-契约自相矛盾处">4.4 契约自相矛盾处</a></li>
+<li><a href="#45-重复度与抽象缺失">4.5 重复度与抽象缺失</a></li>
+<li><a href="#46-新增一个后端要动哪里">4.6 新增一个后端要动哪里</a></li>
+<li><a href="#47-mcts-模式">4.7 MCTS 模式</a></li>
+</ul>
+</li>
+<li><a href="#5-任务契约与可运行性">5. 任务契约与可运行性</a><ul>
+<li><a href="#51-promptjson-真正被读的字段">5.1 prompt.json 真正被读的字段</a></li>
+<li><a href="#52-执行与指标的隐性契约">5.2 执行与指标的隐性契约</a></li>
+<li><a href="#53-仓库自带任务的一致性">5.3 仓库自带任务的一致性</a></li>
+<li><a href="#54-指标比较的三个缺陷">5.4 指标比较的三个缺陷</a></li>
+<li><a href="#55-依赖与安装">5.5 依赖与安装</a></li>
+<li><a href="#56-最小跑通-autodebug-需要什么">5.6 最小跑通 AutoDebug 需要什么</a></li>
+<li><a href="#57-给一个新工科任务要准备什么">5.7 给一个新工科任务要准备什么</a></li>
+</ul>
+</li>
+<li><a href="#6-mas-子系统">6. mas 子系统</a><ul>
+<li><a href="#61-agent-层">6.1 agent 层</a></li>
+<li><a href="#62-模型层">6.2 模型层</a></li>
+<li><a href="#63-工具层">6.3 工具层</a></li>
+<li><a href="#64-记忆层">6.4 记忆层</a></li>
+<li><a href="#65-deep-research">6.5 Deep Research</a></li>
+</ul>
+</li>
+<li><a href="#7-缺陷清单">7. 缺陷清单</a></li>
+<li><a href="#8-对-demo-的意义">8. 对 demo 的意义</a><ul>
+<li><a href="#81-借什么怎么借">8.1 借什么、怎么借</a></li>
+<li><a href="#82-不借什么">8.2 不借什么</a></li>
+<li><a href="#83-若仍要直接跑它做成本对比">8.3 若仍要直接跑它做成本对比</a></li>
+</ul>
+</li>
+<li><a href="#9-未验证与待办">9. 未验证与待办</a></li>
+<li><a href="#10-调研方法">10. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：InternAgent 不适合直接当我们五层框架里的"流水线层"底座，适合当<strong>契约来源和零件供应商</strong>。它最值钱的是一套很轻的任务目录契约（<code>prompt.json</code> + <code>code/</code> + <code>launcher.sh</code> + <code>run_0/final_info.json</code>）和"跑失败把报错回喂给 coding agent、最多重试五次"的自修复循环骨架；最不值钱的恰恰是我们最看重的"对接 coding agent"这一层——三个后端里只有 <code>claudecode</code> 真能跑，<code>openhands</code> 从未有过实现，<code>iflow</code> 是半成品，而且调用深度只有一层 <code>subprocess.run</code>，没有流式、没有超时、没有重试、没有结构化输出。</p>
+<p>怎么读：第 1 节是结论与建议，第 7 节是带 <code>文件:行</code> 的缺陷清单，其余各节按"流水线骨架 → 后端层 → 任务契约与可运行性 → mas 子系统"逐层讲解。横向对比与其他候选见同目录的 <a href="index.html">README.md</a>。</p>
+</blockquote>
+<h2 id="1-结论">1. 结论<a class="permalink" href="#1-结论" title="本节链接">#</a></h2>
+<p><strong>一句话</strong>：科研流程设计想得清楚，工程实现相当粗糙；读它的设计，抄它的契约，不背它的代码。</p>
+<p><strong>能直接借的三块</strong>（按价值排序）：</p>
+<ol>
+<li><strong>任务目录契约</strong>。<code>prompt.json</code>（任务描述）+ <code>code/</code>（基线）+ <code>launcher.sh</code>（唯一执行入口）+ <code>run_0/final_info.json</code>（基线指标）+ <code>run_N/</code>（每轮完整快照）。语言无关、四五个文件就能接一个新任务，和我们"底座 coding agent → 流水线"的分层天然对齐：流水线只管拷目录、起进程、读一个 json。</li>
+<li><strong>实验执行循环</strong>。<code>experiments_utils_claude.py</code> 里 <code>run_experiment</code> + <code>perform_experiments</code> 约 350 行：拷快照 → 让 agent 改代码 → <code>bash launcher.sh</code> → 失败读 <code>traceback.log</code> 截断回喂 → 最多 <code>MAX_ITERS=5</code> 次 → 成功进下一个 run。逻辑清晰，可以整段吸收后重写，不必从零设计。</li>
+<li><strong>经验记忆闭环</strong>。<code>TaskMemoryLayer</code> + <code>HybridRetriever</code>（<code>mas/memory/task_memory.py</code>、<code>retriever.py</code>，约 1400 行）：实验结果打正负标签 → BM25 + faiss 混合检索 → 生成 guidance 塞回下一轮 prompt。只依赖 faiss-cpu、rank_bm25、sentence-transformers，落盘就是 JSON + npy，是这个仓里工程完成度最高的部分，正好对应我们"验证 → 反哺流水线"那一环。</li>
+</ol>
+<p><strong>不该借的</strong>：流水线编排本身（外层 round 循环是 <code>main()</code> 里 200 行过程式代码，内层是状态跳转写死在每个 phase 函数末尾的隐式状态机，改顺序等于改源码）；后端层代码（无抽象基类、两份互不相干的 Runner、四套互不一致的指标解析）；<code>requirements.txt</code>（是 pip freeze 倒出来的整机环境，装不干净、装上也缺关键包）。</p>
+<p><strong>开箱即坏的六处</strong>（默认配置、照 README 装完就会踩到，详见<a href="#7-缺陷清单">第 7 节</a>）：<code>openhands</code> 后端方法不存在；MCTS 模式入口 <code>TypeError</code>；记忆模块因 <code>chromadb</code>/<code>pyclustering</code> 不在依赖里静默降级；<code>embedding.model_name</code> 为空导致 online memory 初始化失败；改进率不分指标方向；README 钦点的首跑任务 <code>AutoDebug</code> 没有 <code>launcher.sh</code>。六处全是半小时能修的，但仓库里没有任何测试或 CI 会告诉你它们坏了。</p>
+<p><strong>对 demo 的建议</strong>：流水线层自己写（我们的五层划分比它的 <code>WorkflowState</code> 清楚），把 InternAgent 当零件供应商——抄任务契约、抄执行循环、抄记忆闭环，Deep Research 需要时当独立进程外挂。底座对接层按我们自己的需要做成 <code>Runner</code> 协议（<code>run(prompt, cwd, timeout) → {events, exit_code, cost}</code>），用 <code>claude -p --output-format stream-json</code> 这类结构化能力取证，每个 CLI 一个 60 到 80 行的适配器。这比在它的 <code>if/elif</code> 上打补丁省事，也能把超时、重试、流式取证一次做对。</p>
+<h2 id="2-仓库画像">2. 仓库画像<a class="permalink" href="#2-仓库画像" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>实况</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>仓库</td>
+<td><a href="https://github.com/InternScience/InternAgent">https://github.com/InternScience/InternAgent</a>，Apache-2.0，版权归上海人工智能实验室</td>
+</tr>
+<tr>
+<td>版本线</td>
+<td>v0.0.1（2025-10-11，1.0 开源）→ v1.0.1（2026-03-17）→ v1.5.0（2026-05-07）；本次读的是 v1.5.0 之后 4 个提交的 <code>fa8c3ee</code>（2026-07-29）</td>
+</tr>
+<tr>
+<td>活跃度</td>
+<td>49 个提交；2026-02 集中提交 24 个，之后每月 1 到 6 个；主力作者一人占 28 个提交</td>
+</tr>
+<tr>
+<td>规模</td>
+<td>185 MB 克隆；1295 个 py 文件，其中 <code>internagent/mas/agents/dr_agents/camel/</code> 是原样 vendor 的 CAMEL 0.2.47（372 个文件、3.4 MB），<code>tasks/*/code/</code> 是各任务的第三方基线（含整套 verl）</td>
+</tr>
+<tr>
+<td>顶层结构</td>
+<td><code>launch_discovery.py</code>（1105 行，主入口）、<code>internagent/stage.py</code>（1356 行，三个阶段类）、<code>internagent/experiments_utils_{claude,iflow}.py</code>（后端）、<code>internagent/mcts_experiments_utils_{claude,iflow}.py</code>（MCTS 后端）、<code>internagent/mas/</code>（多智能体子系统，约 2 万行）、<code>tasks/</code>（13 个算法发现任务）、<code>sci_tasks/</code>（论文复现，子模块，当前为空）</td>
+</tr>
+<tr>
+<td>测试与 CI</td>
+<td>框架代码零测试、零 CI、无 <code>pyproject.toml</code>/<code>setup.py</code>；<code>find</code> 到的 124 个 <code>test_*.py</code> 全在 <code>tasks/AutoTTRL/code/verl/</code> 下，属于第三方</td>
+</tr>
+<tr>
+<td>依赖声明</td>
+<td><code>requirements.txt</code> 376 行，373 行精确钉死，按字典序排列，含 jupyterlab、Sphinx、paddleocr 整套，是 pip freeze 产物；代码硬 import 的 <code>chromadb</code>、<code>pyclustering</code> 反而不在里面</td>
+</tr>
+<tr>
+<td>文档</td>
+<td>README 之外有 <code>docs/{deep_research,memory_module,openrouter,sci_tasks}.md</code>；<code>tasks/README.md</code> 路径全是旧的（指向不存在的 <code>scripts/run_sci_debug.sh</code>、<code>config/debug_config.yaml</code>）</td>
+</tr>
+<tr>
+<td>大文件</td>
+<td><code>dr_agents/tools/tool_test_files/</code> 下 mp4 2.9 MB、mp3 1.6 MB、xlsx 141 KB，与运行无关；抄部件进内仓时只抄源码</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="3-流水线骨架">3. 流水线骨架<a class="permalink" href="#3-流水线骨架" title="本节链接">#</a></h2>
+<h3 id="31-两层循环">3.1 两层循环<a class="permalink" href="#31-两层循环" title="本节链接">#</a></h3>
+<p>一次 discovery 运行是两层循环，都没有独立的 pipeline 或 DAG 抽象：</p>
+<pre><code>launch_discovery.py main()                       ← 外层：for round in 1..loop_rounds（默认 10）
+  ├─ IdeaGenerator.generate_ideas()              ←   内层：mas 状态机，产出 ideas.json
+  │    └─ OrchestrationAgent.run_session()
+  │         GENERATING → REFLECTING → EXTERNAL_DATA → EVOLVING → RANKING
+  │         → (达到 max_iterations 后) METHOD_DEVELOPMENT → REFLECTING → EXTERNAL_DATA
+  │         → REFINING → COMPLETED
+  ├─ ExperimentRunner.run_experiments()          ←   每个 top idea 一个实验目录，线程池并行
+  │    └─ 后端 perform_experiments()             ←     run_1..run_N，每 run 内最多 5 次自修复
+  ├─ _generate_experiences_for_round()           ←   每轮末：ExperienceGenerator 写 experience_library.json
+  └─ (incremental 模式) _update_baseline_for_incremental()  ← 本轮最优覆盖成下一轮基线
+</code></pre>
+<p>外层循环在 <code>launch_discovery.py:798-1000</code>，是 <code>main()</code> 里的一段过程式代码。内层状态跳转写死在各 phase 函数末尾：<code>orchestration_agent.py:499</code>（GENERATING→REFLECTING）、<code>:568</code>、<code>:614-624</code>、<code>:700</code>、<code>:748-758</code>（RANKING 收尾三分支）、<code>:856</code>、<code>:965</code>。没有配置化的图，想在阶段之间插我们自己的验证层或评测层，只能改代码。</p>
+<p><code>loop_mode</code> 两种：<code>fresh</code> 每轮都从 <code>args.task_dir</code> 起步；<code>incremental</code>（默认）第二轮起 <code>base_code_dir</code> 指向上一轮最优实验目录，且只在本轮最优 <code>overall_improvement_rate</code> 超过历史最优时才更新基线（<code>launch_discovery.py:977-998</code>）。更新时会<strong>就地覆盖</strong> results 下那个实验目录的 <code>code/</code> 与 <code>run_0/</code>（<code>launch_discovery.py:157-246</code>），历史产物因此被污染，多轮之后复现不了某一轮的原始状态。</p>
+<h3 id="32-内层状态机的实际语义">3.2 内层状态机的实际语义<a class="permalink" href="#32-内层状态机的实际语义" title="本节链接">#</a></h3>
+<ul>
+<li><code>top_ideas</code> 是 ranking agent 返回的 <code>top_hypotheses</code> id 列表（<code>orchestration_agent.py:748-749</code>）；配置里的 <code>workflow.top_ideas_count=5</code> 只是传给 agent 的提示，代码没有二次截断，实际数量由 LLM 输出决定。</li>
+<li><code>top_ideas_evo=true</code> 时 <code>iteration&gt;0</code> 只演化 top ideas（<code>:1020-1025</code>）；EVOLVING 每个 idea 生成 <code>evolution_count=2</code> 个子 idea，带 <code>parent_id</code>，形成树。</li>
+<li>"人在环"的 <code>AWAITING_FEEDBACK</code> 状态默认被 <code>--offline_feedback=config/feedback_global.json</code> 顶掉，即一段固定的批评话术（<code>config/feedback_global.json:1-4</code>）；不是真的人工反馈。</li>
+<li><code>_extract_feedback_content</code> 号称取最近一条反馈，实现是 <code>sorted(..., reverse=True)[-1]</code>，取的是最旧一条（<code>orchestration_agent.py:1040-1049</code>）。多轮反馈场景下永远拿第一轮的。</li>
+</ul>
+<h3 id="33-数据契约">3.3 数据契约<a class="permalink" href="#33-数据契约" title="本节链接">#</a></h3>
+<p>这是全仓最值得抄的部分。</p>
+<p><strong>任务目录</strong>（输入）：</p>
+<pre><code>tasks/&lt;Name&gt;/
+├── prompt.json            代码真正读的只有 5 个字段，见 5.1
+├── code/                  基线代码；可预置 code_summary.json 省一次 LLM 全仓扫描
+│   └── experiment.py
+├── launcher.sh            唯一执行入口；claudecode 后端以 cwd=run_N 无参执行 bash launcher.sh
+└── run_0/
+    ├── code/              基线代码快照（setup 时由 code/ 拷入）
+    └── final_info.json    基线指标，改进率的分母
+</code></pre>
+<p><strong>结果目录</strong>（输出，<code>launch_discovery.py:642-673</code>、<code>stage.py:350-382</code>）：</p>
+<pre><code>results/&lt;task&gt;/&lt;YYYYmmdd_HHMMSS&gt;_launch/
+├── prompt.json                    每轮可能被 PromptEvolver 就地覆盖
+├── prompt_backup_round&lt;N&gt;.json    覆盖前的备份
+├── prompt_candidates.json
+├── discovery_summary.json         跨轮汇总，也是 --resume 的唯一状态源
+└── session_&lt;epoch&gt;/
+    ├── ideas.json                 只落 refined_method_details 五字段
+    ├── traj.json                  mas 轨迹（落盘路径与 --output_dir 不一致，见 7）
+    └── &lt;ts&gt;_&lt;idea_name&gt;/          每个 idea 一个实验目录 = 任务目录整份 copytree
+        ├── notes.txt              Name/Title/Description/Method 四行 + 各 run 摘要
+        ├── log.txt
+        ├── run_0/                 基线
+        └── run_1..run_N/          每 run 是主目录的完整快照，内含 final_info.json / traceback.log
+results/&lt;task&gt;/experience_library.json   跨 launch 共享的经验库
+</code></pre>
+<p><strong><code>ideas.json</code></strong>：落盘的不是完整 idea，只有 <code>refined_method_details</code> 的 <code>{name, title, description, statement, method}</code> 五字段（<code>launch_discovery.py:867-869</code>，schema 在 <code>refinement_agent.py:92-123</code>）；内存里传给 <code>ExperimentRunner</code> 的却是含 <code>id/score/rationale/critiques/evidence/references/parent_id</code> 的完整 dict（<code>data_type.py:52-73</code>）。所以用 <code>--skip_idea_generation --idea_path</code> 回喂时信息会降级。</p>
+<p><strong><code>final_info.json</code></strong>：规范格式是两层嵌套、叶子必须是标量：</p>
+<pre><code class="language-json">{&quot;cifar100&quot;: {&quot;means&quot;: {&quot;best_acc&quot;: 0.812, &quot;epoch&quot;: 1}}}
+</code></pre>
+<p><code>stage.py:629-643</code> 的解析只取第一个值为 dict 的顶层键，有 <code>means</code> 取 <code>means</code>，否则整个值当指标；整块 <code>except Exception: pass</code>。sci 任务写成 <code>{"sci_task": {"means": {"total_score": ..., "item_i_score": ...}}}</code>。</p>
+<p><strong><code>discovery_summary.json</code></strong>（<code>launch_discovery.py:1048-1085</code>）：<code>timestamp/launch_id/task/task_dir/task_type/mode/output_dir/loop_rounds/loop_mode/sessions/total_ideas/total_successful/total_failed/rounds[]</code>，每轮 <code>{round, session_id, results[], successful, failed}</code>，每条结果 <code>{idea_name, success, gpu_ids, folder_name, code_path, performance}</code>；incremental 额外 <code>incremental_mode.{final_best_code_path, final_best_performance}</code>。<code>--resume</code> 优先读它，读不到才 glob <code>session_*</code> 数轮数；粒度是整轮，一轮中途挂只能整轮重跑。</p>
+<h3 id="34-记忆回流的三条链路及各自的断点">3.4 记忆回流的三条链路及各自的断点<a class="permalink" href="#34-记忆回流的三条链路及各自的断点" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>链路</th>
+<th>写者 / 时机</th>
+<th>读者 / 时机</th>
+<th>默认配置下的状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>经验库 <code>experience_library.json</code></td>
+<td><code>ExperienceGenerator</code>，每轮末（<code>launch_discovery.py:968-971</code>、<code>long_memory.py:1171-1306</code>）</td>
+<td>下一轮 <code>PromptEvolver</code></td>
+<td>需要 <code>chromadb</code>、<code>pyclustering</code>，两者都不在 <code>requirements.txt</code>，<code>ImportError</code> 被 <code>try/except</code> 吞成一行 warning（<code>stage.py:23-31</code>、<code>launch_discovery.py:22-29</code>），<strong>静默失效</strong></td>
+</tr>
+<tr>
+<td>prompt 进化</td>
+<td><code>IdeaGenerator.load_task</code>，<code>round&gt;1</code>（<code>stage.py:190-256</code>）</td>
+<td>同上，就地覆盖 <code>prompt.json</code></td>
+<td>同上</td>
+</tr>
+<tr>
+<td>IdeaGraph 聚类去重</td>
+<td><code>_load_historical_ideas_to_graph</code> glob 磁盘上的 <code>ideas.json</code>（<code>stage.py:102-176</code>）</td>
+<td>本轮 exploration_score</td>
+<td>本轮 <code>ideas.json</code> 在 <code>generate_ideas()</code> 返回后才落盘，所以第 N 轮的 idea 到 N+1 轮才进图，<strong>落后一轮</strong>；<code>add_ideas_batch</code> 无人调用</td>
+</tr>
+<tr>
+<td>online memory（<code>TaskMemoryLayer</code>）</td>
+<td>实验成功后立刻写 <code>./config/mem_store/&lt;task&gt;/</code>（<code>stage.py:479-495</code>）</td>
+<td>generation / evolution agent 的 <code>use_memory</code> 与 <code>filter_failed_ideas</code></td>
+<td><code>embedding.model_name</code> 默认空串，<code>SentenceTransformer("")</code> 构造失败被捕获后只 log，<code>memory_saver</code> 保持 <code>None</code>，<strong>开箱即断</strong>（<code>config/default_config.yaml:43-50</code>、<code>embedding_models.py:57-59</code>）</td>
+</tr>
+</tbody>
+</table></div>
+<p>四条里三条"坏了不吭声"。拿它做"带记忆的自动科研"演示，很可能演示的是一个没有记忆的版本。</p>
+<h3 id="35-三个阶段类的可拆性">3.5 三个阶段类的可拆性<a class="permalink" href="#35-三个阶段类的可拆性" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>类</th>
+<th>依赖 <code>args</code> 的属性</th>
+<th>可拆性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ReportWriter</code>（<code>stage.py:1225-1355</code>）</td>
+<td>存了 <code>self.args</code> 但全类不读</td>
+<td>完全独立，剪下来就能用</td>
+</tr>
+<tr>
+<td><code>ExperimentRunner</code>（<code>stage.py:465-1223</code>）</td>
+<td><code>exp_backend</code>、<code>task_dir</code>、<code>task_name</code>、<code>task_type</code> 四个</td>
+<td>依赖面窄，是三者里最现实的复用点</td>
+</tr>
+<tr>
+<td><code>IdeaGenerator</code>（<code>stage.py:65-388</code>）</td>
+<td>九个属性，且在 <code>__init__</code> 里把 <code>exp_backend</code> 塞进 mas 的 config</td>
+<td>同时干 prompt 进化、IdeaGraph 维护、traj 拷贝、PDF 可视化四件事，最难拆</td>
+</tr>
+</tbody>
+</table></div>
+<p>另外 <code>AgentFactory._agent_cache</code> 是类属性（进程级共享），缓存 key 读的是不存在的 <code>config['model']['provider']</code>，永远退化成 <code>"&lt;type&gt;_default"</code>（<code>agent_factory.py:96-121</code>）；同进程用不同配置创建同类型 agent 会静默拿到旧实例。<code>SurveyAgent.execute</code> 还会永久删掉自己的 <code>web_search</code> 源（<code>survey_agent.py:116-121</code>），第二轮起 web 搜索静默停掉。</p>
+<h2 id="4-coding-agent-后端层">4. coding agent 后端层<a class="permalink" href="#4-coding-agent-后端层" title="本节链接">#</a></h2>
+<p>这一层是我们选它的理由，也是读完落差最大的一层。</p>
+<h3 id="41-三个后端实况">4.1 三个后端实况<a class="permalink" href="#41-三个后端实况" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th><code>--exp_backend</code></th>
+<th>实况</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>openhands</code></td>
+<td><strong>从未有过实现</strong>。argparse 允许选、<code>launch_discovery.py:914-923</code> 还专门为它读配置，但 <code>run_openhands_experiment</code> 全仓无定义。上游历史：1.0 开源版（<code>25fa46c</code>）里这个方法整段被注释掉，1.5（<code>e341f8f</code>）把注释也删了，只留调用点。选它在 <code>stage.py:1069</code> 抛 <code>AttributeError</code>，被 <code>:1143</code> 的 <code>except Exception</code> 吞成一行"实验失败"</td>
+<td><code>stage.py:1068-1075</code>、<code>git log -S</code></td>
+</tr>
+<tr>
+<td><code>claudecode</code></td>
+<td>唯一真跑过的路。<code>subprocess.run(['claude', '--permission-mode', 'acceptEdits', '--model', M, prompt], cwd=实验目录, capture_output=True)</code></td>
+<td><code>experiments_utils_claude.py:121-127</code></td>
+</tr>
+<tr>
+<td><code>iflow</code></td>
+<td>半成品。<code>--model</code> 被注释在同一行行尾，model 参数是死的；<code>gpu_ids</code> 收了只打一行日志就丢；<code>proxy_settings</code> 为 None 时硬编码兜底 <code>http://127.0.0.1:7890</code> 写进子进程 env，而 <code>stage.py</code> 四个调用点都不传 proxy，所以每次都强制走本机 7890；<code>max_runs</code> 判定用的是模块常量 <code>MAX_RUNS=5</code> 而非传入参数；遇到扁平 <code>final_info.json</code>（如 <code>AutoDebug</code>）直接 <code>TypeError</code></td>
+<td><code>experiments_utils_iflow.py:89-92,118-124,344-345,399-401</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><code>tasks/README.md:84</code> 还列了第四个后端 <code>aider</code>，argparse 里没有。仓库里 80 处 "aider"、56 处 "cline"、22 处 "openhands" 字符串命中，绝大多数在 <code>tasks/AutoTTRL/code/verl/</code> 的训练数据里，不是集成代码。</p>
+<h3 id="42-claudecode-到底怎么调">4.2 claudecode 到底怎么调<a class="permalink" href="#42-claudecode-到底怎么调" title="本节链接">#</a></h3>
+<p><code>experiments_utils_claude.py:87-145</code>：</p>
+<ul>
+<li>没有 <code>-p/--print</code>、没有 <code>--output-format</code>、没有 <code>--allowedTools</code>。本机 <code>claude --help</code> 明确写着"starts an interactive session by default, use -p/--print for non-interactive"。在 <code>capture_output=True</code> 的非 TTY 子进程里它究竟走哪种模式，本次没有实测（见<a href="#9-未验证与待办">第 9 节</a>），这是复用前必须第一个验证的事。</li>
+<li><code>capture_output=True</code> 意味着全缓冲、零流式：几十分钟的实验期间外部看不到任何中间输出，<code>stage.py:848-875</code> 的进度监视只能看 <code>log.txt</code> 文件大小涨没涨。</li>
+<li><code>subprocess.run</code> 没有 <code>timeout</code>。coding agent 卡住就永久挂住；实验本体的超时靠 <code>config experiment.run_timeout</code>，而<strong>两份 shipped config 里都没有这个键</strong>，所以默认也是无超时。</li>
+<li>没有重试，没有退出码语义化，拿不到工具调用轨迹和 token 成本。</li>
+<li><code>--permission-mode acceptEdits</code> 只自动放行文件编辑；agent 跑脚本、装依赖会不会被拦，代码里没有任何证据。实验目录是任务目录的整份 copytree（sci 任务还 symlink 了原始 <code>data/</code>），没有容器或沙箱。</li>
+</ul>
+<h3 id="43-成功--失败怎么判">4.3 成功 / 失败怎么判<a class="permalink" href="#43-成功--失败怎么判" title="本节链接">#</a></h3>
+<ul>
+<li>claude 侧纯看 <code>launcher.sh</code> 的 returncode（<code>:272-298</code>）；iflow 侧先看 <code>run_N/final_info.json</code> 存不存在，存在就判成功、不看 returncode（<code>iflow.py:236-262</code>）。两边逻辑相反。</li>
+<li>agent 输出里被当判据的字符串只有两条：<code>"litellm.BadRequestError" in output → return False</code>，<code>"ALL_COMPLETED" in output → break</code>（<code>claude.py:399-404</code>）。而 <code>ALL_COMPLETED</code> 这个词本身就写在发给 agent 的 prompt 里（<code>prompts.py:90,149,176</code>），agent 复述一句指令就会误判"全部完成"并提前 <code>return True</code>，且这个 break 在第一轮、任何实验还没跑时就可能触发。这是"假成功"，会直接污染评测层的成功率统计。</li>
+<li>MCTS 路径一次都没检查这两个字符串。</li>
+</ul>
+<h3 id="44-契约自相矛盾处">4.4 契约自相矛盾处<a class="permalink" href="#44-契约自相矛盾处" title="本节链接">#</a></h3>
+<ul>
+<li>claude 后端在 <code>run_N</code> 目录内无参执行 <code>bash launcher.sh</code>（<code>claude.py:201-224</code>）；iflow 后端在父目录执行 <code>bash launcher.sh run_N</code>（<code>iflow.py:194-210</code>）。同一个任务目录不可能同时满足两个后端。</li>
+<li>共用的 <code>NEXT_EXPERIMENT_PROMPT</code> 告诉 agent "We will run <code>bash launcher.sh {NEXT_RUN_NUM}</code>"（<code>prompts.py:87</code>），只对 iflow 成立；MCTS 的 prompt 又说 <code>bash launcher.sh .</code>（<code>prompts.py:13,166</code>），对谁都不成立。给 agent 的执行契约描述与实际命令不符。</li>
+<li>普通模式的 coder prompt <code>CODER_PROMPT_OPENHANDS</code>（<code>prompts.py:26-47</code>）通篇没提 <code>final_info.json</code>；"实验要写出 <code>final_info.json</code>"这条契约完全隐含在基线代码里。只有 MCTS 的 prompt 显式约束了 schema。</li>
+</ul>
+<h3 id="45-重复度与抽象缺失">4.5 重复度与抽象缺失<a class="permalink" href="#45-重复度与抽象缺失" title="本节链接">#</a></h3>
+<ul>
+<li><code>ClaudeCodeRunner</code> 与 <code>IFlowCodeRunner</code> 是两个互不相干的 plain class，没有共同父类、ABC、Protocol 或注册表；后端选择是 <code>stage.py:1068-1075</code> 的三分支 <code>if/elif</code> 字符串比较。</li>
+<li><code>experiments_utils_claude.py</code>（576 行）与 <code>_iflow.py</code>（403 行）：<code>extract_idea_info</code>、<code>info_traceback</code> 逐字节相同；iflow 404 行里 277 行在 claude 文件里逐字出现。</li>
+<li><code>mcts_experiments_utils_claude.py</code>（762 行）与 <code>_iflow.py</code>（731 行）：行级相同 700 行（92%），差异只有类名替换、默认模型名、工作区是否拆 <code>code/</code>。整棵 MCTS 树、UCT、reward、backprop 复制了两份。</li>
+<li><code>extract_idea_info</code> 全仓四份副本（<code>stage.py:545-580</code>、<code>:1233-1271</code>、两个 utils 文件）；<code>_load_config</code> 两份逐字复制，连同错误的兜底路径 <code>config/default.yaml</code>（实际只有 <code>default_config.yaml</code>）一起复制。</li>
+</ul>
+<h3 id="46-新增一个后端要动哪里">4.6 新增一个后端要动哪里<a class="permalink" href="#46-新增一个后端要动哪里" title="本节链接">#</a></h3>
+<p>照现有范式加 codex / opencode / gemini CLI，必改 6 处：<code>launch_discovery.py:414</code> choices；<code>stage.py:15-18</code> import；<code>stage.py:1068-1075</code> dispatch 加 <code>elif</code>；<code>stage.py</code> 新写一个 <code>run_&lt;x&gt;_experiment</code>（照抄 <code>:883-975</code> 的 93 行）；新建 <code>experiments_utils_&lt;x&gt;.py</code> 约 400 行（其中真正要写的是 <code>Runner.run</code> 45 行 + <code>run_experiment</code> 160 行 + <code>perform_experiments</code> 95 行）；<code>config/default_config.yaml:180-187</code>。要 MCTS 再复制一份 730 行。</p>
+<p>如果先抽一层 <code>Runner</code> 接口，新后端可以压到 60 到 80 行——但那已经是在写我们自己的后端层了。</p>
+<h3 id="47-mcts-模式">4.7 MCTS 模式<a class="permalink" href="#47-mcts-模式" title="本节链接">#</a></h3>
+<p><code>experiment.use_mcts=true</code> 这条路当前跑不起来：<code>stage.py:926-932</code> 传了 <code>gpu_ids</code>、<code>log_file</code> 两个关键字参数，<code>mcts_experiments_utils_claude.py:709-714</code> 的签名只有 <code>(idea, folder_name, proxy_settings, model)</code>，必抛 <code>TypeError</code>，被 <code>stage.py:970</code> 吞成一行 error。默认 <code>false</code>，所以没人踩到。</p>
+<p>机制本身：每个节点一个 <code>node_&lt;uuid&gt;</code> 工作区、从父节点全量复制代码；root 下最多 2 个 draft、每个非 root 节点最多 3 个 improve、总迭代 30；奖励只有三档（跑挂 −1、跑通 +1、刷新全局最优再 +1），指标提升多少不影响奖励；MCTS 下 GPU 分配完全失效（不传 <code>gpu_ids</code>）。值得借鉴的只有 <code>mcts_node.py:19-74</code> 的 <code>MetricValue</code>——按 <code>maximize</code> 翻转比较语义，约 60 行。</p>
+<h2 id="5-任务契约与可运行性">5. 任务契约与可运行性<a class="permalink" href="#5-任务契约与可运行性" title="本节链接">#</a></h2>
+<h3 id="51-promptjson-真正被读的字段">5.1 <code>prompt.json</code> 真正被读的字段<a class="permalink" href="#51-promptjson-真正被读的字段" title="本节链接">#</a></h3>
+<p>用 grep 逐字段核对代码（<code>stage.py:257-267</code>）：只读 <code>task_description</code>（必填）、<code>domain</code>（必填）、<code>background</code>（可选，但默认 <code>agents.dr.enabled=true</code> 时会被 DR 生成的背景整体覆盖，<code>orchestration_agent.py:120-130</code>）、<code>constraints</code>（可选 list）、<code>fix_direction</code>（仅 prompt 进化用）。README 和样例里的 <code>system/goal/dataset/baseline/metrics/task_name/description</code> 在 <code>internagent/</code> 全仓零读取点，是装饰。<code>AutoDebug/prompt.json</code> 里那组 <code>metrics.primary/optimization_direction</code> 没人消费。</p>
+<p>仓库自带的 <code>tasks/AutoDrug/prompt.json</code> 只有 <code>{system, task_description, tools}</code>，缺 <code>domain</code>，按现有代码 <code>load_task</code> 直接 <code>ValueError</code>。<code>AutoDebug/prompt_backup.json</code>（演化前的原始版）没有 <code>task_description</code>，也跑不了；能跑的那份是被 <code>PromptEvolver</code> 写过一遍才补上的。</p>
+<h3 id="52-执行与指标的隐性契约">5.2 执行与指标的隐性契约<a class="permalink" href="#52-执行与指标的隐性契约" title="本节链接">#</a></h3>
+<ul>
+<li><code>launcher.sh</code>：唯一入口，pipeline 不关心 <code>experiment.py</code> 叫什么。</li>
+<li><code>final_info.json</code>：两层 <code>{"&lt;数据集&gt;": {"means": {"&lt;指标&gt;": 标量}}}</code>，写到 <code>run_N/</code>，即实验脚本里的 <code>os.path.dirname(os.path.dirname(__file__))</code>。</li>
+<li><code>traceback.log</code>：失败时 <code>run_experiment</code> 去 <code>run_N/traceback.log</code> 读回栈，正则抽 <code>File "...", line N</code> 与 <code>\w*Error\w*</code> 拼成修错 prompt（<code>claude.py:249-277</code>）；没有这个文件只能给一句 "Experiment failed with return code N"。README 没写，但直接决定 debug 循环的质量。</li>
+<li><code>code_summary.json</code>：<code>ref_code_path</code> 是目录且该文件不存在时，由 codeview 自动生成（claudecode 后端调 CLI，其他后端调 LLM API，<code>generation_agent.py:856-903</code>）；<code>GenerationAgent</code> 只消费 <code>summary</code> 与 <code>key_files[*].path/description</code>。</li>
+</ul>
+<h3 id="53-仓库自带任务的一致性">5.3 仓库自带任务的一致性<a class="permalink" href="#53-仓库自带任务的一致性" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>任务</th>
+<th><code>launcher.sh</code></th>
+<th><code>final_info.json</code> 格式</th>
+<th>写 <code>traceback.log</code></th>
+<th>与 claudecode 契约</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AutoDebug</code>（README 钦点首跑）</td>
+<td><strong>没有</strong></td>
+<td>扁平 <code>{mse, r2, mae, training_time, config:{…}}</code></td>
+<td>否（无 try/except）</td>
+<td>不符：无入口；解析会把 <code>config</code> 里的超参当指标</td>
+</tr>
+<tr>
+<td><code>AutoCls2D</code></td>
+<td>有</td>
+<td>规范两层</td>
+<td>是</td>
+<td>符合（<code>--out_dir</code> 被硬覆盖成 <code>run_N</code>，参数是死的）</td>
+</tr>
+<tr>
+<td><code>AutoMem</code></td>
+<td>有</td>
+<td>三层（指标下再套 mean/std/median）</td>
+<td>是</td>
+<td>入口符合；指标解析返回一堆 dict，<code>float()</code> 全部 <code>TypeError</code> 被吞，改进率恒 0</td>
+</tr>
+<tr>
+<td><code>AutoChem</code></td>
+<td>有，<code>deepspeed experiment.py --out_dir $1</code>（旧扁平布局遗留，根目录并没有 <code>experiment.py</code>）</td>
+<td>规范两层</td>
+<td>是</td>
+<td>不符：无参调用 <code>$1</code> 为空，<code>os.makedirs('')</code> 抛异常</td>
+</tr>
+</tbody>
+</table></div>
+<p>四个里只有两个真正对得上。"开箱可跑"不可信，任何"某功能能用"的结论都得我们自己复现。</p>
+<h3 id="54-指标比较的三个缺陷">5.4 指标比较的三个缺陷<a class="permalink" href="#54-指标比较的三个缺陷" title="本节链接">#</a></h3>
+<ol>
+<li><strong>不看优化方向</strong>。<code>_calculate_experiment_performance</code>（<code>stage.py:606-628</code>）逐指标算 <code>(current − baseline) / |baseline| × 100</code> 再取算术平均，没有任何 maximize/minimize 判断；<code>_find_best_experiment_result</code> 直接取最大者当下一轮基线。工科仿真任务的指标绝大多数越小越好（误差、残差、能耗、时间），直接用它的 incremental 循环会把越跑越差的方向当最优往下传。方向表 <code>tasks/metric_config.json</code> 存在，但只被默认关闭的 MCTS 分支读。</li>
+<li><strong>解析静默出错</strong>。<code>_extract_metrics_from_final_info</code> 整块 <code>except: pass</code>，格式不符不会报错，只会安静得到 0% 改进。</li>
+<li><strong>基线更新取"最后一个"而非"最好一个"</strong>。<code>_update_baseline_for_incremental</code>（<code>launch_discovery.py:170-190</code>）注释直说 "assumed to be the best"，循环里每遇到一个有 <code>final_info.json</code> 的 run 就覆盖；且 <code>sorted(glob('run_[1-9]*'))</code> 是字典序，<code>run_10</code> 排在 <code>run_2</code> 前，<code>max_runs &gt; 9</code> 时取错。</li>
+</ol>
+<h3 id="55-依赖与安装">5.5 依赖与安装<a class="permalink" href="#55-依赖与安装" title="本节链接">#</a></h3>
+<p>从 <code>internagent.stage</code> 静态追 import 图（49 个模块），无条件导入的第三方包 21 个：<code>yaml numpy requests httpx bs4 sklearn tqdm rich networkx faiss rank_bm25 pdfplumber pypdf graphviz dataclasses_json easydict fastmcp rdkit molbloom chromadb pyclustering</code>，另有 <code>model_factory</code> 动态加载的 <code>openai</code>、<code>json_repair</code>。</p>
+<ul>
+<li><code>torch</code>：<strong>不是流水线必需</strong>。<code>launch_discovery.py:13</code> 有一句无条件 <code>import torch</code>，全文件再无第二处引用；GPU 探测在 <code>stage.py:518-527</code> 且有 <code>ImportError</code> 保护。删掉那一行就不需要 torch。</li>
+<li><code>transformers</code>：<code>internagent/</code>（除 dr_agents）零引用，只是 sentence-transformers 的传递依赖。</li>
+<li><code>chromadb</code>、<code>pyclustering</code>：<code>long_memory.py:19-22</code> 模块级硬 import，<code>requirements.txt</code> 里没有。</li>
+<li>macOS / Apple Silicon：<code>requirements.txt</code> 含 15 个 <code>nvidia-*-cu12</code> 与 <code>triton==3.4.0</code>，只发 manylinux x86_64 wheel，整份装不下来。</li>
+<li>版本冲突：根 <code>requirements.txt</code> 钉 <code>openai==2.5.0</code>、<code>anthropic==0.69.0</code>，<code>dr_agents/requirements.txt</code> 钉 <code>openai==1.98.0</code>、<code>anthropic==0.60.0</code>，还钉了早已废弃的 <code>asyncio==3.4.3</code>（装上会遮蔽标准库）。两份不可能装进同一个 venv。</li>
+<li>Python 版本：唯一声明是 README 的 <code>conda create -n InternAgent python=3.11</code>。</li>
+<li><code>literature_search.py:19-31</code> 在 import 阶段用 <code>subprocess</code> 调 pip 装 <code>aiohttp</code>、<code>beautifulsoup4</code>，副作用式安装。</li>
+</ul>
+<h3 id="56-最小跑通-autodebug-需要什么">5.6 最小跑通 <code>AutoDebug</code> 需要什么<a class="permalink" href="#56-最小跑通-autodebug-需要什么" title="本节链接">#</a></h3>
+<ul>
+<li>两把 key：<code>OPENAI_API_KEY</code>（+ <code>OPENAI_API_BASE_URL</code>）供 mas 全部 agent（默认 provider <code>openai</code>、模型 <code>gpt-4o</code>）；<code>ANTHROPIC_API_KEY</code> 供实验后端。后端不是 SDK，是 subprocess 调本机 <code>claude</code> 可执行文件，所以 PATH 里必须有 claude CLI。</li>
+<li>关 memory 与 DR 没有 CLI 开关，只能改 yaml：<code>agents.dr.enabled=false</code>、<code>memory.task_memory.enabled=false</code>、<code>memory.online_memory.enabled=false</code>、<code>memory.long_memory.enabled=false</code>。但 <code>long_memory.enabled</code> 只有 <code>launch_discovery.py</code> 判，<code>stage.py</code> 初始化 IdeaGraph 只看 <code>LONG_MEMORY_AVAILABLE</code>，覆盖不完整。</li>
+<li>建议同时 <code>agents.generation.do_survey=false</code>（默认 true，会去打 arxiv / crossref / Serper）、<code>workflow.loop_rounds=1</code>。</li>
+<li>默认配置不依赖内网服务：<code>kg_papers</code> 的 <code>172.30.35.89</code> 写在 config 里但没列进 <code>scholar.sources</code>；MCP remote 全部注释。唯一硬编码的本机地址是 iflow 的 <code>127.0.0.1:7890</code>。</li>
+<li>无 GPU 时并行度被静默压成 1：<code>GPUAllocator</code> 在 <code>total_gpus==0</code> 时 semaphore 置 1（<code>stage.py:401-412</code>），线程池却按配置开 4 个 worker，日志还打印 "Actual max parallel: 4"。纯 API 驱动的 demo 机上会比预期慢 4 倍且不报错。</li>
+</ul>
+<h3 id="57-给一个新工科任务要准备什么">5.7 给一个新工科任务要准备什么<a class="permalink" href="#57-给一个新工科任务要准备什么" title="本节链接">#</a></h3>
+<p>按它的契约接一个力学 / 材料仿真任务，必备 5 项：<code>prompt.json</code>（<code>task_description</code> + <code>domain</code>，<code>constraints</code> 用 list）、<code>code/</code>（仿真基线，可选 <code>code_summary.json</code>）、<code>launcher.sh</code>（如 <code>python code/experiment.py</code>）、<code>run_0/final_info.json</code>（如 <code>{"beam_fem": {"means": {"rmse": 0.031, "runtime_s": 12.4}}}</code>）、实验脚本把 <code>final_info.json</code> 写到上两级目录并在 <code>except</code> 里写 <code>traceback.log</code>。</p>
+<p>纯契约工作量半天到一天。真正的成本在三处：指标方向必须绕过它的 bug（改代码，或把误差取负伪装成越大越好）；仿真运行时长与资源——pipeline 只有 <code>run_timeout</code> 与 <code>CUDA_VISIBLE_DEVICES</code> 级别的粗调度，没有队列、没有 MPS/ROCm、没有显存隔离，求解器若依赖商业软件或 MPI 得自己在 <code>launcher.sh</code> 里包；基线代码要先整理成"单文件 + 明确 argparse + 快速小规模模式"，否则 agent 每轮改完跑不动，全耗在 debug 循环里。</p>
+<h2 id="6-mas-子系统">6. mas 子系统<a class="permalink" href="#6-mas-子系统" title="本节链接">#</a></h2>
+<p>约 2 万行（不含 vendored CAMEL）。顶层 docstring 写得极详尽，底下有实打实跑不通的分支。</p>
+<h3 id="61-agent-层">6.1 agent 层<a class="permalink" href="#61-agent-层" title="本节链接">#</a></h3>
+<ul>
+<li><code>AgentFactory</code> 注册 11 个：generation / reflection / evolution / method_development / refinement / ranking / survey / scholar / dr / prompt_evolver / experience（<code>agent_factory.py:41-53</code>）。discovery 用 9 个（dr → survey → generation → reflection → scholar → evolution → ranking → method_development → refinement）；QA 只用 <code>DRAgent</code>。</li>
+<li><code>BaseAgent</code> 契约干净：<code>async execute(context, params) → Dict</code>；<code>_call_model</code> 带 <code>max_retries=10</code> 的重试；<code>_call_model_with_tools</code> 实现 OpenAI 风格多轮 tool loop（<code>base_agent.py:331-480</code>），是可以直接当"skills + 工具层"参考实现的一百多行。它自带的 <code>run_with_timing</code> 既无人调用又调不通（单参调用双参 <code>execute</code>，读从未赋值的 <code>agent_type</code>）。</li>
+<li><code>GenerationAgent</code> 与 <code>EvolutionAgent</code> 之间 200 多行逐字重复（<code>generation_agent.py:131-355</code> vs <code>evolution_agent.py:93-325</code>）。</li>
+<li><code>DRAgent.execute</code> 把所有异常吞成一段自然语言兜底字符串返回（<code>dr_agent.py:186-189</code>），下游分不清"DR 真产出了 background"和"DR 挂了"。</li>
+<li>死代码：<code>codeview_agent.py</code> 没有 <code>CodeViewAgent</code> 类；<code>tools/code_search.py</code> 零 importer；<code>demo.py</code> 直接返回协程对象再 <code>len()</code>，官方示例跑不起来。</li>
+</ul>
+<h3 id="62-模型层">6.2 模型层<a class="permalink" href="#62-模型层" title="本节链接">#</a></h3>
+<ul>
+<li>4 个 provider：<code>openai</code>、<code>openrouter</code>（继承 openai）、<code>interns1</code>、<code>dsr1</code>。<code>BaseModel</code> 把 <code>generate_with_messages</code> 声明为抽象方法，只有 <code>OpenAIModel</code> 实现了；<code>S1Model</code>、<code>R1Model</code> 一实例化就 <code>TypeError</code>（<code>base_model.py:135-162</code>、<code>s1_model.py</code>、<code>r1_model.py</code>）。<strong>接国产模型走 <code>interns1</code> 这条路当前不通。</strong></li>
+<li>好消息：<code>OpenAIModel</code> 的 <code>base_url</code> 走 config 或 <code>OPENAI_API_BASE_URL</code>（<code>openai_model.py:48-70</code>），一行配置就能指到 vLLM / DashScope / DeepSeek 这类 OpenAI 兼容端点；按 agent 单独指定模型也支持（<code>model_factory.py:102-139</code>）。</li>
+<li><code>OpenAIModel.generate_with_json_output</code> 的 <code>json_repair</code> 兜底是死代码：修复成功后仍会落到同缩进的无条件 <code>raise ValueError</code>（<code>openai_model.py:160-174</code>）；对照 <code>s1_model.py:176-192</code> 缩进是对的，是复制粘贴改坏的回归。后果是任何非法 JSON 都走满 10 次重试。</li>
+<li><code>dr_agents</code> 自带第二套完全独立的模型层（deepseek / openai / vllm_qwen / intern_s1 / qwen / gemini，靠模型名前缀 if-else），两套互不相通；vLLM 支持只在 DR 那侧。</li>
+</ul>
+<h3 id="63-工具层">6.3 工具层<a class="permalink" href="#63-工具层" title="本节链接">#</a></h3>
+<ul>
+<li>两份 <code>mcp_manager</code>：老 SDK 版（494 行）已在 <code>tools/__init__.py:9</code> 注释掉，生效的是 <code>mcp_manager_fastmcp.py</code>（367 行）。</li>
+<li>默认配置 <code>sci_tools.local=false</code>、<code>remote</code> 全注释，<code>ToolRegistry</code> 是空的，<code>GenerationAgent</code> 的 TF-IDF 工具筛选打印 "No related tools found" 后整段 tool loop 空转。真正发网络请求的是 <code>SurveyAgent</code> / <code>ScholarAgent</code> 直接 new 的 arXiv / CrossRef / Serper 搜索，不经过 registry。</li>
+<li><code>sci_tools</code> 只有 chem 一个子域两个工具（PubChem 查 SMILES、rdkit 改分子）；<code>search_tools</code> 三个（<code>calculate</code> 用 <code>eval</code> 实现、<code>patent_check</code> 查 SureChEMBL、<code>academic_search</code>）。合计 5 个函数工具。</li>
+</ul>
+<h3 id="64-记忆层">6.4 记忆层<a class="permalink" href="#64-记忆层" title="本节链接">#</a></h3>
+<p>三套互不相干的实现、三套存储、两套 embedding：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>子系统</th>
+<th>存储</th>
+<th>embedding</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>task_memory</code> + <code>online_memory</code></td>
+<td>JSON + npy + faiss 索引，<code>./config/mem_store/</code>（运行时状态写进配置目录）</td>
+<td>本地 sentence-transformers，默认 <code>model_name</code> 空串</td>
+<td>开箱即断</td>
+</tr>
+<tr>
+<td><code>long_memory</code>（IdeaGraph / PromptEvolver / ExperienceGenerator）</td>
+<td>chromadb <code>PersistentClient</code> + networkx pickle</td>
+<td>硬编码 OpenAI <code>text-embedding-3-small</code></td>
+<td>依赖缺失，静默降级</td>
+</tr>
+<tr>
+<td><code>context_memory</code>（session 轨迹）</td>
+<td>文件系统 <code>results/&lt;task&gt;/traj_&lt;session&gt;.json</code></td>
+<td>无</td>
+<td>落盘路径与 <code>--output_dir</code> 不一致，传了 <code>--output_dir</code> 就找不到</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>docs/memory_module.md</code> 示例把 <code>task_memory</code> 与 <code>online_memory</code> 都写成 <code>enabled=false</code>，<code>default_config.yaml</code> 却都是 <code>true</code>——文档和发行配置互相矛盾。</p>
+<h3 id="65-deep-research">6.5 Deep Research<a class="permalink" href="#65-deep-research" title="本节链接">#</a></h3>
+<ul>
+<li><code>dr_agents/camel/</code> 原样 vendor 了 CAMEL 0.2.47，靠 <code>sys.path</code> 注入接入（<code>dr_agent.py:23-56</code>），把 <code>agents / models / tools / utils / workflow</code> 这些极通用的顶层模块名塞进解释器，与我们自己的包重名时会出难查的导入冲突。</li>
+<li>耦合面窄且单向，<code>dr_agents</code> 内部没有回头 import <code>internagent.mas</code> 的地方；QA 模式（<code>launch_qa.py</code>）确实能脱离 discovery 独立跑，但 <code>workflow/main.py:11</code> 无条件 <code>import redis</code>。</li>
+<li>三段式设计（planner / executor / synthesizer）值得读；整目录 9.4 MB 里 5 MB 是与运行无关的 mp4 / mp3 / xlsx。</li>
+<li><code>docs/deep_research.md</code> 示例写 <code>DRAgent(model=..., config_path=...)</code>，实际签名没有 <code>config_path</code>，照文档写 <code>TypeError</code>。</li>
+</ul>
+<h2 id="7-缺陷清单">7. 缺陷清单<a class="permalink" href="#7-缺陷清单" title="本节链接">#</a></h2>
+<p>全部是亲自读到代码证实的；本次没有执行任何 InternAgent 代码。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>位置</th>
+<th>现象</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>stage.py:1069</code></td>
+<td><code>run_openhands_experiment</code> 无定义（1.0 里就是注释掉的，1.5 连注释都删了）</td>
+<td>选 <code>openhands</code> 必崩，被吞成"实验失败"</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>stage.py:926-932</code> vs <code>mcts_experiments_utils_claude.py:709-714</code></td>
+<td>调用多传 <code>gpu_ids</code>、<code>log_file</code></td>
+<td><code>use_mcts=true</code> 必 <code>TypeError</code>，被吞</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>stage.py:606-628</code></td>
+<td>改进率不看 maximize/minimize</td>
+<td>loss 类指标越差越"优"，污染 incremental 基线选择</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>stage.py:629-643</code></td>
+<td><code>final_info.json</code> 解析 <code>except: pass</code></td>
+<td>格式错不报错，静默 0% 改进；<code>AutoDebug</code> 会把超参当指标</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>launch_discovery.py:170-190</code>、<code>stage.py:594-600</code></td>
+<td>run 目录字典序排序、取最后而非最优</td>
+<td><code>max_runs &gt; 9</code> 取错 run</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>long_memory.py:19-22</code> vs <code>requirements.txt</code></td>
+<td><code>chromadb</code>、<code>pyclustering</code> 硬 import 但未声明</td>
+<td>长期记忆整体静默降级</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>default_config.yaml:43-50</code>、<code>embedding_models.py:57-59</code></td>
+<td><code>embedding.model_name</code> 默认空串</td>
+<td>online memory 初始化失败，只 log</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>orchestration_agent.py:1040-1049</code></td>
+<td>取"最新反馈"实现为 <code>sorted(reverse=True)[-1]</code></td>
+<td>永远拿最旧一条</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>openai_model.py:160-174</code></td>
+<td><code>json_repair</code> 成功后仍无条件 <code>raise</code></td>
+<td>非法 JSON 走满 10 次重试</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>base_model.py:135-162</code>、<code>s1_model.py</code>、<code>r1_model.py</code></td>
+<td><code>interns1</code>、<code>dsr1</code> 未实现抽象方法</td>
+<td>实例化即 <code>TypeError</code>，国产模型 provider 不可用</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>experiments_utils_claude.py:121-127</code></td>
+<td><code>claude</code> 调用无 <code>-p</code>、无 <code>timeout</code>、<code>capture_output</code></td>
+<td>可能挂死；无流式；无超时</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>prompts.py:90</code> + <code>claude.py:402</code></td>
+<td><code>ALL_COMPLETED</code> 既在 prompt 里又当完成判据</td>
+<td>agent 复述指令即"假成功"</td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>experiments_utils_iflow.py:89-92,119,344,399</code></td>
+<td>硬编码 7890 代理；<code>--model</code> 注释掉；<code>gpu_ids</code> 丢弃；<code>max_runs</code> 用错常量</td>
+<td>iflow 后端不可信</td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>stage.py:401-412</code> + <code>:529-543</code></td>
+<td>无 GPU 时 semaphore=1 而线程池开 4</td>
+<td>并行度静默为 1，日志误报</td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>memory_manager.py:391-407</code> vs <code>launch_discovery.py:645-648</code></td>
+<td>traj 落盘路径不跟随 <code>--output_dir</code></td>
+<td>轨迹与记忆回流断链，只 warning</td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>interface.py:421-434</code>、<code>long_memory.py:1094-1107</code></td>
+<td>兜底配置路径 <code>config/default.yaml</code> 不存在</td>
+<td>兜底形同虚设（两处逐字复制）</td>
+</tr>
+<tr>
+<td>17</td>
+<td><code>agent_factory.py:96-121</code></td>
+<td>缓存 key 读不存在的 <code>config['model']['provider']</code></td>
+<td>同类型 agent 永远拿第一个实例</td>
+</tr>
+<tr>
+<td>18</td>
+<td><code>survey_agent.py:116-121</code></td>
+<td>缓存单例就地删 <code>web_search</code> 源</td>
+<td>第二轮起 web 搜索静默停</td>
+</tr>
+<tr>
+<td>19</td>
+<td><code>launch_discovery.py:841-845</code></td>
+<td><code>--skip_idea_generation</code> 的 <code>session_id</code> 少 <code>session_</code> 前缀</td>
+<td>产出目录与正常路径不同构，resume 与经验生成 glob 对不上</td>
+</tr>
+<tr>
+<td>20</td>
+<td><code>data_type.py:128-144</code>、<code>memory_manager.py:358-378</code></td>
+<td><code>WorkflowSession</code> 序列化丢 <code>method_phase</code></td>
+<td>跨进程恢复 session 会走错状态</td>
+</tr>
+<tr>
+<td>21</td>
+<td><code>tasks/AutoDebug/</code></td>
+<td>无 <code>launcher.sh</code>；<code>AutoDrug/prompt.json</code> 缺 <code>domain</code></td>
+<td>仓库自带样例并非都验证过</td>
+</tr>
+<tr>
+<td>22</td>
+<td><code>stage.py:292-320</code></td>
+<td><code>while self.status != "completed"</code> 比较的是 dict</td>
+<td>循环只靠 break 退出；无反馈时可能死循环</td>
+</tr>
+<tr>
+<td>23</td>
+<td><code>dr_agent.py:186-189</code>、mas 8 处裸 <code>except</code>、7 处 <code>except: pass</code></td>
+<td>异常吞成兜底字符串或 pass</td>
+<td>成功与失败不可区分</td>
+</tr>
+<tr>
+<td>24</td>
+<td><code>requirements.txt</code></td>
+<td>pip freeze 产物；含 15 个 <code>nvidia-*</code> 与 <code>triton</code></td>
+<td>macOS 装不下；装上也缺关键包</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="8-对-demo-的意义">8. 对 demo 的意义<a class="permalink" href="#8-对-demo-的意义" title="本节链接">#</a></h2>
+<h3 id="81-借什么怎么借">8.1 借什么、怎么借<a class="permalink" href="#81-借什么怎么借" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>借的东西</th>
+<th>从哪儿</th>
+<th>怎么用</th>
+<th>抄进内仓时要改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>任务目录契约</td>
+<td><code>tasks/AutoCls2D/</code>、<code>stage.py:784-832</code></td>
+<td>原样采用，写进我们的任务规范</td>
+<td>补上 <code>optimization_direction</code> 字段并真正读它；<code>final_info.json</code> 强 schema 校验</td>
+</tr>
+<tr>
+<td>实验执行循环</td>
+<td><code>experiments_utils_claude.py:147-433</code></td>
+<td>读懂后重写，不复制</td>
+<td>加 <code>timeout</code>、结构化事件流、去掉字符串判据</td>
+</tr>
+<tr>
+<td>coder prompt 的硬约束</td>
+<td><code>prompts.py:26-47</code></td>
+<td>措辞直接抄（不许改 <code>launcher.sh</code>、argparse 改动必须设成 default、不许自建 run 目录）</td>
+<td>补 <code>final_info.json</code> 的 schema 要求</td>
+</tr>
+<tr>
+<td>经验记忆闭环</td>
+<td><code>task_memory.py</code>、<code>retriever.py</code>、<code>memory_retrieval.py</code></td>
+<td>约 1400 行可整段吸收</td>
+<td>所有 <code>except</code> 兜底改成向上抛</td>
+</tr>
+<tr>
+<td>agent 契约</td>
+<td><code>base_agent.py:110-152,259-480</code></td>
+<td>当"skills + 工具层"参考实现</td>
+<td>删掉坏死的 <code>run_with_timing</code></td>
+</tr>
+<tr>
+<td><code>MetricValue</code></td>
+<td><code>mcts_node.py:19-74</code></td>
+<td>按 maximize 翻转比较，约 60 行</td>
+<td>无</td>
+</tr>
+<tr>
+<td>sci 任务的 checklist + LLM-judge</td>
+<td><code>sci_eval.py</code>、<code>docs/sci_tasks.md</code></td>
+<td>思路搬到评测层，自己实现</td>
+<td>依赖的 ResearchClawBench 子模块要另拉</td>
+</tr>
+<tr>
+<td>Deep Research</td>
+<td><code>dr_agents/</code> 整目录</td>
+<td>需要时当独立进程外挂，独立 venv</td>
+<td>不塞进主 <code>sys.path</code>；不带 <code>tool_test_files</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="82-不借什么">8.2 不借什么<a class="permalink" href="#82-不借什么" title="本节链接">#</a></h3>
+<ul>
+<li>流水线编排（外层 for + 内层隐式状态机）。</li>
+<li>后端层代码（无抽象、双份 Runner、四套指标解析）。</li>
+<li>MCTS 模式（入口就坏、奖励三档、每节点全量复制目录、GPU 失效）。</li>
+<li><code>requirements.txt</code>。</li>
+<li>三套记忆存储里的 chromadb 那套（硬编码 OpenAI embedding、依赖未声明）。</li>
+</ul>
+<h3 id="83-若仍要直接跑它做成本对比">8.3 若仍要直接跑它做成本对比<a class="permalink" href="#83-若仍要直接跑它做成本对比" title="本节链接">#</a></h3>
+<p>调研路线图里初级版要"同一个小任务分别跑 AutoResearchClaw 和 InternAgent-1.5"，那就得让它跑起来。最短路径：</p>
+<ol>
+<li>用我们自己的 venv，按 5.5 节的 21 个硬依赖 + <code>openai</code> + <code>json_repair</code> 写精简 requirements，删掉 <code>launch_discovery.py:13</code> 的 <code>import torch</code>。</li>
+<li>先实测 <code>claude</code> 无 <code>-p</code> 在非 TTY 下的行为；不行就给 <code>experiments_utils_claude.py:121</code> 加 <code>-p</code>（顺手加 <code>timeout</code>）。</li>
+<li>关 DR、关三层 memory、关 survey、<code>loop_rounds=1</code>、<code>max_runs=2</code>。</li>
+<li>不用 <code>AutoDebug</code>，用 <code>AutoCls2D</code> 或自建一个契约完整的小任务（给 <code>AutoDebug</code> 补一个 <code>launcher.sh</code> 和两层 <code>final_info.json</code> 也行）。</li>
+<li>改 <code>stage.py:606-628</code> 读方向，否则改进率没有意义。</li>
+</ol>
+<p>以上五步做完，才能得到一个"InternAgent 到底花多少 token、多少时间跑通一轮"的可信数字。</p>
+<h2 id="9-未验证与待办">9. 未验证与待办<a class="permalink" href="#9-未验证与待办" title="本节链接">#</a></h2>
+<ul>
+<li><strong><code>claude</code> 无 <code>-p</code> 在 <code>capture_output</code> 子进程里的行为</strong>：只读到命令行拼装，没有执行。本机 <code>claude --help</code> 写默认是交互模式。这条决定 claudecode 后端在当前 CLI 版本上还能不能跑，复用前第一件事实测。</li>
+<li><strong><code>acceptEdits</code> 权限档下 agent 跑 bash 会不会被拦</strong>：代码里没有 <code>--allowedTools</code> 或 <code>--dangerously-skip-permissions</code>，若被拦整个自修复循环会静默空转。</li>
+<li><strong><code>AutoDebug</code> 到底怎么跑通</strong>：是上游忘了提交 <code>launcher.sh</code>，还是设计上指望 agent 自己造一个。需要实跑一次。</li>
+<li><strong>精简依赖在 Apple Silicon 上能否一把装上</strong>：<code>faiss-cpu==1.12.0</code>、<code>rdkit==2025.9.1</code>、<code>graphviz==0.21</code>、<code>fastmcp==2.12.4</code>、<code>molbloom==3.0.0</code> 的 arm64 wheel 需要在隔离 venv 里 <code>pip download --no-deps</code> 验证。</li>
+<li><strong>sci 模式</strong>：<code>sci_tasks/</code> 子模块空、<code>internagent/rcb_evaluation</code> 符号链接悬空，<code>structai</code>（<code>requirements.txt:304</code>）来路不明。这是 1.5 相对 1.0 的主要卖点，也是最接近"科研全自动化"叙事的部分，要另拉 ResearchClawBench 才能评估。</li>
+<li><strong>单轮 token 成本</strong>：默认 <code>generation_count=15</code>、<code>max_iterations=4</code>、<code>loop_rounds=10</code>、<code>top_ideas_count=5</code>，量级不小，本次没有读各 agent 的 prompt，无法估算。</li>
+<li><strong><code>interns1</code>/<code>dsr1</code> 不可实例化</strong>是靠"抽象方法未实现"推出来的，没起解释器验证，高置信但落地前用一行 <code>python -c</code> 实测。</li>
+</ul>
+<h2 id="10-调研方法">10. 调研方法<a class="permalink" href="#10-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>克隆到外层仓 <code>vendor/InternAgent</code>（被 <code>.gitignore</code> 挡住，只读参考），不进版本库。</li>
+<li>四个读者并行，范围互不重叠：流水线骨架与数据契约；后端层；任务契约与可运行性；mas 子系统。每条结论必须带 <code>文件:行</code>，亲自读到才标"已验证"；不跑代码、不装依赖、不深读 <code>tasks/*/code/</code>。</li>
+<li>四份结果合计 138 条发现，本文由此汇总并另抽查了 8 条最重的结论（MCTS 签名、改进率方向、反馈取最旧、<code>json_repair</code> 死代码、<code>ALL_COMPLETED</code> 双重角色、依赖缺失、<code>AutoDebug</code> 无入口、<code>openhands</code> 的上游历史），全部属实。</li>
+<li>所有"跑不起来"的判断都是静态的；第 9 节列了需要动态验证的项。</li>
+</ul>
+  </main>
+  <footer class="doc">原始稿是同目录的 internagent.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>

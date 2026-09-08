@@ -9,6 +9,7 @@
 | 目录 | 放什么 |
 |---|---|
 | `landscape/` | 同类系统、开源项目与行业现状调研 |
+| `selection/` | 开源项目选型深读：一轮选型一目录，`README.md` 做横向对比，每个候选项目一个 md |
 | `literature/` | 文献综述，按主题一目录，附 `refs.bib` |
 | `domain/` | 课题组学科的领域知识 |
 | `evals/` | 方案评测、benchmark 结论 |
@@ -24,6 +25,8 @@ landscape/2026-0908-auto-research-agents/
 ├── index.html       由 README.md 生成的阅读版，随 md 一起提交
 └── assets/          图
 ```
+
+选型类目录（`selection/`）允许一个目录里多个 md：`README.md` 放候选清单、横向对比与当前结论，每个候选项目一个 `<slug>.md` 深读，都会各自渲染成 html。
 
 写法上的两条规则，让文献和内容真正连起来：
 
@@ -46,3 +49,4 @@ md 是原始稿，html 是构建产物；本地 `make html` 生成并随 md 提�
 | 日期 | 标题 | 状态 | 原稿 | 公网阅读版 |
 |---|---|---|---|---|
 | 2026-09-08 | 新工科自动化科研智能体：2026 年工业界现状与架构设计 | 第一版 | [README](landscape/2026-0908-auto-research-agents/README.md) | <https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/> |
+| 2026-09-09 | 流水线层选型（已评 InternAgent，代码级深读） | 进行中 | [README](selection/2026-0909-pipeline-frameworks/README.md) · [InternAgent](selection/2026-0909-pipeline-frameworks/internagent.md) | <https://zephyr4123.github.io/TJU-AI4Science/selection/2026-0909-pipeline-frameworks/> |

@@ -305,6 +305,7 @@ skills/
 #### InternAgent
 
 - **链接**：<https://github.com/InternScience/InternAgent>（上海 AI Lab · InternScience）；组织 <https://github.com/InternScience>；1.5 技术报告 <https://arxiv.org/abs/2602.08990>[^internagent-report]
+- **代码级深读**（2026-09-09）：[选型 / InternAgent](../../selection/2026-0909-pipeline-frameworks/internagent.md)。要点：三个实验后端里只有 claudecode 真能跑，openhands 从未有过实现；流水线编排没有抽象层；最值得借的是任务目录契约与实验执行循环，不当底座。
 - **演化过程**（这是国内跟得最久的一条线）：
     - 2025-01 Dolphin：提出"思考—实践—反馈"的闭环 auto-research；
     - 2025-05-22 NovelSeek（后改名 InternAgent）：从假设到验证的闭环系统；

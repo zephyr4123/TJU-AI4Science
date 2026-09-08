@@ -17,7 +17,7 @@
 | 名称 | 类型 | 机构 | 链接 | 一句话 | 正文位置 |
 |---|---|---|---|---|---|
 | AutoResearchClaw | 项目 | UNC aiming-lab | <https://github.com/aiming-lab/AutoResearchClaw> | 23 阶段端到端流水线，底座可换、skills 可插、消息平台可接 | [§8.2](README.md#autoresearchclaw) |
-| InternAgent | 项目 | 上海 AI Lab · InternScience | <https://github.com/InternScience/InternAgent> | 生成 / 验证 / 进化三子系统的统一框架，国产模型适配 | [§8.2](README.md#internagent) |
+| InternAgent | 项目 | 上海 AI Lab · InternScience | <https://github.com/InternScience/InternAgent> | 生成 / 验证 / 进化三子系统的统一框架，国产模型适配 | [§8.2](README.md#internagent)；[代码级深读](../../selection/2026-0909-pipeline-frameworks/internagent.md) |
 | InternAgent-1.5 技术报告 | 论文 | 上海 AI Lab | <https://arxiv.org/abs/2602.08990> | 统一框架、长程自主发现，多学科案例 | 脚注 internagent-report |
 | InternScience 组织 | 索引 | 上海 AI Lab | <https://github.com/InternScience> | InternAgent、ResearchClawBench、skills 库的母组织 | [§8.2](README.md#internagent) |
 | MLEvolve | 项目 | InternScience | <https://github.com/InternScience/MLEvolve> | ML 算法端到端自动设计与优化 | [§8.2](README.md#internagent) |
