@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-08
+
 ### 修复
 - `./repos remotes --fix` 对刚 `git init`、尚无 origin 的内仓会报错退出；现在 origin 不存在就 add，存在才 set-url
 
@@ -19,5 +21,6 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/zephyr4123/TJU-AI4Science/releases/tag/v0.1.0
