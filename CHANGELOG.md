@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-08
+
 ### 新增
 - 第一篇调研《新工科自动化科研智能体：2026 年工业界现状与架构设计》：`research/landscape/2026-0908-auto-research-agents/`，正文里项目名链接到条目、数字挂脚注，附 `references.md` 台账
 - 调研阅读版工具链 `md2html`：渲染 `research/` 下全部 .md（README.md → index.html，索引页与台账一并出 html），锚点按 GitHub 规则生成，站内 .md 链接改写为 .html，文内链接与脚注不能落地直接报错；`make html` 构建，`make check` 新增 html 与 md 同步检查
@@ -31,6 +33,7 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/zephyr4123/TJU-AI4Science/releases/tag/v0.1.0
