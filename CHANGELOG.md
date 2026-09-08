@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### 修复
+- `./repos remotes --fix` 对刚 `git init`、尚无 origin 的内仓会报错退出；现在 origin 不存在就 add，存在才 set-url
+
 ## [0.1.0] - 2026-09-08
 
 ### 新增

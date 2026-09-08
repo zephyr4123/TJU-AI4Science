@@ -117,10 +117,17 @@ def dirty_count(dir_):
     return len([l for l in git(dir_, "status", "--short").stdout.splitlines() if l.strip()])
 
 
+def set_origin(dir_, url, check=True):
+    """origin 存在就 set-url，不存在就 add —— 刚 `git init` 还没配远端的内仓也要能被归正，
+    否则 `remote set-url` 对着不存在的 origin 直接报错，remotes --fix 就修不了它本该修的场景。"""
+    exists = git(dir_, "remote", "get-url", "origin", check=False).returncode == 0
+    return git(dir_, "remote", "set-url" if exists else "add", "origin", url, check=check)
+
+
 def ensure_remote(dir_, url):
     """每次网络操作前把 origin 归正到 manifest 的 url —— manifest 是权威，
     手工改过的 remote、克隆时用的旧地址，都在这里被拉回来。"""
-    git(dir_, "remote", "set-url", "origin", url, check=False)
+    set_origin(dir_, url, check=False)
 
 
 def _detached(name):
@@ -343,7 +350,7 @@ def cmd_remotes(a):
         if cur == r["url"]:
             print(f"{name:18s} {c('✓', 'g')} {cur}")
         elif a.fix:
-            git(r["dir"], "remote", "set-url", "origin", r["url"])
+            set_origin(r["dir"], r["url"])
             print(f"{name:18s} {c('已归正', 'g')} {r['url']}")
         else:
             bad += 1
