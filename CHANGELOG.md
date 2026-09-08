@@ -1,0 +1,17 @@
+# 变更日志
+
+本仓库所有值得注意的变更都记录在这里。格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
+
+- 每个改动合并时，把条目写进 **Unreleased**；发布时 `make release VERSION=x.y.z` 把它轮转成版本小节并打 tag，推送 tag 即触发 GitHub Release。
+- 1.0.0 之前是开发期：0.x 不承诺兼容性，正式发布才进入 1.0.0。
+- 条目分类用：新增 / 变更 / 修复 / 移除 / 安全。
+
+## [Unreleased]
+
+### 新增
+- 项目之家骨架：`repos.json` 内仓 manifest、`./repos` 跨仓 CLI（doctor / clone / status / sync / pull / push / remotes）、`.gitignore` 挡位
+- 目录约定：`docs/`（项目级文档与 ADR）、`research/`（调研）、`scripts/`（外部脚本，生产代码不得依赖）、`assets/`
+- 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
+- ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
+
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/commits/main

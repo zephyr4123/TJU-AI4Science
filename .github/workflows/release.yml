@@ -1,0 +1,31 @@
+name: release
+
+# 推送 vX.Y.Z tag 即发版：校验 tag 与 CHANGELOG 一致 → 取该版本条目做 Release Notes → 建 GitHub Release。
+# 0.x 一律标为 pre-release；正式发布走 1.0.0。
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: tag 与 CHANGELOG 对账，并提取 Release Notes
+        run: |
+          .github/scripts/changelog.sh check --tag "$GITHUB_REF_NAME"
+          .github/scripts/changelog.sh notes "${GITHUB_REF_NAME#v}" > release-notes.md
+          cat release-notes.md
+
+      - name: 建 GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          pre=""
+          case "$ver" in 0.*) pre="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md $pre
