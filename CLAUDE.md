@@ -18,6 +18,7 @@
 5. 每个改动合并时写进 `CHANGELOG.md` 的 Unreleased；发版只走 `make release VERSION=x.y.z`，不手工打 tag。（`make changelog`）
 6. `./repos` 的 pull 只 ff-only、push 永不 force、fetch 失败不吞，这些红线在代码里，不要删。
 7. 在内仓下"某功能不存在"这类否定结论前，先看 `./repos status` 有没有 prod 分支漂移告警。
+8. `research/` 是公开区：main 上的变动会把它整体渲染并发布到 <https://zephyr4123.github.io/TJU-AI4Science/>（`pages.yml`）。不想公开的材料不放这个目录；新调研只要 md 进 main 就自动上线，不改 workflow。
 
 ## 版本
 

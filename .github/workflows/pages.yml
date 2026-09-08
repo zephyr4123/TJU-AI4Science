@@ -1,0 +1,39 @@
+name: pages
+
+# research/ 是公开区：main 上任何变动都把 research/ 下全部 md 重新渲染成 html，整个目录发布到 GitHub Pages。
+# 新增一篇调研不需要改这里；不想公开的东西不要放进 research/。
+# 这里重新渲染而不是直接上传仓里的 html，是为了让公网永远是 md 的最新版本；仓里 html 是否落后由 ci 的 html-check 负责报警。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'research/**'
+      - '.github/scripts/md2html/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 渲染 research/ 下全部 md
+        run: make html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: research
+      - id: deploy
+        uses: actions/deploy-pages@v4

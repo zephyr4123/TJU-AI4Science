@@ -2,6 +2,8 @@
 
 课题组的知识资产。结论进 git；原始产物（PDF、数据集、原始导出）不进 git，放 LFS 或 NAS，这里只放索引与来源链接。
 
+**这个目录是公开区。** main 上的每次变动都会把这里全部 `.md` 渲染成 html 并整体发布到 <https://zephyr4123.github.io/TJU-AI4Science/>，新加一篇调研不用碰任何配置；不想公开的材料不要放进来。
+
 ## 目录
 
 | 目录 | 放什么 |
@@ -35,12 +37,12 @@ make html          # research/*/*/README.md → 同目录 index.html；文内链
 make check         # 含 html-check：index.html 落后于 README.md 时门禁不过
 ```
 
-md 是原始稿，html 是构建产物，只在本地生成、不上传到任何托管服务。视觉层遵守 `artifact-design` 的规范（阅读列宽、层级、明暗主题、表格可横向滚动、脚注回跳），模板在 `.github/scripts/md2html/template.html`。
+md 是原始稿，html 是构建产物；本地 `make html` 生成并随 md 提交（离线可读），`.github/workflows/pages.yml` 在 main 更新时重新渲染并发布到 GitHub Pages。视觉层遵守 `artifact-design` 的规范（阅读列宽、层级、明暗主题、表格可横向滚动、脚注回跳），模板在 `.github/scripts/md2html/template.html`。
 
 `.venv/bin/python .github/scripts/md2html/md2html.py backrefs <README.md>` 能打印每个标题被哪些章节链接到，写"被引用"行时用。
 
 ## 调研索引
 
-| 日期 | 标题 | 状态 | 原稿 | 阅读版 |
+| 日期 | 标题 | 状态 | 原稿 | 公网阅读版 |
 |---|---|---|---|---|
-| 2026-09-08 | 新工科自动化科研智能体：2026 年工业界现状与架构设计 | 第一版 | [README](landscape/2026-0908-auto-research-agents/README.md) | [index.html](landscape/2026-0908-auto-research-agents/index.html) |
+| 2026-09-08 | 新工科自动化科研智能体：2026 年工业界现状与架构设计 | 第一版 | [README](landscape/2026-0908-auto-research-agents/README.md) | <https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/> |

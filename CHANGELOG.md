@@ -12,6 +12,8 @@
 - 第一篇调研《新工科自动化科研智能体：2026 年工业界现状与架构设计》：`research/landscape/2026-0908-auto-research-agents/`，正文里项目名链接到条目、数字挂脚注，附 `references.md` 台账
 - 调研阅读版工具链 `md2html`：README.md → index.html，锚点按 GitHub 规则生成，文内链接与脚注不能落地直接报错；`make html` 构建，`make check` 新增 html 与 md 同步检查
 - `research/README.md` 写明一篇调研的目录形态与引用规则
+- `md2html` 改为渲染 `research/` 下全部 .md（索引页、台账一并出 html），站内 .md 链接改写为 .html
+- GitHub Pages 管线 `pages.yml`：仓库转为公开，`research/` 定为公开区，main 更新即重新渲染并整体发布到 <https://zephyr4123.github.io/TJU-AI4Science/>；新调研进 main 自动上线
 
 ### 变更
 - 内仓远端尚未创建，`repos.json` 的 url 改为 `TBD` 占位，不再写编造的地址；`./repos` 对占位仓只报告状态，clone / fetch / sync / pull / push 明确拒绝并退非 0

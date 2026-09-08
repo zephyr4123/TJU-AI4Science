@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文献与项目台账</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>文献与项目台账</h1>
+    <p class="subtitle"></p>
+    
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#底座与循环层">底座与循环层</a></li>
+<li><a href="#流水线层">流水线层</a></li>
+<li><a href="#学科适配层">学科适配层</a></li>
+<li><a href="#验证与评测层">验证与评测层</a></li>
+<li><a href="#批评与综述">批评与综述</a></li>
+<li><a href="#制度">制度</a></li>
+<li><a href="#原文里没有来源的说法">原文里没有来源的说法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<p>正文 <code>README.md</code> 里每个项目名链接到第 8 节条目、每个数字与判断挂脚注；这份台账是它们的平铺索引，用来快速核对"某个东西在哪、链接是什么、正文哪里用到了"。改正文时同步改这里。</p>
+<p>类型：项目 = 能装能跑的开源仓库；论文 = 只作为证据引用；基准 = 评测任务集；制度 = 会议与出版规则。</p>
+<h2 id="底座与循环层">底座与循环层<a class="permalink" href="#底座与循环层" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>机构</th>
+<th>链接</th>
+<th>一句话</th>
+<th>正文位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>autoresearch</td>
+<td>项目</td>
+<td>Karpathy</td>
+<td><a href="https://github.com/karpathy/autoresearch">https://github.com/karpathy/autoresearch</a></td>
+<td>630 行、三个文件的棘轮优化循环，模式 A 的原型</td>
+<td><a href="index.html#karpathy-autoresearch">§8.1</a></td>
+</tr>
+<tr>
+<td>awesome-autoresearch</td>
+<td>索引</td>
+<td>webfuse-com</td>
+<td><a href="https://github.com/webfuse-com/awesome-autoresearch">https://github.com/webfuse-com/awesome-autoresearch</a></td>
+<td>autoresearch 衍生项目汇总</td>
+<td><a href="index.html#karpathy-autoresearch">§8.1</a></td>
+</tr>
+<tr>
+<td>Tree-AutoResearch</td>
+<td>项目</td>
+<td>dongdongunique</td>
+<td><a href="https://github.com/dongdongunique/Tree-AutoResearch">https://github.com/dongdongunique/Tree-AutoResearch</a></td>
+<td>把线性循环改成树搜索，节点绑 git worktree</td>
+<td><a href="index.html#karpathy-autoresearch">§8.1</a></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="流水线层">流水线层<a class="permalink" href="#流水线层" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>机构</th>
+<th>链接</th>
+<th>一句话</th>
+<th>正文位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AutoResearchClaw</td>
+<td>项目</td>
+<td>UNC aiming-lab</td>
+<td><a href="https://github.com/aiming-lab/AutoResearchClaw">https://github.com/aiming-lab/AutoResearchClaw</a></td>
+<td>23 阶段端到端流水线，底座可换、skills 可插、消息平台可接</td>
+<td><a href="index.html#autoresearchclaw">§8.2</a></td>
+</tr>
+<tr>
+<td>InternAgent</td>
+<td>项目</td>
+<td>上海 AI Lab · InternScience</td>
+<td><a href="https://github.com/InternScience/InternAgent">https://github.com/InternScience/InternAgent</a></td>
+<td>生成 / 验证 / 进化三子系统的统一框架，国产模型适配</td>
+<td><a href="index.html#internagent">§8.2</a></td>
+</tr>
+<tr>
+<td>InternAgent-1.5 技术报告</td>
+<td>论文</td>
+<td>上海 AI Lab</td>
+<td><a href="https://arxiv.org/abs/2602.08990">https://arxiv.org/abs/2602.08990</a></td>
+<td>统一框架、长程自主发现，多学科案例</td>
+<td>脚注 internagent-report</td>
+</tr>
+<tr>
+<td>InternScience 组织</td>
+<td>索引</td>
+<td>上海 AI Lab</td>
+<td><a href="https://github.com/InternScience">https://github.com/InternScience</a></td>
+<td>InternAgent、ResearchClawBench、skills 库的母组织</td>
+<td><a href="index.html#internagent">§8.2</a></td>
+</tr>
+<tr>
+<td>MLEvolve</td>
+<td>项目</td>
+<td>InternScience</td>
+<td><a href="https://github.com/InternScience/MLEvolve">https://github.com/InternScience/MLEvolve</a></td>
+<td>ML 算法端到端自动设计与优化</td>
+<td><a href="index.html#internagent">§8.2</a></td>
+</tr>
+<tr>
+<td>DrClaw</td>
+<td>项目</td>
+<td>InternScience</td>
+<td><a href="https://github.com/InternScience/DrClaw">https://github.com/InternScience/DrClaw</a></td>
+<td>InternScience 的 Claw 系科研 agent</td>
+<td><a href="index.html#internagent">§8.2</a></td>
+</tr>
+<tr>
+<td>Denario</td>
+<td>项目</td>
+<td>AstroPilot-AI</td>
+<td><a href="https://github.com/AstroPilot-AI/Denario">https://github.com/AstroPilot-AI/Denario</a></td>
+<td>AG2 + LangGraph 的多学科论文生成，每节一个 agent</td>
+<td><a href="index.html#denario-与-cmbagent">§8.2</a></td>
+</tr>
+<tr>
+<td>cmbagent</td>
+<td>项目</td>
+<td>CMBAgents</td>
+<td><a href="https://github.com/CMBAgents/cmbagent">https://github.com/CMBAgents/cmbagent</a></td>
+<td>Denario 的研究分析后端</td>
+<td><a href="index.html#denario-与-cmbagent">§8.2</a></td>
+</tr>
+<tr>
+<td>Denario 论文</td>
+<td>论文</td>
+<td>剑桥 / Flatiron / AstroPilot</td>
+<td><a href="https://arxiv.org/abs/2510.26887">https://arxiv.org/abs/2510.26887</a></td>
+<td>十个学科的生成论文与专家评审</td>
+<td>脚注 denario-paper</td>
+</tr>
+<tr>
+<td>AI Scientist v2</td>
+<td>项目</td>
+<td>Sakana AI</td>
+<td><a href="https://github.com/SakanaAI/AI-Scientist-v2">https://github.com/SakanaAI/AI-Scientist-v2</a></td>
+<td>去模板、tree search 探索、多轮自审</td>
+<td><a href="index.html#ai-scientist-v2">§8.2</a></td>
+</tr>
+<tr>
+<td>AI Scientist 首篇通过评审博客</td>
+<td>博客</td>
+<td>Sakana AI</td>
+<td><a href="https://sakana.ai/ai-scientist-first-publication/">https://sakana.ai/ai-scientist-first-publication/</a></td>
+<td>与 ICLR workshop 约定的评审实验经过</td>
+<td>脚注 sakana-nature</td>
+</tr>
+<tr>
+<td>AI Scientist Nature 论文</td>
+<td>论文</td>
+<td>Sakana AI</td>
+<td>DOI 10.1038/s41586-026-10265-5</td>
+<td>2026-03-26 系统论文</td>
+<td>脚注 sakana-nature</td>
+</tr>
+<tr>
+<td>OpenEvolve</td>
+<td>项目</td>
+<td>algorithmicsuperintelligence</td>
+<td><a href="https://github.com/algorithmicsuperintelligence/openevolve">https://github.com/algorithmicsuperintelligence/openevolve</a></td>
+<td>AlphaEvolve 开源复刻，模式 C</td>
+<td><a href="index.html#openevolve-与-shinkaevolve">§8.2</a></td>
+</tr>
+<tr>
+<td>AlphaEvolve</td>
+<td>论文</td>
+<td>Google DeepMind</td>
+<td><a href="https://arxiv.org/abs/2506.13131">https://arxiv.org/abs/2506.13131</a></td>
+<td>LLM 作变异算子的程序进化搜索</td>
+<td>脚注 alphaevolve</td>
+</tr>
+<tr>
+<td>Agent Laboratory</td>
+<td>项目</td>
+<td>JHU</td>
+<td><a href="https://github.com/SamuelSchmidgall/AgentLaboratory">https://github.com/SamuelSchmidgall/AgentLaboratory</a></td>
+<td>2025 年前的整体式系统之一</td>
+<td><a href="index.html#1-2026-年发生了什么">§1</a></td>
+</tr>
+<tr>
+<td>AI-Researcher</td>
+<td>项目</td>
+<td>港大 HKUDS</td>
+<td><a href="https://github.com/HKUDS/AI-Researcher">https://github.com/HKUDS/AI-Researcher</a></td>
+<td>2025 年前的整体式系统之一</td>
+<td><a href="index.html#1-2026-年发生了什么">§1</a></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="学科适配层">学科适配层<a class="permalink" href="#学科适配层" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>机构</th>
+<th>链接</th>
+<th>一句话</th>
+<th>正文位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>scientific-agent-skills</td>
+<td>项目</td>
+<td>K-Dense</td>
+<td><a href="https://github.com/K-Dense-AI/scientific-agent-skills">https://github.com/K-Dense-AI/scientific-agent-skills</a></td>
+<td>165 个科研 skill，偏生命科学</td>
+<td><a href="index.html#k-dense-scientific-agent-skills">§8.3</a></td>
+</tr>
+<tr>
+<td>science-skills</td>
+<td>项目</td>
+<td>Google DeepMind</td>
+<td><a href="https://github.com/google-deepmind/science-skills">https://github.com/google-deepmind/science-skills</a></td>
+<td>官方 skills 包，接 30+ 数据库，主打 grounding</td>
+<td><a href="index.html#deepmind-science-skills">§8.3</a></td>
+</tr>
+<tr>
+<td>Awesome-Scientific-Skills</td>
+<td>项目</td>
+<td>InternScience</td>
+<td><a href="https://github.com/InternScience/Awesome-Scientific-Skills">https://github.com/InternScience/Awesome-Scientific-Skills</a></td>
+<td>上海 AI Lab 策展的 skills 库</td>
+<td><a href="index.html#awesome-scientific-skills">§8.3</a></td>
+</tr>
+<tr>
+<td>Claw4Science</td>
+<td>论文</td>
+<td>—</td>
+<td><a href="https://www.biorxiv.org/content/10.64898/2026.03.30.715118v1">https://www.biorxiv.org/content/10.64898/2026.03.30.715118v1</a></td>
+<td>OpenClaw 科研生态的策展数据集</td>
+<td><a href="index.html#claw4science-与-openclaw-科研生态">§8.3</a></td>
+</tr>
+<tr>
+<td>ToolUniverse</td>
+<td>项目</td>
+<td>哈佛 mims</td>
+<td><a href="https://github.com/mims-harvard/ToolUniverse">https://github.com/mims-harvard/ToolUniverse</a></td>
+<td>600+ 科学工具统一接口</td>
+<td><a href="index.html#工具层">§8.3</a></td>
+</tr>
+<tr>
+<td>PaperQA2</td>
+<td>项目</td>
+<td>FutureHouse</td>
+<td><a href="https://github.com/Future-House/paper-qa">https://github.com/Future-House/paper-qa</a></td>
+<td>文献问答与合成</td>
+<td><a href="index.html#工具层">§8.3</a></td>
+</tr>
+<tr>
+<td>awesome-ai-for-science</td>
+<td>索引</td>
+<td>ai-boost</td>
+<td><a href="https://github.com/ai-boost/awesome-ai-for-science">https://github.com/ai-boost/awesome-ai-for-science</a></td>
+<td>AI for Science 项目索引</td>
+<td>未在正文引用，备查</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="验证与评测层">验证与评测层<a class="permalink" href="#验证与评测层" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>机构</th>
+<th>链接</th>
+<th>一句话</th>
+<th>正文位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ResearchClawBench</td>
+<td>基准</td>
+<td>上海 AI Lab</td>
+<td><a href="https://github.com/InternScience/ResearchClawBench">https://github.com/InternScience/ResearchClawBench</a></td>
+<td>40 任务、10 学科、开放投任务、带稳定性统计</td>
+<td><a href="index.html#researchclawbench">§8.4</a></td>
+</tr>
+<tr>
+<td>ResearchClawBench 数据集</td>
+<td>数据</td>
+<td>上海 AI Lab</td>
+<td><a href="https://huggingface.co/datasets/InternScience/ResearchClawBench">https://huggingface.co/datasets/InternScience/ResearchClawBench</a></td>
+<td>HF 镜像，含 Self 额外 10 个任务</td>
+<td><a href="index.html#researchclawbench">§8.4</a></td>
+</tr>
+<tr>
+<td>ResearchClawBench 论文</td>
+<td>论文</td>
+<td>上海 AI Lab</td>
+<td><a href="https://arxiv.org/abs/2606.07591">https://arxiv.org/abs/2606.07591</a></td>
+<td>2026-06-09</td>
+<td>脚注 researchclawbench-paper</td>
+</tr>
+<tr>
+<td>AstaBench</td>
+<td>基准</td>
+<td>Ai2</td>
+<td><a href="https://allenai.org/asta/bench">https://allenai.org/asta/bench</a></td>
+<td>2400+ 问题、四大类</td>
+<td><a href="index.html#astabench">§8.4</a></td>
+</tr>
+<tr>
+<td>AstaBench 论文</td>
+<td>论文</td>
+<td>Ai2</td>
+<td><a href="https://arxiv.org/abs/2510.21652">https://arxiv.org/abs/2510.21652</a></td>
+<td>ICLR 2026 oral</td>
+<td>脚注 astabench-paper</td>
+</tr>
+<tr>
+<td>AstaBench 2026 春季更新</td>
+<td>博客</td>
+<td>Ai2</td>
+<td><a href="https://allenai.org/blog/astabench-update-spring-2026">https://allenai.org/blog/astabench-update-spring-2026</a></td>
+<td>E2E-Bench-Hard 3% 的出处</td>
+<td>脚注 astabench-update</td>
+</tr>
+<tr>
+<td>PaperBench</td>
+<td>基准</td>
+<td>OpenAI</td>
+<td><a href="https://arxiv.org/abs/2504.01848">https://arxiv.org/abs/2504.01848</a></td>
+<td>复现 20 篇 ICML 论文，8316 个子任务</td>
+<td>脚注 paperbench</td>
+</tr>
+<tr>
+<td>Terminal-Bench Science</td>
+<td>基准</td>
+<td>Harbor</td>
+<td>（原文未给链接）</td>
+<td>终端环境真实科研工作流</td>
+<td><a href="index.html#其他基准">§8.4</a></td>
+</tr>
+<tr>
+<td>NewtonBench</td>
+<td>基准</td>
+<td>HKUST</td>
+<td>（原文未给链接）</td>
+<td>抗记忆的物理定律再发现</td>
+<td><a href="index.html#其他基准">§8.4</a></td>
+</tr>
+<tr>
+<td>Kosmos</td>
+<td>论文</td>
+<td>Edison Scientific</td>
+<td><a href="https://arxiv.org/abs/2511.02824">https://arxiv.org/abs/2511.02824</a></td>
+<td>claim → evidence 可追溯性的参考</td>
+<td>脚注 kosmos</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="批评与综述">批评与综述<a class="permalink" href="#批评与综述" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>日期</th>
+<th>链接</th>
+<th>一句话</th>
+<th>正文位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Autonomous Research Agents: A Survey of AI Scientists and the Verification Gap</td>
+<td>综述</td>
+<td>2026-06-29</td>
+<td><a href="https://arxiv.org/abs/2608.05179">https://arxiv.org/abs/2608.05179</a></td>
+<td>筛 125 纳 35，七个审计维度</td>
+<td>脚注 verification-gap</td>
+</tr>
+<tr>
+<td>Agentic AI Scientists Are Not Built For Autonomous Scientific Discovery</td>
+<td>论文</td>
+<td>2026-05-09</td>
+<td><a href="https://arxiv.org/abs/2605.08956">https://arxiv.org/abs/2605.08956</a></td>
+<td>四个结构性缺陷</td>
+<td>脚注 not-built</td>
+</tr>
+<tr>
+<td>Sibyl-AutoResearch</td>
+<td>论文</td>
+<td>2026-05</td>
+<td><a href="https://arxiv.org/abs/2605.22343">https://arxiv.org/abs/2605.22343</a></td>
+<td>要的是自进化试错 harness</td>
+<td>脚注 sibyl</td>
+</tr>
+<tr>
+<td>AutoResearch AI</td>
+<td>综述</td>
+<td>2026-05</td>
+<td><a href="https://arxiv.org/abs/2605.23204">https://arxiv.org/abs/2605.23204</a></td>
+<td>2026 工具链综述</td>
+<td>脚注 autoresearch-ai-survey</td>
+</tr>
+<tr>
+<td>EvoScientist</td>
+<td>论文</td>
+<td>2026-03</td>
+<td><a href="https://arxiv.org/abs/2603.08127">https://arxiv.org/abs/2603.08127</a></td>
+<td>多智能体自进化 AI 科学家</td>
+<td>脚注 evoscientist</td>
+</tr>
+<tr>
+<td>ASI-Evolve</td>
+<td>论文</td>
+<td>2026-03</td>
+<td><a href="https://arxiv.org/abs/2603.29640">https://arxiv.org/abs/2603.29640</a></td>
+<td>AI 加速 AI</td>
+<td>脚注 asi-evolve</td>
+</tr>
+<tr>
+<td>ARIS</td>
+<td>论文</td>
+<td>2026-05</td>
+<td><a href="https://arxiv.org/abs/2605.03042">https://arxiv.org/abs/2605.03042</a></td>
+<td>对抗式多智能体科研</td>
+<td>脚注 aris</td>
+</tr>
+<tr>
+<td>Agon</td>
+<td>论文</td>
+<td>2026-06</td>
+<td><a href="https://arxiv.org/abs/2606.24177">https://arxiv.org/abs/2606.24177</a></td>
+<td>大规模全学科多智能体科研</td>
+<td>脚注 agon</td>
+</tr>
+<tr>
+<td>Clarus</td>
+<td>论文</td>
+<td>2026-06</td>
+<td><a href="https://arxiv.org/abs/2606.30246">https://arxiv.org/abs/2606.30246</a></td>
+<td>web 级协作多智能体科研</td>
+<td>脚注 clarus</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="制度">制度<a class="permalink" href="#制度" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>链接</th>
+<th>一句话</th>
+<th>正文位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agents4Science</td>
+<td>会议</td>
+<td><a href="https://agents4science.stanford.edu">https://agents4science.stanford.edu</a></td>
+<td>专门接收 AI 作者论文的会议</td>
+<td>脚注 agents4science</td>
+</tr>
+<tr>
+<td>JAIGP</td>
+<td>期刊</td>
+<td>（原文未给链接）</td>
+<td>2026-02 创刊，AI 作者期刊</td>
+<td><a href="index.html#9-制度约束与项目定位">§9</a></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="原文里没有来源的说法">原文里没有来源的说法<a class="permalink" href="#原文里没有来源的说法" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>说法</th>
+<th>位置</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>含幻觉引用的论文比例从 2024 年的 0.3% 升到 2025 年的 2.6%</td>
+<td>§6.2</td>
+<td>原文只写"一篇 2026 年的分析"，未给链接；保留原句、不挂脚注，待补来源</td>
+</tr>
+<tr>
+<td>Google Co-Scientist 正式论文（2026-06-29）</td>
+<td>§11 时间线</td>
+<td>原文未给链接，待补</td>
+</tr>
+</tbody>
+</table></div>
+  </main>
+  <footer class="doc">原始稿是同目录的 references.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>

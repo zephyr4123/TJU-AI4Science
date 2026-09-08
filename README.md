@@ -6,6 +6,7 @@
   <a href="https://github.com/zephyr4123/TJU-AI4Science/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/zephyr4123/TJU-AI4Science/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/zephyr4123/TJU-AI4Science/releases"><img alt="release" src="https://img.shields.io/github/v/release/zephyr4123/tju-ai4science?include_prereleases&label=release"></a>
   <a href="CHANGELOG.md"><img alt="changelog" src="https://img.shields.io/badge/changelog-keep%20a%20changelog-blue"></a>
+  <a href="https://zephyr4123.github.io/TJU-AI4Science/"><img alt="pages" src="https://github.com/zephyr4123/TJU-AI4Science/actions/workflows/pages.yml/badge.svg"></a>
 </p>
 
 ## 这是什么
@@ -33,7 +34,7 @@ tju-ai4science/
 ├── Makefile          check / release 入口，本地与 CI 共用
 ├── CHANGELOG.md      变更日志
 ├── docs/             项目级文档：vision、adr/（架构决策）、specs/（设计规格）、meetings/（纪要）
-├── research/         调研：literature/ landscape/ domain/ evals/
+├── research/         调研：literature/ landscape/ domain/ evals/ —— 公开区，自动发布到 GitHub Pages
 ├── scripts/          外部脚本与一次性工具 —— 生产代码禁止依赖这里
 ├── assets/           图、幻灯片；大文件只放索引
 └── platform/         内仓（独立 git，被 .gitignore 挡住）
@@ -48,6 +49,10 @@ tju-ai4science/
 | 推送某个内仓（永不 force） | `./repos push platform` |
 | 提交前门禁 | `make check` |
 | 发版 | `make release VERSION=0.2.0` 然后 `git push origin main --follow-tags` |
+
+## 公开阅读版
+
+`research/` 下的调研会被渲染成 html 并发布到 <https://zephyr4123.github.io/TJU-AI4Science/>，main 一更新就自动重发；新加调研不用改配置。
 
 ## 版本与发布
 

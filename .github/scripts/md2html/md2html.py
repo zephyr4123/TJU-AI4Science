@@ -8,8 +8,8 @@
   - 文内链接必须能落地：指向不存在的标题或脚注直接报错退非 0，这是本工具存在的主要理由。
 
 用法：
-  md2html.py build <README.md> [...]     渲染到同目录 index.html
-  md2html.py build --all                 渲染 research/*/*/README.md 全部
+  md2html.py build <x.md> [...]          渲染到同目录：README.md → index.html，其余 → 同名 .html
+  md2html.py build --all                 渲染 research/ 下全部 .md（含索引页与台账），产物即 GitHub Pages 站点
   md2html.py backrefs <README.md>        打印每个标题被哪些章节链接到（给「被引用」行用）
 """
 import argparse
@@ -40,6 +40,22 @@ def github_slug(value, separator="-"):
     return value.replace(" ", separator)
 
 
+def output_path(src):
+    """README.md → index.html（目录 URL 直接命中），其余 .md → 同名 .html。"""
+    return src.with_name("index.html") if src.name == "README.md" else src.with_suffix(".html")
+
+
+def lift_title(body):
+    """没有 front matter 的文件（索引页、台账）用首个一级标题当页面标题，并从正文里摘掉，避免标题出现两次。"""
+    lines = body.split("\n")
+    for i, line in enumerate(lines):
+        if line.startswith("# "):
+            return line[2:].strip(), "\n".join(lines[:i] + lines[i + 1:])
+        if line.strip():
+            break
+    return None, body
+
+
 def split_front_matter(text):
     """开头 `---` 包起来的 key: value 块是元数据（标题、截止日期、范围……）。不引入 yaml 依赖，只认单行键值。"""
     if not text.startswith("---\n"):
@@ -56,8 +72,9 @@ def split_front_matter(text):
 
 
 def strip_code_blocks(body):
-    """检查锚点时忽略围栏代码块里的内容（ASCII 图里可能有 `](#` 形状的字符）。"""
-    return re.sub(r"```.*?```", "", body, flags=re.S)
+    """检查锚点与脚注时忽略代码：围栏块（ASCII 图里可能有 `](#` 形状的字符）和行内代码（文档里会写 `[^id]` 讲规则）。"""
+    body = re.sub(r"```.*?```", "", body, flags=re.S)
+    return re.sub(r"`[^`\n]*`", "", body)
 
 
 def headings(body):
@@ -108,6 +125,10 @@ def build(path):
     src = Path(path)
     text = src.read_text(encoding="utf-8")
     meta, body = split_front_matter(text)
+    if not meta.get("title"):
+        title, body = lift_title(body)
+        if title:
+            meta["title"] = title
     if not check_links(src, body):
         return False
     md = markdown.Markdown(
@@ -121,6 +142,9 @@ def build(path):
     # 表格和代码块要能在自己的容器里横向滚动，正文永远不横向滚
     content = re.sub(r"<table>", '<div class="table-wrap"><table>', content)
     content = re.sub(r"</table>", "</table></div>", content)
+    # 站内相对链接从 .md 改指到对应的 .html：本地双击和 GitHub Pages 上都能跳；GitHub 上读 md 时链接仍是 md
+    content = re.sub(r'href="(?!https?://)([^"#]*?)README\.md(#[^"]*)?"', r'href="\1index.html\2"', content)
+    content = re.sub(r'href="(?!https?://)([^"#]*?)\.md(#[^"]*)?"', r'href="\1.html\2"', content)
     page = TEMPLATE.read_text(encoding="utf-8")
     title = meta.get("title") or src.parent.name
     for key, val in {
@@ -132,7 +156,7 @@ def build(path):
         "{{source}}": html.escape(src.name),
     }.items():
         page = page.replace(key, val)
-    out = src.parent / "index.html"
+    out = output_path(src)
     out.write_text(page, encoding="utf-8")
     print(f"✓ {out.relative_to(ROOT) if out.is_relative_to(ROOT) else out}")
     return True
@@ -170,10 +194,10 @@ def main():
         return 0 if backrefs(a.file) else 1
     files = [Path(f) for f in a.files]
     if a.all:
-        files += sorted((ROOT / "research").glob("*/*/README.md"))
+        files += sorted((ROOT / "research").rglob("*.md"))
     if not files:
         if a.all:
-            print("（research/*/*/README.md 一个都没有，无事可做）")
+            print("（research/ 下没有 .md，无事可做）")
             return 0
         p.error("给文件，或用 --all")
     ok = all([build(f) for f in files])  # 列表推导：全部都跑，不因第一个失败短路

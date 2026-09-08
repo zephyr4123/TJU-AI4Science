@@ -20,11 +20,11 @@ $(VENV)/.stamp: $(MD2HTML)/requirements.txt    ## 依赖装在项目局部 venv�
 	$(VENV)/bin/pip install -q -r $<
 	touch $@
 
-html: $(VENV)/.stamp               ## research/*/*/README.md → 同目录 index.html（含文内链接检查）
+html: $(VENV)/.stamp               ## research/ 下全部 .md → 同目录 .html（README.md → index.html；含文内链接检查）
 	$(VENV)/bin/python $(MD2HTML)/md2html.py build --all
 
-html-check: html                   ## html 必须与 md 同步：构建后 index.html 不能有改动或未追踪
-	@bad=$$(git status --porcelain -- 'research/*/*/index.html'); \
+html-check: html                   ## html 必须与 md 同步：构建后 research/ 下的 .html 不能有改动或未追踪
+	@bad=$$(git status --porcelain -- 'research/**/*.html' 'research/*.html'); \
 	if [ -n "$$bad" ]; then echo "✗ index.html 与 README.md 不同步，跑 make html 后一起提交："; echo "$$bad"; exit 1; fi; \
 	echo "✓ html 与 md 同步"
 

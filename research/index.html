@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>research/ 调研</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>research/ 调研</h1>
+    <p class="subtitle"></p>
+    
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#目录">目录</a></li>
+<li><a href="#一篇调研长什么样">一篇调研长什么样</a></li>
+<li><a href="#生成阅读版">生成阅读版</a></li>
+<li><a href="#调研索引">调研索引</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<p>课题组的知识资产。结论进 git；原始产物（PDF、数据集、原始导出）不进 git，放 LFS 或 NAS，这里只放索引与来源链接。</p>
+<p><strong>这个目录是公开区。</strong> main 上的每次变动都会把这里全部 <code>.md</code> 渲染成 html 并整体发布到 <a href="https://zephyr4123.github.io/TJU-AI4Science/">https://zephyr4123.github.io/TJU-AI4Science/</a>，新加一篇调研不用碰任何配置；不想公开的材料不要放进来。</p>
+<h2 id="目录">目录<a class="permalink" href="#目录" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>目录</th>
+<th>放什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>landscape/</code></td>
+<td>同类系统、开源项目与行业现状调研</td>
+</tr>
+<tr>
+<td><code>literature/</code></td>
+<td>文献综述，按主题一目录，附 <code>refs.bib</code></td>
+</tr>
+<tr>
+<td><code>domain/</code></td>
+<td>课题组学科的领域知识</td>
+</tr>
+<tr>
+<td><code>evals/</code></td>
+<td>方案评测、benchmark 结论</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="一篇调研长什么样">一篇调研长什么样<a class="permalink" href="#一篇调研长什么样" title="本节链接">#</a></h2>
+<p>一篇调研一个目录，目录名 <code>YYYY-MMDD-slug</code>，天然按时间排：</p>
+<pre><code>landscape/2026-0908-auto-research-agents/
+├── README.md        正文，唯一原始稿。开头是 YAML 元数据（title / subtitle / kind / date / scope / status）
+├── references.md    文献与项目台账：类型、机构、链接、一句话、正文位置
+├── index.html       由 README.md 生成的阅读版，随 md 一起提交
+└── assets/          图
+</code></pre>
+<p>写法上的两条规则，让文献和内容真正连起来：</p>
+<ol>
+<li>项目、论文、基准的名字在<strong>每一节首次出现处</strong>链接到正文里它自己的条目（<code>#锚点</code>），条目里放全部外链，并写一行"被引用：§x、§y"作为回跳。</li>
+<li>具体数字与判断用脚注 <code>[^id]</code> 挂到来源；脚注在文末自动汇成参考列表，阅读版里可回跳正文。</li>
+</ol>
+<h2 id="生成阅读版">生成阅读版<a class="permalink" href="#生成阅读版" title="本节链接">#</a></h2>
+<pre><code class="language-bash">make html          # research/*/*/README.md → 同目录 index.html；文内链接与脚注不能落地会直接报错
+make check         # 含 html-check：index.html 落后于 README.md 时门禁不过
+</code></pre>
+<p>md 是原始稿，html 是构建产物；本地 <code>make html</code> 生成并随 md 提交（离线可读），<code>.github/workflows/pages.yml</code> 在 main 更新时重新渲染并发布到 GitHub Pages。视觉层遵守 <code>artifact-design</code> 的规范（阅读列宽、层级、明暗主题、表格可横向滚动、脚注回跳），模板在 <code>.github/scripts/md2html/template.html</code>。</p>
+<p><code>.venv/bin/python .github/scripts/md2html/md2html.py backrefs &lt;README.md&gt;</code> 能打印每个标题被哪些章节链接到，写"被引用"行时用。</p>
+<h2 id="调研索引">调研索引<a class="permalink" href="#调研索引" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>日期</th>
+<th>标题</th>
+<th>状态</th>
+<th>原稿</th>
+<th>公网阅读版</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-09-08</td>
+<td>新工科自动化科研智能体：2026 年工业界现状与架构设计</td>
+<td>第一版</td>
+<td><a href="landscape/2026-0908-auto-research-agents/index.html">README</a></td>
+<td><a href="https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/">https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/</a></td>
+</tr>
+</tbody>
+</table></div>
+  </main>
+  <footer class="doc">原始稿是同目录的 README.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>
