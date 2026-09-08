@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+### 变更
+- 内仓远端尚未创建，`repos.json` 的 url 改为 `TBD` 占位，不再写编造的地址；`./repos` 对占位仓只报告状态，clone / fetch / sync / pull / push 明确拒绝并退非 0
+- `changelog.sh` 的链接引用允许 `TBD` 占位，但在占位上 `release` 会被拒绝
+
 ## [0.1.1] - 2026-09-08
 
 ### 修复

@@ -1,12 +1,12 @@
 {
   "_note": "内仓拓扑 + 线上坐标的唯一真相源，./repos 的全部命令都读这里。改拓扑改本文件，不改 CLI 代码。`_` 开头的键是注释，工具一律跳过。",
-  "_hosting": "外仓 https://github.com/zephyr4123/TJU-AI4Science（私有）与内仓都挂在 GitHub 个人账号 zephyr4123 下。将来迁到课题组 org，只需改这里的 url，然后 ./repos remotes --fix。",
+  "_hosting": "外仓在 https://github.com/zephyr4123/TJU-AI4Science（私有）。内仓远端尚未创建，url 写 TBD 占位；有了地址再填，然后 ./repos remotes --fix。",
   "repos": {
     "platform": {
-      "url": "https://github.com/zephyr4123/tju-ai4science-platform.git",
+      "url": "TBD",
       "path": "platform",
       "prod_branch": "main",
-      "_note": "生产代码 monorepo：前端 / 后端 / 不分端的核心库 / 执行端 / db / infra 都在这一个仓里。尚无线上部署，prod_version 等首次正式发布（1.0.0）后再补，证据来源届时写进 _version_source。"
+      "_note": "生产代码 monorepo：前端 / 后端 / 不分端的核心库 / 执行端 / db / infra 都在这一个仓里。远端待定（url=TBD），CLI 对它只报告、不做网络操作；尚无线上部署，prod_version 等首次正式发布后再补。"
     }
   }
 }

@@ -20,6 +20,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 MANIFEST = ROOT / "repos.json"
+# 远端未定时 url 写 TBD：不编造地址。CLI 对这种仓只报告状态，不做任何网络与 remote 操作。
+PENDING_URL = "TBD"
+
+
+def remote_pending(r):
+    return r["url"] == PENDING_URL
 
 
 # ── 输出 ────────────────────────────────────────────────────────────────────
@@ -120,6 +126,8 @@ def dirty_count(dir_):
 def set_origin(dir_, url, check=True):
     """origin 存在就 set-url，不存在就 add —— 刚 `git init` 还没配远端的内仓也要能被归正，
     否则 `remote set-url` 对着不存在的 origin 直接报错，remotes --fix 就修不了它本该修的场景。"""
+    if url == PENDING_URL:
+        return None
     exists = git(dir_, "remote", "get-url", "origin", check=False).returncode == 0
     return git(dir_, "remote", "set-url" if exists else "add", "origin", url, check=check)
 
@@ -162,7 +170,12 @@ def cmd_doctor(_a):
             print(f"{name:18s} {c('✗ 外层 .gitignore 没挡住 ' + r['dir'] + '/（加一行 /' + r['dir'] + '/）', 'r')}")
             continue
         if not has_git(r["dir"]):
-            print(f"{name:18s} {c('· 未 clone（./repos clone all）', 'y')}")
+            hint = '· 未 clone，且远端待定（repos.json 里 url=TBD）' if remote_pending(r) else '· 未 clone（./repos clone all）'
+            print(f"{name:18s} {c(hint, 'y')}")
+            continue
+        if remote_pending(r):
+            br = branch(r["dir"])
+            print(f"{name:18s} {c('✓', 'g')} {br or c('detached / 无分支', 'y')}  {c('远端待定，未对账 remote', 'y')}")
             continue
         cur = git(r["dir"], "remote", "get-url", "origin", check=False).stdout.strip()
         if cur != r["url"]:
@@ -181,6 +194,10 @@ def cmd_clone(a):
         d = ROOT / r["dir"]
         if has_git(r["dir"]):
             print(f"{name:18s} {c('✓ 已存在，跳过', 'g')}")
+            continue
+        if remote_pending(r):
+            print(f"{name:18s} {c('✗ 远端待定（repos.json 里 url=TBD），有了地址再 clone', 'r')}")
+            bad += 1
             continue
         if d.exists() and any(d.iterdir()):
             # 有东西但不是 git 仓：可能是手工放的文件、也可能是上次 clone 断在半路。
@@ -251,6 +268,10 @@ def cmd_fetch(a):
         if not has_git(r["dir"]):
             print(f"{name:18s} {c('跳过（未 clone）', 'y')}")
             continue
+        if remote_pending(r):
+            print(f"{name:18s} {c('✗ 远端待定，无法 fetch', 'r')}")
+            bad += 1
+            continue
         ensure_remote(r["dir"], r["url"])
         rc = git(r["dir"], "fetch", "origin", capture=False, check=False).returncode
         bad += 0 if rc == 0 else 1
@@ -267,6 +288,10 @@ def cmd_sync(_a):
     for name, r in load_manifest().items():
         if not has_git(r["dir"]):
             print(f"{name:18s} {c('未 clone', 'y')}")
+            continue
+        if remote_pending(r):
+            print(f"{name:18s} {c('✗ 远端待定，不做对账', 'r')}")
+            bad += 1
             continue
         ensure_remote(r["dir"], r["url"])
         f = git(r["dir"], "fetch", "origin", check=False)
@@ -303,6 +328,10 @@ def cmd_pull(a):
         if br is None:
             bad += _detached(name)
             continue
+        if remote_pending(r):
+            print(f"{name:18s} {c('✗ 远端待定，无法 pull', 'r')}")
+            bad += 1
+            continue
         ensure_remote(r["dir"], r["url"])
         rc = git(r["dir"], "pull", "--ff-only", "origin", br, capture=False, check=False).returncode
         bad += 0 if rc == 0 else 1
@@ -330,6 +359,10 @@ def cmd_push(a):
         if br is None:
             bad += _detached(name)
             continue
+        if remote_pending(r):
+            print(f"{name:18s} {c('✗ 远端待定，无处可 push', 'r')}")
+            bad += 1
+            continue
         ensure_remote(r["dir"], r["url"])
         print(f"{name:18s} {c('push', 'b')} {br} → {r['url']}")
         # 完整 refspec 写死源和目标，不让分支名被 git 当成 refspec 再解析一遍。
@@ -345,6 +378,9 @@ def cmd_remotes(a):
     bad = 0
     for name, r in load_manifest().items():
         if not has_git(r["dir"]):
+            continue
+        if remote_pending(r):
+            print(f"{name:18s} {c('远端待定（url=TBD），跳过', 'y')}")
             continue
         cur = git(r["dir"], "remote", "get-url", "origin", check=False).stdout.strip()
         if cur == r["url"]:

@@ -60,7 +60,8 @@ cmd_check() {
   [ -f "$file" ] || die "缺 $file"
   grep -qE '^## \[Unreleased\]$' "$file" || die "$file 缺「## [Unreleased]」小节"
   [ "$(grep -m1 -E '^## \[' "$file")" = "## [Unreleased]" ] || die "「## [Unreleased]」必须是第一个版本小节"
-  grep -qE '^\[Unreleased\]: https?://' "$file" || die "缺「[Unreleased]: <url>」链接引用行（release 轮转要用它推导仓库地址）"
+  # 链接引用允许写 TBD 占位（仓库远端还没定时不编造地址），但 release 时必须已是真实地址
+  grep -qE '^\[Unreleased\]: (https?://|TBD$)' "$file" || die "缺「[Unreleased]: <url>」链接引用行（远端未定可先写 TBD；release 轮转要用它推导仓库地址）"
 
   local bad
   bad=$(grep -E '^## \[' "$file" | grep -vE '^## \[Unreleased\]$' | grep -vE "^## \[$SEMVER\] - $DATE\$" || true)
@@ -72,7 +73,7 @@ $bad"
     if [ -n "$prev" ]; then
       semver_gt "$prev" "$v" || die "版本顺序不对：$prev 应严格大于其后的 ${v}（最新版本在最上面，不允许重复）"
     fi
-    grep -qE "^\[$(printf '%s' "$v" | sed 's/\./\\./g')\]: https?://" "$file" || die "版本 $v 缺底部链接引用行「[$v]: <url>」"
+    grep -qE "^\[$(printf '%s' "$v" | sed 's/\./\\./g')\]: (https?://|TBD$)" "$file" || die "版本 $v 缺底部链接引用行「[$v]: <url>」（远端未定可先写 TBD）"
     [ -n "$(section_body "$file" "$v")" ] || die "版本 $v 的小节是空的"
     prev="$v"
   done
@@ -111,6 +112,7 @@ cmd_release() {
   # 仓库地址从现有的 [Unreleased] 链接推导：去掉 /compare/... 或 /commits/... 这类尾巴
   base=$(grep -m1 -E '^\[Unreleased\]: ' "$file" | sed -E 's/^\[Unreleased\]: //; s#/(compare|commits|releases|tree)/.*$##')
   [ -n "$base" ] || die "无法从 [Unreleased] 链接推导仓库地址"
+  [ "$base" != "TBD" ] || die "[Unreleased] 链接还是 TBD 占位：先把它填成真实仓库地址（如 https://github.com/<owner>/<repo>/commits/main）再发版"
   prev="$top"
   today=$(date +%F)
   tmp="$file.tmp.$$"
