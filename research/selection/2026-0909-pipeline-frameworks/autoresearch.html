@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>autoresearch 代码级深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>autoresearch 代码级深读</h1>
+    <p class="subtitle">流水线层选型 · Karpathy 的棘轮循环到底跟&quot;结果塞 prompt&quot;差在哪</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目选型深读（只读代码，不跑、不装依赖）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-09</dd></div><div class="meta-row"><dt>范围</dt><dd>仓库 https://github.com/karpathy/autoresearch，克隆到 vendor/autoresearch，master 提交 228791f（2026-03-25）；连同远端分支 origin/exp/H100/mar8（一次真实跑档）与 origin/agenthub（未合并的多 agent 版协议）；文中 文件:行 均相对该仓库根</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-结论">1. 结论</a></li>
+<li><a href="#2-仓库画像">2. 仓库画像</a></li>
+<li><a href="#3-协议programmd-逐条">3. 协议：program.md 逐条</a></li>
+<li><a href="#4-棘轮机制与-internagent-内环的对照">4. 棘轮机制，与 InternAgent 内环的对照</a></li>
+<li><a href="#5-harnesstrainpy-与-preparepy">5. harness：train.py 与 prepare.py</a><ul>
+<li><a href="#51-分区">5.1 分区</a></li>
+<li><a href="#52-指标">5.2 指标</a></li>
+<li><a href="#53-固定墙钟预算">5.3 固定墙钟预算</a></li>
+<li><a href="#54-数据隔离">5.4 数据隔离</a></li>
+<li><a href="#55-输出契约与-fast-fail">5.5 输出契约与 fast-fail</a></li>
+<li><a href="#56-硬件耦合">5.6 硬件耦合</a></li>
+</ul>
+</li>
+<li><a href="#6-真实跑档originexph100mar8">6. 真实跑档：origin/exp/H100/mar8</a></li>
+<li><a href="#7-协议的洞">7. 协议的洞</a></li>
+<li><a href="#8-被删的-spawnsh-与未合并的-agenthub">8. 被删的 spawn.sh 与未合并的 agenthub</a></li>
+<li><a href="#9-对-demo-的意义">9. 对 demo 的意义</a><ul>
+<li><a href="#91-借什么">9.1 借什么</a></li>
+<li><a href="#92-必须补的">9.2 必须补的</a></li>
+<li><a href="#93-移植前提">9.3 移植前提</a></li>
+<li><a href="#94-跟-internagent-各取一半">9.4 跟 InternAgent 各取一半</a></li>
+</ul>
+</li>
+<li><a href="#10-可运行性">10. 可运行性</a></li>
+<li><a href="#11-未验证与待办">11. 未验证与待办</a></li>
+<li><a href="#12-调研方法">12. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：它跟 InternAgent"结果塞 prompt"的循环有本质区别，但区别<strong>不在循环里传什么</strong>（它每轮进上下文的信息比 InternAgent 还少，成功时只有两个数字），而在<strong>循环外用什么承载状态、用什么规则收敛</strong>。三件东西：git 工作树是状态载体（改进就推进分支，退步就 <code>git reset</code> 物理销毁）；一个外部的单标量硬闸（固定 5 分钟预算下的 <code>val_bpb</code>，低了才算数）；一份被 gitignore 的 append-only 账本（正因为不进 git，才能活过 <code>git reset</code>）。所以 agent 的上下文可以随时压缩、清空、换会话，棘轮不掉。代价是整套东西是荣誉制：跑实验、比大小、执行回滚、写账本全是 agent 自己做，仓库里没有一行代码去校验；而且接受阈值低于噪声，125 次实验里多次被 keep 的改进只有换个随机种子造成波动的十分之一。</p>
+<p>怎么读：第 1 节是结论，第 4 节是与 InternAgent 内环的逐项对照，第 6 节是那次真实跑档的数据，第 7 节是协议的洞。它不是 InternAgent 的替代品，是补 InternAgent 短板的那一半：InternAgent 有流水线没有严格的实验床契约，autoresearch 有实验床契约没有流水线。横向对比见同目录的 <a href="index.html">README.md</a>。</p>
+</blockquote>
+<h2 id="1-结论">1. 结论<a class="permalink" href="#1-结论" title="本节链接">#</a></h2>
+<p><strong>一句话</strong>：抄形态不抄代码。整个仓库 1200 行里跟我们任务相关的代码是零（GPT + Muon + flash-attn3 + 单卡 NVIDIA），但它的循环形态是目前读到的最值得照搬的"实验床契约"。</p>
+<p><strong>它相对"结果塞 prompt"多出来的三件东西</strong>（详见<a href="#4-棘轮机制与-internagent-内环的对照">第 4 节</a>）：</p>
+<ol>
+<li><strong>状态在文件系统里单调前进</strong>，不在上下文里。<code>train.py</code> 的当前工作树就是"已积累的知识"，<code>git commit</code> / <code>git reset --hard</code> 就是 accept / revert 算子。</li>
+<li><strong>接受与拒绝是外部标量硬闸</strong>，不是让模型看着结果自己决定要不要继续。这是把验证层从"建议"升格成"闸门"。</li>
+<li><strong>失败记忆外部化</strong>成一份活过 revert 的账本 <code>results.tsv</code>，不靠 prompt 堆历史。</li>
+</ol>
+<p>再加一条纪律：<code>run.log</code> 不许进上下文，只 <code>grep</code> 两行。每轮进上下文的信息量是常数，这才是它能在一台 H100 上连跑 12 小时、125 次实验不塌的原因。</p>
+<p><strong>能借的五条骨架</strong>（约 150 到 250 行就能重写一遍）：固定墙钟预算而非固定步数、单标量且实现无关的指标、保留集在只读文件里物理钉死、<code>stdout</code> 摘要 + exit code + fast-fail、git 作为状态载体 + 账本 + 显式 accept/revert。</p>
+<p><strong>照抄会踩的四个洞</strong>（都能用一条命令查，符合"机器判不了的规矩不是规矩"）：</p>
+<ol>
+<li><strong>裁判员就是运动员</strong>。跑实验、解析指标、比大小、执行 <code>git reset</code>、写账本五件事全是 agent 自己做。要写一个 runner 当裁判，agent 只负责改代码和提交。</li>
+<li><strong>只读保护是字面的不是结构的</strong>。<code>TIME_BUDGET</code>、<code>evaluate_bpb</code>、<code>make_dataloader</code> 全部 import 进了 agent 全权拥有的 <code>train.py</code>（<code>train.py:26</code>）。改时间预算、包一层假评测、把训练 split 改成 <code>"val"</code>，三件事都不违反"不许改 <code>prepare.py</code>"。</li>
+<li><strong>账本不与 git 对账</strong>。<code>results.tsv</code> 由被考核者手写、被 gitignore、commit 哈希从不校验；唯一能戳穿改预算的字段 <code>training_seconds</code> 恰好是协议不 grep 也不记的那个。</li>
+<li><strong>没有统计门</strong>。没有重复种子、没有显著性阈值，单次跑分变好就 keep。</li>
+</ol>
+<p><strong>对 demo 的定位</strong>：这套东西落在我们五层的"验证层 + 评测层"，给的是实验床契约；流水线层和 skills 层它基本没有，整个"流水线"就是 <code>program.md</code> 里 13 行伪代码。移植前提比以上都重要：<strong>它成立的唯一原因是有一个 5 分钟、必然跑完、单标量、改什么都可比的评测。</strong> 选型时先问的不是"用不用这套循环"，而是"我们的验证层能不能压缩成一个 5 分钟的标量"。</p>
+<h2 id="2-仓库画像">2. 仓库画像<a class="permalink" href="#2-仓库画像" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>实况</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>仓库</td>
+<td><a href="https://github.com/karpathy/autoresearch">https://github.com/karpathy/autoresearch</a>，MIT，95k star</td>
+</tr>
+<tr>
+<td>时间线</td>
+<td>36 个提交全在 2026-03（03-06 初始提交，03-25 最后一次合并）；karpathy 本人 28 个，外部贡献 8 条</td>
+</tr>
+<tr>
+<td>规模</td>
+<td>git 追踪的文件只有 10 个：<code>README.md</code> 92 行、<code>program.md</code> 114 行、<code>train.py</code> 630 行、<code>prepare.py</code> 389 行、<code>analysis.ipynb</code>、<code>pyproject.toml</code>、<code>uv.lock</code>、<code>.gitignore</code>、<code>.python-version</code>、<code>progress.png</code></td>
+</tr>
+<tr>
+<td>远端分支</td>
+<td><code>exp/H100/mar8</code>：一次真实跑档，25 个提交 + agent 提交的 <code>results.tsv</code>；<code>agenthub</code>：未合并，多了一份 191 行的 <code>program_agenthub.md</code></td>
+</tr>
+<tr>
+<td>测试与 CI</td>
+<td>零测试、零 CI、零 hook；<code>train.py</code> 零 <code>try/except</code>，靠 7 条 <code>assert</code> + 一条 NaN fast-fail</td>
+</tr>
+<tr>
+<td>依赖</td>
+<td>9 个直接依赖，<code>torch==2.9.1</code> 钉在 cu128 索引；<code>uv.lock</code> 里 torch 只有 manylinux 与 win_amd64 wheel</td>
+</tr>
+<tr>
+<td>平台</td>
+<td>单卡 NVIDIA 硬绑定：<code>train.py:21</code> 在模块导入期就调 <code>torch.cuda.get_device_capability()</code>；无 CPU / MPS 回退；README 列了 macOS / MLX / Windows / AMD 四个第三方 fork</td>
+</tr>
+<tr>
+<td>分工</td>
+<td>README 明说：<code>train.py</code> 由 agent 迭代，<code>program.md</code> 由人迭代，<code>prepare.py</code> 谁都不改</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="3-协议programmd-逐条">3. 协议：<code>program.md</code> 逐条<a class="permalink" href="#3-协议programmd-逐条" title="本节链接">#</a></h2>
+<p><code>program.md</code> 是写给 agent 的唯一指令文件，114 行纯 Markdown，无代码无 schema，README 称它"本质上是一个超轻量 skill"。启动就是一句自然语言 prompt 加"disable all permissions"。</p>
+<p><strong>Setup</strong>（<code>program.md:5-19</code>）：约定 run tag → 开分支 <code>autoresearch/&lt;tag&gt;</code> → 读三个文件 → 确认 <code>~/.cache/autoresearch/</code> 有数据 → 建只有表头的 <code>results.tsv</code> → 人确认后开跑。人介入点只有四个：setup 确认、数据缺失时替 agent 跑 <code>prepare.py</code>、手动打断、第二天看结果。</p>
+<p><strong>边界</strong>（<code>:25-37</code>）：只改 <code>train.py</code>，文件内"everything is fair game"；不改 <code>prepare.py</code>；不装包；不改评测（<code>evaluate_bpb</code> 是 ground truth）；VRAM 软约束；简洁性判据带数值门槛（0.001 提升加 20 行 hacky 代码不要，0.001 提升来自删代码一定留，提升约 0 但更简单也留）；第一次 run 必须原样跑 baseline。</p>
+<p><strong>循环</strong>（<code>:94-106</code>），每步的动作与状态载体：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>步</th>
+<th>动作</th>
+<th>状态落在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>看 git state（当前分支 / commit）</td>
+<td>git</td>
+</tr>
+<tr>
+<td>2</td>
+<td>改 <code>train.py</code></td>
+<td>工作树</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>git commit</code></td>
+<td>git</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>uv run train.py &gt; run.log 2&gt;&amp;1</code>，不许 <code>tee</code>、不许让输出淹没上下文</td>
+<td>磁盘</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>grep "^val_bpb:\|^peak_vram_mb:" run.log</code></td>
+<td>上下文（两行）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>grep 为空即崩溃 → <code>tail -n 50 run.log</code> 读 traceback → 修几次不行就放弃</td>
+<td>上下文（50 行，仅崩溃时）</td>
+</tr>
+<tr>
+<td>7</td>
+<td>写 <code>results.tsv</code>（不 commit，保持 untracked）</td>
+<td>磁盘，gitignore</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>val_bpb</code> 变低 → 推进分支、保留 commit</td>
+<td>git</td>
+</tr>
+<tr>
+<td>9</td>
+<td>持平或变差 → <code>git reset</code> 回起点</td>
+<td>git（失败代码被销毁）</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>其它条款</strong>：10 分钟超时必杀（<code>:108</code>）；崩溃分"笨错误就修"与"想法本身坏了就记 crash 跳过"（<code>:110</code>）；<strong>NEVER STOP</strong>（<code>:112</code>），人可能在睡觉，跑到被手动打断为止，没想法就"think harder"。</p>
+<p><strong>账本格式</strong>（<code>:64-88</code>）：5 列 TSV，<code>commit / val_bpb / memory_gb / status∈{keep,discard,crash} / description</code>，崩溃写 <code>0.000000 / 0.0</code>。</p>
+<h2 id="4-棘轮机制与-internagent-内环的对照">4. 棘轮机制，与 InternAgent 内环的对照<a class="permalink" href="#4-棘轮机制与-internagent-内环的对照" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>InternAgent 实验内环</th>
+<th>autoresearch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>迭代间传递什么</td>
+<td>全部 run 的 <code>final_info.json</code> 原样 json.load 塞进下一轮 prompt，加 traceback</td>
+<td>磁盘上 <code>train.py</code> 的实际内容 + 分支 tip；上下文只进两个数字</td>
+</tr>
+<tr>
+<td>谁判断"改进"</td>
+<td>没有判断。每个 run 的编辑都留下，agent 说 <code>ALL_COMPLETED</code> 或到 <code>max_runs</code> 就停</td>
+<td>外部标量 <code>val_bpb</code>，低了才 advance</td>
+</tr>
+<tr>
+<td>失败怎么处理</td>
+<td>traceback 回喂，最多 5 次修错；失败的代码留在目录里</td>
+<td><code>git reset --hard</code>，失败代码物理销毁；<code>results.tsv</code> 记一行 discard</td>
+</tr>
+<tr>
+<td>记忆载体</td>
+<td>prompt 里的历史 + 三层 memory（默认配置下断的）</td>
+<td>git + 一份 untracked 的 TSV</td>
+</tr>
+<tr>
+<td>上下文被截断会怎样</td>
+<td>进度退回</td>
+<td>进度不掉，换个 agent 接手也行</td>
+</tr>
+<tr>
+<td>每轮进上下文的量</td>
+<td>整个 JSON + 整段 stderr（上限 3 万字符）</td>
+<td>常数：两行，崩溃时 50 行</td>
+</tr>
+<tr>
+<td>可比性</td>
+<td>无固定预算，<code>max_runs=2</code></td>
+<td>固定 5 分钟墙钟，任何改动同一成本下可比</td>
+</tr>
+<tr>
+<td>谁执行判定</td>
+<td>代码（但不看指标方向）</td>
+<td>agent 自己心算</td>
+</tr>
+</tbody>
+</table></div>
+<p>两点要说清楚。第一，从信息通道看 autoresearch 反而更薄，它的优势全在"循环外"。第二，<code>results.tsv</code> 被 gitignore 不是疏忽，是设计：<code>.gitignore:22-23</code> 与 <code>program.md:102</code> 双重要求它 untracked，正是为了在 <code>git reset --hard</code> 摧毁失败代码后这条失败记录还活着。</p>
+<p>但这份账本<strong>只写不读</strong>：循环里没有任何一步要求回读 <code>results.tsv</code>，"不要重复已失败方向"完全靠 agent 上下文。真实跑档里能看到重复描述（"matrix LR 0.04 to 0.045" 两次、"embedding WD 0.001 to 0.002" 三次），分不清是 baseline 前移后的合理复测还是遗忘。<code>agenthub</code> 分支把"读回前沿、查 current best 的 children"补成了循环第一步（<code>program_agenthub.md:137</code>），可见作者自己认这是个洞。</p>
+<h2 id="5-harnesstrainpy-与-preparepy">5. harness：<code>train.py</code> 与 <code>prepare.py</code><a class="permalink" href="#5-harnesstrainpy-与-preparepy" title="本节链接">#</a></h2>
+<h3 id="51-分区">5.1 分区<a class="permalink" href="#51-分区" title="本节链接">#</a></h3>
+<p><code>train.py</code> 用注释横幅切成五段：模型 <code>28-291</code>、优化器 <code>293-427</code>、超参常量区 <code>428-451</code>（14 个全大写常量，"edit these directly, no CLI flags needed"）、setup <code>453-532</code>、训练循环 <code>534-604</code>、终局评测与打印 <code>606-631</code>。这些横幅只是分节，<strong>没有把可变区与评测区分开</strong>，评测区在另一个文件里。分界完全靠文件边界 + <code>prepare.py:26-28</code>、<code>:339-341</code> 两条"do not modify"横幅，没有任何机器校验。</p>
+<h3 id="52-指标">5.2 指标<a class="permalink" href="#52-指标" title="本节链接">#</a></h3>
+<p><code>val_bpb</code> = 总 nats / (ln2 × 总 UTF-8 字节数)，逐 token cross-entropy 按 token 字节长度加权，special token 记 0 字节被 mask（<code>prepare.py:343-365</code>）。对词表大小不变，所以架构改动可公平比。整个 5 分钟只在训练结束后算一次（<code>train.py:610-613</code>），没有中途验证曲线、没有 early stopping。一次实验的全部反馈信号就是一个标量加几个辅助数。</p>
+<p>评测虽在只读文件里，但由 agent 的代码调用、吃 agent 的 model 对象、传 agent 的 <code>DEVICE_BATCH_SIZE</code>，打印 <code>val_bpb</code> 的那行 <code>print</code> 也在 <code>train.py:622</code>。"评测不可改"只挡住了 bpb 的算术公式，没挡住喂进公式的数。另一个可比性漏洞：评测步数是 <code>EVAL_TOKENS // (batch_size × MAX_SEQ_LEN)</code> 的整除，改 <code>DEVICE_BATCH_SIZE</code> 会同时改变评测 token 总量（<code>prepare.py:350-354</code>）。真实跑档里这个常量没被动过，洞没触发，但它敞着。</p>
+<h3 id="53-固定墙钟预算">5.3 固定墙钟预算<a class="permalink" href="#53-固定墙钟预算" title="本节链接">#</a></h3>
+<p><code>TIME_BUDGET = 300</code> 定义在 <code>prepare.py:31</code>，<code>train.py:26</code> import 进来，退出条件 <code>step &gt; 10 and total_training_time &gt;= TIME_BUDGET</code>（<code>train.py:603</code>），前 10 步吃掉 <code>torch.compile</code> 与 CUDA warmup 不计时。真正的杠杆在调度：LR 乘子、Muon weight decay 都以 <code>progress = total_training_time / TIME_BUDGET</code> 为自变量（<code>train.py:516-532</code>），所以"跑得更快"自动换成"同样调度形状下更多步"，吞吐优化和算法优化统一成同一个可比目标。代价是跨机器不可比，README 自己承认。</p>
+<h3 id="54-数据隔离">5.4 数据隔离<a class="permalink" href="#54-数据隔离" title="本节链接">#</a></h3>
+<p>做得比协议宣称的还严：<code>VAL_SHARD</code> 钉死在 <code>shard_06542</code>，训练分片 <code>range(0, min(num_shards, 6542))</code> 永不含它（<code>prepare.py:42-44</code>、<code>:94-97</code>）；训练 dataloader 显式剔除 val 路径（<code>:258-263</code>）；<strong>连 BPE tokenizer 的训练语料也剔除了 val 分片</strong>（<code>:126-127</code>）。提交 <code>032d203</code> 显示这是后来修的，早期用"排序后最后一个分片"当 val，不同人下载不同分片数就在不同数据上评测。</p>
+<h3 id="55-输出契约与-fast-fail">5.5 输出契约与 fast-fail<a class="permalink" href="#55-输出契约与-fast-fail" title="本节链接">#</a></h3>
+<p><code>train.py</code> 全程不写任何文件，无 <code>open()</code>、无 <code>torch.save</code>、无 checkpoint。唯一产物是 stdout：<code>---</code> 分隔符后 9 行 <code>key: value</code> 定宽文本（<code>train.py:621-631</code>）。agent 用 <code>grep</code> 取两行。跟 InternAgent 的 <code>final_info.json</code> 比是"更弱的机器可读性 + 更强的上下文节流"。</p>
+<p>退出码是唯一的机器信号：loss 为 NaN 或 &gt; 100 时打印 <code>FAIL</code> 并 <code>exit(1)</code>（<code>train.py:569-572</code>），让发散的实验几秒内失败而不是烧掉 5 分钟。这条有段演化史：初版 <code>&gt; 100</code> 漏掉 NaN（IEEE 754 下 NaN 任何比较都 False），社区 PR 改成 <code>not x &lt;= 100</code>，再改成显式 <code>math.isnan</code>。</p>
+<h3 id="56-硬件耦合">5.6 硬件耦合<a class="permalink" href="#56-硬件耦合" title="本节链接">#</a></h3>
+<p><code>train.py:21</code> 模块顶层调 <code>torch.cuda.get_device_capability()</code>，无 GPU 机器 import 即崩；device / autocast 写死 cuda（<code>:461-462</code>）；MFU 分母写死 H100 峰值 <code>989.5e12</code>（<code>:463</code>），非 H100 上打印的 <code>mfu_percent</code> 是错的但仍进 stdout 给 agent 看；<code>prepare.py:298-299</code>、<code>:352</code> 直接建 pinned CPU buffer 与 cuda buffer。全仓 grep 不到 <code>mps</code> / <code>is_available</code> / cpu fallback。</p>
+<h2 id="6-真实跑档originexph100mar8">6. 真实跑档：<code>origin/exp/H100/mar8</code><a class="permalink" href="#6-真实跑档originexph100mar8" title="本节链接">#</a></h2>
+<p>这条分支是一次完整的过夜实验留档，是评估这套协议最硬的证据。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>数据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>时长</td>
+<td>首个实验 commit 2026-03-08 03:38Z 到末次 15:50Z，12 小时 11 分</td>
+</tr>
+<tr>
+<td>实验数</td>
+<td>125 次（账本 126 行 = baseline + 125）</td>
+</tr>
+<tr>
+<td>结果</td>
+<td>keep 23（含 baseline 行）/ discard 102 / crash 1</td>
+</tr>
+<tr>
+<td>收益</td>
+<td><code>val_bpb</code> 0.997900 → 0.969686，降 2.83%</td>
+</tr>
+<tr>
+<td>收益分布</td>
+<td>头两次（batch 524K 减半到 262K、depth 8 → 9）贡献 0.016127，占 57%；其余 123 次合计 43%</td>
+</tr>
+<tr>
+<td>改动形态</td>
+<td>绝大多数 commit 的 diffstat 是 <code>1 file changed, 1 insertion(+), 1 deletion(-)</code>；整条分支相对 master 的 <code>train.py</code> 净差异 18 插入 19 删除</td>
+</tr>
+<tr>
+<td>结构性改动</td>
+<td>parallel attn+MLP、weight tying、multi-query attention 都显著变差被丢弃</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>噪声证据</strong>：账本第 16 行是一次"只把随机种子 42 改成 137"的实验，<code>val_bpb</code> 从 0.973104 变到 0.973799，差 6.95e-4，被判 discard。而后续多次被 keep 的改进 delta 是 7.0e-5、8.5e-5、1.30e-4、3.1e-5、8.8e-5，全部比这个噪声样本小一个量级。棘轮把噪声也棘进去了；再加上验证集是一个钉死的分片被同一条链选择 125 次、没有 holdout，最终 2.83% 里有多少是真提升，这套协议无法回答。这不是 agent 作弊，是协议缺一个统计门。</p>
+<p>实际形态是"一次改一个数字"的坐标下降，擅长在给定架构里刮超参，不擅长产生结构性创新。向课题组展示时要预设这个期望。</p>
+<p>分支最后两条 commit 是收尾动作：把本该 untracked 的 <code>results.tsv</code> 提交进去做公开留档（即公开留档必须破一次自己的规矩），以及用一个新 commit 把被中断的实验改回去。这两条带 <code>Co-Authored-By: Claude Opus 4.6</code> 尾注，22 条实验 commit 都不带。</p>
+<h2 id="7-协议的洞">7. 协议的洞<a class="permalink" href="#7-协议的洞" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>洞</th>
+<th>证据</th>
+<th>性质</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>裁判员就是运动员：跑、比、reset、记账全由 agent 做，无 runner 无校验</td>
+<td><code>program.md:94-106</code></td>
+<td>结构性</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>TIME_BUDGET</code> 经 import 进入可改文件，改预算不违反字面规定；破绽字段 <code>training_seconds</code> 协议不 grep 不记</td>
+<td><code>train.py:26</code>、<code>:603</code>、<code>program.md:100</code>、<code>:71</code></td>
+<td>作弊面</td>
+</tr>
+<tr>
+<td>3</td>
+<td>评测调用点、model 对象、batch size、打印行都在可改文件；训练 split 是 <code>train.py:510</code> 的字符串字面量，改成 <code>"val"</code> 是一个单词</td>
+<td><code>train.py:510</code>、<code>:613</code>、<code>:622</code></td>
+<td>作弊面</td>
+</tr>
+<tr>
+<td>4</td>
+<td>账本由被考核者手写、不进 git、commit 哈希不校验；102 条 discard 的哈希在 reset 后本来就是悬空对象</td>
+<td><code>program.md:102</code>、<code>analysis.ipynb:24-26</code></td>
+<td>作弊面</td>
+</tr>
+<tr>
+<td>5</td>
+<td>接受阈值低于噪声，无重复种子、无显著性、无 holdout</td>
+<td>第 6 节</td>
+<td>方法学</td>
+</tr>
+<tr>
+<td>6</td>
+<td>记忆只写不读，避免重复靠上下文</td>
+<td><code>program.md:96-105</code></td>
+<td>设计</td>
+</tr>
+<tr>
+<td>7</td>
+<td>证据保留极差：<code>run.log</code> 每轮覆盖不归档，9 个字段只有 2 个进账本，commit message 不带数字</td>
+<td><code>program.md:71</code>、<code>:99</code></td>
+<td>设计</td>
+</tr>
+<tr>
+<td>8</td>
+<td>自主性靠指令扛不住：<code>NEVER STOP</code> 写了一整段，作者自己仍在 <code>spawn.sh</code> 里写了每 120 秒检测空提示符并 <code>send-keys</code> "Keep going" 的 watcher</td>
+<td><code>spawn.sh:165-181</code>（见第 8 节）</td>
+<td>实证</td>
+</tr>
+<tr>
+<td>9</td>
+<td>跨机器不可比是设计内在的；<code>agenthub</code> 版的做法是强制每条结果标 <code>platform</code> 字段</td>
+<td><code>README.md:64</code>、<code>program_agenthub.md:102</code></td>
+<td>设计</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>prepare.py</code> 下载失败静默降级：部分分片失败只打印计数不退出，tokenizer 凑到 2 个文件就继续训</td>
+<td><code>prepare.py:108-113</code></td>
+<td>违反不吞失败</td>
+</tr>
+</tbody>
+</table></div>
+<p>公平地说，协议确实防住了几类常见跑偏：改动范围锁死单文件（diff 可审）、依赖冻结、评测文件只读、显存不许爆、复杂度不许无限膨胀、跑飞 10 分钟必杀、崩溃必须读 traceback、上下文不许被日志淹没。但全部是散文约束，靠 agent 自觉。</p>
+<h2 id="8-被删的-spawnsh-与未合并的-agenthub">8. 被删的 <code>spawn.sh</code> 与未合并的 <code>agenthub</code><a class="permalink" href="#8-被删的-spawnsh-与未合并的-agenthub" title="本节链接">#</a></h2>
+<p><strong><code>spawn.sh</code></strong>：初始提交里有一个 248 行的多 agent 编排脚本，第二天被作者删除（<code>1e207aa</code>，"erase experimental file from before that snuck through in my purge"），README 与 <code>program.md</code> 里的引用一并清掉，但 <code>.gitignore:9-17</code> 至今留着 <code>worktrees/</code>、<code>results/</code>、<code>queue/</code> 和"Agent prompt files (generated per-session by launchers)"的化石。用 <code>git show 1e207aa^:spawn.sh</code> 可取回。形状：</p>
+<pre><code>bash spawn.sh launch mar5 opus:0 sonnet:1 codex:2 codex:3
+</code></pre>
+<p>每个 worker 一条分支 <code>autoresearch/&lt;tag&gt;-gpu&lt;N&gt;</code> + 一个 <code>git worktree</code> + 软链共享 <code>.venv</code> + <code>CUDA_VISIBLE_DEVICES</code> 绑卡，全部塞进 tmux tiled session。启动命令是 <code>claude --dangerously-skip-permissions --model &lt;m&gt; "Read program.md and follow the instructions."</code> 或 <code>codex --dangerously-bypass-approvals-and-sandbox</code>（<code>spawn.sh:70-73</code>）。末尾的 watcher 每 120 秒 <code>capture-pane</code> 做 md5，内容没变且匹配到空提示符就判定 agent 卡住，<code>send-keys</code> 发一句 "Keep going. Do not stop — continue your research loop."（<code>:165-181</code>）。</p>
+<p>这才是真正的"底座 coding agent 编排层"：worktree 隔离 + 绑卡 + tmux + 空闲催促。对我们的意义是两条实证：长跑必须配外部哨兵，不能只靠 prompt；多 agent 并行的隔离单位是 git worktree 而不是目录拷贝。</p>
+<p><strong><code>agenthub</code></strong>：未合并分支上有一份 191 行的 <code>program_agenthub.md</code>（作者提交，message 只有一个字 "hmmm"）。把单机协议改成中心 hub 版：<code>git bundle</code> 通过 HTTP 推拉 commit；<code>/api/git/leaves</code> 取探索前沿的叶子 commit，<code>/api/git/commits/&lt;hash&gt;/children</code> 查"这个 commit 上别人已经试过什么"；<code>#results</code> / <code>#discussion</code> 两个消息板。三处关键差异：循环第一步从"看 git state"升级成"读 hub、看 leaves、看 current best 的 children 避免重复劳动"；结果强制加 <code>platform</code> 字段；只推 improvement，discard 和 crash 只发帖不推 commit，让 hub 上的 git 树天然是一棵纯改进树。hub 服务端不在这个仓里也没开源，跑没跑通无从判断。</p>
+<h2 id="9-对-demo-的意义">9. 对 demo 的意义<a class="permalink" href="#9-对-demo-的意义" title="本节链接">#</a></h2>
+<h3 id="91-借什么">9.1 借什么<a class="permalink" href="#91-借什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>借的东西</th>
+<th>从哪儿</th>
+<th>大约行数</th>
+<th>抄进内仓时要改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>固定墙钟预算，调度按 progress 走</td>
+<td><code>train.py:516-532</code>、<code>:555-563</code>、<code>:578-579</code>、<code>:603-604</code></td>
+<td>40</td>
+<td>连调度一起抄，不只抄退出条件，否则拿不到"跑得快 = 做得多"的性质</td>
+</tr>
+<tr>
+<td>单标量、实现无关的指标</td>
+<td><code>prepare.py:343-365</code></td>
+<td>25</td>
+<td>换成对网格分辨率 / 离散格式 / 单位制不变的误差度量（相对 L2、守恒量偏差），否则 agent 会改离散化刷指标</td>
+</tr>
+<tr>
+<td>保留集物理钉死</td>
+<td><code>prepare.py:42-44</code>、<code>:126-127</code>、<code>:258-263</code></td>
+<td>15</td>
+<td>验证算例有明确 ID、准备阶段就分开、分离逻辑写在 agent 不改的文件里</td>
+</tr>
+<tr>
+<td>stdout 摘要 + exit code + fast-fail</td>
+<td><code>train.py:569-572</code>、<code>:621-631</code></td>
+<td>20</td>
+<td>同时写一份 JSON 产物给自动汇总用，stdout 摘要给 agent grep，两个都要</td>
+</tr>
+<tr>
+<td>git 状态载体 + 账本 + 显式 accept/revert</td>
+<td><code>program.md:94-106</code></td>
+<td>协议</td>
+<td>不写 checkpoint、不留隐藏状态、每次实验对应一个 commit</td>
+</tr>
+<tr>
+<td>简洁性判据的数值门槛措辞</td>
+<td><code>program.md:37</code></td>
+<td>协议</td>
+<td>直接抄</td>
+</tr>
+<tr>
+<td>上下文卫生条款</td>
+<td><code>program.md:99-101</code></td>
+<td>协议</td>
+<td>直接抄</td>
+</tr>
+<tr>
+<td>多 agent 编排形态</td>
+<td><code>git show 1e207aa^:spawn.sh</code></td>
+<td>248</td>
+<td>worktree 隔离 + 绑卡 + 外部哨兵；权限标志按我们的红线来</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="92-必须补的">9.2 必须补的<a class="permalink" href="#92-必须补的" title="本节链接">#</a></h3>
+<ol>
+<li><strong>裁判外置</strong>：runner 负责跑实验、解析指标、比较、执行 <code>git reset</code>；agent 只改代码和提交。</li>
+<li><strong>只读文件校验和</strong>：<code>prepare.py</code> 类文件的 hash 进 CI；禁止在可改文件里重绑 import 进来的常量（一条 grep 能查）。</li>
+<li><strong>账本机器可对账</strong>：<code>training_seconds</code> 等破绽字段必须进账本，commit 哈希与 git 对账，每轮 <code>run.log</code> 归档不覆盖。</li>
+<li><strong>统计门</strong>：同配置重复 k 次估 σ，接受阈值 &gt; 2σ 或对候选做二次确认跑；一个从不参与选择的 holdout。</li>
+<li><strong>评测进程隔离</strong>：评测跑成独立子进程，只吃 agent 的产物文件不吃 agent 的对象，这样"评测不可改"才是真的。</li>
+<li><strong>记忆读回</strong>：循环第一步读账本，按 <code>agenthub</code> 版的做法。</li>
+</ol>
+<p>补齐大约再多 60 到 100 行。</p>
+<h3 id="93-移植前提">9.3 移植前提<a class="permalink" href="#93-移植前提" title="本节链接">#</a></h3>
+<p>这套协议成立的唯一原因是有一个 5 分钟、必然跑完、输出单标量、改什么都可比的评测。换一个没有这种评测的领域（跑一次几小时、指标多维、或需要人判），闸门失效，棘轮立刻退化成"结果塞 prompt"。对新工科任务，网格加密、时间步长、求解器选择本来就是精度换时间的权衡，固定预算是合适的；但仿真往往要看收敛曲线、残差、守恒量违反度才能判断结果可信，照抄"只留一个数"会失去判断实验是否有效的能力。</p>
+<h3 id="94-跟-internagent-各取一半">9.4 跟 InternAgent 各取一半<a class="permalink" href="#94-跟-internagent-各取一半" title="本节链接">#</a></h3>
+<p>InternAgent 给任务目录契约、实验执行循环、经验记忆闭环；autoresearch 给实验床契约、棘轮、账本、编排形态。demo 建议先照 autoresearch 的形状搭一个最小闭环（单文件可改 + 固定预算 + 单标量 + git 棘轮 + 外部账本），把 runner 做成裁判，然后拿 InternAgent 的内环做对照，展示"上下文被清空后谁还能接着爬"。这个对比就是我们相对两者的差异化叙事。</p>
+<h2 id="10-可运行性">10. 可运行性<a class="permalink" href="#10-可运行性" title="本节链接">#</a></h2>
+<ul>
+<li><code>requires-python &gt;= 3.10</code>，9 个直接依赖，<code>uv.lock</code> 锁 74 个包。</li>
+<li><strong>macOS 上 <code>uv sync</code> 这一步就过不去</strong>：<code>torch</code> 被 <code>[tool.uv.sources]</code> 强制走 cu128 索引，lock 里没有任何 macosx wheel；即便绕过，<code>train.py:21</code> 导入期就崩。缩小版只能走 README 列的四个 fork。</li>
+<li>README 自己给了 7 条往小机器缩的旋钮，其中两条要动 <code>prepare.py</code> 里的"不可改"常量（<code>MAX_SEQ_LEN</code>、<code>EVAL_TOKENS</code>），等于承认那两条横幅是给"同一台机器上的同一轮实验"用的，不是给移植用的。</li>
+<li>数据：HF 的 <code>karpathy/climbmix-400b-shuffle</code>，6543 个 parquet 分片，默认下载 10 个训练分片 + 1 个 val 分片，缓存在 <code>~/.cache/autoresearch/</code>。单分片体积仓库里没写。</li>
+</ul>
+<h2 id="11-未验证与待办">11. 未验证与待办<a class="permalink" href="#11-未验证与待办" title="本节链接">#</a></h2>
+<ul>
+<li>125 次实验的 <code>run.log</code> 全部丢失，无法核查 <code>training_seconds</code> 是否始终约 300 秒，只能说协议留了口子，不能说被用过。</li>
+<li>换种子那次只做了一次，7e-4 是噪声的一个样本不是标准差估计。</li>
+<li>22 条实验 commit 不带 AI 尾注、2 条收尾 commit 带，跑实验的 agent 到底是不是 Claude Code、什么模型，仓库里无法确认。</li>
+<li><code>agenthub</code> 的 hub 服务端不开源，那套"commit 树即前沿"的协调跑没跑通无从判断。</li>
+<li>四个 fork 是否同时改了 <code>program.md</code> 的禁止清单、改完还能不能跨机器比，要单独读 fork。</li>
+<li>改 <code>DEVICE_BATCH_SIZE</code> 会让 <code>val_bpb</code> 漂多少，只能推出"会漂"，量级要实跑。</li>
+</ul>
+<h2 id="12-调研方法">12. 调研方法<a class="permalink" href="#12-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>克隆到外层仓 <code>vendor/autoresearch</code>（gitignore 挡住），连同两条远端分支。</li>
+<li>两个读者：一个读协议（<code>README.md</code>、<code>program.md</code>、<code>analysis.ipynb</code>、36 个提交的历史、两条远端分支），一个逐行读 harness（<code>train.py</code>、<code>prepare.py</code>、依赖锁）。每条结论带 <code>文件:行</code>，不跑代码、不装依赖。</li>
+<li>两份结果合计 42 条发现，本文由此汇总并另抽查 5 条（<code>train.py:26</code> 的 import、<code>:603</code> 的退出条件、跑档账本的状态计数与换种子行、<code>spawn.sh</code> 的历史与 watcher、<code>agenthub</code> 协议的三处差异），全部属实。</li>
+<li>读者顺带发现 <code>vendor/autoresearch/vendor/</code> 下有一个套错层级的残留克隆（是我们自己 clone 时 cwd 没回到外层仓根造成的），已删除。</li>
+</ul>
+  </main>
+  <footer class="doc">原始稿是同目录的 autoresearch.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>
