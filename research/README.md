@@ -49,4 +49,4 @@ md 是原始稿，html 是构建产物；本地 `make html` 生成并随 md 提�
 | 日期 | 标题 | 状态 | 原稿 | 公网阅读版 |
 |---|---|---|---|---|
 | 2026-09-08 | 新工科自动化科研智能体：2026 年工业界现状与架构设计 | 第一版 | [README](landscape/2026-0908-auto-research-agents/README.md) | <https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/> |
-| 2026-09-09 | 流水线层选型（已评 InternAgent，代码级深读） | 进行中 | [README](selection/2026-0909-pipeline-frameworks/README.md) · [InternAgent](selection/2026-0909-pipeline-frameworks/internagent.md) | <https://zephyr4123.github.io/TJU-AI4Science/selection/2026-0909-pipeline-frameworks/> |
+| 2026-09-09 | 流水线层选型（已评 InternAgent、autoresearch、AutoResearchClaw，代码级深读） | 进行中 | [README](selection/2026-0909-pipeline-frameworks/README.md) · [InternAgent](selection/2026-0909-pipeline-frameworks/internagent.md) · [autoresearch](selection/2026-0909-pipeline-frameworks/autoresearch.md) · [AutoResearchClaw](selection/2026-0909-pipeline-frameworks/autoresearchclaw.md) | <https://zephyr4123.github.io/TJU-AI4Science/selection/2026-0909-pipeline-frameworks/> |

@@ -10,6 +10,7 @@
 
 ### 新增
 - 流水线层选型调研 `research/selection/2026-0909-pipeline-frameworks/`：InternAgent-1.5 代码级深读（四个读者分片读 `vendor/` 克隆，138 条带 `文件:行` 的发现，抽查 8 条属实），结论是抄任务契约与三块零件、不当流水线层底座；`README.md` 放候选清单与横向对比表，后续候选逐个补入
+- 选型深读第二、三篇：autoresearch（两个读者，42 条发现，抽查 5 条；含 H100 真实跑档 125 次实验的数据与被删的 `spawn.sh`、未合并的 `agenthub` 协议）与 AutoResearchClaw v0.5.0（六个读者，177 条发现，抽查 13 条；四个总问题逐条对账 README 与代码）。对比表补齐三行，"目前能定下来的"从 4 条扩到 8 条：编排自己写、任务契约两层、内环用棘轮且裁判外置、评测由框架注入、验证层三条零 LLM 判据、底座 Runner 协议、人在环文件通道、四条机器可查的规矩
 - `research/README.md` 新增 `selection/` 目录形态说明；行业调研的 InternAgent 条目与台账链接到深读
 - `.gitignore` 新增 `/vendor/`：选型阶段拉来研究的第三方开源项目放这里，物理在树里、git 看不见
 

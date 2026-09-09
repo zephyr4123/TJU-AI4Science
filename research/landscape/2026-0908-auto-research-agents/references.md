@@ -8,7 +8,7 @@
 
 | 名称 | 类型 | 机构 | 链接 | 一句话 | 正文位置 |
 |---|---|---|---|---|---|
-| autoresearch | 项目 | Karpathy | <https://github.com/karpathy/autoresearch> | 630 行、三个文件的棘轮优化循环，模式 A 的原型 | [§8.1](README.md#karpathy-autoresearch) |
+| autoresearch | 项目 | Karpathy | <https://github.com/karpathy/autoresearch> | 630 行、三个文件的棘轮优化循环，模式 A 的原型 | [§8.1](README.md#karpathy-autoresearch)；[代码级深读](../../selection/2026-0909-pipeline-frameworks/autoresearch.md) |
 | awesome-autoresearch | 索引 | webfuse-com | <https://github.com/webfuse-com/awesome-autoresearch> | autoresearch 衍生项目汇总 | [§8.1](README.md#karpathy-autoresearch) |
 | Tree-AutoResearch | 项目 | dongdongunique | <https://github.com/dongdongunique/Tree-AutoResearch> | 把线性循环改成树搜索，节点绑 git worktree | [§8.1](README.md#karpathy-autoresearch) |
 
@@ -16,7 +16,7 @@
 
 | 名称 | 类型 | 机构 | 链接 | 一句话 | 正文位置 |
 |---|---|---|---|---|---|
-| AutoResearchClaw | 项目 | UNC aiming-lab | <https://github.com/aiming-lab/AutoResearchClaw> | 23 阶段端到端流水线，底座可换、skills 可插、消息平台可接 | [§8.2](README.md#autoresearchclaw) |
+| AutoResearchClaw | 项目 | UNC aiming-lab | <https://github.com/aiming-lab/AutoResearchClaw> | 23 阶段端到端流水线，底座可换、skills 可插、消息平台可接 | [§8.2](README.md#autoresearchclaw)；[代码级深读](../../selection/2026-0909-pipeline-frameworks/autoresearchclaw.md) |
 | InternAgent | 项目 | 上海 AI Lab · InternScience | <https://github.com/InternScience/InternAgent> | 生成 / 验证 / 进化三子系统的统一框架，国产模型适配 | [§8.2](README.md#internagent)；[代码级深读](../../selection/2026-0909-pipeline-frameworks/internagent.md) |
 | InternAgent-1.5 技术报告 | 论文 | 上海 AI Lab | <https://arxiv.org/abs/2602.08990> | 统一框架、长程自主发现，多学科案例 | 脚注 internagent-report |
 | InternScience 组织 | 索引 | 上海 AI Lab | <https://github.com/InternScience> | InternAgent、ResearchClawBench、skills 库的母组织 | [§8.2](README.md#internagent) |

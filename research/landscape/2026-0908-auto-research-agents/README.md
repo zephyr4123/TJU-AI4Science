@@ -258,6 +258,7 @@ skills/
 #### Karpathy autoresearch
 
 - **链接**：<https://github.com/karpathy/autoresearch>；衍生汇总 <https://github.com/webfuse-com/awesome-autoresearch>
+- **代码级深读**（2026-09-09）：[选型 / autoresearch](../../selection/2026-0909-pipeline-frameworks/autoresearch.md)。要点：棘轮的本质不在循环里传什么，而在 git 承载状态、外部单标量硬闸收敛、gitignore 的账本外化失败记忆；但整套是荣誉制且接受阈值低于噪声（一次 H100 真实跑档 125 次实验为证）。抄形态不抄代码。
 - **时间**：2026-03-07 发布。几天内 21k star、Karpathy 推文 860 万浏览；一个月内 66k star、9.6k fork。
 - **背景**：Karpathy 在预训练小型 transformer（nanochat）时，大量时间花在"改一个超参或结构 → 跑一会 → 看验证指标 → 决定留不留"的手动循环上。autoresearch 就是把这个循环交给 agent。
 - **架构**（三个文件，约 630 行）：
@@ -282,6 +283,7 @@ skills/
 #### AutoResearchClaw
 
 - **链接**：<https://github.com/aiming-lab/AutoResearchClaw>（UNC aiming-lab）
+- **代码级深读**（2026-09-09）：[选型 / AutoResearchClaw](../../selection/2026-0909-pipeline-frameworks/autoresearchclaw.md)。要点："底座可换"是把 agent 名透传给外部 npm 包 `acpx`，本仓零分支；编排仍是外层 for，状态机写了没接线；真硬的是数字白名单对账与五源引用校验两条零 LLM 判据，以及 ARC-Bench 的 manifest / rubric 契约；8 万行里死代码过万，无 CI。零件按模块摘，骨架不要。
 - **时间线**：
     - 2026-03-15 v0.1.0：23 阶段全自动流水线，一个想法 → 会议级论文。
     - 2026-03-22 v0.3.2：跨平台——任何 ACP 兼容后端（Claude Code、Codex CLI、Copilot CLI、Gemini CLI、Kimi CLI）；通过 OpenClaw 桥接 Discord / Telegram / 飞书 / 微信；新增"CLI-agent 代码生成后端"，把第 10、13 阶段委托给外部 CLI agent，带预算控制和超时管理。
