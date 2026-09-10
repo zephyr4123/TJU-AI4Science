@@ -13,6 +13,7 @@
  ├── coordinator/             协调层 skill 包，跟项目走；不进执行层的搜索路径（Q-10）
  ├── framework/               通用，一行不随任务改
  ├── backends/                执行层适配器
+ ├── compute/                 算力适配器：local / ssh / slurm
  ├── tools/                   确定性脚本
  │
  ├── domains/                 领域包：一个领域一个目录

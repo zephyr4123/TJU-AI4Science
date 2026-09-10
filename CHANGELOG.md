@@ -9,7 +9,7 @@
 ## [Unreleased]
 
 ### 变更
-- 架构纲领三箱改四层：加协调层（人 + 协调 agent），科研判断归它，框架降为诚实执行基底，不连跑、不等人；"阶段"改"能力"、"底座"改"执行层"，人在环模式与文件通道移除；加 P-10 P-11 与 `coordinator/` 目录。spec 的 R-5 R-7 N-2 改写，新增 R-10 C-7 A-11；未决项加 Q-10；决策 issue #18，Q-10 是 #19；纪要 `docs/meetings/2026-0910-coordinator-layer.md`。spec 状态改为滚动：只驱动下一步，不设 aligned 门槛
+- 架构纲领三箱改四层：加协调层（人 + 协调 agent），科研判断归它，框架降为诚实执行基底，不连跑、不等人；"阶段"改"能力"、"底座"改"执行层"，人在环模式与文件通道移除；加 P-10 P-11 与 `coordinator/` 目录。spec 的 R-5 R-7 N-2 改写，新增 R-10 C-7 A-11；未决项加 Q-10；决策 issue #18，Q-10 是 #19；纪要 `docs/meetings/2026-0910-coordinator-layer.md`。spec 状态改为滚动：只驱动下一步，不设 aligned 门槛。纲领 workflow §5 加算力端口 `Compute`（put / submit / wait / cancel / get，句柄落盘，靠名字选择、不静默回退），目录加 `compute/`
 - 内仓远端就位：`repos.json` 的 url 由 `TBD` 改为 <https://github.com/zephyr4123/TJU-AI4Science-Platform>（私有），`./repos remotes --fix` 接好 origin，骨架与 v0.1.0 首次推送；根 README、spec、纪要同步
 
 ## [0.3.0] - 2026-09-10

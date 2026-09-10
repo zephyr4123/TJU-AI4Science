@@ -156,6 +156,29 @@ ai4sci loop resume <run_id>           从 checkpoint 与账本续跑
 ai4sci status <run_id>                打印状态、账本摘要、验证结论；协调层读盘的入口
 ```
 
+### 算力适配
+
+harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各自一个端口、各自一组适配器。算力端口是策略模式在 Python 里的形态：一个 `Protocol`，一个后端一个文件，靠名字选择。runner 对算力的全部需求只有三件事：快照放过去、跑 `launcher.sh`、产物拿回来。
+
+```
+class Compute(Protocol):
+    def put(self, local_dir, remote_dir) -> None          # 快照过去
+    def submit(self, remote_dir, cmd, timeout_s) -> Job   # 起任务，立刻返回句柄
+    def wait(self, job, timeout_s) -> ExitStatus          # 等结束，超时就 cancel
+    def cancel(self, job) -> None                         # 杀干净
+    def get(self, remote_dir, local_dir) -> None          # 产物回来
+
+local:  put=cp        submit=Popen 新进程组   cancel=killpg      get=cp
+ssh:    put=rsync     submit=ssh nohup+pid    cancel=ssh kill    get=rsync
+slurm:  put=rsync     submit=sbatch           cancel=scancel     get=rsync
+```
+
+- **submit / wait 而不是阻塞的 run**：句柄落盘到 `run_N/job.json`，`loop resume` 重启后能重新接上还在远端跑的任务或 reap 已死的任务，这是 A-5 续跑的前提。阻塞改异步是最疼的方向，反过来不疼。
+- **选择靠名字**：manifest 或命令行 `--compute local` / `ssh:<host>`，名字对不上就报错退出；要的算力不可用绝不静默退回本地（P-7，AutoResearchClaw 的 docker 反例）。
+- **凭据在 git 外**：ssh 主机与密钥路径放本地配置文件；远端 venv 是否就绪由 `ai4sci doctor --compute <name>` 事先查，查不过不开跑。
+- platform 0.2.0 只写 `local`（Q-6）；Protocol 现在就定，因为调用点已经存在（P-8），ssh 是第二个实现时再校验接口没漏。
+- 不做：抽象基类加模板方法、装饰器注册表、工厂套工厂。一个后端一个文件，60 到 80 行，与 `backends/` 同一标准。
+
 ### 执行层适配
 
 一个 `Runner` 协议，每个 CLI 一个适配器：
@@ -176,4 +199,5 @@ run(prompt, cwd, timeout_s, allowed_paths) -> {exit_code, events[], changed_file
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-10 | 建档。阶段骨架、实验内环四角色、账本、裁判、人在环、Runner 协议 | 三个仓深读的收敛结论；棘轮来自 autoresearch，harness 注入来自 AutoResearchClaw，目录形态来自 InternAgent | 主人 + Claude |
+| 2026-09-10 | 第 5 节加算力适配：`Compute` 端口五个动作，submit / wait 句柄落盘，靠名字选择、不静默回退 | 主人问算力模块用什么模式；harness 在哪跑与 agent 在哪跑是两根正交的轴，各自端口 + 适配器 | 主人 + Claude |
 | 2026-09-10 | "阶段"改"能力"，去掉框架内的顺序与回退判断，串联归协调层；磁盘布局按能力名而非序号，加 `journal.md`；第 4 节人在环改写为协调层行为，去掉 full-auto / gate-only 与文件通道；第 5 节加协调层驱动面 `ai4sci` 子命令；"底座"改称"执行层"（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 固定顺序的阶段骨架就是"外层 for + 硬编码状态"；科研判断归协调层（人 + agent），框架不等人、不连跑 | 主人 + Claude |

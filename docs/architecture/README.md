@@ -106,6 +106,7 @@ platform/
 ├── coordinator/        协调层 skill 包：怎么当科研助理、怎么驱动框架；注入到当协调层的那个 CLI
 ├── framework/          通用，不随任务改：能力、runner、契约、验证、裁判、ai4sci CLI
 ├── backends/           执行层适配器：claude_code.py  codex.py …  每个 60 到 80 行
+├── compute/            算力适配器：local.py  ssh.py …  put / submit / wait / cancel / get（见 workflow.md §5）
 ├── tools/              确定性脚本：文献 API、引用校验、出图、harness 基类
 ├── domains/            领域包，一个领域一个目录，含执行层的 skill（见 packs.md）
 ├── tasks/              任务包，一个任务一个目录（见 packs.md）
@@ -139,3 +140,4 @@ spec 与 milestone 用**产品版本**命名且带 `platform` 前缀（`specs/pl
 | 2026-09-10 | 第 6 节加 spec 与 milestone 的命名规则 | 外仓版本与产品版本撞号 | 主人 + Claude |
 | 2026-09-10 | 三箱改四层：加协调层（人 + agent），框架从"决策与校验"降为"诚实执行基底"，"底座"改称"执行层"；加 P-10 P-11、"谁做什么"表、可替换性一节；目录加 `coordinator/`（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 科研判断在旧纲领里没有家，被塞进"设计阶段"与"人在环"；固定顺序的阶段骨架就是我们批评三个仓的"硬编码状态"；协调层与执行层解耦后两边各自可换 | 主人 + Claude |
 | 2026-09-10 | 第 6 节加"spec 是滚动的" | 主人：spec 只驱动下一步，不设 aligned 门槛 | 主人 + Claude |
+| 2026-09-10 | 目录加 `compute/` | 算力是独立于执行层的第二个端口 | 主人 + Claude |
