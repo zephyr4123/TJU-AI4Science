@@ -10,8 +10,9 @@
 
 ```
  platform/
+ ├── coordinator/             协调层 skill 包，跟项目走；不进执行层的搜索路径（Q-10）
  ├── framework/               通用，一行不随任务改
- ├── backends/                底座适配器
+ ├── backends/                执行层适配器
  ├── tools/                   确定性脚本
  │
  ├── domains/                 领域包：一个领域一个目录
@@ -19,16 +20,16 @@
  │   ├── ml/
  │   └── mechanics/
  │       ├── profile.yaml     必有
- │       ├── prompts/         可选：各阶段的领域补充提示
+ │       ├── prompts/         可选：各能力的领域补充提示
  │       ├── tools/           可选：求解器封装、网格生成、单位换算
- │       └── skills/          可选：SKILL.md，与 Claude Code 原生同格式
+ │       └── skills/          可选：执行层用的 SKILL.md，与 Claude Code 原生同格式
  │
  └── tasks/                   任务包：一个任务一个目录
      └── beam-deflection/
          ├── manifest.yaml    必有
          ├── harness/         必有：怎么算分、跑多久；只读，框架校验 hash
-         ├── code/            必有：基线，底座唯一能改的地方
-         ├── data/            可选：参考解、验证算例；底座不能碰
+         ├── code/            必有：基线，执行层唯一能改的地方
+         ├── data/            可选：参考解、验证算例；执行层不能碰
          └── run_0/           必有：基线跑一次的产物
 ```
 
@@ -36,15 +37,15 @@
 
 ### manifest.yaml
 
-声明层。从 AutoResearchClaw 的 ARC-Bench manifest 取形态（55 道题五个领域同一模板），去掉它没人读的字段。
+声明层。**由协调层（人 + agent）拍板后填写，框架只读**：方向、预算、统计门、验收判据都是决策，不是框架自己长出来的（纲领 §2）。形态从 AutoResearchClaw 的 ARC-Bench manifest 取（55 道题五个领域同一模板），去掉它没人读的字段。
 
 ```yaml
 id: beam-deflection
 domain: mechanics                 # 对应 domains/<id>/，缺省 generic
 title: 悬臂梁挠度计算的网格无关性
-question: >                       # 研究问题，给阶段 1 到 3
+question: >                       # 研究问题，给文献、假设、设计三个能力
   在固定计算预算下，哪种网格加密策略能以最小误差逼近解析解
-conditions:                       # 实验条件，阶段 3 与 4 用
+conditions:                       # 实验条件，设计与实验能力用
   - name: uniform
   - name: adaptive
 metrics:
@@ -58,7 +59,7 @@ budget:
   max_iterations: 30
   repeat_k: 3                     # 统计门：同配置重复次数
   accept_sigma: 2.0
-requirements:                     # 验收条件，阶段 7 与隔离裁判用
+requirements:                     # 验收条件，验证能力与隔离裁判用
   - id: R1
     type: numeric                 # numeric | artifact | discussion
     must_pass: true
@@ -92,7 +93,7 @@ harness 的接口约束（从 AutoResearchClaw 的 `harness_template.py` 取思�
 
 ### code/ 与 data/
 
-- `code/` 是底座唯一能改的地方，基线要整理到"单入口、明确参数、能快速小规模跑"的状态，否则底座每轮改完跑不动，全耗在修 bug 上。
+- `code/` 是执行层唯一能改的地方，基线要整理到"单入口、明确参数、能快速小规模跑"的状态，否则执行层每轮改完跑不动，全耗在修 bug 上。
 - `data/` 放参考解与验证算例，有明确 ID，准备阶段就与调参用的算例分开，分离逻辑写在 harness 里而不是 code/ 里。
 - `run_0/` 是基线跑一次的产物，改进率的分母，也是账本第一行。
 
@@ -112,7 +113,7 @@ harness 的接口约束（从 AutoResearchClaw 的 `harness_template.py` 取思�
 ```yaml
 id: mechanics
 display_name: 固体力学
-condition_terminology:            # 阶段 3 的措辞
+condition_terminology:            # 设计能力的措辞
   baseline: 参考格式
   proposed: 候选格式
 default_budget_s: 600
@@ -125,9 +126,9 @@ paper_keywords: [mesh refinement, finite element, error estimate]
 
 ### prompts/、tools/、skills/
 
-- `prompts/<stage>.md`：该阶段的领域补充提示，框架在组装阶段指令时追加；缺了就不追加，不回退到别的领域（AutoResearchClaw 让 26 个领域静默用 ML 提示词，这是反例）。
-- `tools/`：确定性脚本，底座可以调用；求解器怎么起、结果怎么读、单位怎么换。
-- `skills/<name>/SKILL.md`：与 Claude Code 原生同格式，怎么注入见 Q-2。
+- `prompts/<capability>.md`：该能力的领域补充提示，框架在组装能力指令时追加；缺了就不追加，不回退到别的领域（AutoResearchClaw 让 26 个领域静默用 ML 提示词，这是反例）。
+- `tools/`：确定性脚本，执行层可以调用；求解器怎么起、结果怎么读、单位怎么换。
+- `skills/<name>/SKILL.md`：**执行层**用的 skill，与 Claude Code 原生同格式，怎么注入见 Q-2。协调层的 skill 不在这里，在内仓 `coordinator/`（放哪、怎么注入见 Q-10）；两条搜索路径不相交（P-11）。
 
 ### 加一个新领域
 
@@ -145,3 +146,4 @@ paper_keywords: [mesh refinement, finite element, error estimate]
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-10 | 建档。任务包与领域包的目录、manifest 与 profile 字段、harness 约束、发现规则 | 泛化边界的结论：流程通用、任务不通用，适配必须是写文件 | 主人 + Claude |
+| 2026-09-10 | manifest 明确由协调层拍板后填写；全景加 `coordinator/`；领域包 `skills/` 限定为执行层用，与协调层 skill 隔离；"阶段"改"能力"、"底座"改"执行层"（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 加了协调层，契约的填写权归它；两层 agent 的 skill 必须物理隔离（P-11） | 主人 + Claude |

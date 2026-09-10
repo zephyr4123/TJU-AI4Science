@@ -11,7 +11,7 @@
 - 仓库拓扑：外层协作仓 + 内仓 `platform/` 生产 monorepo（见 [ADR-0001](adr/0001-nested-git-topology.md)）
 - 版本与发布：CHANGELOG 驱动、tag 触发流水线、0.1.0 起步（见 [ADR-0002](adr/0002-versioning-and-release.md)）
 - 托管：外仓与内仓都在 GitHub
-- 架构（2026-09-10）：框架 + 底座 + 工具三箱，底座 coding agent 是唯一执行者，裁判上下文隔离，任务与领域是扫目录发现的插件（见 [架构总纲领](architecture/README.md)）
+- 架构（2026-09-10）：协调层（人 + agent）+ 框架 + 执行层 + 工具四层。科研判断归协调层，框架只做机械判定、不连跑不等人；执行层 coding agent 是唯一执行者，裁判上下文隔离；任务与领域是扫目录发现的插件；两层 agent 都集成不手搓、各自可换（见 [架构总纲领](architecture/README.md)）
 - 协作方式：spec coding + issue driven，先对齐文档再干活，每个工作单元一条 issue
 
 未定，等它自己长出来：

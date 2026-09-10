@@ -2,6 +2,7 @@
 
 - 参与：主人、Claude
 - 输入：三个开源仓的代码级深读（[选型 README](../../research/selection/2026-0909-pipeline-frameworks/README.md)）
+- 后续：同日晚加了协调层，结论 4 到 7 的"框架做决策"部分被 [2026-0910-coordinator-layer.md](2026-0910-coordinator-layer.md) 取代
 
 ## 结论
 
