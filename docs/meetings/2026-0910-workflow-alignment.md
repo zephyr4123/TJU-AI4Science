@@ -14,12 +14,13 @@
 7. 不设专门的"反思" agent；反思换成确定性检查再喂回底座。
 8. 文档体系：`docs/architecture/` 是可改的总纲领（改要双方认可 + 变更记录），`docs/specs/` 每版一份 PRD，`docs/adr/` 只留仓库基础设施的决定，`docs/meetings/` 记结论。
 9. 协作规范：spec coding + issue driven。先对齐 spec 再干活，文档实时更新，每个工作单元一条 issue，过程即结果。
+10. 版本线：外仓与 platform 各走各的；milestone 与 spec 只用产品版本并带 `platform` 前缀。初级版 = platform 0.2.0（0.1.0 是骨架），内测 `-rc.N`。
 
 ## 待办
 
-- [x] 写 `architecture/` 四份、`specs/v0.1-demo.md`、本纪要
-- [ ] 主人审 `specs/v0.1-demo.md`，转 aligned
-- [x] 目标合约 [#2](https://github.com/zephyr4123/TJU-AI4Science/issues/2)；五条母 issue [#3](https://github.com/zephyr4123/TJU-AI4Science/issues/3) 到 [#7](https://github.com/zephyr4123/TJU-AI4Science/issues/7) 挂 milestone v0.1；叶子开工时再拆 sub-issue
+- [x] 写 `architecture/` 四份、`specs/platform-0.2.0.md`（原名 v0.1-demo）、本纪要
+- [ ] 主人审 `specs/platform-0.2.0.md`，转 aligned
+- [x] 目标合约 [#2](https://github.com/zephyr4123/TJU-AI4Science/issues/2)；五条母 issue [#3](https://github.com/zephyr4123/TJU-AI4Science/issues/3) 到 [#7](https://github.com/zephyr4123/TJU-AI4Science/issues/7) 挂 milestone `platform 0.2.0 · 初级版`；叶子开工时再拆 sub-issue
 - [x] Q-1 到 Q-9 各一条 [#8](https://github.com/zephyr4123/TJU-AI4Science/issues/8) 到 [#16](https://github.com/zephyr4123/TJU-AI4Science/issues/16)，`needs-decision`
 - [x] 科研案例采集 [#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1)，挂在 #4 下
 - [ ] 内仓远端地址

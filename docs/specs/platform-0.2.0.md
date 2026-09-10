@@ -1,10 +1,10 @@
-# v0.1 初级版 · 诚实的实验内环
+# platform 0.2.0 初级版 · 诚实的实验内环
 
 - 状态：**draft**（等主人审阅后转 aligned）
 - 目标日期：2026-09-28
-- 版本：内仓 `platform/` 打 tag，外仓 CHANGELOG 同步记录
+- 版本：产品版本 = 内仓 `platform/` 的 tag `v0.2.0`（0.1.0 是骨架）；外仓有自己的版本线，CHANGELOG 里只记一句交叉引用。spec 文件按产品版本号命名
 - 纲领：[architecture/](../architecture/README.md)；未决项：[open-questions.md](../architecture/open-questions.md)
-- 目标合约：[#2](https://github.com/zephyr4123/TJU-AI4Science/issues/2)；母 issue [#3](https://github.com/zephyr4123/TJU-AI4Science/issues/3) 到 [#7](https://github.com/zephyr4123/TJU-AI4Science/issues/7)，milestone v0.1
+- 目标合约：[#2](https://github.com/zephyr4123/TJU-AI4Science/issues/2)；母 issue [#3](https://github.com/zephyr4123/TJU-AI4Science/issues/3) 到 [#7](https://github.com/zephyr4123/TJU-AI4Science/issues/7)，milestone `platform 0.2.0 · 初级版`
 
 ## 目标
 
@@ -72,8 +72,8 @@
 |---|---|
 | 09-13 | R-1 R-2 R-3：适配器能跑一条 prompt，玩具任务 `run_0` 出来 |
 | 09-18 | R-4：内环跑 20 轮，A-4 A-6 A-7 A-8 过 |
-| 09-22 | R-5 R-6 R-7：四段骨架 + 续跑 + 数字回溯，A-5 A-10 过；内测 tag |
-| 09-28 | R-8 R-9：门禁、文档、初级版 tag |
+| 09-22 | R-5 R-6 R-7：四段骨架 + 续跑 + 数字回溯，A-5 A-10 过；内测 tag `v0.2.0-rc.1` |
+| 09-28 | R-8 R-9：门禁、文档、初级版 tag `v0.2.0` |
 
 ## 未决（挂 issue）
 
@@ -86,3 +86,4 @@
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-10 | 建档 | 纲领 aligned 后的第一份版本 spec | 待主人审 |
+| 2026-09-10 | 改名 v0.1 → platform 0.2.0 | 外仓已发到 0.2.0，两条版本线撞号；产品版本一律带 platform 前缀 | 主人 + Claude |

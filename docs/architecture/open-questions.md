@@ -6,19 +6,19 @@
 
 | 编号 | 问题 | 层 | 建议 | 拍板 | issue |
 |---|---|---|---|---|---|
-| Q-1 | 阶段切几段 | 流水线 | 7 段，v0.1 只做 4 段 | 主人 | [#8](https://github.com/zephyr4123/TJU-AI4Science/issues/8) |
+| Q-1 | 阶段切几段 | 流水线 | 7 段，platform 0.2.0 只做 4 段 | 主人 | [#8](https://github.com/zephyr4123/TJU-AI4Science/issues/8) |
 | Q-2 | skills 怎么注入底座 | 学科适配 | 交给底座原生机制，不自研匹配器 | 主人 | [#9](https://github.com/zephyr4123/TJU-AI4Science/issues/9) |
 | Q-3 | 验收怎么定义 | 验证 | manifest.requirements 的 must_pass + 零 LLM 判据；discussion 类交隔离裁判 | 主人 | [#10](https://github.com/zephyr4123/TJU-AI4Science/issues/10) |
 | Q-4 | 评测怎么做 | 评测 | rubric 树 + 组件消融 + 噪声基线；首个工科 bench 3 到 5 题 | 主人 | [#11](https://github.com/zephyr4123/TJU-AI4Science/issues/11) |
 | Q-5 | 第一个真任务与学院 | 任务 | 先用玩具任务把闭环跑通，不等 | 主人 | [#12](https://github.com/zephyr4123/TJU-AI4Science/issues/12) |
-| Q-6 | 执行环境 | 底座 / 工具 | v0.1 本机 venv 独立进程；docker 与集群按需 | 主人 | [#13](https://github.com/zephyr4123/TJU-AI4Science/issues/13) |
+| Q-6 | 执行环境 | 底座 / 工具 | platform 0.2.0 本机 venv 独立进程；docker 与集群按需 | 主人 | [#13](https://github.com/zephyr4123/TJU-AI4Science/issues/13) |
 | Q-7 | 人在环第一版做到哪 | 流水线 | full-auto + gate-only | 主人 | [#14](https://github.com/zephyr4123/TJU-AI4Science/issues/14) |
 | Q-8 | 首批支持哪几个 CLI | 底座 | Claude Code 先行，Codex 第二 | 主人 | [#15](https://github.com/zephyr4123/TJU-AI4Science/issues/15) |
 | Q-9 | 跨 run 记忆要不要做 | 学科适配 | v0.x 不做，账本与 git 就是记忆 | 主人 | [#16](https://github.com/zephyr4123/TJU-AI4Science/issues/16) |
 
 ## Q-1 阶段切几段
 
-AutoResearchClaw 的 23 段太细（大量阶段是一次 LLM 调用），InternAgent 的 3 段太粗（想法生成一个阶段里塞了 9 个 agent）。建议 7 段：文献、假设、设计、实验、分析、写作、验证。v0.1 只做设计、实验、分析、验证四段。
+AutoResearchClaw 的 23 段太细（大量阶段是一次 LLM 调用），InternAgent 的 3 段太粗（想法生成一个阶段里塞了 9 个 agent）。建议 7 段：文献、假设、设计、实验、分析、写作、验证。platform 0.2.0 只做设计、实验、分析、验证四段。
 
 ## Q-2 skills 怎么注入底座
 
@@ -52,7 +52,7 @@ AutoResearchClaw 的 23 段太细（大量阶段是一次 LLM 调用），Intern
 
 ## Q-6 执行环境
 
-v0.1 本机 venv 里起独立进程，隔离只到进程级；docker 模式在 harness 需要装东西时再加；集群按 ADR-0001 的判据到时候拆仓。AutoResearchClaw 的教训：docker 不可用时静默降级成裸进程是错的，隔离降级必须显式失败。
+platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker 模式在 harness 需要装东西时再加；集群按 ADR-0001 的判据到时候拆仓。AutoResearchClaw 的教训：docker 不可用时静默降级成裸进程是错的，隔离降级必须显式失败。
 
 ## Q-7 人在环第一版做到哪
 
