@@ -34,7 +34,19 @@
  └─────────────────────────────────────────────────────────────────┘
 ```
 
-- **7 个能力是拟定值**，platform 0.2.0 只做设计、实验、分析、验证四个（Q-1）。文献能力可以不跑：用户自带调研包就当它的产物。
+- **7 个能力各自的输入、输出、执行者、验证判据**（拟定，落地一个改一个）：
+
+| 能力 | 级别 | 输入 | 输出 | 谁执行 | 机器判据 |
+|---|---|---|---|---|---|
+| 文献 | 项目 | 研究问题 | `lit.jsonl`（DOI / arXiv id、摘要、笔记） | 执行层 + `tools/` 学术 API（Q-11） | 每条引用在学术 API 里存在 |
+| 假设 | 项目 | 研究问题 + 文献 + 项目记忆 | `hypotheses.md`（假设台账：编号、依据、可证伪的预测） | 执行层 | schema；每条假设引用的文献在 lit 里 |
+| 设计 | 项目 → 任务包 | 一条假设 + 领域包 | 任务包（manifest、harness、code 基线、data、run_0）+ `plan.yaml` | 执行层，协调层拍 manifest | `ai4sci task validate` 通过 |
+| 实验 | run | 任务包 | 账本、实验笔记、best commit | 执行层改 code/，runner 判 | 统计门、账本 × git 对账、只读 hash |
+| 分析 | 项目 | 全部 run 的账本、笔记、best diff | `analysis.md`（哪条假设被证实 / 证伪、数字从哪来） | 执行层 | 每个数字回溯到账本或 results.json |
+| 写作 | 项目 | 分析 + 文献 + 假设台账 + 模板 | `paper.md` / LaTeX + 图 | 执行层分节调用（Q-12），图由 tools 出 | 数字回溯、引用真伪、图源 |
+| 验证 | 项目 | 论文 + 上游全部产物 | `report.json` | 框架，零模型；discussion 类交隔离裁判 | 三条判据全过才 PASS |
+
+  platform 0.2.0 只做设计、实验、分析、验证四个（Q-1），且设计暂以现成任务包代替。文献能力可以不跑：用户自带调研包就当它的产物。
 - **每个能力一次执行层调用，新会话。** 上下文从磁盘来，不靠上一个能力的会话。这是 P-1 与 P-3 的直接推论。
 - **失败处理**：FAILED 就停，不模板兜底、不静默跳过（P-7）。重试是显式配置，默认 0。
 - **回退**：框架不判断"要不要回到设计"，协调层看了分析结论决定。框架只提供留档：重跑一个能力时把旧目录改名成 `_v{n}`，不覆盖。
@@ -213,6 +225,7 @@ run(prompt, cwd, timeout_s, allowed_paths)
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-10 | 建档。阶段骨架、实验内环四角色、账本、裁判、人在环、Runner 协议 | 三个仓深读的收敛结论；棘轮来自 autoresearch，harness 注入来自 AutoResearchClaw，目录形态来自 InternAgent | 主人 + Claude |
+| 2026-09-10 | 第 1 节加七个能力的输入 / 输出 / 执行者 / 判据表，标出项目级与 run 级（[#29](https://github.com/zephyr4123/TJU-AI4Science/issues/29)） | 端到端对齐，实体分两级 | 主人 + Claude |
 | 2026-09-10 | 第 2 节加轮间记忆（实验笔记）与续命，P-9 措辞随纲领 README 改；磁盘布局加 notebook.md；第 5 节加 run extend（[#28](https://github.com/zephyr4123/TJU-AI4Science/issues/28) [#26](https://github.com/zephyr4123/TJU-AI4Science/issues/26)） | 真跑暴露执行层失忆，主人拍板必须有轮间记忆 | 主人 + Claude |
 | 2026-09-10 | 第 1、2 节按 R-4 内环实现回写：runner 提交、work/ 独立 git 仓、失败分类改成带优先级的六类 + noop / interrupted、账本加 cost_usd 与 executor_s 且基线不占行、统计门加 min_delta 与 σ=0 fail-closed、停止条件与续跑规则、磁盘布局加 work/ prompts/ inflight.json stop.json；第 5 节环境变量清单补两项（[#24](https://github.com/zephyr4123/TJU-AI4Science/issues/24)） | 实现与审查暴露的偏差回写，纲领不能描述另一套行为 | 主人 + Claude |
 | 2026-09-10 | 第 5 节执行层适配按 R-1 spike 实测改写：隔离位、`//` 路径规则、kill_tree、快照 diff、成本 NaN、落盘（[#20](https://github.com/zephyr4123/TJU-AI4Science/issues/20)） | 四个未知全部拿到证据 | 主人 + Claude |

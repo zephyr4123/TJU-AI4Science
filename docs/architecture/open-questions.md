@@ -14,8 +14,10 @@
 | Q-6 | 执行环境 | 执行层 / 工具 | platform 0.2.0 本机 venv 独立进程；docker 与集群按需 | 主人 | [#13](https://github.com/zephyr4123/TJU-AI4Science/issues/13) |
 | Q-7 | 无人值守时协调层怎么找人 | 协调层 | 大方向已定：人在协调层对话里，框架不等人；异步通道 0.2.0 不做 | 主人 | [#14](https://github.com/zephyr4123/TJU-AI4Science/issues/14) |
 | Q-8 | 协调层与执行层各用哪个 CLI | 协调层 / 执行层 | 开工时定；执行层 Claude Code 先行，Codex 第二 | 主人 | [#15](https://github.com/zephyr4123/TJU-AI4Science/issues/15) |
-| Q-9 | 跨 run 记忆要不要做 | 协调层 | v0.x 不做专门机制，issue + 账本 + git 就是记忆 | 主人 | [#16](https://github.com/zephyr4123/TJU-AI4Science/issues/16) |
+| Q-9 | 项目级记忆怎么做 | 协调层 | 改写：run 级已有（账本、笔记）；项目级（文献笔记、假设台账、跨 run 结论）是写作前提，0.2.0 之后第一优先 | 主人 | [#16](https://github.com/zephyr4123/TJU-AI4Science/issues/16) |
 | Q-10 | 协调层 skill 包放哪、怎么注入 | 协调层 | 内仓 `coordinator/`，按 CLI 原生机制挂进去；与执行层路径不相交 | 主人 | [#19](https://github.com/zephyr4123/TJU-AI4Science/issues/19) |
+| Q-11 | 文献检索走 tools/ 学术 API 还是执行层联网 | 学科适配 / 验证 | tools/ 学术 API，引用才可验 | 主人 | [#31](https://github.com/zephyr4123/TJU-AI4Science/issues/31) |
+| Q-12 | 写作能力的形态 | 流水线 | 分节多次调用，模板放领域包，图由 tools 出，写完过三条判据 | 主人 | [#32](https://github.com/zephyr4123/TJU-AI4Science/issues/32) |
 
 ## Q-1 首版提供哪几个能力
 
@@ -63,9 +65,17 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 
 两层各自选，可以不一样。执行层：Claude Code 先行（本机有、flag 已对账），Codex 第二（本机有、flag 未对账），每加一个适配器必须带真 CLI 冒烟测试。协调层：开工时定，0.2.0 就是主人加交互态的 Claude Code。
 
-## Q-9 跨 run 记忆
+## Q-9 项目级记忆怎么做
 
-三个仓的记忆层：InternAgent 默认配置下断的，AutoResearchClaw 接线是坏的，autoresearch 只写不读。加了协调层后，跨 run 的记忆是协调层的事，不是框架的：v0.x 不做专门机制，issue + 账本 + git log + 上一轮的 `analysis.md` + `journal.md` 就是记忆；`agenthub` 那种"读前沿、查 children 避免重复"的做法等多 agent 并行时再考虑。
+2026-09-10 改写。run 级记忆已经有了：账本给机器对账，实验笔记给执行层（真跑证明没有它执行层会重复改动）。项目级记忆是另一回事：文献笔记、假设台账、跨 run 的结论，它们是分析与写作能力的输入，没有它论文写不出来。形态待定：最直接的是项目目录下几个有 schema 的文件（`lit.jsonl`、`hypotheses.md`、`conclusions.md`），由对应能力写、由协调层与后续能力读；`agenthub` 那种"读前沿、查 children 避免重复"的做法等多 agent 并行时再考虑。0.2.0 不做，之后第一优先。
+
+## Q-11 文献检索走 tools/ 学术 API 还是执行层联网
+
+执行层被隔离后 MCP 清零，内建 WebSearch 仍在但不受控。建议 `tools/` 里做确定性脚本走学术 API（Semantic Scholar / arXiv / OpenAlex），执行层调脚本，结果带 DOI 或 arXiv id 落 `lit.jsonl`，验证能力用同一套 API 核引用真伪。给执行层开 WebSearch 快，但引用来源不可核，三条零 LLM 判据里"引用真伪"就做不了。
+
+## Q-12 写作能力的形态
+
+论文是长文档、多节、要图、要引用，一次执行层调用写不完。建议分节多次调用，每节的输入是项目记忆 + 分析产物 + 前面已写的节；模板（Markdown 或 LaTeX）放领域包；图由 `tools/` 从 `results.json` 与账本确定性生成，执行层只引用不画；写完过数字回溯、引用真伪、图源三条判据，不过就停。
 
 ## Q-10 协调层 skill 包放哪、怎么注入
 
@@ -80,4 +90,5 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-10 | 建档，九项 | 三层未定，先把问题与候选写下来 | 主人 + Claude |
+| 2026-09-10 | Q-9 改写为项目级记忆；加 Q-11 文献、Q-12 写作（[#29](https://github.com/zephyr4123/TJU-AI4Science/issues/29)） | 端到端对齐 | 主人 + Claude |
 | 2026-09-10 | Q-1 Q-2 Q-7 Q-8 Q-9 按四层改写，Q-7 大方向标已定；加 Q-10（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 加了协调层：顺序、人在环、记忆都归它，skill 分两套 | 主人 + Claude |
