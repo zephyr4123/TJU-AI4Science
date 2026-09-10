@@ -20,4 +20,4 @@
 
 - [x] 纲领四份、spec、vision、CHANGELOG 按四层改写，决策 issue [#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)，Q-10 [#19](https://github.com/zephyr4123/TJU-AI4Science/issues/19)
 - [ ] 拍 Q-5 [#12](https://github.com/zephyr4123/TJU-AI4Science/issues/12) 玩具任务
-- [ ] 开工：拆 #3 #4 #5 的 sub-issue，R-1 spike 与剧本后端两条线并行
+- [x] 开工：#20 spike 与 #21 任务包挂到 #3 #4 下，两条线并行做完（内仓 `feat/runner-spike`）；#5 内环下一单元再拆

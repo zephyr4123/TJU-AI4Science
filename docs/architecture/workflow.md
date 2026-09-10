@@ -181,23 +181,28 @@ slurm:  put=rsync     submit=sbatch           cancel=scancel     get=rsync
 
 ### 执行层适配
 
-一个 `Runner` 协议，每个 CLI 一个适配器：
+一个 `Runner` 协议，每个 CLI 一个适配器。形状由 R-1 spike 实测定案（[#20](https://github.com/zephyr4123/TJU-AI4Science/issues/20)，代码 `backends/`）：
 
 ```
-run(prompt, cwd, timeout_s, allowed_paths) -> {exit_code, events[], changed_files[], cost}
+run(prompt, cwd, timeout_s, allowed_paths)
+  -> RunResult{exit_code, events[], changed_files[], cost_usd, duration_s, timed_out, stdout_tail}
 ```
 
-- 非交互 + 结构化输出：Claude Code 走 `claude -p ... --output-format stream-json`（本机 `claude --help` 已确认这两个 flag 存在），Codex 走 `codex exec --json`（落地前对账）。
-- 权限：只放行 `allowed_paths` 内的编辑；不用 `--dangerously-skip-permissions` 这类全放行标志。各家权限模型语义对不齐，适配器只负责尽量收紧，真正的门是 runner 事后 diff：`code/` 之外有改动就判 crash 回滚（P-7）。
-- 超时由适配器执行，进程组一起杀。
-- `events[]` 是取证用的结构化事件流（工具调用、文件改动、token），验证层与评测层都靠它。
-- 执行层会话的 skill 搜索路径只挂领域包的 `skills/`，不挂 `coordinator/`（P-11）。
-- 任何适配器合入必须带一个真实调用点和一个真 CLI 的冒烟测试（P-8）。
+- **非交互 + 结构化输出**：Claude Code 走 `claude -p ... --output-format stream-json --verbose`，Codex 走 `codex exec --json`（落地前对账）。
+- **隔离**（P-11）：`--setting-sources ""` 是承重位，不带它项目 CLAUDE.md 会原样进上下文、plugin / hook / 自定义 agent 全加载；再加 `--strict-mcp-config`（MCP 清零）与 `--disable-slash-commands`（skill 清零）。`--bare` 看似等价但会跳过 keychain 读取导致未登录，不能用。隔离后一句 pong 从 $0.46 降到 $0.05。
+- **权限**：`--permission-mode dontAsk` + `--allowedTools` 白名单，只放行 `allowed_paths` 内的 Edit / Write；绝对路径规则必须写 `//`（单个 `/` 被当作项目根相对路径，会把该放行的也拒掉）。dontAsk 下只读 Bash 自动放行、写操作 Bash 被拒；Bash 规则默认一条不给。不用 `--dangerously-skip-permissions` / `bypassPermissions`。这是第一道门，真正的门仍是 runner 事后拿 `changed_files` 判：`code/` 之外有改动就判 crash 回滚（P-7）。
+- **changed_files 不采信 CLI 自报**：调用前后对 cwd 做 sha256 快照 diff。事件流里的 `file_path` 实测与 diff 一致，但 Bash 改文件不产生 `file_path`，改完再改回去也看不出来。
+- **超时**：`kill_tree` 逐进程组杀。CLI 的 Bash 工具把 shell 起在自己的新进程组里，只 `killpg` CLI 那一组会留下 PPID=1 的孤儿；先趟进程树再叶子组先杀。
+- **成本**：只认最终 `result` 事件的 `total_cost_usd` 与 `duration_ms`；超时被杀时 result 不会发出，成本填 NaN 表示未知，绝不填 0。
+- **事件流落盘**：完整 stream-json 与 stderr 写 `cwd/.ai4sci/executor-<ts>.jsonl|.stderr.log`，给执行层的只有摘要（P-9）。stdin 给 DEVNULL（否则 CLI 等 3 秒），stdout 与 stderr 各一个线程排空。
+- 配置从环境变量读：`AI4SCI_EXECUTOR_MAX_TURNS`（30）、`AI4SCI_EXECUTOR_MAX_BUDGET_USD`（2.0）、`AI4SCI_EXECUTOR_MODEL`（缺省不传）。执行层模型该由 manifest 或协调层显式指定，这是待办。
+- 任何适配器合入必须带一个真实调用点和一个真 CLI 的冒烟测试（P-8）；冒烟测试 `AI4SCI_LIVE=1` 才跑，CI 不跑。
 
 ## 变更记录
 
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-10 | 建档。阶段骨架、实验内环四角色、账本、裁判、人在环、Runner 协议 | 三个仓深读的收敛结论；棘轮来自 autoresearch，harness 注入来自 AutoResearchClaw，目录形态来自 InternAgent | 主人 + Claude |
+| 2026-09-10 | 第 5 节执行层适配按 R-1 spike 实测改写：隔离位、`//` 路径规则、kill_tree、快照 diff、成本 NaN、落盘（[#20](https://github.com/zephyr4123/TJU-AI4Science/issues/20)） | 四个未知全部拿到证据 | 主人 + Claude |
 | 2026-09-10 | 第 5 节加算力适配：`Compute` 端口五个动作，submit / wait 句柄落盘，靠名字选择、不静默回退 | 主人问算力模块用什么模式；harness 在哪跑与 agent 在哪跑是两根正交的轴，各自端口 + 适配器 | 主人 + Claude |
 | 2026-09-10 | "阶段"改"能力"，去掉框架内的顺序与回退判断，串联归协调层；磁盘布局按能力名而非序号，加 `journal.md`；第 4 节人在环改写为协调层行为，去掉 full-auto / gate-only 与文件通道；第 5 节加协调层驱动面 `ai4sci` 子命令；"底座"改称"执行层"（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 固定顺序的阶段骨架就是"外层 for + 硬编码状态"；科研判断归协调层（人 + agent），框架不等人、不连跑 | 主人 + Claude |

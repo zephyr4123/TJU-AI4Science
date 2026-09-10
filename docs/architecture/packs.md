@@ -30,8 +30,8 @@
          ├── manifest.yaml    必有
          ├── harness/         必有：怎么算分、跑多久；只读，框架校验 hash
          ├── code/            必有：基线，执行层唯一能改的地方
-         ├── data/            可选：参考解、验证算例；执行层不能碰
-         └── run_0/           必有：基线跑一次的产物
+         ├── data/            可选：参考解、验证算例；执行层不能碰（真值只给 harness，code/ 只见输入）
+         └── run_0/           必有：results.json 基线 + repeats/results-<seed>.json × repeat_k + sigma.json
 ```
 
 ## 2. 任务包
@@ -96,14 +96,17 @@ harness 的接口约束（从 AutoResearchClaw 的 `harness_template.py` 取思�
 
 - `code/` 是执行层唯一能改的地方，基线要整理到"单入口、明确参数、能快速小规模跑"的状态，否则执行层每轮改完跑不动，全耗在修 bug 上。
 - `data/` 放参考解与验证算例，有明确 ID，准备阶段就与调参用的算例分开，分离逻辑写在 harness 里而不是 code/ 里。
-- `run_0/` 是基线跑一次的产物，改进率的分母，也是账本第一行。
+- `run_0/` 是基线跑一次的产物，改进率的分母，也是账本第一行。布局：`results.json`（基线种子）、`repeats/results-<seed>.json` 恰好 `repeat_k` 个、`sigma.json` 每个指标一条 `{sigma, seeds, values}`；`ai4sci task validate` 逐项对账。
+- 验证集拆两份：`data/val_inputs.json` 只有输入给 `code/` 读，`data/val.json` 带真值只给 harness。code/ 自己算分等于自己给自己打分（P-2），当假成功处理。
 
 ### 接一个新任务的清单
 
 1. 写 `manifest.yaml`，跑 `ai4sci task validate <dir>` 过 schema。
 2. 把基线整理进 `code/`，写 `launcher.sh`。
 3. 写 `harness/evaluate.py`，产出 `results.json`；跑一次得到 `run_0/`。
-4. 同配置重复 k 次，把 σ 记进 `run_0/`，这是统计门的基线。
+4. 同配置重复 k 次，把 σ 记进 `run_0/sigma.json`，这是统计门的基线。把这几步写成 `harness/make_run0.sh` 并登记进 SHA256SUMS，改了 code/ 或数据就重跑它。
+
+参考实现：`tasks/mlp-regression/`（[#21](https://github.com/zephyr4123/TJU-AI4Science/issues/21)）。schema 只收有读取点的字段（P-8 反过来用）：`conditions` 在设计能力落地前不进 schema，写了会被判不合法。
 
 纯契约工作量半天到一天；真正的成本在把仿真整理成能在预算内跑完。
 
@@ -147,4 +150,5 @@ paper_keywords: [mesh refinement, finite element, error estimate]
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-10 | 建档。任务包与领域包的目录、manifest 与 profile 字段、harness 约束、发现规则 | 泛化边界的结论：流程通用、任务不通用，适配必须是写文件 | 主人 + Claude |
+| 2026-09-10 | run_0 布局、验证集拆两份、make_run0.sh、schema 只收有读取点的字段（[#21](https://github.com/zephyr4123/TJU-AI4Science/issues/21)） | 第一个任务包落地后的实测形态 | 主人 + Claude |
 | 2026-09-10 | manifest 明确由协调层拍板后填写；全景加 `coordinator/`；领域包 `skills/` 限定为执行层用，与协调层 skill 隔离；"阶段"改"能力"、"底座"改"执行层"（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 加了协调层，契约的填写权归它；两层 agent 的 skill 必须物理隔离（P-11） | 主人 + Claude |
