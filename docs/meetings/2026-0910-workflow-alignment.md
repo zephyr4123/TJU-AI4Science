@@ -20,7 +20,7 @@
 ## 待办
 
 - [x] 写 `architecture/` 四份、`specs/platform-0.2.0.md`（原名 v0.1-demo）、本纪要
-- [ ] 主人审 `specs/platform-0.2.0.md`，转 aligned
+- [x] ~~主人审 `specs/platform-0.2.0.md`，转 aligned~~ 取消：spec 滚动，不设 aligned 门槛（同日晚定）
 - [x] 目标合约 [#2](https://github.com/zephyr4123/TJU-AI4Science/issues/2)；五条母 issue [#3](https://github.com/zephyr4123/TJU-AI4Science/issues/3) 到 [#7](https://github.com/zephyr4123/TJU-AI4Science/issues/7) 挂 milestone `platform 0.2.0 · 初级版`；叶子开工时再拆 sub-issue
 - [x] Q-1 到 Q-9 各一条 [#8](https://github.com/zephyr4123/TJU-AI4Science/issues/8) 到 [#16](https://github.com/zephyr4123/TJU-AI4Science/issues/16)，`needs-decision`
 - [x] 科研案例采集 [#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1)，挂在 #4 下

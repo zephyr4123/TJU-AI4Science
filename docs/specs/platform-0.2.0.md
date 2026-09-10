@@ -1,6 +1,6 @@
 # platform 0.2.0 初级版 · 诚实的实验内环
 
-- 状态：**draft**（等主人审阅后转 aligned）
+- 状态：**滚动**。spec 只对下一步负责：第 n 步的 spec 只驱动第 n+1 步的执行，做完一步回来改；不设 aligned 门槛，变化是常态
 - 目标日期：2026-09-28
 - 版本：产品版本 = 内仓 `platform/` 的 tag `v0.2.0`（0.1.0 是骨架）；外仓有自己的版本线，CHANGELOG 里只记一句交叉引用。spec 文件按产品版本号命名
 - 纲领：[architecture/](../architecture/README.md)；未决项：[open-questions.md](../architecture/open-questions.md)
@@ -88,6 +88,7 @@
 
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
-| 2026-09-10 | 建档 | 纲领 aligned 后的第一份版本 spec | 待主人审 |
+| 2026-09-10 | 建档 | 纲领 aligned 后的第一份版本 spec | 主人 + Claude |
 | 2026-09-10 | 改名 v0.1 → platform 0.2.0 | 外仓已发到 0.2.0，两条版本线撞号；产品版本一律带 platform 前缀 | 主人 + Claude |
 | 2026-09-10 | 按纲领四层改写：目标段、R-5 R-7 N-2 改写，R-4 加剧本后端，新增 R-10 C-7 A-11，"底座"改"执行层"，未决加 Q-10（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 加了协调层，框架不连跑不等人；三件演示不变 | 主人 + Claude |
+| 2026-09-10 | 状态从"draft 待审"改为"滚动" | 主人：spec 随时会变，第 n 步只驱动第 n+1 步，没有更硬的理由驱动更后面的执行 | 主人 + Claude |

@@ -14,10 +14,10 @@
 6. 协调层与执行层都是集成进来的 coding agent，都不手搓，各自可换：Claude Code 协调 + Claude Code 执行，或 Codex 协调 + Claude Code 执行，框架不改。具体 CLI 开工时定。
 7. 两套 skill 物理隔离：协调层的 skill（怎么当科研助理、怎么驱动框架）跟项目走，放内仓 `coordinator/`；执行层的 skill（怎么在这个领域做实验）跟领域包走。执行层会话的搜索路径里没有协调层的目录（P-11）。
 8. 主人强调的三个好处：人的角色不可替代也不应被替代；协调 agent 是人的助理，帮人头脑风暴和大规模收集；两层解耦后模块替换非常灵活。
+9. spec 不转 aligned：它是滚动的，第 n 步的 spec 只驱动第 n+1 步的执行，没有更硬的理由驱动更后面的执行。敏捷：一直在变才是唯一不变的。
 
 ## 待办
 
 - [x] 纲领四份、spec、vision、CHANGELOG 按四层改写，决策 issue [#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)，Q-10 [#19](https://github.com/zephyr4123/TJU-AI4Science/issues/19)
-- [ ] 主人审 spec，转 aligned
 - [ ] 拍 Q-5 [#12](https://github.com/zephyr4123/TJU-AI4Science/issues/12) 玩具任务
 - [ ] 开工：拆 #3 #4 #5 的 sub-issue，R-1 spike 与剧本后端两条线并行
