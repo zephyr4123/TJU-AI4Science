@@ -60,6 +60,7 @@ budget:
   max_iterations: 30
   repeat_k: 3                     # 统计门：同配置重复次数
   accept_sigma: 2.0
+  # 可选：patience 连续不改进几轮停（缺省 5）；min_delta 最小改进量，σ=0 的确定性 harness 必填；max_cost_usd 总花费上限
 requirements:                     # 验收条件，验证能力与隔离裁判用
   - id: R1
     type: numeric                 # numeric | artifact | discussion
@@ -90,7 +91,7 @@ harness/
 {"metrics": {"rel_l2_error": 0.0312, "runtime_s": 287.4}, "elapsed_s": 298.1, "seed": 42, "status": "ok"}
 ```
 
-harness 的接口约束（从 AutoResearchClaw 的 `harness_template.py` 取思路）：到预算 80% 让实验自己优雅停；NaN / Inf 计满即退出非零；指标只能经 harness 写出。
+harness 的接口约束（从 AutoResearchClaw 的 `harness_template.py` 取思路）：到预算 80% 让实验自己优雅停；NaN / Inf 计满即退出非零；指标只能经 harness 写出。`evaluate.py` 拒收产物（预测缺失、长度不对、NaN）时用 `SystemExit` 带一句话退出非零、**不抛 traceback**，runner 据此把假成功判成 `no_results` 而不是 `crash`；`status` 字段不是 ok 也判 `no_results`。任务包别带会挡住 `code/` 产物的 `.gitignore`：被挡住的改动提交不进去，那一轮记 `noop`。
 
 ### code/ 与 data/
 
@@ -150,5 +151,6 @@ paper_keywords: [mesh refinement, finite element, error estimate]
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-10 | 建档。任务包与领域包的目录、manifest 与 profile 字段、harness 约束、发现规则 | 泛化边界的结论：流程通用、任务不通用，适配必须是写文件 | 主人 + Claude |
+| 2026-09-10 | budget 加可选 patience / min_delta / max_cost_usd；harness 约束加 evaluate 退出方式与 status 字段的读取点、.gitignore 提醒（[#24](https://github.com/zephyr4123/TJU-AI4Science/issues/24)） | 内环实现的读取点反推回契约 | 主人 + Claude |
 | 2026-09-10 | run_0 布局、验证集拆两份、make_run0.sh、schema 只收有读取点的字段（[#21](https://github.com/zephyr4123/TJU-AI4Science/issues/21)） | 第一个任务包落地后的实测形态 | 主人 + Claude |
 | 2026-09-10 | manifest 明确由协调层拍板后填写；全景加 `coordinator/`；领域包 `skills/` 限定为执行层用，与协调层 skill 隔离；"阶段"改"能力"、"底座"改"执行层"（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 加了协调层，契约的填写权归它；两层 agent 的 skill 必须物理隔离（P-11） | 主人 + Claude |
