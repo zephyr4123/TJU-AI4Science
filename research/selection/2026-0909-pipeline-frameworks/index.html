@@ -328,6 +328,8 @@
 <li><strong>底座对接层自己写</strong>：一个 <code>Runner</code> 协议（<code>run(prompt, cwd, timeout) → {events, exit_code, cost}</code>），用各 CLI 的非交互 + 结构化输出模式取证，每个 CLI 一个适配器。ARC 的 <code>CodeAgentProvider</code> 是这层该有的形状（在它仓里是死代码，对我们反而省事）。</li>
 <li><strong>人在环用 stage 边界暂停 + 文件通道回传</strong>：ARC 的 <code>intervention.py</code> + <code>file_wait.py</code> + pre/post hook 签名。实验内环里的打断粒度我们自己往下切。</li>
 <li><strong>立四条机器可查的规矩</strong>（从 ARC 的反面清单来）：每个抽象合入时必须带真实调用点；每加一个配置项同时加一条断言证明它被读到；集成点必须有测试；不许裸 <code>except</code>。</li>
+<li><strong>底座 coding agent 是唯一执行者</strong>（2026-09-10 拍板）：写代码、修 bug、文献检索、假设、分析、写论文，凡是产出文件的活都交给它，一个阶段一次新会话，上下文从磁盘来（<code>runs/</code>、账本、git log）。框架不单独调 LLM 写文本，<code>framework/</code> 目录里 grep 不到模型 API。联网检索做成框架提供的确定性脚本，换底座能力不变；用户自带的调研直接当阶段输入。</li>
+<li><strong>裁判是上下文隔离的 agent</strong>（2026-09-10 拍板）：accept / reject、验证、评审绝不由干活的那个会话做。确定性能判的用 runner 与零 LLM 判据；需要模型判断的，由框架派一个新会话（subagent / workflow，可指定不同模型），只给产物不给轨迹。执行与决策的分界：产出文件的是执行，改变流程走向的是决策。</li>
 </ol>
 <h2 id="目录">目录<a class="permalink" href="#目录" title="本节链接">#</a></h2>
 <pre><code>selection/2026-0909-pipeline-frameworks/
