@@ -53,6 +53,7 @@ runs/<run_id>/
 ├── experiment/             实验内环整个住在这里，见第 2 节
 │   ├── runs/               每轮一个 run_N/ 快照 + results.json + job.json + .job/ 日志
 │   ├── ledger.tsv
+│   ├── notebook.md         实验笔记：每轮的自述、改动、裁决，下一轮整本进 prompt
 │   ├── inflight.json       在飞的那一轮，结账即删
 │   └── stop.json           停止原因
 ├── analysis/  analysis.md
@@ -115,7 +116,9 @@ runs/<run_id>/
 - **失败分类**：确定性规则，不调模型，按优先级判：`readonly_violated`（diff 或 hash 发现 harness / data 被改）→ `timeout` → `missing_dependency`（stderr 有 ModuleNotFoundError / ImportError）→ `crash`（stderr 有 Python traceback）→ `no_results`（results.json 缺失、不合 schema、或 harness 自报 status ≠ ok；假成功落在这里）→ `nan_metric`。另有两个非失败状态：`noop`（执行层什么都没改，或改动全被 .gitignore 挡住）、`interrupted`（那一轮被杀）。分类结果与修复提示一起给执行层；同类失败连续 3 次判 `unrecoverable`，停。
 - **停止条件**：`max_iterations`、连续 `patience` 轮不改进（缺省 5）、`max_cost_usd` 累计用尽、`unrecoverable`；任一触发写 `experiment/stop.json` 并停。已停的 run 再跑一轮都不跑：要不要加预算续命是协调层的决定（P-10）。`--max-iters N` 只是本次调用的配额，用完返回 `batch_exhausted`，不算停止。
 - **续跑**：每轮开跑前写 `experiment/inflight.json`，结账后删。`loop resume` 先做 checkpoint、账本、git 三方对账，对不上就 fail-closed；有 in-flight 标记的那一轮记 `interrupted`、在飞的 job 先收尸、候选 commit 进 `refs/attempts/` 再回到 best。`loop run` 撞到 in-flight 标记直接拒绝并指引用 resume。
-- **上下文卫生**（P-9）：给执行层的是摘要，不是 stdout；日志落盘。
+- **轮间记忆**：`experiment/notebook.md` 一个 run 一本，runner 每轮追加执行层的自述（假设 / 改动 / 预期）、`git diff --stat`、裁决；下一轮整本进 prompt，执行层先读前面试过什么再动手。笔记由 runner 写，活在棘轮之外，回滚不抹。
+- **上下文卫生**（P-9）：给执行层的是账本与笔记（有界），不是 stdout；日志落盘。
+- **续命**：已停的 run 用 `ai4sci run extend` 改预算、清停止标记，journal.md 记一行；要不要续是协调层的决定（P-10）。
 - **revert-to-best**：下一轮的起点永远是分支 tip，不是上一轮的失败候选。
 
 **账本 `experiment/ledger.tsv`**
@@ -156,6 +159,7 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 ```
 ai4sci task validate <dir>            任务包过 schema
 ai4sci run new <task> [--run-id]      建 runs/<run_id>/，写 manifest 快照
+ai4sci run extend <run_id> ...        给已停的 run 续命：改预算、清停止标记
 ai4sci cap <name> <run_id>            跑一个能力：design | analysis | verify …
 ai4sci loop run <run_id>              跑实验内环，到停止条件即退
 ai4sci loop resume <run_id>           从 checkpoint 与账本续跑
@@ -209,6 +213,7 @@ run(prompt, cwd, timeout_s, allowed_paths)
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-10 | 建档。阶段骨架、实验内环四角色、账本、裁判、人在环、Runner 协议 | 三个仓深读的收敛结论；棘轮来自 autoresearch，harness 注入来自 AutoResearchClaw，目录形态来自 InternAgent | 主人 + Claude |
+| 2026-09-10 | 第 2 节加轮间记忆（实验笔记）与续命，P-9 措辞随纲领 README 改；磁盘布局加 notebook.md；第 5 节加 run extend（[#28](https://github.com/zephyr4123/TJU-AI4Science/issues/28) [#26](https://github.com/zephyr4123/TJU-AI4Science/issues/26)） | 真跑暴露执行层失忆，主人拍板必须有轮间记忆 | 主人 + Claude |
 | 2026-09-10 | 第 1、2 节按 R-4 内环实现回写：runner 提交、work/ 独立 git 仓、失败分类改成带优先级的六类 + noop / interrupted、账本加 cost_usd 与 executor_s 且基线不占行、统计门加 min_delta 与 σ=0 fail-closed、停止条件与续跑规则、磁盘布局加 work/ prompts/ inflight.json stop.json；第 5 节环境变量清单补两项（[#24](https://github.com/zephyr4123/TJU-AI4Science/issues/24)） | 实现与审查暴露的偏差回写，纲领不能描述另一套行为 | 主人 + Claude |
 | 2026-09-10 | 第 5 节执行层适配按 R-1 spike 实测改写：隔离位、`//` 路径规则、kill_tree、快照 diff、成本 NaN、落盘（[#20](https://github.com/zephyr4123/TJU-AI4Science/issues/20)） | 四个未知全部拿到证据 | 主人 + Claude |
 | 2026-09-10 | 第 5 节加算力适配：`Compute` 端口五个动作，submit / wait 句柄落盘，靠名字选择、不静默回退 | 主人问算力模块用什么模式；harness 在哪跑与 agent 在哪跑是两根正交的轴，各自端口 + 适配器 | 主人 + Claude |
