@@ -13,6 +13,10 @@
 - 选型深读第二、三篇：autoresearch（两个读者，42 条发现，抽查 5 条；含 H100 真实跑档 125 次实验的数据与被删的 `spawn.sh`、未合并的 `agenthub` 协议）与 AutoResearchClaw v0.5.0（六个读者，177 条发现，抽查 13 条；四个总问题逐条对账 README 与代码）。对比表补齐三行，"目前能定下来的"从 4 条扩到 8 条：编排自己写、任务契约两层、内环用棘轮且裁判外置、评测由框架注入、验证层三条零 LLM 判据、底座 Runner 协议、人在环文件通道、四条机器可查的规矩
 - `research/README.md` 新增 `selection/` 目录形态说明；行业调研的 InternAgent 条目与台账链接到深读
 - `.gitignore` 新增 `/vendor/`：选型阶段拉来研究的第三方开源项目放这里，物理在树里、git 看不见
+- 架构总纲领 `docs/architecture/`（README 三箱结构与九条原则、workflow 阶段骨架与实验内环、packs 任务包与领域包、open-questions 九项未决）；`docs/specs/v0.1-demo.md` 初级版 PRD 草稿（R / N / C / A 编号，目标 2026-09-28）；`docs/meetings/2026-0910-workflow-alignment.md`；`docs/adr/README.md` 划定 adr 只放仓库基础设施决定。vision 与根 README 同步
+
+### 变更
+- 文档体系分四类：`architecture/` 可改的总纲领（改要双方认可 + 变更记录）、`specs/` 每版一份 PRD、`adr/` 只追加、`meetings/` 只记结论；协作方式定为 spec coding + issue driven
 
 ### 修复
 - `make check` 的 html 同步检查只看未暂存改动与未追踪文件，md 改完 `make html` 并 `git add` 后本地门禁也能过；此前在提交前必报不同步

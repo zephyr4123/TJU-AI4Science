@@ -33,7 +33,7 @@ tju-ai4science/
 ├── repos             跨仓 CLI：doctor · clone · status · sync · fetch · pull · push · remotes
 ├── Makefile          check / release 入口，本地与 CI 共用
 ├── CHANGELOG.md      变更日志
-├── docs/             项目级文档：vision、adr/（架构决策）、specs/（设计规格）、meetings/（纪要）
+├── docs/             vision、architecture/（可改的总纲领）、specs/（每版一份 PRD）、adr/（仓库基础设施决定）、meetings/（纪要）
 ├── research/         调研：literature/ landscape/ domain/ evals/ —— 公开区，自动发布到 GitHub Pages
 ├── scripts/          外部脚本与一次性工具 —— 生产代码禁止依赖这里
 ├── assets/           图、幻灯片；大文件只放索引
@@ -62,4 +62,4 @@ tju-ai4science/
 
 ## 约定
 
-规矩集中在 [`CLAUDE.md`](CLAUDE.md)，能用命令判定的都进了 `make check`。架构决策见 [`docs/adr/`](docs/adr/)。
+规矩集中在 [`CLAUDE.md`](CLAUDE.md)，能用命令判定的都进了 `make check`。系统长什么样见 [`docs/architecture/`](docs/architecture/README.md)，这一版做到哪一步见 [`docs/specs/`](docs/specs/)，仓库基础设施的决定见 [`docs/adr/`](docs/adr/)。协作方式是 spec coding + issue driven：先对齐文档再干活，每个工作单元一条 issue。
