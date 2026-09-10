@@ -79,7 +79,6 @@
 
 - Q-5 玩具任务选哪个（MLP 回归开箱即有；有限元更贴工科但要先写基线）→ [#12](https://github.com/zephyr4123/TJU-AI4Science/issues/12)；真实案例采集 → [#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1)
 - Q-8 Codex 适配器是否纳入 → [#15](https://github.com/zephyr4123/TJU-AI4Science/issues/15)
-- 内仓远端地址仍是 TBD，首次推送前要定
 
 ## 变更记录
 

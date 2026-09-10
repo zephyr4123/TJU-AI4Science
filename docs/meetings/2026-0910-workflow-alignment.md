@@ -23,4 +23,4 @@
 - [x] 目标合约 [#2](https://github.com/zephyr4123/TJU-AI4Science/issues/2)；五条母 issue [#3](https://github.com/zephyr4123/TJU-AI4Science/issues/3) 到 [#7](https://github.com/zephyr4123/TJU-AI4Science/issues/7) 挂 milestone `platform 0.2.0 · 初级版`；叶子开工时再拆 sub-issue
 - [x] Q-1 到 Q-9 各一条 [#8](https://github.com/zephyr4123/TJU-AI4Science/issues/8) 到 [#16](https://github.com/zephyr4123/TJU-AI4Science/issues/16)，`needs-decision`
 - [x] 科研案例采集 [#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1)，挂在 #4 下
-- [ ] 内仓远端地址
+- [x] 内仓远端地址：https://github.com/zephyr4123/TJU-AI4Science-Platform（私有），骨架已推，v0.1.0

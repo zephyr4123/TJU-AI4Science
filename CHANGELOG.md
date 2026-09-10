@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### 变更
+- 内仓远端就位：`repos.json` 的 url 由 `TBD` 改为 <https://github.com/zephyr4123/TJU-AI4Science-Platform>（私有），`./repos remotes --fix` 接好 origin，骨架与 v0.1.0 首次推送；根 README、spec、纪要同步
+
 ## [0.3.0] - 2026-09-10
 
 ### 新增
