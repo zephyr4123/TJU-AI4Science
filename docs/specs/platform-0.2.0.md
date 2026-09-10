@@ -65,7 +65,7 @@
 | A-6 | 假成功拦截 | 注入直接 print 分数不产 `results.json` 的假实验，runner 判 crash 并回滚，账本记 crash |
 | A-7 | 只读被改拦截 | 执行层改动 `harness/`，runner 判 crash 并回滚 |
 | A-8 | 统计门 | 账本每个 keep 行的差值 > `accept_sigma × sigma`，σ 来自 `run_0/` 的重复 |
-| A-9 | 预算 | 每行 `elapsed_s` 在预算的 0.8 到 1.5 倍之间，超出的行 status 为 timeout |
+| A-9 | 预算 | 每行 `elapsed_s` 不超过预算 1.5 倍，超出的行 status 为 timeout；0.8 倍下限只对填满预算的 harness 成立，玩具任务 0.3 秒跑完不适用 |
 | A-10 | 数字回溯 | `analysis.md` 里的每个数值在 `results.json` 里能匹配（1% 容差），构造一个编造数字的分析 → 验证能力 FAILED |
 | A-11 | 框架不连跑 | 四个能力用四条命令手工串起来才能走完；`framework/` 里 grep 不到能力顺序表，没有子命令跑完一个能力再起另一个 |
 
@@ -92,4 +92,5 @@
 | 2026-09-10 | 改名 v0.1 → platform 0.2.0 | 外仓已发到 0.2.0，两条版本线撞号；产品版本一律带 platform 前缀 | 主人 + Claude |
 | 2026-09-10 | 按纲领四层改写：目标段、R-5 R-7 N-2 改写，R-4 加剧本后端，新增 R-10 C-7 A-11，"底座"改"执行层"，未决加 Q-10（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 加了协调层，框架不连跑不等人；三件演示不变 | 主人 + Claude |
 | 2026-09-10 | 09-13 一格标完成；R-1 实测出的约束回写纲领 workflow §5 | 第一单元做完 | 主人 + Claude |
+| 2026-09-10 | A-9 去掉 0.8 倍下限的硬要求 | 玩具任务不填满预算，下限只对长跑 harness 有意义 | 主人 + Claude |
 | 2026-09-10 | 状态从"draft 待审"改为"滚动" | 主人：spec 随时会变，第 n 步只驱动第 n+1 步，没有更硬的理由驱动更后面的执行 | 主人 + Claude |
