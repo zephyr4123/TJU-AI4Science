@@ -24,7 +24,7 @@
 | R-2 | 任务包契约：`manifest.yaml` schema、`harness/` 约束与 hash 校验、`code/` `data/` `run_0/` 布局；`ai4sci task validate` | packs §2 |
 | R-3 | 玩具任务一个：30 秒内跑完、单标量、方向 minimize；候选 MLP 回归或悬臂梁有限元 | Q-5 |
 | R-4 | 实验内环 runner：拷快照、独立进程跑 launcher、读 `results.json`、按 direction 比较、统计门、git 留或回滚、账本、失败六分类、停止条件；内环之外用一个无模型的剧本后端把 A-4 到 A-9 在 CI 里测全 | workflow §2 |
-| R-5 | 能力最小版：设计、实验、分析、验证四个能力各自一条 `ai4sci` 子命令，契约校验，内环 checkpoint 续跑；框架不连跑，顺序由协调层定 | workflow §1，P-10 |
+| R-5 | 能力最小版：设计、实验、分析、验证四个能力各自一条 `ai4sci` 子命令，契约校验，内环 checkpoint 续跑；框架不连跑，顺序由协调层定；第二个能力落地时从两个真实例抽出能力描述符，CLI 只是薄壳 | workflow §1，P-10 P-12 |
 | R-6 | 验证最小版：`analysis.md` 里出现的每个数字能回溯到 `results.json`，不过就 FAILED | workflow §3 |
 | R-7 | CLI：`ai4sci task validate` / `run new` / `cap` / `loop run` / `loop resume` / `status`，命令名拟定；没有 `--mode`，没有等人 | workflow §5 |
 | R-8 | 框架自己的测试：契约、账本对账、续跑、假成功拦截；`make check` 门禁 | P-4 P-8 |
@@ -94,4 +94,5 @@
 | 2026-09-10 | 09-13 一格标完成；R-1 实测出的约束回写纲领 workflow §5 | 第一单元做完 | 主人 + Claude |
 | 2026-09-10 | 09-18 一格标完成；R-4 加实验笔记与 executor_failed | 真跑暴露执行层失忆与被杀炸循环两个问题，当天修掉 | 主人 + Claude |
 | 2026-09-10 | A-9 去掉 0.8 倍下限的硬要求 | 玩具任务不填满预算，下限只对长跑 harness 有意义 | 主人 + Claude |
+| 2026-09-15 | R-5 加能力描述符与 CLI 薄壳（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)） | 主人对齐高度模块化；描述符从两个真实例抽，不先设计 | 主人 + Claude |
 | 2026-09-10 | 状态从"draft 待审"改为"滚动" | 主人：spec 随时会变，第 n 步只驱动第 n+1 步，没有更硬的理由驱动更后面的执行 | 主人 + Claude |
