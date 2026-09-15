@@ -119,20 +119,20 @@ run 以任务包为起点，但端到端的起点是一个研究问题；任务�
 - **P-9 上下文卫生，但不失忆。** 进执行层会话的是账本与实验笔记（有界：一轮几行，上限由轮数决定），不是 stdout 与整段日志；日志落盘不进 prompt。每轮新会话是为了上下文不膨胀，记忆放磁盘每轮读回来（P-3）。
 - **P-10 决策不在框架里。** 框架没有"下一步"：每条 `ai4sci` 子命令只跑一个能力，跑完写状态退出，不连跑、不回退、不等人；串起来的是协调层。（CLI 里没有一条命令会连续起两个能力；`framework/` 里没有能力顺序表）
 - **P-11 两层 agent 都是集成的、各自可换、skill 隔离。** 协调层与执行层都不手搓；执行层会话的 skill 搜索路径里没有协调层的 skill 目录，反之亦然。（适配器测试断言两条搜索路径不相交）
-- **P-12 能力可自由装配。** 模块的粒度是能力，不是函数：内环是一个节点带参数，不拆成十个节点；每个能力有机器可读的描述符（输入、输出、参数 schema、要不要执行层、判据）；能力对外是一个 Python 函数加磁盘契约，CLI 只是薄壳，协调 agent、UI 后端、测试调同一个函数。契约挂在产物上，不挂在"上游是谁"，所以任意子集都能单独成流。描述符与接口从两个真实例里抽，不先画接口再填。（每个能力子包有描述符且 CLI 参数与之一致；Q-13 拍板前 `framework/` 里没有图 DSL）
+- **P-12 能力可自由装配。** 模块的粒度是能力，不是函数：内环是一个节点带参数，不拆成十个节点；每个能力有机器可读的描述符（输入、输出、参数 schema、要不要执行层、判据）；能力对外是一个 Python 函数加磁盘契约，CLI 只是薄壳，协调 agent、UI 后端、测试调同一个函数。契约挂在产物上，不挂在"上游是谁"，所以任意子集都能单独成流。描述符与接口从两个真实例里抽，不先画接口再填。（每个能力子包有描述符且 CLI 参数与之一致，`capabilities.discover()` 断言；Q-13 拍板前 `framework/` 里没有图 DSL。2026-09-15 落地：`framework/contracts/capability.py`）
 
 ## 5. 内仓目录约定（拟定，代码落地时以代码为准）
 
 ```
 platform/
-├── coordinator/        协调层 skill 包：怎么当科研助理、怎么驱动框架；注入到当协调层的那个 CLI
+├── coordinator/        协调层入口指南：怎么当科研助理、怎么驱动框架跑固定流；注入到当协调层的那个 CLI
 ├── framework/          通用，不随任务改；按概念分子包，依赖单向（cli → capabilities → executor → memory → run → contracts）
 │   ├── cli/            驱动面：一个子命令一个模块
-│   ├── contracts/      schema 文件、任务包发现与校验、results 读取
-│   ├── run/            run 实体：布局、checkpoint、上下文、生命周期、work/ 的 git
+│   ├── contracts/      schema 文件、任务包发现与校验、results 读取、能力描述符、analysis.md 与 report.json 契约
+│   ├── run/            run 实体：布局、checkpoint、上下文、生命周期、work/ 的 git、结果索引
 │   ├── memory/         账本、实验笔记；项目级记忆以后加在这
 │   ├── executor/       组 prompt、调 Runner、搬取证日志
-│   └── capabilities/   一个能力一个子包，互不 import：experiment/ 已有，其余六个待建
+│   └── capabilities/   一个能力一个子包，互不 import，各带描述符：experiment/ analysis/ verify/ 已有，其余四个待建
 ├── backends/           执行层适配器：claude_code.py  codex.py …  每个 60 到 80 行
 ├── compute/            算力适配器：local.py  ssh.py …  put / submit / wait / cancel / get（见 workflow.md §5）
 ├── tools/              确定性脚本：文献 API、引用校验、出图、harness 基类
@@ -170,5 +170,6 @@ spec 与 milestone 用**产品版本**命名且带 `platform` 前缀（`specs/pl
 | 2026-09-10 | 第 6 节加"spec 是滚动的" | 主人：spec 只驱动下一步，不设 aligned 门槛 | 主人 + Claude |
 | 2026-09-10 | 目录加 `compute/` | 算力是独立于执行层的第二个端口 | 主人 + Claude |
 | 2026-09-10 | §1 加"产品是论文不是内环"；§2 加"研究项目：端到端的实体"（项目 → 任务包 → run → 论文，契约与记忆各两级）；§5 framework/ 按概念分子包、依赖单向（[#29](https://github.com/zephyr4123/TJU-AI4Science/issues/29) [#30](https://github.com/zephyr4123/TJU-AI4Science/issues/30)） | 主人对齐：内环只是一步，前置文献猜想、后置写论文是大头；旧纲领形状上有七个能力、实体上缺项目这一层 | 主人 + Claude |
+| 2026-09-15 | §5 目录按落地回写：capabilities 三个已有、contracts / run 新增模块、coordinator 改入口指南；P-12 标落地（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35)） | 09-22 单元做完 | 主人 + Claude |
 | 2026-09-15 | §2 可替换性加"协调层形态可换"（低代码图是第二种协调层）；§4 加 P-12 能力可自由装配（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)） | 主人对齐：项目要高度模块化，低代码拖拽搭流是必须有的 UI 形态，不同任务用不同子集流程；真正的代价不是成本而是过早抽象，所以描述符从两个真实例里抽 | 主人 + Claude |
 | 2026-09-10 | P-9 改写为"上下文卫生，但不失忆"（[#28](https://github.com/zephyr4123/TJU-AI4Science/issues/28)） | 真跑第 2 轮与第 5 轮做了同一个改动：只给账本尾部摘要等于让执行层失忆；主人拍板必须有轮间记忆 | 主人 + Claude |

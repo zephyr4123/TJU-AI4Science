@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- 09-22 单元主体（内仓分支 `feat/analysis-verify`，#35 #36 #37 #38）：能力描述符与 `ai4sci cap`（子命令从描述符生成，`cap list --json` 是 UI 的节点定义）、分析能力（执行层写三节 `analysis.md`，数据表是数字回溯的锚）、验证能力（零模型四项检查，1% 容差，`report.json`）、协调层入口指南 `coordinator/README.md`；真跑 live-20 分析 $0.28 出 19 行数据表，验证 PASS。纲领 workflow §1 §3 §5、README §5、spec R-5 R-6 R-7 R-10 与 09-22 一格回写
 - 端到端对齐（#29）：纲领加"产品是论文不是内环"与"研究项目"实体（项目 → 任务包 → run → 论文，契约与记忆各两级），workflow §1 加七个能力的输入 / 输出 / 执行者 / 判据表，Q-9 改写为项目级记忆，新增 Q-11 文献检索、Q-12 写作形态（#31 #32）；`framework/` 目录约定改为按概念分子包、依赖单向（#30）
 - platform 0.2.0 第一单元完成（内仓分支 `feat/runner-spike`）：R-1 spike 用真 CLI 回答四个未知（隔离位、`//` 权限路径、逐进程组杀、成本来源），R-2 任务包契约与 `ai4sci task validate`，R-3 玩具任务 `mlp-regression` 含 run_0 与 σ。issue #20 #21 #22；纲领 workflow §5 与 packs §2 按实测回写
 

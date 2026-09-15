@@ -24,12 +24,12 @@
 | R-2 | 任务包契约：`manifest.yaml` schema、`harness/` 约束与 hash 校验、`code/` `data/` `run_0/` 布局；`ai4sci task validate` | packs §2 |
 | R-3 | 玩具任务一个：30 秒内跑完、单标量、方向 minimize；候选 MLP 回归或悬臂梁有限元 | Q-5 |
 | R-4 | 实验内环 runner：拷快照、独立进程跑 launcher、读 `results.json`、按 direction 比较、统计门、git 留或回滚、账本、失败六分类、停止条件；内环之外用一个无模型的剧本后端把 A-4 到 A-9 在 CI 里测全 | workflow §2 |
-| R-5 | 能力最小版：设计、实验、分析、验证四个能力各自一条 `ai4sci` 子命令，契约校验，内环 checkpoint 续跑；框架不连跑，顺序由协调层定；第二个能力落地时从两个真实例抽出能力描述符，CLI 只是薄壳 | workflow §1，P-10 P-12 |
-| R-6 | 验证最小版：`analysis.md` 里出现的每个数字能回溯到 `results.json`，不过就 FAILED | workflow §3 |
-| R-7 | CLI：`ai4sci task validate` / `run new` / `cap` / `loop run` / `loop resume` / `status`，命令名拟定；没有 `--mode`，没有等人 | workflow §5 |
+| R-5 | 能力最小版：设计、实验、分析、验证四个能力各自一条 `ai4sci` 子命令，契约校验，内环 checkpoint 续跑；框架不连跑，顺序由协调层定；第二个能力落地时从两个真实例抽出能力描述符，CLI 只是薄壳。**2026-09-15**：实验 / 分析 / 验证与描述符落地（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35) [#36](https://github.com/zephyr4123/TJU-AI4Science/issues/36) [#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37)），设计 = `run new` 吃现成任务包 | workflow §1，P-10 P-12 |
+| R-6 | 验证最小版：`analysis.md` 里出现的每个数字能回溯到 `results.json`，不过就 FAILED。**2026-09-15 完成**：`ai4sci cap verify`，A-10 在 CI 与真跑各过一次（[#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37)） | workflow §3 |
+| R-7 | CLI：`ai4sci task validate` / `run new` / `cap` / `loop run` / `loop resume` / `status`，命令名拟定；没有 `--mode`，没有等人。**2026-09-15 完成**：`cap list` / `cap <name>` 从描述符生成（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35)） | workflow §5 |
 | R-8 | 框架自己的测试：契约、账本对账、续跑、假成功拦截；`make check` 门禁 | P-4 P-8 |
 | R-9 | 文档：内仓 README 承接步骤，CHANGELOG | ADR-0002 |
-| R-10 | 协调层最小 skill 包：内仓 `coordinator/` 一份入口指南，让 Claude Code 当科研助理驱动框架：读 `runs/` 与账本、调 `ai4sci`、什么该问人 | README §2，Q-10 |
+| R-10 | 协调层最小 skill 包：内仓 `coordinator/` 一份入口指南，让 Claude Code 当科研助理驱动框架：读 `runs/` 与账本、调 `ai4sci`、什么该问人。**2026-09-15 首版**：`coordinator/README.md`，auto-research 流四条命令与每步看什么（[#38](https://github.com/zephyr4123/TJU-AI4Science/issues/38)） | README §2，Q-10 |
 
 ## 非目标（N-n）
 
@@ -75,7 +75,7 @@
 |---|---|
 | 09-13 | R-1 R-2 R-3：适配器能跑一条 prompt，玩具任务 `run_0` 出来。**2026-09-10 完成**：内仓分支 `feat/runner-spike`，[#20](https://github.com/zephyr4123/TJU-AI4Science/issues/20) [#21](https://github.com/zephyr4123/TJU-AI4Science/issues/21) |
 | 09-18 | R-4：内环跑 20 轮，A-4 A-6 A-7 A-8 过。**2026-09-10 完成**：内仓分支 `feat/inner-loop`，真跑 21 轮证据在 [#25](https://github.com/zephyr4123/TJU-AI4Science/issues/25)；A-7 真跑未触发，由 CI 验 |
-| 09-22 | R-5 R-6 R-7：四个能力 + 续跑 + 数字回溯，A-5 A-10 A-11 过；内测 tag `v0.2.0-rc.1` |
+| 09-22 | R-5 R-6 R-7：四个能力 + 续跑 + 数字回溯，A-5 A-10 A-11 过；内测 tag `v0.2.0-rc.1`。**2026-09-15 主体完成**：内仓分支 `feat/analysis-verify`，[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35) [#36](https://github.com/zephyr4123/TJU-AI4Science/issues/36) [#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37) [#38](https://github.com/zephyr4123/TJU-AI4Science/issues/38)；A-10 CI + 真跑，A-11 真跑证据在 [#38](https://github.com/zephyr4123/TJU-AI4Science/issues/38)；rc.1 tag 等 [#17](https://github.com/zephyr4123/TJU-AI4Science/issues/17) 的 rc 后缀 |
 | 09-28 | R-8 R-9 R-10：门禁、文档、协调层入口指南、初级版 tag `v0.2.0` |
 
 ## 未决（挂 issue）
@@ -95,4 +95,5 @@
 | 2026-09-10 | 09-18 一格标完成；R-4 加实验笔记与 executor_failed | 真跑暴露执行层失忆与被杀炸循环两个问题，当天修掉 | 主人 + Claude |
 | 2026-09-10 | A-9 去掉 0.8 倍下限的硬要求 | 玩具任务不填满预算，下限只对长跑 harness 有意义 | 主人 + Claude |
 | 2026-09-15 | R-5 加能力描述符与 CLI 薄壳（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)） | 主人对齐高度模块化；描述符从两个真实例抽，不先设计 | 主人 + Claude |
+| 2026-09-15 | R-5 R-6 R-7 R-10 标完成或首版，09-22 一格标主体完成（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35) [#36](https://github.com/zephyr4123/TJU-AI4Science/issues/36) [#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37) [#38](https://github.com/zephyr4123/TJU-AI4Science/issues/38)） | 分析、验证、描述符、cap CLI、协调层指南一次做完，真跑 live-20 与 flow-1 | 主人 + Claude |
 | 2026-09-10 | 状态从"draft 待审"改为"滚动" | 主人：spec 随时会变，第 n 步只驱动第 n+1 步，没有更硬的理由驱动更后面的执行 | 主人 + Claude |

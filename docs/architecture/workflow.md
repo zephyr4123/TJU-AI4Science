@@ -46,7 +46,7 @@
 | 写作 | 项目 | 分析 + 文献 + 假设台账 + 模板 | `paper.md` / LaTeX + 图 | 执行层分节调用（Q-12），图由 tools 出 | 数字回溯、引用真伪、图源 |
 | 验证 | 项目 | 论文 + 上游全部产物 | `report.json` | 框架，零模型；discussion 类交隔离裁判 | 三条判据全过才 PASS |
 
-  platform 0.2.0 只做设计、实验、分析、验证四个（Q-1），且设计暂以现成任务包代替。文献能力可以不跑：用户自带调研包就当它的产物。
+  platform 0.2.0 只做设计、实验、分析、验证四个（Q-1），且设计暂以现成任务包代替。文献能力可以不跑：用户自带调研包就当它的产物。**2026-09-15 起实验、分析、验证三个已落地**（`ai4sci cap list` 列出的就是全部），设计 = `ai4sci run new` 吃现成任务包。
 - **每个能力一次执行层调用，新会话。** 上下文从磁盘来，不靠上一个能力的会话。这是 P-1 与 P-3 的直接推论。
 - **失败处理**：FAILED 就停，不模板兜底、不静默跳过（P-7）。重试是显式配置，默认 0。
 - **回退**：框架不判断"要不要回到设计"，协调层看了分析结论决定。框架只提供留档：重跑一个能力时把旧目录改名成 `_v{n}`，不覆盖。
@@ -90,7 +90,7 @@ runs/<run_id>/
 
 契约里的值从哪来：**manifest 由协调层（人 + agent）拍板后填写**，方向、预算、统计门、验收判据都在里面；框架只读，并在每轮证明它们没被改（hash、`elapsed_s`）。
 
-**能力描述符**：每个能力一份机器可读的描述（名字、inputs 与 outputs 的类型与 schema、参数 schema、要不要执行层、机器判据）。它是低代码 UI 的节点定义，也是契约测试的输入。现在这些只在上面的表里；文件格式与位置在 09-22 第二个能力落地时从两个真实例里抽出来，不先设计（P-12）。机器判据：每个能力子包有描述符，且它的 `ai4sci` 子命令参数与描述符一致。
+**能力描述符**（已落地，`framework/contracts/capability.py`）：每个能力子包导出 `DESCRIPTOR`（name、level、summary、inputs、outputs、params、needs_executor、needs_compute、criteria）与统一入口 `run(run_dir, ports, **params) -> str`；`capabilities.discover()` 扫子包并断言入口签名与描述符的参数表一致，`ai4sci cap` 的子命令从描述符生成，所以 CLI 参数与描述符一致是构造保证。`ai4sci cap list --json` 输出全部描述符，是低代码 UI 的节点定义、也是 UI 后端与协调 agent 的同一份真相（P-12）。它是从实验与分析两个真实例里抽出来的：只放两个都用得上的字段。
 
 ## 2. 实验内环（实验能力）
 
@@ -163,6 +163,14 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 - **确定性优先**：能用规则判的不用模型。实验能力的 accept / reject 完全确定性；验证能力首批三条零 LLM 判据：报告里的每个数字能回溯到 `results.json`，每条引用在真实学术 API 里存在，每张图由数据文件生成。
 - **模型裁判**：需要模型判断的（假设质量、写作质量、manifest 里 `requirements` 的 discussion 类验收），由框架派**一个新会话**，可指定与执行者不同的模型，只给产物不给轨迹，输出结构化 verdict（P-2）。
 - **协调层只读判决**：验证结论回到协调层，由它决定接受、重跑还是换方向；协调层不替裁判改判，也不裁自己派出去的活。
+
+### 数字回溯（已落地：分析与验证两个能力）
+
+- **分析的形状**（`contracts/analysis.py`）：`analysis/analysis.md` 固定三节 `## 结论` / `## 数据` / `## 证伪与未决`；`## 数据` 是表 `| run | 指标 | 值 |`，值从 results.json 原样抄，是数字回溯的锚。执行层的 prompt 里附每个 run 的指标清单，只许从清单抄。分析能力只校验形状（三节齐全、表至少一行），不裁判自己的数字（P-2）。
+- **验证的四项检查**（`capabilities/verify/checks.py`，零模型）：分析存在；数据表每行 (run, 指标, 值) 在那个 run 的 `results.json` 里能找到，相对容差 1%（`--tolerance` 可调，实际值为 0 时声称也必须为 0）；正文里带小数点或指数的数与表里某个值在容差内相等；账本 × git 对账（复用内环那把尺子）。
+- **已知边界**（写在这里，不在代码里静默放宽）：整数不查（轮次、行数都是整数），百分比不查（相对变化没有绝对来源），行内代码与代码块不查。执行层被告知相对变化只写百分比、不写版本号之类带小数点的东西。
+- **报告**：`verify/report.json`（schema `contracts/schemas/report.schema.json`）：`status` PASS / FAIL、每项 `passed` 与 `details` 一行一条。PASS 与 FAIL 都写报告，FAIL 再退 1——协调层看退出码，读报告看细节。
+- **重跑**：分析与验证重跑时旧目录改名 `analysis_v{n}` / `verify_v{n}`，不覆盖。
 - **fail-closed**：门不过就停在门口，不涂黑、不降级（P-7）。
 
 ## 4. 人在环
@@ -183,9 +191,11 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 ai4sci task validate <dir>            任务包过 schema
 ai4sci run new <task> [--run-id]      建 runs/<run_id>/，写 manifest 快照
 ai4sci run extend <run_id> ...        给已停的 run 续命：改预算、清停止标记
-ai4sci cap <name> <run_id>            跑一个能力：design | analysis | verify …
-ai4sci loop run <run_id>              跑实验内环，到停止条件即退
+ai4sci loop run <run_id>              跑实验内环，到停止条件即退（等价于 cap experiment）
 ai4sci loop resume <run_id>           从 checkpoint 与账本续跑
+ai4sci cap list [--json]              全部能力与描述符
+ai4sci cap <name> <run_id> [--backend] [--compute] [--<param>]
+                                      按名字跑一个能力；子命令从描述符生成，用法错退 2、没通过退 1
 ai4sci status <run_id>                打印状态、账本摘要、验证结论；协调层读盘的入口
 ```
 
@@ -238,6 +248,7 @@ run(prompt, cwd, timeout_s, allowed_paths)
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-10 | 建档。阶段骨架、实验内环四角色、账本、裁判、人在环、Runner 协议 | 三个仓深读的收敛结论；棘轮来自 autoresearch，harness 注入来自 AutoResearchClaw，目录形态来自 InternAgent | 主人 + Claude |
+| 2026-09-15 | 第 1 节标实验 / 分析 / 验证已落地，能力描述符改为已落地的形状；第 3 节加"数字回溯（已落地）"：分析三节与数据表、验证四项检查、1% 容差、已知边界、report.json、重跑轮转；第 5 节 CLI 加 `cap list` / `cap <name>`（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35) [#36](https://github.com/zephyr4123/TJU-AI4Science/issues/36) [#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37)） | 09-22 单元的分析与验证做完，纲领不能描述另一套行为 | 主人 + Claude |
 | 2026-09-15 | 第 1 节加"装配与固定流"（子集也是流、入口契约由人填、固定流是存好的图、产物跨流复用），契约加"能力描述符"；第 5 节注明 CLI 是薄壳、能力对外是 Python 函数（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)） | 主人对齐高度模块化：不同任务用不同子集流程，低代码图是第二种协调层 | 主人 + Claude |
 | 2026-09-10 | 第 1 节加七个能力的输入 / 输出 / 执行者 / 判据表，标出项目级与 run 级（[#29](https://github.com/zephyr4123/TJU-AI4Science/issues/29)） | 端到端对齐，实体分两级 | 主人 + Claude |
 | 2026-09-10 | 第 2 节加轮间记忆（实验笔记）与续命，P-9 措辞随纲领 README 改；磁盘布局加 notebook.md；第 5 节加 run extend（[#28](https://github.com/zephyr4123/TJU-AI4Science/issues/28) [#26](https://github.com/zephyr4123/TJU-AI4Science/issues/26)） | 真跑暴露执行层失忆，主人拍板必须有轮间记忆 | 主人 + Claude |

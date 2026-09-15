@@ -16,5 +16,5 @@
 ## 待办
 
 - [x] 纲领 README §2 §4、workflow §1 §5、open-questions、spec R-5、vision、CHANGELOG
-- [ ] 09-22 第二个能力落地时抽能力描述符（R-5）
+- [x] 09-22 第二个能力落地时抽能力描述符（R-5）：当天下午随分析与验证一起落地，#35
 - [ ] Q-13 拍板
