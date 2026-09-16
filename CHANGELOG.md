@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- 接任务的按钮单元（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)）：spec 加 R-14 A-15 与 09-2x 第二格；packs §2 接任务清单改成「三问 + manifest + env + design.md + `ai4sci task design` + 签字 + 基线」的按钮版，分工里加框架封 harness 与 lint
 - vision 加「给谁用、凭什么」：用户是非工程师研究者，产品 = 谁都能用 + 数能拿去用，命令行是 agent 的按钮不是人的界面，复用与自建的判据是「模型能干的交给模型，模型不能自证的自己做」，如实记今天的差距（[#34](https://github.com/zephyr4123/TJU-AI4Science/issues/34)）
 - 任务自带环境与领域包单元的纲领与 spec（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39) [#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)）：packs §2 加 `env/` 契约（python-version + requirements.lock，uv 建任务级 venv，launcher 只经 `$AI4SCI_PYTHON`）、manifest `format_version` 必填与 `source` 可选、接任务清单加分工；§3 领域 skill 注入改走 prompt 快照（Q-2 翻案：隔离参数关掉了原生加载），领域按工具链命名；spec 加 R-11 R-12 R-13 与 A-12 A-13 A-14，N-3 N-7 纳入；Q-6 细化为任务级 venv；vision 写工业级开源项目定位
 - 案例库 `docs/cases/`（[#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1)）：学长交付的三个案例入库，每个一张案例卡加一字不改的原文；按任务类型描述（回归 / 连续参数优化 / 表示学习），应用领域只留名词。案例二 `boehm-stat5-petab` 选为第一个真任务包；案例一登记为复现型 0.2.0 不跑；案例三访谈直接喂协调层的人在环停点。原件放新目录 `materials/`（gitignore），sha256 与重取方式记在案例卡；README、CLAUDE.md 同步
