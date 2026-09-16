@@ -33,7 +33,7 @@
          ├── code/            必有：基线，执行层唯一能改的地方
          ├── data/            可选：参考解、验证算例；执行层不能碰（真值只给 harness，code/ 只见输入）
          ├── run_0/           必有：results.json 基线 + repeats/results-<seed>.json × repeat_k + sigma.json
-         └── .venv/           不进 git：`ai4sci task env build` 按 env/ 建出来，给 make_run0.sh 用
+         └── .venv/           不进 git：`ai4sci cap baseline` 缺了就按 env/ 建出来，给 make_run0.sh 用
 ```
 
 ## 2. 任务包
@@ -88,7 +88,7 @@ env/
 └── requirements.lock   逐行 name==version，钉死；可以为空（零依赖任务）
 ```
 
-框架把它建成 venv 的地方有两处，同一份 lock、同一个函数：`tasks/<id>/.venv/`（`ai4sci task env build <dir>`，给 `make_run0.sh` 与人手工跑用）和 `runs/<id>/.venv/`（`ai4sci run new` 建 run 时顺手建，run 跑起来后不回头看任务包，环境也一样）。venv 由 `uv` 建与同步（`uv venv` + `uv pip sync`），uv 是框架的运行时依赖；uv 不在或解释器拉不下来就明确报错，不静默退回到平台 venv。
+框架把它建成 venv 的地方有两处，同一份 lock、同一个函数：`tasks/<id>/.venv/`（`ai4sci cap baseline <dir>` 缺了就建，给 `make_run0.sh` 用）和 `runs/<id>/.venv/`（`ai4sci run new` 建 run 时顺手建，run 跑起来后不回头看任务包，环境也一样）。venv 由 `uv` 建与同步（`uv venv` + `uv pip sync`），uv 是框架的运行时依赖；uv 不在或解释器拉不下来就明确报错，不静默退回到平台 venv。
 
 `env/` 与 `harness/` 一样是只读的：依赖是问题定义的一部分，执行层改了它判 `readonly`。docker 按 Q-6 仍不上，依赖真要系统库时再谈。
 
@@ -125,9 +125,9 @@ harness 的接口约束（从 AutoResearchClaw 的 `harness_template.py` 取思�
 谁做什么（纲领 §2 的分工）：协调层（人 + agent）先问四句合不合适（有能跑的代码吗、一次跑几分钟、出一个数吗、尽头在哪），然后填 `manifest.yaml`、准备 `data/` `env/`、把产物契约与「怎么算好」写进 `design.md`；**人发布**（需求看板的那颗键，钥匙落盘）；执行层在隔离会话里写 `harness/` 与 `code/` 草稿，只放行这两个目录；框架封 harness（执行位、SHA256SUMS）、lint、校验；协调 agent 把 `evaluate.py` 与「怎么算好」逐条核对，人不读代码；框架建环境、跑基线、做预检。接任务与跑基线都是协调 agent 按的按钮，是 task 级能力（`ai4sci cap design` / `ai4sci cap baseline`，[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41) [#49](https://github.com/zephyr4123/TJU-AI4Science/issues/49)），不是人敲的七步。
 
 1. 写 `manifest.yaml`（`format_version: 1`，`source` 指回案例卡；探到尽头值就写主指标的 `attainable`）。
-2. 写 `env/python-version` 与 `env/requirements.lock`，`ai4sci task env build <dir>` 建出 `.venv/`；问题定义放 `data/`。
+2. 写 `env/python-version` 与 `env/requirements.lock`，`.venv/` 由跑基线时建；问题定义放 `data/`。
 3. 写 `design.md`：`code/` 产出什么文件、什么形状；`evaluate.py` 查什么、怎么用 `data/` 重算指标、退出码；基线用什么策略。这是「怎么算好」的人话版，人签字签的是它。
-4. 人发布：`ai4sci task publish <dir> --by <人名>` 写 `publish.json`（签 manifest 与 design.md 的 sha256，[#48](https://github.com/zephyr4123/TJU-AI4Science/issues/48)）。没发布，后面的按钮一个都不开；发布后改了这两个文件钥匙失效，重新发布。协调 agent 不替人按。
+4. 人发布：`ai4sci sign task <dir> --by <人名>` 写 `publish.json`（签 manifest 与 design.md 的 sha256，[#48](https://github.com/zephyr4123/TJU-AI4Science/issues/48)）。没发布，后面的按钮一个都不开；发布后改了这两个文件钥匙失效，重新发布。协调 agent 不替人按。
 5. `ai4sci cap design <dir>`：执行层写 `harness/` 与 `code/` 草稿，框架加执行位、写 SHA256SUMS、跑 ruff、跑 validate（此时不查 run_0），停。有问题就 `--feedback` 喂回去改第二版，不要手改 harness。协调 agent 对照 `design.md` 核对 `evaluate.py`，报"一致 / 有出入"。
 6. `ai4sci cap baseline <dir>` 跑 `make_run0.sh` 出基线 + repeat_k 次重复 + σ → `run_0/`，跑完机器预检（门 = max(accept_sigma×σ, min_delta)；门是 0、或基线到 `attainable` 不到一个门就退 1 说清，[#42](https://github.com/zephyr4123/TJU-AI4Science/issues/42)）；`ai4sci task validate <dir>` 退 0。原来"人看基线决定开不开跑"的停点取消：数字在结论行里，念给人听即可。
 

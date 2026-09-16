@@ -141,7 +141,7 @@ runs/<run_id>/
 - **续跑**：每轮开跑前写 `experiment/inflight.json`，结账后删。`loop resume` 先做 checkpoint、账本、git 三方对账，对不上就 fail-closed；有 in-flight 标记的那一轮记 `interrupted`、在飞的 job 先收尸、候选 commit 进 `refs/attempts/` 再回到 best。`loop run` 撞到 in-flight 标记直接拒绝并指引用 resume。
 - **轮间记忆**：`experiment/notebook.md` 一个 run 一本，runner 每轮追加执行层的自述（假设 / 改动 / 预期）、`git diff --stat`、裁决；下一轮整本进 prompt，执行层先读前面试过什么再动手。笔记由 runner 写，活在棘轮之外，回滚不抹。
 - **上下文卫生**（P-9）：给执行层的是账本与笔记（有界），不是 stdout；日志落盘。
-- **续命**：已停的 run 用 `ai4sci run extend` 改预算、清停止标记，journal.md 记一行；要不要续是协调层的决定（P-10）。
+- **续命**：已停的 run 用 `ai4sci cap experiment <id> --patience/--max-iterations/--max-cost-usd --reason` 改预算、清停止标记，journal.md 记一行，然后接着跑；要不要续是协调层的决定（P-10）。
 - **revert-to-best**：下一轮的起点永远是分支 tip，不是上一轮的失败候选。
 
 **账本 `experiment/ledger.tsv`**
@@ -155,7 +155,7 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 ```
 
 - 基线不占行：它活在 checkpoint 的 `best_metric` / `best_commit` 里，账本从第 1 轮开始。`parent` 是结算前的 best commit，keep 行的 parent 链就是棘轮走向。
-- 每行的 `commit` 必须能在 git 里找到（keep 的在分支上，其余有 commit 的在 `refs/attempts/` 下），`ai4sci status` 每次都跑这条对账，对不上退非 0。这是 P-3 的机器判据。
+- 每行的 `commit` 必须能在 git 里找到（keep 的在分支上，其余有 commit 的在 `refs/attempts/` 下），`ai4sci show run` 每次都跑这条对账，对不上退非 0。这是 P-3 的机器判据。
 - `sigma` 来自统计门，`harness_sha` 是 `harness/SHA256SUMS` 自身的 sha256，`elapsed_s` 是 compute 测到的墙钟（不采信 harness 自报），`cost_usd` 与 `executor_s` 是执行层那次调用的花费与耗时。拿不到的值写 NaN 或 `-`，绝不写 0。
 
 ## 3. 裁判与验证
@@ -185,19 +185,21 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 
 ### 协调层怎么驱动框架
 
-框架是一个 Python 包加一条 `ai4sci` CLI。每条子命令只跑一个能力，跑完写状态、退非零表示 FAILED（P-10）。命令名拟定，开工时以代码为准：
+框架是一个 Python 包加一条 `ai4sci` CLI。命令行上只有四类东西，每样要么是能力、要么是键、要么是查询、要么是入口（2026-09-16 收纳，[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）：
 
 ```
-ai4sci task validate <dir>            任务包过 schema
-ai4sci run new <task> [--run-id]      建 runs/<run_id>/，写 manifest 快照
-ai4sci run extend <run_id> ...        给已停的 run 续命：改预算、清停止标记
-ai4sci loop run <run_id>              跑实验内环，到停止条件即退（等价于 cap experiment）
-ai4sci loop resume <run_id>           从 checkpoint 与账本续跑
-ai4sci cap list [--json]              全部能力与描述符
-ai4sci cap <name> <run_id> [--backend] [--compute] [--<param>]
-                                      按名字跑一个能力；子命令从描述符生成，用法错退 2、没通过退 1
-ai4sci status <run_id>                打印状态、账本摘要、验证结论；协调层读盘的入口
+ai4sci cap <name> <task_dir|run_id> [--backend] [--compute] [--<param>]
+                                      能力：agent 按，产出文件；子命令从描述符生成，用法错退 2、没通过退 1
+                                      六颗：design baseline start（任务包上）experiment analysis verify（run 上）
+                                      续跑 = cap experiment --resume；续命 = cap experiment --patience/--max-iterations/--max-cost-usd --reason
+ai4sci sign task <dir> --by <谁>      键：人按，发布需求，写 publish.json
+ai4sci sign run <id> --by <谁>        键：人按，验收结果，写 accept.json
+ai4sci show tasks | task <dir> | run <id> | caps | workflows | flow <能力>...
+                                      查询：只读，与 serve 的 GET 端点同一批函数
+ai4sci chat ... / ai4sci serve        入口：终端里聊 / 网页后端
 ```
+
+并掉的旧命令：`task validate|list|env build|publish`、`run new|extend|accept`、`loop run|resume`、`status`、`cap list`、`flow list|check`。环境由 `cap baseline` 缺了就建，不再单独按。
 
 CLI 是薄壳：每个能力对外是一个 Python 函数（实验能力是 `capabilities.experiment.run_loop`），子命令只做参数解析与退出码。协调 agent 走 CLI，低代码 UI 后端与测试直接调函数，三者跑的是同一段代码（P-12）。
 
