@@ -33,6 +33,9 @@
 | R-11 | 任务包自带环境：`env/`（python-version + requirements.lock），uv 建任务级 venv（`tasks/<id>/.venv` 与 `runs/<id>/.venv`），launcher 只经 `$AI4SCI_PYTHON` 起 Python、裸 python 判不合法；manifest 加 `format_version` 必填与 `source` 可选；`ai4sci task env build`；`mlp-regression` 迁到新契约。**2026-09-16 完成**（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)） | packs §2，Q-6 |
 | R-12 | 第一个真领域包 `domains/petab/`：profile、`prompts/experiment.md`、`skills/petab/SKILL.md`；skill 注入走 prompt 快照，实验与分析都吃；内仓 `docs/add-a-task.md`「十分钟接一个任务」。**2026-09-16 完成**（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)） | packs §3，Q-2 |
 | R-14 | 接任务的按钮 `ai4sci task design <dir>`：读 manifest、协调层写的 `design.md`、领域 skill，起执行层（只放行 `harness/` `code/`）写草稿，框架封 harness（执行位、SHA256SUMS）、ruff、validate（不查 run_0），停；`--feedback` 喂回改第二版；不抽描述符、不进 `cap`。协调层 README 固定流之二改为三问 + 按钮。验收方式是**模仿一个研究者**只经对话把第二道基准题接进来，卡点逐条成 issue。**2026-09-16 完成**：`task design` 落地（11 个剧本测试）；rahman-nll 只经按钮接入，协调 agent 用 `--feedback` 打回一次静默兜底，8 轮出 1 个 keep、验证 PASS；12 个卡点并成 [#42](https://github.com/zephyr4123/TJU-AI4Science/issues/42)–[#46](https://github.com/zephyr4123/TJU-AI4Science/issues/46)，顺带修了 `run extend` 对不可修复无效（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)） | vision「给谁用、凭什么」，packs §2 |
+| R-15 | 发布做成钥匙：`ai4sci task publish <dir> --by <谁>` 写 `publish.json`（签 manifest.yaml 与 design.md 的 sha256）；`cap design` `cap baseline` `run new` 没它或签的文件改过都不开。接任务预检：门高的算式只此一处（内环 gate 同用），manifest 主指标可写 `attainable`，基线到尽头不到一个门或门是 0 就停；「看基线」停点取消。**2026-09-16 完成**（[#48](https://github.com/zephyr4123/TJU-AI4Science/issues/48)） | vision「产品形态」，packs §2，#42 |
+| R-16 | 接任务与跑基线升格成 task 级能力：描述符 `level: task`，`ai4sci cap design|baseline <task_dir>` 从描述符生成，`cap list` 列全；`task design` / `task baseline` 删除。**2026-09-16 完成**（[#49](https://github.com/zephyr4123/TJU-AI4Science/issues/49)） | P-12，Q-13 |
+| R-17 | 流通不通检查 `ai4sci flow check <能力>...`：按描述符对吃吐文件，任务段→桥（run new）→run 段，同一 run 不重复，`--json` 给编排看板；不跑。**2026-09-16 完成**（[#50](https://github.com/zephyr4123/TJU-AI4Science/issues/50)） | P-12，Q-13 |
 | R-13 | 第一个真任务包 `tasks/boehm-nll/`（学长案例二）：按 packs §2 的分工手工走一遍设计流程——协调层填 manifest、执行层写 harness / code / env、人签 evaluate.py——跑出 run_0 与 σ；这是设计能力的第二个实例，描述符之后从两个实例抽。**2026-09-16 完成**：run_0 200.33、σ 28.98，真跑 3 轮 + 分析 + 验证 PASS，手工流沉淀为 `coordinator/README.md` 固定流之二（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)） | packs §2，Q-5，#1 |
 
 ## 非目标（N-n）
@@ -75,6 +78,9 @@
 | A-12 | 环境隔离 | 夹具任务经框架跑 harness，`sys.executable` 落在 `runs/<id>/.venv/` 下（CI 测试）；`make check` 前后平台 venv 的 `pip list` 不变 |
 | A-13 | 环境契约机器可查 | `harness/*.sh` 里的裸 `python3` 被 `task validate` 判不合法；`format_version` 缺失或不受支持判不合法 |
 | A-15 | 接任务是按钮 | 剧本执行层下 `task design`：合约草稿被封且 validate 空、越界 / 会话死 / 什么都没写判 `DesignFailed`、裸 python 与 lint 问题作为清单回传、第二版提示带现状与反馈（CI）；第二道基准题只经 `task design` 接入、协调层没手改 `harness/`、`task validate` 退 0（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)） |
+| A-16 | 没发布不开 | 夹具包不发布时 `run new` `cap design` `cap baseline` 都退 1 并指向 `task publish`；发布后改 manifest 或 design.md 再按退 1 说「改过了」（CI）；仓内三个任务包都带 `publish.json` 且 validate 退 0（[#48](https://github.com/zephyr4123/TJU-AI4Science/issues/48)） |
+| A-17 | 预检停得住 | 夹具 σ=0 无 min_delta → `run new` 退 1；`attainable` 离基线不到一个门 → `cap baseline` 退 1 说「无解」；rahman-nll 真包预检：baseline 21.5958、gate 0.15、room 0.4158（2.8 个门）（[#48](https://github.com/zephyr4123/TJU-AI4Science/issues/48)） |
+| A-18 | 节点清单完整、流查得出 | `cap list` 列出 design baseline experiment analysis verify 五个；`flow check design baseline experiment analysis verify` 退 0，跳过 baseline 报桥缺 run_0/，只有 verify 报缺 analysis.md（CI，[#49](https://github.com/zephyr4123/TJU-AI4Science/issues/49) [#50](https://github.com/zephyr4123/TJU-AI4Science/issues/50)） |
 | A-14 | 真任务跑通 | `ai4sci task validate tasks/boehm-nll` 退 0；run_0 与 σ 出来；`loop run` 至少 3 轮不炸 |
 
 ## 里程碑
@@ -86,6 +92,7 @@
 | 09-22 | R-5 R-6 R-7：四个能力 + 续跑 + 数字回溯，A-5 A-10 A-11 过；内测 tag `v0.2.0-rc.1`。**2026-09-15 主体完成**：内仓分支 `feat/analysis-verify`，[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35) [#36](https://github.com/zephyr4123/TJU-AI4Science/issues/36) [#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37) [#38](https://github.com/zephyr4123/TJU-AI4Science/issues/38)；A-10 CI + 真跑，A-11 真跑证据在 [#38](https://github.com/zephyr4123/TJU-AI4Science/issues/38)；rc.1 tag 等 [#17](https://github.com/zephyr4123/TJU-AI4Science/issues/17) 的 rc 后缀 |
 | 09-2x | R-11 R-12 R-13：任务自带环境、领域包 petab、真任务 boehm-nll 的 run_0 与 σ；A-12 A-13 A-14 过。**2026-09-16 完成**：内仓分支 `feat/task-env`，A-12 A-13 在 CI，A-14 真跑证据在 [#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)） |
 | 09-2x | R-14：接任务的按钮 + 模仿研究者走一遍；A-15。**2026-09-16 完成**（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)） |
+| 09-2x | R-15 R-16 R-17：发布钥匙 + 预检、两个按钮进能力清单、flow check；A-16 A-17 A-18。**2026-09-16 完成**：内仓分支 `feat/mvp-batch-1`（[#47](https://github.com/zephyr4123/TJU-AI4Science/issues/47)） |
 | 09-28 | R-8 R-9 R-10：门禁、文档、协调层入口指南、初级版 tag `v0.2.0` |
 
 ## 未决（挂 issue）
@@ -110,3 +117,4 @@
 | 2026-09-16 | 加 R-11 R-12 R-13 与 A-12 A-13 A-14，N-3 N-7 纳入，里程碑加 09-2x 一格（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39) [#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)） | 学长案例到了（#1），主人定调按工业级开源项目完善：任务自带环境、领域包、接任务流程三处缺口用真任务补 | 主人 + Claude |
 | 2026-09-16 | 加 R-14 A-15 与 09-2x 第二格（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)） | 主人定调平台给非工程师用，入口必须是对话；接任务七步里唯一不是按钮的一步做成按钮，用模仿研究者的真人测试验收 | 主人 + Claude |
 | 2026-09-16 | R-11 R-12 R-13 与 09-2x 一格标完成（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39) [#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)） | 第一个真任务端到端闭环跑通：三轮全 discard、分析证伪两条假设、验证 PASS；门是否太严带回人拍板 | 主人 + Claude |
+| 2026-09-16 | 加 R-15 R-16 R-17 与 A-16 A-17 A-18，09-2x 第三格（[#47](https://github.com/zephyr4123/TJU-AI4Science/issues/47) [#48](https://github.com/zephyr4123/TJU-AI4Science/issues/48) [#49](https://github.com/zephyr4123/TJU-AI4Science/issues/49) [#50](https://github.com/zephyr4123/TJU-AI4Science/issues/50)） | 产品形态定为两个发布键一次验收：发布做成钥匙、签字挪到脚本前、看基线交给机器预检；编排看板要节点清单完整、要能查流通不通 | 主人 + Claude |
