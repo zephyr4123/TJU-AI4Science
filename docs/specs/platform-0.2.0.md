@@ -37,6 +37,7 @@
 | R-16 | 接任务与跑基线升格成 task 级能力：描述符 `level: task`，`ai4sci cap design|baseline <task_dir>` 从描述符生成，`cap list` 列全；`task design` / `task baseline` 删除。**2026-09-16 完成**（[#49](https://github.com/zephyr4123/TJU-AI4Science/issues/49)） | P-12，Q-13 |
 | R-17 | 流通不通检查 `ai4sci flow check <能力>...`：按描述符对吃吐文件，任务段→桥（run new）→run 段，同一 run 不重复，`--json` 给编排看板；不跑。**2026-09-16 完成**（[#50](https://github.com/zephyr4123/TJU-AI4Science/issues/50)） | P-12，Q-13 |
 | R-18 | 协调 agent 服务化第一版：`backends` 第二个端口 `Chat`（多轮、session id 续接、事件流）与 Claude Code 适配器；`framework/chat/` 指南注入、对话落盘 `runs/chats/<id>/`、标准库 HTTP + SSE；`ai4sci chat new|send|list`、`ai4sci serve`。涉及 agent 的一律走端口可替换。**2026-09-16 完成**（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） | vision「产品形态」，workflow §5 |
+| R-19 | 页面第一版：`ui/web/` React 19 + Tailwind v4 + shadcn，`ai4sci serve` 端出静态文件；对话（SSE 事件流、工具行）、需求看板（阶段、manifest、设计说明、预检、**发布键**）、编排看板（节点清单、流通不通）、结果看板（best 对基线、账本、分析、验证、**验收键**）；后端加 tasks / runs / flow/check 端点与验收记录 `accept.json`（`ai4sci run accept`）；`ui/` 是界面适配器层，TUI 留位置；`make ui-check` 进 `make check` 与 CI。**2026-09-16 完成**（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | vision「产品形态」，workflow §5 界面适配 |
 | R-13 | 第一个真任务包 `tasks/boehm-nll/`（学长案例二）：按 packs §2 的分工手工走一遍设计流程——协调层填 manifest、执行层写 harness / code / env、人签 evaluate.py——跑出 run_0 与 σ；这是设计能力的第二个实例，描述符之后从两个实例抽。**2026-09-16 完成**：run_0 200.33、σ 28.98，真跑 3 轮 + 分析 + 验证 PASS，手工流沉淀为 `coordinator/README.md` 固定流之二（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)） | packs §2，Q-5，#1 |
 
 ## 非目标（N-n）
@@ -83,6 +84,7 @@
 | A-17 | 预检停得住 | 夹具 σ=0 无 min_delta → `run new` 退 1；`attainable` 离基线不到一个门 → `cap baseline` 退 1 说「无解」；rahman-nll 真包预检：baseline 21.5958、gate 0.15、room 0.4158（2.8 个门）（[#48](https://github.com/zephyr4123/TJU-AI4Science/issues/48)） |
 | A-18 | 节点清单完整、流查得出 | `cap list` 列出 design baseline experiment analysis verify 五个；`flow check design baseline experiment analysis verify` 退 0，跳过 baseline 报桥缺 run_0/，只有 verify 报缺 analysis.md（CI，[#49](https://github.com/zephyr4123/TJU-AI4Science/issues/49) [#50](https://github.com/zephyr4123/TJU-AI4Science/issues/50)） |
 | A-19 | 网页能起协调 agent、发话、收话、让它按按钮 | 剧本适配器下：两轮续接带同一个 session id、事件流与 transcript 落盘、忙锁 409、错误码（CI）；真跑：sonnet 经 `ai4sci chat` 两轮，第一轮 `ls tasks/` + 读三个 manifest 用人话复述，第二轮续接答 rahman 预算，共 $0.12；`ai4sci serve` 起来 `/health` `/cap` `/chats` 都通（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） |
+| A-20 | 人在页面上按两颗键，机器认账 | HTTP 层（CI）：`POST /tasks/<id>/publish` 不署名 400、design.md 为空 422、成功 201 且 `publish.json` 落盘；`POST /runs/<id>/accept` 内环在跑 422、成功后 `accept` 带 stale=false；静态页与单页应用回退、接口前缀下怪路径仍 404。浏览器闭环（playwright，本机）：需求看板按「发布需求」→ `publish.json` 由张三签、阶段跳到可开跑；结果看板按「验收结果」→ `accept.json` 签第 6 轮 21.3392、验证 PASS；编排看板 design → baseline → experiment → design 报不通；对话两轮 haiku 共 $0.03，第二轮工具行 `ls -1 tasks/` 可展开（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） |
 | A-14 | 真任务跑通 | `ai4sci task validate tasks/boehm-nll` 退 0；run_0 与 σ 出来；`loop run` 至少 3 轮不炸 |
 
 ## 里程碑
@@ -95,6 +97,7 @@
 | 09-2x | R-11 R-12 R-13：任务自带环境、领域包 petab、真任务 boehm-nll 的 run_0 与 σ；A-12 A-13 A-14 过。**2026-09-16 完成**：内仓分支 `feat/task-env`，A-12 A-13 在 CI，A-14 真跑证据在 [#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)） |
 | 09-2x | R-14：接任务的按钮 + 模仿研究者走一遍；A-15。**2026-09-16 完成**（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)） |
 | 09-2x | R-15 R-16 R-17：发布钥匙 + 预检、两个按钮进能力清单、flow check；A-16 A-17 A-18。**2026-09-16 完成**：内仓分支 `feat/mvp-batch-1`（[#47](https://github.com/zephyr4123/TJU-AI4Science/issues/47)） |
+| 09-2x | R-19：页面第一版；A-20。**2026-09-16 完成**：内仓分支 `feat/web-ui`（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） |
 | 09-2x | R-18：协调 agent 服务化第一版；A-19。**2026-09-16 完成**：内仓分支 `feat/coordinator-service`（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） |
 | 09-28 | R-8 R-9 R-10：门禁、文档、协调层入口指南、初级版 tag `v0.2.0` |
 
@@ -122,3 +125,4 @@
 | 2026-09-16 | R-11 R-12 R-13 与 09-2x 一格标完成（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39) [#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)） | 第一个真任务端到端闭环跑通：三轮全 discard、分析证伪两条假设、验证 PASS；门是否太严带回人拍板 | 主人 + Claude |
 | 2026-09-16 | 加 R-15 R-16 R-17 与 A-16 A-17 A-18，09-2x 第三格（[#47](https://github.com/zephyr4123/TJU-AI4Science/issues/47) [#48](https://github.com/zephyr4123/TJU-AI4Science/issues/48) [#49](https://github.com/zephyr4123/TJU-AI4Science/issues/49) [#50](https://github.com/zephyr4123/TJU-AI4Science/issues/50)） | 产品形态定为两个发布键一次验收：发布做成钥匙、签字挪到脚本前、看基线交给机器预检；编排看板要节点清单完整、要能查流通不通 | 主人 + Claude |
 | 2026-09-16 | 加 R-18 A-19 与 09-2x 第四格（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） | MVP 第 4 件：网页要能起协调 agent；主人拍板走 CLI 子进程 + 续接，端口可替换 | 主人 + Claude |
+| 2026-09-16 | 加 R-19 A-20 与 09-2x 第五格（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | MVP 第 5 件：页面。主人定 React + Tailwind v4，UI 作适配器留 TUI 位置，浏览器闭环验证 | 主人 + Claude |

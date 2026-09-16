@@ -256,9 +256,18 @@ turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, bash_
 - **指南注入**：服务会话隔离了所有设置源，`coordinator/README.md` 由 `framework/chat/guide.py` 连同一段"你在服务里"的前言塞进 system prompt（命令写 `.venv/bin/ai4sci`、发布键不由你按、先说结论用人话）。
 - **权限**：Bash 只放行 `ai4sci`，写只放行 `tasks/` 与 `runs/`；dontAsk 下只读 Bash 自动放行，但带 `for` / `cat` 的复合命令实测被拒，agent 会改用 Read 工具。
 - **落盘**：会话内容存在 CLI 自己的目录里，我们只记 session id；但每一轮的原生事件流自己留一份在 `runs/chats/<id>/turn-N/events.jsonl`，它是"agent 那一轮到底按了什么"的唯一证据（P-3）。meta 记后端、session id、cwd、完成的轮数、累计花费；transcript 给人翻；忙锁 `inflight.json` 让同一段对话同一时刻只跑一轮；半途放弃的轮次目录留着不计数。
-- **两张脸同一套函数**：`ai4sci chat new|send|list` 在终端里聊，`ai4sci serve` 起标准库 HTTP + SSE（`POST /chats`、`POST /chats/<id>/messages` 逐事件推、`GET /chats[/<id>]`、`GET /cap` 节点清单、`GET /health`）给网页；节点清单由 cli 以函数传入，chat 层不认识 capabilities。三四个端点不值得引 web 框架，页面要更多再说。
+- **两张脸同一套函数**：`ai4sci chat new|send|list` 在终端里聊，`ai4sci serve` 起标准库 HTTP + SSE 给页面：对话（`POST /chats`、`POST /chats/<id>/messages` 逐事件推、`GET /chats[/<id>]` 带第一句话标题与一轮一条的 history）、需求看板（`GET /tasks[/<id>]`：阶段、钥匙状态、manifest、design.md、预检；`POST /tasks/<id>/publish` 发布键）、编排看板（`GET /cap` 节点清单、`GET /flow/check?steps=` 通不通）、结果看板（`GET /runs[/<id>]`：best 对基线、账本、分析、验证、验收状态；`POST /runs/<id>/accept` 验收键）、`GET /health`；不是接口前缀的路径端页面的静态文件。节点清单与流检查由 cli 以函数传入，chat 层不认识 capabilities；看板读盘在 `framework/chat/boards.py`，全是纯函数，NaN 出门前换 None。十来个端点仍是标准库，页面要更多再说。
 - 配置从环境变量读：`AI4SCI_COORDINATOR_MODEL`（缺省不传）、`_MAX_TURNS`（50）、`_MAX_BUDGET_USD`（每轮 2.0）、`_TIMEOUT_S`（900：它会按按钮等基线跑完）。
-- 不做（等页面）：token 级流式、多用户、鉴权；协调 agent 从终端里技术上也能按发布键，只有网页那颗键能做到"只有人能按"。
+- 不做：token 级流式、多用户、鉴权（本机单人服务）。协调 agent 从终端里技术上也能按两颗键（`task publish` / `run accept`），只有页面上那两颗能做到"只有人能按"；指南写明它不替人按。
+
+### 界面适配
+
+界面也是适配器（主人 2026-09-16：现在是 GUI，之后有 TUI，要留位置，[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）。一种界面一个目录 `ui/<kind>/`，全部是上面那套端点的客户端，互相不认识、也不认识框架内部；换一种界面后端一行不改。契约就是端点清单（`framework/chat/server.py` 文件头）+ 响应体（`boards.py`），网页的 `ui/web/src/api/client.ts` 是它的照抄，写 TUI 时照抄一份即可。
+
+- **网页 `ui/web/`**：React 19 + Tailwind v4 + shadcn（radix-nova 预设）+ reactbits 两个动效件，Vite 构建成静态文件，`ai4sci serve` 缺省端 `ui/web/dist`（`--ui` 可换目录，没构建只开接口）。三栏：左边对话列表，中间对话（SSE 事件流，agent 按的每个按钮以工具行显示、可展开看输入输出、denied 标红），右边三张看板按产品形态各占一页签——需求（任务包阶段 drafting → published → designed → baselined、manifest、设计说明、预检、**发布键**）、编排（节点清单、摆一串查通不通，先不做拖拽画布）、结果（best 对基线、账本、分析全文、验证结论、**验收键**）。两颗键都要署名，署名记在浏览器里。
+- **验收记录**：与发布记录对称。`runs/<id>/accept.json` 签 best_iter / best_metric / best_commit 与验证报告的结论（`framework/run/accept.py`，放 run 层因为它读 checkpoint）；内环在跑、只有基线、报告不合约都拒绝；验收之后 best 又变了记录标 stale，看板要人再看一遍，不让旧签名盖住新结果。
+- **门禁**：`make ui-check`（tsc + oxlint + vitest + 构建）并入 `make check` 与 CI（setup-node 22）；依赖只进 `ui/web/node_modules`。浏览器闭环实测（playwright）：发布 → `publish.json`、验收 → `accept.json`、流通不通报「第 4 步 design 是 task 级能力，run 段之后不能回到任务包」、haiku 两轮对话（第二轮 `ls -1 tasks/` 的工具行）。
+- **`ui/tui/`**：留位置没建。
 
 ## 变更记录
 
@@ -274,3 +283,4 @@ turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, bash_
 | 2026-09-10 | 第 5 节加算力适配：`Compute` 端口五个动作，submit / wait 句柄落盘，靠名字选择、不静默回退 | 主人问算力模块用什么模式；harness 在哪跑与 agent 在哪跑是两根正交的轴，各自端口 + 适配器 | 主人 + Claude |
 | 2026-09-10 | "阶段"改"能力"，去掉框架内的顺序与回退判断，串联归协调层；磁盘布局按能力名而非序号，加 `journal.md`；第 4 节人在环改写为协调层行为，去掉 full-auto / gate-only 与文件通道；第 5 节加协调层驱动面 `ai4sci` 子命令；"底座"改称"执行层"（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 固定顺序的阶段骨架就是"外层 for + 硬编码状态"；科研判断归协调层（人 + agent），框架不等人、不连跑 | 主人 + Claude |
 | 2026-09-16 | §5 加「协调层适配」：`Chat` 端口、Claude Code 续接、指南注入、对话落盘、`ai4sci chat` / `serve`（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） | 产品形态定为两个看板一次验收，网页要能起协调 agent；主人拍板走 CLI 子进程 + 续接、藏在端口后面可替换 | 主人 + Claude |
+| 2026-09-16 | §5 协调层适配的端点清单补看板与两颗键；加「界面适配」：`ui/<kind>/` 一种界面一个目录、全是端点的客户端，网页第一版、验收记录 `accept.json`、门禁与浏览器闭环（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | MVP 第 5 件页面；主人红线：UI 也是适配器，GUI 之后有 TUI 要留位置 | 主人 + Claude |
