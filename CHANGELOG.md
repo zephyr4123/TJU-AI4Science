@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- vision 加「产品形态：两个发布键、一次验收」：需求看板发布即签字、编排看板 agent 摆好人改、结果验收；「看基线」停点改机器预检；单点 / 套餐 / 停点 / 发布的口径。open-questions Q-13 更正「先 TUI」与三停点（[#34](https://github.com/zephyr4123/TJU-AI4Science/issues/34)）
 - 裁判文件的契约进纲领 packs §2：`budget.inner_k`、框架保证给 harness 的三个环境变量、写默认值判不合法、`ai4sci task baseline`（[#43](https://github.com/zephyr4123/TJU-AI4Science/issues/43) [#44](https://github.com/zephyr4123/TJU-AI4Science/issues/44) [#45](https://github.com/zephyr4123/TJU-AI4Science/issues/45)）
 - 案例卡 `docs/cases/rahman-ode-petab/`：平台自测材料（模仿研究者接入的第二道基准题），记接入过程与 12 个卡点并成的五条 issue（[#42](https://github.com/zephyr4123/TJU-AI4Science/issues/42)–[#46](https://github.com/zephyr4123/TJU-AI4Science/issues/46)）
 - 接任务的按钮单元（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)）：spec 加 R-14 A-15 与 09-2x 第二格；packs §2 接任务清单改成「三问 + manifest + env + design.md + `ai4sci task design` + 签字 + 基线」的按钮版，分工里加框架封 harness 与 lint
