@@ -8,6 +8,7 @@
 - 生产代码在内仓 `platform/`（独立 git，远端见 `repos.json`），外层 `.gitignore` 整目录挡住，两层互不知情。
 - 内仓坐标以 `repos.json` 为唯一真相源；加仓、改地址只改它，然后 `./repos remotes --fix`。
 - 承接：`git clone` 外层 → `./repos clone all` → `./repos status`。
+- 真实科研案例：原件（PDF、数据、代码 zip）放 `materials/`，整目录 gitignore；仓里只放 `docs/cases/` 的案例卡、学长原文与 sha256 索引。案例卡按任务类型描述（回归 / 参数优化 / …），应用领域只留一个名词。
 
 ## 红线（能用命令查的都进了 `make check`）
 

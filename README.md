@@ -34,9 +34,11 @@ tju-ai4science/
 ├── Makefile          check / release 入口，本地与 CI 共用
 ├── CHANGELOG.md      变更日志
 ├── docs/             vision、architecture/（可改的总纲领）、specs/（每版一份 PRD）、adr/（仓库基础设施决定）、meetings/（纪要）
+│                     cases/（真实科研案例：案例卡 + 学长原文，原件在 materials/）
 ├── research/         调研：literature/ landscape/ domain/ evals/ —— 公开区，自动发布到 GitHub Pages
 ├── scripts/          外部脚本与一次性工具 —— 生产代码禁止依赖这里
 ├── assets/           图、幻灯片；大文件只放索引
+├── materials/        案例原件（PDF / 数据 / 代码 zip），整目录 gitignore，索引与 sha256 在 docs/cases/
 └── platform/         内仓（独立 git，被 .gitignore 挡住）
 ```
 

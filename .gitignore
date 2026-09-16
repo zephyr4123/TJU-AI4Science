@@ -14,3 +14,6 @@ AGENTS.md
 __pycache__/
 *.pyc
 .venv/
+
+# ── 真实科研案例的原件（PDF / 数据 / 代码 zip），仓里只放 docs/cases/ 的案例卡与索引 ──
+/materials/

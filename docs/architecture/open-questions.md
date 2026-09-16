@@ -10,7 +10,7 @@
 | Q-2 | 执行层 skill 怎么注入 | 学科适配 | 交给执行层 CLI 原生机制，不自研匹配器 | 主人 | [#9](https://github.com/zephyr4123/TJU-AI4Science/issues/9) |
 | Q-3 | 验收怎么定义 | 验证 | manifest.requirements 的 must_pass + 零 LLM 判据；discussion 类交隔离裁判 | 主人 | [#10](https://github.com/zephyr4123/TJU-AI4Science/issues/10) |
 | Q-4 | 评测怎么做 | 评测 | rubric 树 + 组件消融 + 噪声基线；首个工科 bench 3 到 5 题 | 主人 | [#11](https://github.com/zephyr4123/TJU-AI4Science/issues/11) |
-| Q-5 | 第一个真任务与学院 | 任务 | 先用玩具任务把闭环跑通，不等 | 主人 | [#12](https://github.com/zephyr4123/TJU-AI4Science/issues/12) |
+| Q-5 | 第一个真任务与学院 | 任务 | 玩具任务已跑通；2026-09-16 案例到，案例二选为第一个真任务包，学院是交叉领域 | 主人 | [#12](https://github.com/zephyr4123/TJU-AI4Science/issues/12) [#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1) |
 | Q-6 | 执行环境 | 执行层 / 工具 | platform 0.2.0 本机 venv 独立进程；docker 与集群按需 | 主人 | [#13](https://github.com/zephyr4123/TJU-AI4Science/issues/13) |
 | Q-7 | 无人值守时协调层怎么找人 | 协调层 | 大方向已定：人在协调层对话里，框架不等人；异步通道 0.2.0 不做 | 主人 | [#14](https://github.com/zephyr4123/TJU-AI4Science/issues/14) |
 | Q-8 | 协调层与执行层各用哪个 CLI | 协调层 / 执行层 | 开工时定；执行层 Claude Code 先行，Codex 第二 | 主人 | [#15](https://github.com/zephyr4123/TJU-AI4Science/issues/15) |
@@ -53,6 +53,8 @@ AutoResearchClaw 的 23 段太细（大量阶段是一次 LLM 调用），Intern
 ## Q-5 第一个真任务与学院
 
 人和领域的决定，读框架读不出来。建议不等：先用玩具任务（30 秒的 MLP 回归，或一根悬臂梁的有限元）把闭环跑通，学院定了换任务目录，循环不动。真任务要满足的条件：能在几分钟内跑完一次、能压成一个对离散化不变的标量、基线代码能整理成单入口。
+
+**2026-09-16**：学长案例到了（[#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1)），入库在 `docs/cases/`。案例二 `boehm-stat5-petab`（9 参数最小化 NLL，秒到分钟级 CPU）三条条件全中，选为第一个真任务包；案例一登记为复现型不跑；案例三访谈是 P-10 分工的第一份研究者证据。学院方向按导师要求是交叉领域，三个案例分属三个领域是预期。
 
 ## Q-6 执行环境
 
@@ -105,3 +107,4 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 | 2026-09-15 | 加 Q-13 低代码协调层的形状（[#34](https://github.com/zephyr4123/TJU-AI4Science/issues/34)） | 主人对齐高度模块化，低代码图是第二种协调层 | 主人 + Claude |
 | 2026-09-10 | Q-9 改写为项目级记忆；加 Q-11 文献、Q-12 写作（[#29](https://github.com/zephyr4123/TJU-AI4Science/issues/29)） | 端到端对齐 | 主人 + Claude |
 | 2026-09-10 | Q-1 Q-2 Q-7 Q-8 Q-9 按四层改写，Q-7 大方向标已定；加 Q-10（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 加了协调层：顺序、人在环、记忆都归它，skill 分两套 | 主人 + Claude |
+| 2026-09-16 | Q-5 加案例到达记录：案例二选为第一个真任务包，学院方向是交叉领域（[#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1)） | 学长三个案例入库 `docs/cases/` | 主人 + Claude |
