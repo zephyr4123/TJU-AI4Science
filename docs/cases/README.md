@@ -7,7 +7,7 @@
 | slug | 案例类型 | 任务类型 | 应用领域 | 来源 | 状态 | 喂给哪一层 |
 |---|---|---|---|---|---|---|
 | [lnp-lipid-design](lnp-lipid-design/) | 复现型 | 回归 | 药剂学 | 第三方论文 | 登记，0.2.0 不跑 | 验证 / 评测 |
-| [boehm-stat5-petab](boehm-stat5-petab/) | 调参型 | 连续参数优化 | 系统生物学 | 第三方 benchmark | **已成任务包** `platform/tasks/boehm-nll`，run_0 均值 224.74、σ 28.8 | 实验内环 |
+| [boehm-stat5-petab](boehm-stat5-petab/) | 调参型 | 连续参数优化 | 系统生物学 | 第三方 benchmark | **已成任务包** `platform/tasks/boehm-nll`，run_0 均值 224.74、σ 28.8，真跑 3 轮出第一个 keep 148.26 | 实验内环 |
 | [vlm-hard-negatives](vlm-hard-negatives/) | 过程访谈 | 表示学习 | 多模态 ML | 学长本人工作 | 已入库 | 协调层 |
 
 ## 案例卡怎么写
