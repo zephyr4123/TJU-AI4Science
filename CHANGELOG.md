@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- 任务自带环境与领域包单元的纲领与 spec（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39) [#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)）：packs §2 加 `env/` 契约（python-version + requirements.lock，uv 建任务级 venv，launcher 只经 `$AI4SCI_PYTHON`）、manifest `format_version` 必填与 `source` 可选、接任务清单加分工；§3 领域 skill 注入改走 prompt 快照（Q-2 翻案：隔离参数关掉了原生加载），领域按工具链命名；spec 加 R-11 R-12 R-13 与 A-12 A-13 A-14，N-3 N-7 纳入；Q-6 细化为任务级 venv；vision 写工业级开源项目定位
 - 案例库 `docs/cases/`（[#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1)）：学长交付的三个案例入库，每个一张案例卡加一字不改的原文；按任务类型描述（回归 / 连续参数优化 / 表示学习），应用领域只留名词。案例二 `boehm-stat5-petab` 选为第一个真任务包；案例一登记为复现型 0.2.0 不跑；案例三访谈直接喂协调层的人在环停点。原件放新目录 `materials/`（gitignore），sha256 与重取方式记在案例卡；README、CLAUDE.md 同步
 - 09-22 单元主体（内仓分支 `feat/analysis-verify`，#35 #36 #37 #38）：能力描述符与 `ai4sci cap`（子命令从描述符生成，`cap list --json` 是 UI 的节点定义）、分析能力（执行层写三节 `analysis.md`，数据表是数字回溯的锚）、验证能力（零模型四项检查，1% 容差，`report.json`）、协调层入口指南 `coordinator/README.md`；真跑 live-20 分析 $0.28 出 19 行数据表，验证 PASS。纲领 workflow §1 §3 §5、README §5、spec R-5 R-6 R-7 R-10 与 09-22 一格回写
 - 端到端对齐（#29）：纲领加"产品是论文不是内环"与"研究项目"实体（项目 → 任务包 → run → 论文，契约与记忆各两级），workflow §1 加七个能力的输入 / 输出 / 执行者 / 判据表，Q-9 改写为项目级记忆，新增 Q-11 文献检索、Q-12 写作形态（#31 #32）；`framework/` 目录约定改为按概念分子包、依赖单向（#30）

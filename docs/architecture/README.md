@@ -136,9 +136,10 @@ platform/
 ├── backends/           执行层适配器：claude_code.py  codex.py …  每个 60 到 80 行
 ├── compute/            算力适配器：local.py  ssh.py …  put / submit / wait / cancel / get（见 workflow.md §5）
 ├── tools/              确定性脚本：文献 API、引用校验、出图、harness 基类
-├── domains/            领域包，一个领域一个目录，含执行层的 skill（见 packs.md）
-├── tasks/              任务包，一个任务一个目录（见 packs.md）
-└── runs/               运行产物，不进 git
+├── domains/            领域包，按工具链命名，一个领域一个目录，含执行层的 skill（prompt 注入，见 packs.md §3）
+├── tasks/              任务包，一个任务一个目录，自带 env/（见 packs.md §2）
+├── docs/               面向接任务的人的指南：add-a-task.md
+└── runs/               运行产物，不进 git；每个 run 自带 .venv/
 ```
 
 ## 6. 文档关系
@@ -173,3 +174,4 @@ spec 与 milestone 用**产品版本**命名且带 `platform` 前缀（`specs/pl
 | 2026-09-15 | §5 目录按落地回写：capabilities 三个已有、contracts / run 新增模块、coordinator 改入口指南；P-12 标落地（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35)） | 09-22 单元做完 | 主人 + Claude |
 | 2026-09-15 | §2 可替换性加"协调层形态可换"（低代码图是第二种协调层）；§4 加 P-12 能力可自由装配（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)） | 主人对齐：项目要高度模块化，低代码拖拽搭流是必须有的 UI 形态，不同任务用不同子集流程；真正的代价不是成本而是过早抽象，所以描述符从两个真实例里抽 | 主人 + Claude |
 | 2026-09-10 | P-9 改写为"上下文卫生，但不失忆"（[#28](https://github.com/zephyr4123/TJU-AI4Science/issues/28)） | 真跑第 2 轮与第 5 轮做了同一个改动：只给账本尾部摘要等于让执行层失忆；主人拍板必须有轮间记忆 | 主人 + Claude |
+| 2026-09-16 | §5 目录加 `docs/`、任务自带 env/、run 自带 .venv/、领域按工具链命名（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)） | 第一个真实输入到了，按工业级标准补环境与领域两处缺口 | 主人 + Claude |

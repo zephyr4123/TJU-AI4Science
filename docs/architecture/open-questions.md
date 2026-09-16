@@ -7,11 +7,11 @@
 | 编号 | 问题 | 层 | 建议 | 拍板 | issue |
 |---|---|---|---|---|---|
 | Q-1 | 首版提供哪几个能力 | 流水线 | 拟定 7 个，platform 0.2.0 只做设计、实验、分析、验证 4 个；顺序不由框架定 | 主人 | [#8](https://github.com/zephyr4123/TJU-AI4Science/issues/8) |
-| Q-2 | 执行层 skill 怎么注入 | 学科适配 | 交给执行层 CLI 原生机制，不自研匹配器 | 主人 | [#9](https://github.com/zephyr4123/TJU-AI4Science/issues/9) |
+| Q-2 | 执行层 skill 怎么注入 | 学科适配 | 2026-09-16 翻案：走 prompt 整文件追加（原方案 1 被隔离参数关掉了），不做关键词匹配 | 主人 | [#9](https://github.com/zephyr4123/TJU-AI4Science/issues/9) |
 | Q-3 | 验收怎么定义 | 验证 | manifest.requirements 的 must_pass + 零 LLM 判据；discussion 类交隔离裁判 | 主人 | [#10](https://github.com/zephyr4123/TJU-AI4Science/issues/10) |
 | Q-4 | 评测怎么做 | 评测 | rubric 树 + 组件消融 + 噪声基线；首个工科 bench 3 到 5 题 | 主人 | [#11](https://github.com/zephyr4123/TJU-AI4Science/issues/11) |
 | Q-5 | 第一个真任务与学院 | 任务 | 玩具任务已跑通；2026-09-16 案例到，案例二选为第一个真任务包，学院是交叉领域 | 主人 | [#12](https://github.com/zephyr4123/TJU-AI4Science/issues/12) [#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1) |
-| Q-6 | 执行环境 | 执行层 / 工具 | platform 0.2.0 本机 venv 独立进程；docker 与集群按需 | 主人 | [#13](https://github.com/zephyr4123/TJU-AI4Science/issues/13) |
+| Q-6 | 执行环境 | 执行层 / 工具 | 任务级 venv（uv 建，任务自带 env/），独立进程；docker 与集群按需 | 主人 | [#13](https://github.com/zephyr4123/TJU-AI4Science/issues/13) |
 | Q-7 | 无人值守时协调层怎么找人 | 协调层 | 大方向已定：人在协调层对话里，框架不等人；异步通道 0.2.0 不做 | 主人 | [#14](https://github.com/zephyr4123/TJU-AI4Science/issues/14) |
 | Q-8 | 协调层与执行层各用哪个 CLI | 协调层 / 执行层 | 开工时定；执行层 Claude Code 先行，Codex 第二 | 主人 | [#15](https://github.com/zephyr4123/TJU-AI4Science/issues/15) |
 | Q-9 | 项目级记忆怎么做 | 协调层 | 改写：run 级已有（账本、笔记）；项目级（文献笔记、假设台账、跨 run 结论）是写作前提，0.2.0 之后第一优先 | 主人 | [#16](https://github.com/zephyr4123/TJU-AI4Science/issues/16) |
@@ -31,6 +31,8 @@ AutoResearchClaw 的 23 段太细（大量阶段是一次 LLM 调用），Intern
 2. **框架按能力选 skill 塞进 prompt**。AutoResearchClaw 走的是这条，它的匹配器因为分词 bug 在主路径上什么都匹配不到，真正生效的是无差别灌前 5 条。
 
 建议 1。依据：[AutoResearchClaw 深读 §6.2](../../research/selection/2026-0909-pipeline-frameworks/autoresearchclaw.md#62-自进化在默认配置下不存在)。风险：换一个不支持 skill 的执行层时这层失效，届时再做方案 2 的最简版（按 `applicable-capabilities` 字段整文件追加，不做关键词匹配）。无论哪种，搜索路径里都不能有 `coordinator/`（P-11）。
+
+**2026-09-16 翻案，取方案 2 的最简版**（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)）：R-1 spike 实测（[#20](https://github.com/zephyr4123/TJU-AI4Science/issues/20)）执行层的承重隔离位是 `--setting-sources ""` 加 `--disable-slash-commands`，这两个参数正是把本机 CLAUDE.md、plugin、skill 一并关掉的东西——P-11 的隔离与"CLI 原生加载领域 skill"是同一个开关的两面，不能只要一半。所以领域 skill 由框架在 `run new` 时快照进 run，随执行层提示的「领域约定」段整文件追加，不做关键词匹配；实验与分析两个能力都吃。这样换执行层也不失效。
 
 ## Q-3 验收怎么定义
 
@@ -59,6 +61,8 @@ AutoResearchClaw 的 23 段太细（大量阶段是一次 LLM 调用），Intern
 ## Q-6 执行环境
 
 platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker 模式在 harness 需要装东西时再加；集群按 ADR-0001 的判据到时候拆仓。AutoResearchClaw 的教训：docker 不可用时静默降级成裸进程是错的，隔离降级必须显式失败。
+
+**2026-09-16 细化**（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)）：venv 是**任务级**不是平台级——任务包自带 `env/`，框架用 uv 建 `tasks/<id>/.venv` 与 `runs/<id>/.venv`，平台 venv 一个包不多装；harness 经 `$AI4SCI_PYTHON` 起 Python。第一个真任务（案例二）走纯 pip 栈就够，没触发 docker；uv 或解释器拉不下来时明确报错，不退回平台 venv。
 
 ## Q-7 无人值守时协调层怎么找人
 
@@ -108,3 +112,4 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 | 2026-09-10 | Q-9 改写为项目级记忆；加 Q-11 文献、Q-12 写作（[#29](https://github.com/zephyr4123/TJU-AI4Science/issues/29)） | 端到端对齐 | 主人 + Claude |
 | 2026-09-10 | Q-1 Q-2 Q-7 Q-8 Q-9 按四层改写，Q-7 大方向标已定；加 Q-10（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 加了协调层：顺序、人在环、记忆都归它，skill 分两套 | 主人 + Claude |
 | 2026-09-16 | Q-5 加案例到达记录：案例二选为第一个真任务包，学院方向是交叉领域（[#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1)） | 学长三个案例入库 `docs/cases/` | 主人 + Claude |
+| 2026-09-16 | Q-2 翻案走 prompt 追加；Q-6 细化为任务级 venv（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)） | 真任务落地时发现隔离参数关掉了原生 skill 加载；任务自带环境 | 主人 + Claude |
