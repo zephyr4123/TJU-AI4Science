@@ -131,3 +131,5 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 | 2026-09-16 | Q-5 加案例到达记录：案例二选为第一个真任务包，学院方向是交叉领域（[#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1)） | 学长三个案例入库 `docs/cases/` | 主人 + Claude |
 | 2026-09-16 | Q-2 翻案走 prompt 追加；Q-6 细化为任务级 venv（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)） | 真任务落地时发现隔离参数关掉了原生 skill 加载；任务自带环境 | 主人 + Claude |
 | 2026-09-16 | Q-13 加主人判断：协调层的面板（TUI → GUI）是协调层的脸，停点可视化，缺一个机器可读的等待状态（[#34](https://github.com/zephyr4123/TJU-AI4Science/issues/34)） | 真任务闭环跑通后对齐 UI 的位置 | 主人 + Claude |
+
+> Q-13 补记（2026-09-16 深夜）：套餐文件提前落地了，改叫工作流 `workflows/*.yaml`，因为页面要列出来、下一步的自定义工坊要让 agent 在对话里拼出来存进去。格式故意最小：name / title / summary / assumes / steps，见内仓 `framework/contracts/workflows.py` 文件头（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）。

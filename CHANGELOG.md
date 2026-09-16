@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- workflow §5 与 Q-13 补记：套餐改叫工作流并落成文件 `workflows/*.yaml`，`start` 成为第 6 颗能力，页面进度页换成工作流页（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）
 - workflow §5 加「界面适配」（`ui/<kind>/` 一种界面一个目录、全是 `serve` 端点的客户端、TUI 留位置）并补看板端点与两颗键；spec 加 R-19 A-20 与 09-2x 第五格；`.playwright-mcp/` 进 gitignore（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）
 - workflow §5 加「协调层适配」：`Chat` 端口与 Claude Code 续接、指南注入、对话落盘、`ai4sci chat` / `serve`；spec 加 R-18 A-19 与 09-2x 第四格（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)）
 - MVP 第一批（[#47](https://github.com/zephyr4123/TJU-AI4Science/issues/47)）：packs §2 接任务清单加人发布（`publish.json` 钥匙）与机器预检（`attainable` 尽头值），接任务与跑基线升格成 task 级能力 `cap design` / `cap baseline`，加 `flow check`；spec 加 R-15 R-16 R-17 与 A-16 A-17 A-18、09-2x 第三格（[#48](https://github.com/zephyr4123/TJU-AI4Science/issues/48) [#49](https://github.com/zephyr4123/TJU-AI4Science/issues/49) [#50](https://github.com/zephyr4123/TJU-AI4Science/issues/50)）
