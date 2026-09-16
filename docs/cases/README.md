@@ -9,7 +9,7 @@
 | [lnp-lipid-design](lnp-lipid-design/) | 复现型 | 回归 | 药剂学 | 第三方论文 | 登记，0.2.0 不跑 | 验证 / 评测 |
 | [boehm-stat5-petab](boehm-stat5-petab/) | 调参型 | 连续参数优化 | 系统生物学 | 第三方 benchmark | **已成任务包** `platform/tasks/boehm-nll`，run_0 均值 224.74、σ 28.8，真跑 3 轮出第一个 keep 148.26 | 实验内环 |
 | [vlm-hard-negatives](vlm-hard-negatives/) | 过程访谈 | 表示学习 | 多模态 ML | 学长本人工作 | 已入库 | 协调层 |
-| [rahman-ode-petab](rahman-ode-petab/) | 平台自测 | 连续参数优化 | 流行病学 | 第三方 benchmark | **已成任务包** `platform/tasks/rahman-nll`，只经 `ai4sci task design` 接入（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)），run_0 均值 21.5958、σ 0.056 | 实验内环；接任务入口测试 |
+| [rahman-ode-petab](rahman-ode-petab/) | 平台自测 | 连续参数优化 | 流行病学 | 第三方 benchmark | **已成任务包** `platform/tasks/rahman-nll`，只经 `ai4sci task design` 接入（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)），run_0 均值 21.5958、σ 0.056，8 轮出 1 个 keep 21.339，验证 PASS | 实验内环；接任务入口测试 |
 
 ## 案例卡怎么写
 
