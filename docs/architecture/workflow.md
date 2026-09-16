@@ -243,6 +243,23 @@ run(prompt, cwd, timeout_s, allowed_paths)
 - 配置从环境变量读：`AI4SCI_EXECUTOR_MAX_TURNS`（30）、`AI4SCI_EXECUTOR_MAX_BUDGET_USD`（2.0）、`AI4SCI_EXECUTOR_MODEL`（缺省不传）、`AI4SCI_EXECUTOR_TIMEOUT_S`（内环里执行层单次调用的墙钟上限，缺省 900）、`AI4SCI_RUNS_ROOT`（runs 根目录，缺省仓根 `runs/`）。执行层模型该由 manifest 或协调层显式指定，这是待办。
 - 任何适配器合入必须带一个真实调用点和一个真 CLI 的冒烟测试（P-8）；冒烟测试 `AI4SCI_LIVE=1` 才跑，CI 不跑。
 
+### 协调层适配
+
+同一批 CLI 的第二种用法：多轮、按 session id 续接、事件边跑边出。端口 `Chat` 与 `Runner` 放同一个 `backends/__init__.py`，适配器放同一个文件（一个 CLI 一个文件）；换一家 CLI 就是加一个文件，自研 agent 就是第三个适配器（主人红线：涉及 agent 的一律可替换，[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)）：
+
+```
+turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, bash_rules)
+  -> Iterator[ChatEvent{kind: init|text|tool_use|tool_result|denied|done|error, text, tool, tool_input, session_id, cost_usd, duration_s, raw}]
+```
+
+- **续接**：Claude Code 走 `claude -p <message> --resume <session id> --append-system-prompt <指南>`；隔离位与执行层同一组，但**不带** `--no-session-persistence`，多轮靠的就是 CLI 自己的会话持久化。实测两轮记得住（haiku 两轮 $0.02；sonnet 列任务包并复述、续接答预算，两轮 $0.12）。
+- **指南注入**：服务会话隔离了所有设置源，`coordinator/README.md` 由 `framework/chat/guide.py` 连同一段"你在服务里"的前言塞进 system prompt（命令写 `.venv/bin/ai4sci`、发布键不由你按、先说结论用人话）。
+- **权限**：Bash 只放行 `ai4sci`，写只放行 `tasks/` 与 `runs/`；dontAsk 下只读 Bash 自动放行，但带 `for` / `cat` 的复合命令实测被拒，agent 会改用 Read 工具。
+- **落盘**：会话内容存在 CLI 自己的目录里，我们只记 session id；但每一轮的原生事件流自己留一份在 `runs/chats/<id>/turn-N/events.jsonl`，它是"agent 那一轮到底按了什么"的唯一证据（P-3）。meta 记后端、session id、cwd、完成的轮数、累计花费；transcript 给人翻；忙锁 `inflight.json` 让同一段对话同一时刻只跑一轮；半途放弃的轮次目录留着不计数。
+- **两张脸同一套函数**：`ai4sci chat new|send|list` 在终端里聊，`ai4sci serve` 起标准库 HTTP + SSE（`POST /chats`、`POST /chats/<id>/messages` 逐事件推、`GET /chats[/<id>]`、`GET /cap` 节点清单、`GET /health`）给网页；节点清单由 cli 以函数传入，chat 层不认识 capabilities。三四个端点不值得引 web 框架，页面要更多再说。
+- 配置从环境变量读：`AI4SCI_COORDINATOR_MODEL`（缺省不传）、`_MAX_TURNS`（50）、`_MAX_BUDGET_USD`（每轮 2.0）、`_TIMEOUT_S`（900：它会按按钮等基线跑完）。
+- 不做（等页面）：token 级流式、多用户、鉴权；协调 agent 从终端里技术上也能按发布键，只有网页那颗键能做到"只有人能按"。
+
 ## 变更记录
 
 | 日期 | 改了什么 | 为什么 | 认可 |
@@ -256,3 +273,4 @@ run(prompt, cwd, timeout_s, allowed_paths)
 | 2026-09-10 | 第 5 节执行层适配按 R-1 spike 实测改写：隔离位、`//` 路径规则、kill_tree、快照 diff、成本 NaN、落盘（[#20](https://github.com/zephyr4123/TJU-AI4Science/issues/20)） | 四个未知全部拿到证据 | 主人 + Claude |
 | 2026-09-10 | 第 5 节加算力适配：`Compute` 端口五个动作，submit / wait 句柄落盘，靠名字选择、不静默回退 | 主人问算力模块用什么模式；harness 在哪跑与 agent 在哪跑是两根正交的轴，各自端口 + 适配器 | 主人 + Claude |
 | 2026-09-10 | "阶段"改"能力"，去掉框架内的顺序与回退判断，串联归协调层；磁盘布局按能力名而非序号，加 `journal.md`；第 4 节人在环改写为协调层行为，去掉 full-auto / gate-only 与文件通道；第 5 节加协调层驱动面 `ai4sci` 子命令；"底座"改称"执行层"（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 固定顺序的阶段骨架就是"外层 for + 硬编码状态"；科研判断归协调层（人 + agent），框架不等人、不连跑 | 主人 + Claude |
+| 2026-09-16 | §5 加「协调层适配」：`Chat` 端口、Claude Code 续接、指南注入、对话落盘、`ai4sci chat` / `serve`（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） | 产品形态定为两个看板一次验收，网页要能起协调 agent；主人拍板走 CLI 子进程 + 续接、藏在端口后面可替换 | 主人 + Claude |
