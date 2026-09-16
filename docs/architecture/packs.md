@@ -128,7 +128,9 @@ harness 的接口约束（从 AutoResearchClaw 的 `harness_template.py` 取思�
 2. 写 `env/python-version` 与 `env/requirements.lock`，`ai4sci task env build <dir>` 建出 `.venv/`；问题定义放 `data/`。
 3. 写 `design.md`：`code/` 产出什么文件、什么形状；`evaluate.py` 查什么、怎么用 `data/` 重算指标、退出码；基线用什么策略。这是拍板的东西，执行层照它写。
 4. `ai4sci task design <dir>`：执行层写 `harness/` 与 `code/` 草稿，框架加执行位、写 SHA256SUMS、跑 ruff、跑 validate（此时不查 run_0），停。有问题就 `--feedback` 喂回去改第二版，不要手改 harness。
-5. 人签 `evaluate.py`；`harness/make_run0.sh` 跑出基线 + repeat_k 次重复 + σ → `run_0/`；`ai4sci task validate <dir>` 退 0。
+5. 人签 `evaluate.py`；`ai4sci task baseline <dir>` 跑 `make_run0.sh` 出基线 + repeat_k 次重复 + σ → `run_0/`；`ai4sci task validate <dir>` 退 0。
+
+裁判文件的契约（[#43](https://github.com/zephyr4123/TJU-AI4Science/issues/43) [#44](https://github.com/zephyr4123/TJU-AI4Science/issues/44)）：框架起 harness 时**保证**给 `AI4SCI_PYTHON`、`AI4SCI_BUDGET_S`（= `wall_clock_s`）、`AI4SCI_INNER_K`（= `budget.inner_k`，评分内部重复次数，缺省 1）；内环与基线按钮走同一个函数给这组变量。harness 拿不到就必须停，给它们写默认值（`environ.get(名, x)`、`${名:-x}`）`task validate` 判不合法——第一版 rahman 评分脚本缺 INNER_K 时默认按 5 份算出一份看着合法的假成绩，签字的人没看出来。`AI4SCI_SEED` 缺省 42 是契约。这条安检只管裁判文件里的这几个变量，不是通用静态警察（前期不加隔栏）。
 
 参考实现：`tasks/mlp-regression/`（[#21](https://github.com/zephyr4123/TJU-AI4Science/issues/21)，零依赖）与 `tasks/boehm-nll/`（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)，第一个真任务，带依赖）；面向接任务的人的指南在内仓 `docs/add-a-task.md`，协调 agent 的操作步骤在内仓 `coordinator/README.md` 固定流之二。schema 只收有读取点的字段（P-8 反过来用）：`conditions` 没有读取点，不进 schema，写了会被判不合法。
 
@@ -177,5 +179,6 @@ paper_keywords: [mesh refinement, finite element, error estimate]
 | 2026-09-10 | budget 加可选 patience / min_delta / max_cost_usd；harness 约束加 evaluate 退出方式与 status 字段的读取点、.gitignore 提醒（[#24](https://github.com/zephyr4123/TJU-AI4Science/issues/24)） | 内环实现的读取点反推回契约 | 主人 + Claude |
 | 2026-09-10 | run_0 布局、验证集拆两份、make_run0.sh、schema 只收有读取点的字段（[#21](https://github.com/zephyr4123/TJU-AI4Science/issues/21)） | 第一个任务包落地后的实测形态 | 主人 + Claude |
 | 2026-09-10 | manifest 明确由协调层拍板后填写；全景加 `coordinator/`；领域包 `skills/` 限定为执行层用，与协调层 skill 隔离；"阶段"改"能力"、"底座"改"执行层"（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 加了协调层，契约的填写权归它；两层 agent 的 skill 必须物理隔离（P-11） | 主人 + Claude |
+| 2026-09-16 | 裁判文件的契约：`budget.inner_k`、框架保证给 harness 的三个环境变量、写默认值判不合法、`ai4sci task baseline` 按钮（[#43](https://github.com/zephyr4123/TJU-AI4Science/issues/43) [#44](https://github.com/zephyr4123/TJU-AI4Science/issues/44)） | 模仿研究者测试里评分脚本的静默默认值只被 agent 的眼睛抓到；栏杆只加在裁判文件、只加在出过事的变量上 | 主人 + Claude |
 | 2026-09-16 | 接任务清单改成按钮版：协调层三问 + manifest + env + `design.md`，`ai4sci task design` 起执行层写草稿并由框架封 harness、lint、校验，人签字后跑基线（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)） | 平台给非工程师用（vision「给谁用、凭什么」）：接任务的七步手工里唯一不是按钮的一步做成按钮，剩下的靠对话；停点状态与面板往后 | 主人 + Claude |
 | 2026-09-16 | 任务包加 `env/`（python-version + requirements.lock，uv 建任务级 venv，launcher 只经 `$AI4SCI_PYTHON` 起 Python）；manifest 加 `format_version` 必填与 `source` 可选；领域 skill 注入改走 prompt 快照；领域按工具链命名；接任务清单加分工与环境步骤（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39) [#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)） | 第一个真实输入到了（#1）：任务跑在平台 venv 里、领域知识没家、接任务靠手攒，三处在真任务面前全露；按工业级开源项目标准补 | 主人 + Claude |
