@@ -3,7 +3,7 @@
 - 任务类型：**连续参数优化**。9 个参数在 log10 尺度上搜索，边界 1e-5 到 1e5，目标函数是负对数似然（NLL），方向 minimize
 - 应用领域：系统生物学。这是第三方 benchmark 的背景
 - 案例类型：调参型（[#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1) 的「案例二 · 日常在跑的参数实验」）
-- 状态：**选为第一个真任务包**，待装依赖后跑基线
+- 状态：**已成任务包 → `platform/tasks/boehm-nll/`**（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)），run_0 与 σ 已出
 - 喂给哪一层：实验内环——决定 harness 长什么样、指标能不能压成一个数、噪声多大
 - 原文：[questionnaire.md](questionnaire.md)
 
@@ -42,15 +42,27 @@ Q-5 对真任务提了三条要求，这道题三条全中：
 
 benchmark 仓库 README 的表格给的是 9 个参数、48 个测量点、3 个观测量，与实际文件一致。学长问卷里说的三个数也对得上。
 
-## 基线数字缺口
+## 基线与最优值（2026-09-16 本机实测）
 
-学长没给具体 NLL 数值，只说「用 pyPESTO 默认 multi-start 得到的初始优化结果作为 baseline」。文献与 benchmark 社区有这道题的公认最优值，**我还没核实具体数字，不写进来**。跑通之后以本机实测为 `run_0`，不拿没核实的文献值当标准答案。
+学长只说「用 pyPESTO 默认 multi-start 得到的初始优化结果作为 baseline」，没给数。实测：
 
-## 本机阻塞
+| 项 | 值 | 怎么来的 |
+|---|---|---|
+| 名义参数处 NLL | 138.2220 | 探针直接计算，这就是文献里的公认最优值 |
+| 基线 run_0（seed 42） | 200.3254 | 5 个均匀随机起点 + scipy L-BFGS-B，学长的默认流程 |
+| 重复（seed 42 / 43 / 44） | 200.33 / 195.30 / 147.81 | 同 seed 两次逐位相同 |
+| σ | 28.98 | 三次重复的样本标准差 |
+| 一次跑完 | 约 3 秒 | 含装载模型，纯 CPU |
 
-pyPESTO 默认靠 AMICI 把 SBML 模型编译成 C++ 求解器，AMICI 要 swig、hdf5、cmake，`brew list` 显示三个都缺。装它们会动全局 brew，等主人点头。
+σ 这么大是这道题的本性：多起点从随机点出发，掉进哪个局部最优看运气。统计门 `2σ ≈ 58` 意味着执行层要把 NLL 压到 142 以下才算真改进，而不是换个 seed 碰到 147.8 就算。
 
-退路：pyPESTO 也支持不经 AMICI 的后端，代价是慢一些。AMICI 装不上再退到这条。
+## 求解器
+
+纯 pip 栈：pypesto 0.7.0 + petab 0.9.0 + libroadrunner 2.10.0，Python 3.14，全是预编译轮子，不装 AMICI、不碰 brew。PEtab 定义的 NLL 与求解器无关。roadrunner 目标函数没有解析梯度，scipy 走有限差分。
+
+## 任务包怎么接进来的
+
+按纲领 packs §2 的分工走了一遍：协调层填 manifest；执行层（sonnet，隔离会话，只放行 harness/ 与 code/，$0.42、170 秒）写 launcher / evaluate / make_run0 / 基线 optimize.py，一次写对；人审 evaluate.py（NLL 由 harness 重算，code/ 只产参数向量）；`task validate` 一次过。过程与洞记在 [#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)。
 
 ## 噪声怎么估
 
