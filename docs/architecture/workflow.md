@@ -90,7 +90,9 @@ runs/<run_id>/
 
 契约里的值从哪来：**manifest 由协调层（人 + agent）拍板后填写**，方向、预算、统计门、验收判据都在里面；框架只读，并在每轮证明它们没被改（hash、`elapsed_s`）。
 
-**能力描述符**（已落地，`framework/contracts/capability.py`）：每个能力子包导出 `DESCRIPTOR`（name、level、summary、inputs、outputs、params、needs_executor、needs_compute、criteria）与统一入口 `run(run_dir, ports, **params) -> str`；`capabilities.discover()` 扫子包并断言入口签名与描述符的参数表一致，`ai4sci cap` 的子命令从描述符生成，所以 CLI 参数与描述符一致是构造保证。`ai4sci cap list --json` 输出全部描述符，是低代码 UI 的节点定义、也是 UI 后端与协调 agent 的同一份真相（P-12）。它是从实验与分析两个真实例里抽出来的：只放两个都用得上的字段。
+**能力描述符**（已落地，`framework/contracts/capability.py`）：每个能力子包导出 `DESCRIPTOR`（name、level、stage、title、what、summary、inputs、outputs、params、needs_executor、needs_compute、criteria）与统一入口 `run(run_dir, ports, **params) -> str`；`capabilities.discover()` 扫子包并断言入口签名与描述符的参数表一致，`ai4sci cap` 的子命令从描述符生成，所以 CLI 参数与描述符一致是构造保证。`ai4sci cap list --json` 输出全部描述符，是低代码 UI 的节点定义、也是 UI 后端与协调 agent 的同一份真相（P-12）。它是从实验与分析两个真实例里抽出来的：只放两个都用得上的字段。
+
+**阶段是能力上面的一层标签**（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)）：上图的七个格子（文献、假设、设计、实验、分析、写作、验证）不是七个能力，是七个科研阶段；落地时设计拆成了 design + baseline，实验拆成了 start + experiment，所以一个阶段下挂几颗能力。描述符的 `stage` 只认这七个（`STAGES`），`discover()` 断言。阶段没有代码、没有运行时、不定先后（P-10），目录也不按阶段套子目录——契约挂在产物上，不挂在分组上。能力上**不写**「属于哪条工作流」：工作流文件引用能力，反过来写是两份真相；`ai4sci show caps` 与 `GET /cap` 的 `used_by` 是反查算出来的。工作流「覆盖哪几个阶段」（`covers`）同样现算；有实验或分析却没有验证，机器提醒一句（`remarks`），不拦。`title` / `what` 是给研究者看的人话，页面与以后的 TUI 读同一份，不在某个界面里另抄。
 
 ## 2. 实验内环（实验能力）
 
@@ -287,3 +289,4 @@ turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, bash_
 | 2026-09-16 | §5 加「协调层适配」：`Chat` 端口、Claude Code 续接、指南注入、对话落盘、`ai4sci chat` / `serve`（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） | 产品形态定为两个看板一次验收，网页要能起协调 agent；主人拍板走 CLI 子进程 + 续接、藏在端口后面可替换 | 主人 + Claude |
 | 2026-09-16 | §5 协调层适配的端点清单补看板与两颗键；加「界面适配」：`ui/<kind>/` 一种界面一个目录、全是端点的客户端，网页第一版、验收记录 `accept.json`、门禁与浏览器闭环（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | MVP 第 5 件页面；主人红线：UI 也是适配器，GUI 之后有 TUI 要留位置 | 主人 + Claude |
 | 2026-09-16 | 「套餐」改叫工作流并落成文件 `workflows/*.yaml`（`intake` 接一个新课题、`auto-research` 自动做实验；步骤是能力、键或纯人的事，`assumes` 声明前提），`run new` 升成第 6 颗能力 `start`（`contracts.flow` 的桥改认它）；页面的进度页（写死五步）换成工作流页（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | 主人指出页面把两条固定流拼起来当成了平台：平台是能力清单，工作流只是预装的拼法；每样东西要么是能力、要么是键、要么是查询 | 主人 + Claude |
+| 2026-09-17 | §1 描述符加阶段（`stage`，七个科研阶段，能力上面的一层标签）与人话字段（`title` / `what`）；工作流的覆盖范围与能力的「用在哪条流」都是算出来的，不存（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)） | 主人提出能力归科研模块、模块拼工作流；对齐后「模块」改叫阶段，反向归属不存 | 主人 + Claude |

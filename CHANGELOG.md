@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- workflow §1 与 README P-12：能力描述符加所属阶段与人话标题，七个科研阶段是能力上面的一层标签、反向归属不存只算；Q-1 补记；spec 加 R-21（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)）
 - workflow §5 协调层驱动面改成四类命令（cap / sign / show / chat serve），packs §2 的命令名跟着改；spec 加 R-20（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）
 - workflow §5 与 Q-13 补记：套餐改叫工作流并落成文件 `workflows/*.yaml`，`start` 成为第 6 颗能力，页面进度页换成工作流页（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）
 - workflow §5 加「界面适配」（`ui/<kind>/` 一种界面一个目录、全是 `serve` 端点的客户端、TUI 留位置）并补看板端点与两颗键；spec 加 R-19 A-20 与 09-2x 第五格；`.playwright-mcp/` 进 gitignore（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）

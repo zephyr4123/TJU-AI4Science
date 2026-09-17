@@ -39,6 +39,7 @@
 | R-18 | 协调 agent 服务化第一版：`backends` 第二个端口 `Chat`（多轮、session id 续接、事件流）与 Claude Code 适配器；`framework/chat/` 指南注入、对话落盘 `runs/chats/<id>/`、标准库 HTTP + SSE；`ai4sci chat new|send|list`、`ai4sci serve`。涉及 agent 的一律走端口可替换。**2026-09-16 完成**（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） | vision「产品形态」，workflow §5 |
 | R-19 | 页面第一版：`ui/web/` React 19 + Tailwind v4 + shadcn，`ai4sci serve` 端出静态文件；对话（SSE 事件流、工具行翻成人话）、需求页（想解决什么、怎么算好、花多少、**发布键**）、工作流页（几条工作流、几颗能力，从 `workflows/*.yaml` 与 `/cap` 读）、结果页（比原来好了多少、可信吗、助理的结论、每轮一句、**验收键**），每页是一页纸、术语全翻译；`run new` 升成能力 `start`，能力清单六颗；后端加 tasks / runs / flow/check 端点与验收记录 `accept.json`（`ai4sci run accept`）；`ui/` 是界面适配器层，TUI 留位置；`make ui-check` 进 `make check` 与 CI。**2026-09-16 完成**（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | vision「产品形态」，workflow §5 界面适配 |
 | R-20 | 命令行收成四类：`cap` 能力（六颗，续跑与续命是 `experiment` 的参数）、`sign task|run` 两颗键、`show` 查询、`chat` / `serve` 入口；`task` `run` `loop` `status` `flow` `cap list` 全部并掉，环境由 `cap baseline` 自建。R-7 R-15 R-17 A-5 A-14 里的旧命令名是历史记录，以本行为准。**2026-09-16 完成**（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | 主人：每样东西要么是模块要么不是；workflow §5 |
+| R-21 | 能力归到七个科研阶段下：描述符加 `stage`（只认 `STAGES`）与人话 `title` / `what`；`show caps` / `GET /cap` 按阶段列、空阶段标空、带反查的 `used_by`；工作流与 `show flow` 带算出来的 `covers` 与「有实验没验证」的 `remarks`；`GET /stages`；页面能力清单按阶段分组。阶段是标签不定先后，能力上不写属于哪条流。**2026-09-17 完成**（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)） | 主人：能力归科研模块、模块拼工作流；workflow §1 |
 | R-13 | 第一个真任务包 `tasks/boehm-nll/`（学长案例二）：按 packs §2 的分工手工走一遍设计流程——协调层填 manifest、执行层写 harness / code / env、人签 evaluate.py——跑出 run_0 与 σ；这是设计能力的第二个实例，描述符之后从两个实例抽。**2026-09-16 完成**：run_0 200.33、σ 28.98，真跑 3 轮 + 分析 + 验证 PASS，手工流沉淀为 `coordinator/README.md` 固定流之二（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)） | packs §2，Q-5，#1 |
 
 ## 非目标（N-n）
@@ -128,3 +129,4 @@
 | 2026-09-16 | 加 R-18 A-19 与 09-2x 第四格（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） | MVP 第 4 件：网页要能起协调 agent；主人拍板走 CLI 子进程 + 续接，端口可替换 | 主人 + Claude |
 | 2026-09-16 | 加 R-19 A-20 与 09-2x 第五格（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | MVP 第 5 件：页面。主人定 React + Tailwind v4，UI 作适配器留 TUI 位置，浏览器闭环验证 | 主人 + Claude |
 | 2026-09-16 | 加 R-20：命令行收成四类（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | 主人指出 CLI 上一堆没归类的动作，要求按纲领每样要么是能力要么是键要么是查询 | 主人 + Claude |
+| 2026-09-17 | 加 R-21：能力归到科研阶段下（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)） | 主人提出「模块 → 能力包 → workflow」三层；对齐后模块定名为阶段，反向归属不存只算 | 主人 + Claude |

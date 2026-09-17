@@ -24,6 +24,8 @@
 
 AutoResearchClaw 的 23 段太细（大量阶段是一次 LLM 调用），InternAgent 的 3 段太粗（想法生成一个阶段里塞了 9 个 agent）。拟定 7 个能力：文献、假设、设计、实验、分析、写作、验证。platform 0.2.0 只做设计、实验、分析、验证四个。加了协调层后这个问题只剩"提供哪几个"，不再有"按什么顺序"：顺序、回退、跳过都是协调层的决定（P-10）。
 
+> 2026-09-17 补记：这七个落地时成了七个**阶段**，不是七个能力——设计拆成 design + baseline，实验拆成 start + experiment，一个阶段下挂几颗能力。阶段是描述符上的字段 `stage`，`ai4sci show caps` 按它列清单，文献、假设、写作三格标空（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)）。
+
 ## Q-2 执行层 skill 怎么注入
 
 候选：
