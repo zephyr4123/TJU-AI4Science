@@ -46,7 +46,7 @@
 | 写作 | 项目 | 分析 + 文献 + 假设台账 + 模板 | `paper.md` / LaTeX + 图 | 执行层分节调用（Q-12），图由 tools 出 | 数字回溯、引用真伪、图源 |
 | 验证 | 项目 | 论文 + 上游全部产物 | `report.json` | 框架，零模型；discussion 类交隔离裁判 | 三条判据全过才 PASS |
 
-  platform 0.2.0 只做设计、实验、分析、验证四个（Q-1），且设计暂以现成任务包代替。文献能力可以不跑：用户自带调研包就当它的产物。**2026-09-15 起实验、分析、验证三个已落地**（`ai4sci cap list` 列出的就是全部），设计 = `ai4sci run new` 吃现成任务包。
+  platform 0.2.0 只做设计、实验、分析、验证四个（Q-1），且设计暂以现成任务包代替。文献能力可以不跑：用户自带调研包就当它的产物。**2026-09-15 起实验、分析、验证三个已落地**（`ai4sci cap list` 列出的就是全部），设计 = `ai4sci run new` 吃现成任务包。2026-09-17 设计阶段下有三颗 task 级按钮：`cap init` 起任务包（搬材料、放带「待填」的模板，唯一一颗自己建目标目录的能力，描述符 `creates_target`）、`cap design` 接任务、`cap baseline` 跑基线（[#60](https://github.com/zephyr4123/TJU-AI4Science/issues/60)）。
 - **每个能力一次执行层调用，新会话。** 上下文从磁盘来，不靠上一个能力的会话。这是 P-1 与 P-3 的直接推论。
 - **失败处理**：FAILED 就停，不模板兜底、不静默跳过（P-7）。重试是显式配置，默认 0。
 - **回退**：框架不判断"要不要回到设计"，协调层看了分析结论决定。框架只提供留档：重跑一个能力时把旧目录改名成 `_v{n}`，不覆盖。
@@ -263,8 +263,8 @@ turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, bash_
 ```
 
 - **续接**：Claude Code 走 `claude -p <message> --resume <session id> --append-system-prompt <指南>`；隔离位与执行层同一组，但**不带** `--no-session-persistence`，多轮靠的就是 CLI 自己的会话持久化。实测两轮记得住（haiku 两轮 $0.02；sonnet 列任务包并复述、续接答预算，两轮 $0.12）。
-- **指南注入**：服务会话隔离了所有设置源，`coordinator/README.md` 由 `framework/chat/guide.py` 连同一段"你在服务里"的前言塞进 system prompt（命令写 `.venv/bin/ai4sci`、发布键不由你按、先说结论用人话）。
-- **权限**：Bash 只放行 `ai4sci`，写只放行 `tasks/`、`runs/` 与 `workflows/`（后者是自定义工坊的前置：agent 拼出的流要存得下来，[#56](https://github.com/zephyr4123/TJU-AI4Science/issues/56)；指南教它先 `show flow` 后存、存完 `show workflows` 校验）；dontAsk 下只读 Bash 自动放行，但带 `for` / `cat` 的复合命令实测被拒，agent 会改用 Read 工具。
+- **指南注入**：服务会话隔离了所有设置源，`coordinator/README.md` 由 `framework/chat/guide.py` 连同一段"你在服务里"的前言塞进 system prompt（命令写裸 `ai4sci`、一条一行、不加路径不挂前缀不接管道、没有按钮就停下来说缺按钮、发布键不由你按、先说结论用人话）。指南本身受 lint：代码块里每条命令以 `ai4sci ` 开头（P-14，[#60](https://github.com/zephyr4123/TJU-AI4Science/issues/60)）。
+- **权限**：Bash 白名单只有 `Bash(ai4sci *)` 一条（规则按命令文本前缀匹配，挂环境变量前缀、写 `.venv/bin/` 路径都对不上；裸 `ai4sci` 找得到是因为 `ClaudeCodeChat.build_env` 把本 venv 的 bin **追加**到 PATH 末尾，不遮系统命令），配置一律走起服务的人的环境变量（`AI4SCI_EXECUTOR_MODEL` 等），命令上不带；写只放行 `tasks/`、`runs/` 与 `workflows/`（后者是自定义工坊的前置：agent 拼出的流要存得下来，[#56](https://github.com/zephyr4123/TJU-AI4Science/issues/56)；指南教它先 `show flow` 后存、存完 `show workflows` 校验）；dontAsk 下只读 Bash 自动放行，但带 `for` / `cat` 的复合命令实测被拒，agent 会改用 Read 工具。
 - **长按钮不进后台**（[#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)）：`claude -p` 里 Bash 超过 CLI 缺省的 2 分钟会被自动挪到后台，一轮结束后台子进程约 5 秒后被杀。实验 #55 里 `cap experiment --max-iters 3` 第 4 轮就这样死在半路（框架记 `interrupted`、回滚到 best、下一轮 `--resume` 接上，P-3 兑现，但研究者看到的是「卡住了」）。适配器起会话时设 `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` 关掉全部后台机制，并把 `BASH_DEFAULT_TIMEOUT_MS` / `BASH_MAX_TIMEOUT_MS` 抬到与本轮超时（`AI4SCI_COORDINATOR_TIMEOUT_S`，缺省 900 s）一样长：唯一会杀它的只有我们自己的定时器。指南同步写明前台等、跑不完分批。真正的解是长能力做成异步作业（`cap experiment` 立刻返回作业号、`show run` 报进度），那是无人值守的方向，记在 Q-7。
 - **落盘**：会话内容存在 CLI 自己的目录里，我们只记 session id；但每一轮的原生事件流自己留一份在 `runs/chats/<id>/turn-N/events.jsonl`，它是"agent 那一轮到底按了什么"的唯一证据（P-3）。meta 记后端、session id、cwd、完成的轮数、累计花费；transcript 给人翻；忙锁 `inflight.json` 让同一段对话同一时刻只跑一轮；半途放弃的轮次目录留着不计数。
 - **两张脸同一套函数**：`ai4sci chat new|send|list` 在终端里聊，`ai4sci serve` 起标准库 HTTP + SSE 给页面：对话（`POST /chats`、`POST /chats/<id>/messages` 逐事件推、`GET /chats[/<id>]` 带第一句话标题与一轮一条的 history）、需求看板（`GET /tasks[/<id>]`：阶段、钥匙状态、manifest、design.md、预检；`POST /tasks/<id>/publish` 发布键）、编排看板（`GET /cap` 节点清单、`GET /flow/check?steps=` 通不通）、结果看板（`GET /runs[/<id>]`：best 对基线、账本、分析、验证、验收状态；`POST /runs/<id>/accept` 验收键）、`GET /health`；不是接口前缀的路径端页面的静态文件。节点清单与流检查由 cli 以函数传入，chat 层不认识 capabilities；看板读盘在 `framework/chat/boards.py`，全是纯函数，NaN 出门前换 None。十来个端点仍是标准库，页面要更多再说。

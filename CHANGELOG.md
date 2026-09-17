@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- README §4 加 P-14「CLI 主导封装」：agent 面前只有 `ai4sci`、缺按钮就加按钮不放行裸命令；workflow §1 设计阶段三颗按钮、§5 协调层适配的白名单与 PATH；spec 加 R-26；实验 #59 记录真实协调 agent 从零接 rahman（[#59](https://github.com/zephyr4123/TJU-AI4Science/issues/59) [#60](https://github.com/zephyr4123/TJU-AI4Science/issues/60)）
 - vision 加「产品形态补记：两块看板，页面随工作流变」；纲领 P-12 补「页面同理」；workflow §1 拟定步骤参数与 run 记流、§5 界面适配下一版形态；Q-13 补记等待状态的形状；spec 加 R-24 R-25（拟定）与 MVP 顺序（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)）
 - workflow §5 协调层适配加可写 `workflows/` 与「长按钮不进后台」，Q-7 补记异步作业方向，spec 加 R-23；实验 #55 记录真实协调 agent 四轮拼装并跑通（[#55](https://github.com/zephyr4123/TJU-AI4Science/issues/55) [#56](https://github.com/zephyr4123/TJU-AI4Science/issues/56) [#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)）
 - README §4 加 P-13「文档即接口」：文件名就是接口、一个文件一个生产者、命名三规矩；workflow §1 契约段加种子清单与两处不齐的名字；spec 加 R-22（[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)）
