@@ -42,6 +42,8 @@
 | R-21 | 能力归到七个科研阶段下：描述符加 `stage`（只认 `STAGES`）与人话 `title` / `what`；`show caps` / `GET /cap` 按阶段列、空阶段标空、带反查的 `used_by`；工作流与 `show flow` 带算出来的 `covers` 与「有实验没验证」的 `remarks`；`GET /stages`；页面能力清单按阶段分组。阶段是标签不定先后，能力上不写属于哪条流。**2026-09-17 完成**（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)） | 主人：能力归科研模块、模块拼工作流；workflow §1 |
 | R-22 | 文档即接口（P-13）：`capabilities.discover()` 断言同级别里没有两颗能力声明同一个输出路径、每个输入路径是种子或同级能力的输出；`checkpoint.json` 归 run 种子，experiment 不再记它为输出。**2026-09-17 完成**（[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)） | 主人：文件名就是接口，agent 读人话去发散比读 schema 好；README P-13 |
 | R-23 | 自定义工坊前置（实验 [#55](https://github.com/zephyr4123/TJU-AI4Science/issues/55) 的两处缺口）：协调 agent 可写 `workflows/`，指南加「拼一条自己的流」（格式、先 `show flow` 后存、存完 `show workflows`，样例有测试）；`ClaudeCodeChat` 起会话关后台（`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`）、Bash 超时对齐本轮超时，指南写明前台等、跑不完分批。**2026-09-17 完成**（[#56](https://github.com/zephyr4123/TJU-AI4Science/issues/56) [#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)） | 主人：别停留在纸面，用真实协调 agent 对话拼装并跑通；workflow §5 |
+| R-24 | 两块看板（拟定，[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)）：编辑台改库（可写 `workflows/`，对话拼流存文件，可选）、主页面改实例（可写 `tasks/` `runs/`，接流照跑不立新流，需求对齐在这里）；主页面右侧随当前 run 照的工作流生成，一步一个模块，能力步骤按文件种类通用渲染，三个页签废掉。**未开工** | 主人：页面不是固定流程，装什么流长什么样；vision 产品形态补记 |
+| R-25 | 接流的前置（拟定，[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)）：工作流步骤 `with:` 参数按描述符校验；run 记照哪条流、走到第几步、停在等谁（等待状态）并快照那条流；长能力做成异步作业（Q-7）。**未开工** | 主人 MVP 判断：真实长度实验一轮对话等不到 |
 | R-13 | 第一个真任务包 `tasks/boehm-nll/`（学长案例二）：按 packs §2 的分工手工走一遍设计流程——协调层填 manifest、执行层写 harness / code / env、人签 evaluate.py——跑出 run_0 与 σ；这是设计能力的第二个实例，描述符之后从两个实例抽。**2026-09-16 完成**：run_0 200.33、σ 28.98，真跑 3 轮 + 分析 + 验证 PASS，手工流沉淀为 `coordinator/README.md` 固定流之二（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)） | packs §2，Q-5，#1 |
 
 ## 非目标（N-n）
@@ -103,6 +105,7 @@
 | 09-2x | R-15 R-16 R-17：发布钥匙 + 预检、两个按钮进能力清单、flow check；A-16 A-17 A-18。**2026-09-16 完成**：内仓分支 `feat/mvp-batch-1`（[#47](https://github.com/zephyr4123/TJU-AI4Science/issues/47)） |
 | 09-2x | R-19：页面第一版；A-20。**2026-09-16 完成**：内仓分支 `feat/web-ui`（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） |
 | 09-2x | R-18：协调 agent 服务化第一版；A-19。**2026-09-16 完成**：内仓分支 `feat/coordinator-service`（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） |
+| 09-2x | 主人 2026-09-17 的 MVP 判断与顺序：接任务侧真协调 agent 实验（同 #55 的方式）→ R-25 异步作业与等待状态 → 打 `v0.2.0` → 分工（文献 / 假设 / 写作三颗能力、第二个执行层适配器、ssh / slurm 算力、领域包、R-24 页面各一路并行）（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)） |
 | 09-28 | R-8 R-9 R-10：门禁、文档、协调层入口指南、初级版 tag `v0.2.0` |
 
 ## 未决（挂 issue）
@@ -134,3 +137,4 @@
 | 2026-09-17 | 加 R-21：能力归到科研阶段下（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)） | 主人提出「模块 → 能力包 → workflow」三层；对齐后模块定名为阶段，反向归属不存只算 | 主人 + Claude |
 | 2026-09-17 | 加 R-22：文档即接口的两条加载时断言（[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)） | 主人问接口松怎么拼；结论是拼靠名字，把命名规矩变成断言 | 主人 + Claude |
 | 2026-09-17 | 加 R-23：自定义工坊前置的两处缺口（[#55](https://github.com/zephyr4123/TJU-AI4Science/issues/55) [#56](https://github.com/zephyr4123/TJU-AI4Science/issues/56) [#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)） | 真实协调 agent 四轮对话拼出并跑通自定义流，暴露存不下与长按钮被杀两处 | 主人 + Claude |
+| 2026-09-17 | 加 R-24 R-25（拟定）与 09-2x 的 MVP 顺序一格（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)） | 主人拍板两块看板与页面随工作流生成；框架骨架到 MVP，先补两件真用会撞的事 | 主人 + Claude |

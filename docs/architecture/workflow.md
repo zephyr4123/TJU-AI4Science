@@ -98,6 +98,8 @@ runs/<run_id>/
 
 一个例子，工坊里以后拼进一颗「写作」能力：它只能往 `writing/` 里写，产物叫 `paper.md` 还是 `draft.md` 随它，撞不到别人；它声明「吃 `analysis/analysis.md` 与 `experiment/ledger.tsv`」，这两个名字上面有人吐，通；写成 `analysis/*.md` 或 `summary.md`，加载时就被拒。agent 拼流时看 `show caps` 每颗一句「吃什么、吐什么、里面有什么」，照名字接，不读 schema。
 
+拟定（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)，未做）：工作流的能力步骤加 `with:`（如 `with: {max_iters: 3}`），按描述符的 Param 名字与类型校验；run 开始时把照的那条流快照进 `runs/<id>/`，并记下走到第几步、停在等谁。没有这两样，接流的 agent 只能从人话里猜参数、页面不知道该高亮哪一格。
+
 ## 2. 实验内环（实验能力）
 
 唯一有循环的地方。这个循环是机械的，不做科研判断，所以可以留在框架里。核心是**四个角色分开**：三个仓都把它们混在一起了。
@@ -277,6 +279,7 @@ turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, bash_
 - **验收记录**：与发布记录对称。`runs/<id>/accept.json` 签 best_iter / best_metric / best_commit 与验证报告的结论（`framework/run/accept.py`，放 run 层因为它读 checkpoint）；内环在跑、只有基线、报告不合约都拒绝；验收之后 best 又变了记录标 stale，看板要人再看一遍，不让旧签名盖住新结果。
 - **门禁**：`make ui-check`（tsc + oxlint + vitest + 构建）并入 `make check` 与 CI（setup-node 22）；依赖只进 `ui/web/node_modules`。浏览器闭环实测（playwright）：发布 → `publish.json`、验收 → `accept.json`、流通不通报「第 4 步 design 是 task 级能力，run 段之后不能回到任务包」、haiku 两轮对话（第二轮 `ls -1 tasks/` 的工具行）。
 - **`ui/tui/`**：留位置没建。
+- **下一版形态（2026-09-17 拍板，未做，[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)）**：两块看板，以可写目录划界。编辑台改「库」（`workflows/`，以后 `capabilities/`）：对话拼流、查通不通、存文件，可选，主页面 agent 缺合适的流时把人送过来。主页面改「实例」（`tasks/` `runs/`）：agent 接一条流照着跑，跑偏自己按单颗按钮修，不立新流；需求对齐是 intake 前三步，在主页面。主页面右侧 = 当前 run 照的那条流，一步一个模块（能力步骤按文件种类通用渲染、键步骤是那颗键、纯人步骤是一行待办），装什么流长什么样，三个页签废掉。前置：步骤 `with:` 参数、run 记流与步序（等待状态）、流快照、异步作业。
 
 ## 变更记录
 
@@ -297,3 +300,4 @@ turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, bash_
 | 2026-09-17 | §1 描述符加阶段（`stage`，七个科研阶段，能力上面的一层标签）与人话字段（`title` / `what`）；工作流的覆盖范围与能力的「用在哪条流」都是算出来的，不存（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)） | 主人提出能力归科研模块、模块拼工作流；对齐后「模块」改叫阶段，反向归属不存 | 主人 + Claude |
 | 2026-09-17 | §1 契约段加「接口是文件名不是 schema」：种子清单、`checkpoint.json` 归 run 种子、两处不齐的名字与原因、写作能力的例子（[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)） | 文档即接口升成 P-13，落地两条加载时断言 | 主人 + Claude |
 | 2026-09-17 | §5 协调层适配：可写目录加 `workflows/`，长按钮不进后台（`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` + Bash 超时对齐本轮超时）（[#56](https://github.com/zephyr4123/TJU-AI4Science/issues/56) [#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)） | 实验 #55 暴露的两处缺口：拼得出存不下、长按钮被挪到后台杀掉 | 主人 + Claude |
+| 2026-09-17 | §1 拟定步骤 `with:` 参数与 run 记流 / 步序 / 快照；§5 界面适配加下一版形态：两块看板以可写目录划界、主页面右侧随工作流生成（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)） | 主人拍板：页面不是固定流程，装什么流长什么样；需求对齐在主页面 | 主人 + Claude |

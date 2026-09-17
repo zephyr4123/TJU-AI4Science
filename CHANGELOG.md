@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- vision 加「产品形态补记：两块看板，页面随工作流变」；纲领 P-12 补「页面同理」；workflow §1 拟定步骤参数与 run 记流、§5 界面适配下一版形态；Q-13 补记等待状态的形状；spec 加 R-24 R-25（拟定）与 MVP 顺序（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)）
 - workflow §5 协调层适配加可写 `workflows/` 与「长按钮不进后台」，Q-7 补记异步作业方向，spec 加 R-23；实验 #55 记录真实协调 agent 四轮拼装并跑通（[#55](https://github.com/zephyr4123/TJU-AI4Science/issues/55) [#56](https://github.com/zephyr4123/TJU-AI4Science/issues/56) [#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)）
 - README §4 加 P-13「文档即接口」：文件名就是接口、一个文件一个生产者、命名三规矩；workflow §1 契约段加种子清单与两处不齐的名字；spec 加 R-22（[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)）
 - workflow §1 与 README P-12：能力描述符加所属阶段与人话标题，七个科研阶段是能力上面的一层标签、反向归属不存只算；Q-1 补记；spec 加 R-21（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)）
