@@ -70,6 +70,8 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 
 大方向 2026-09-10 已定（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)）：人在协调层的对话里，框架没有人在环功能，不等人。剩下的问题只有一个：协调 agent 无人值守（挂机过夜）时把问题留给人、人异步回复，走什么通道。候选是 issue 评论、协调 CLI 自己的通知机制。platform 0.2.0 不做，先用交互态对话。co-pilot（协作改假设、共写论文）在协调层里天然就是对话，不再是单独的模式。
 
+> Q-7 补记（2026-09-17）：实验 #55 里长按钮在一轮对话里等不到底，暂时用「关后台 + 前台等」兜住（[#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)）。无人值守的正解是长能力做成异步作业：`cap experiment` 立刻返回作业号，`show run` 报进度，页面轮询，人回来看结果。做 Q-7 时一起做。
+
 ## Q-8 协调层与执行层各用哪个 CLI
 
 两层各自选，可以不一样。执行层：Claude Code 先行（本机有、flag 已对账），Codex 第二（本机有、flag 未对账），每加一个适配器必须带真 CLI 冒烟测试。协调层：开工时定，0.2.0 就是主人加交互态的 Claude Code。
@@ -135,3 +137,4 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 | 2026-09-16 | Q-13 加主人判断：协调层的面板（TUI → GUI）是协调层的脸，停点可视化，缺一个机器可读的等待状态（[#34](https://github.com/zephyr4123/TJU-AI4Science/issues/34)） | 真任务闭环跑通后对齐 UI 的位置 | 主人 + Claude |
 
 > Q-13 补记（2026-09-16 深夜）：套餐文件提前落地了，改叫工作流 `workflows/*.yaml`，因为页面要列出来、下一步的自定义工坊要让 agent 在对话里拼出来存进去。格式故意最小：name / title / summary / assumes / steps，见内仓 `framework/contracts/workflows.py` 文件头（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）。
+| 2026-09-17 | Q-7 补记：长按钮暂用关后台兜住，异步作业是无人值守的正解（[#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)） | 实验 #55 第三轮长按钮被挪到后台杀掉 | 主人 + Claude |

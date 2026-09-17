@@ -41,6 +41,7 @@
 | R-20 | 命令行收成四类：`cap` 能力（六颗，续跑与续命是 `experiment` 的参数）、`sign task|run` 两颗键、`show` 查询、`chat` / `serve` 入口；`task` `run` `loop` `status` `flow` `cap list` 全部并掉，环境由 `cap baseline` 自建。R-7 R-15 R-17 A-5 A-14 里的旧命令名是历史记录，以本行为准。**2026-09-16 完成**（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | 主人：每样东西要么是模块要么不是；workflow §5 |
 | R-21 | 能力归到七个科研阶段下：描述符加 `stage`（只认 `STAGES`）与人话 `title` / `what`；`show caps` / `GET /cap` 按阶段列、空阶段标空、带反查的 `used_by`；工作流与 `show flow` 带算出来的 `covers` 与「有实验没验证」的 `remarks`；`GET /stages`；页面能力清单按阶段分组。阶段是标签不定先后，能力上不写属于哪条流。**2026-09-17 完成**（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)） | 主人：能力归科研模块、模块拼工作流；workflow §1 |
 | R-22 | 文档即接口（P-13）：`capabilities.discover()` 断言同级别里没有两颗能力声明同一个输出路径、每个输入路径是种子或同级能力的输出；`checkpoint.json` 归 run 种子，experiment 不再记它为输出。**2026-09-17 完成**（[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)） | 主人：文件名就是接口，agent 读人话去发散比读 schema 好；README P-13 |
+| R-23 | 自定义工坊前置（实验 [#55](https://github.com/zephyr4123/TJU-AI4Science/issues/55) 的两处缺口）：协调 agent 可写 `workflows/`，指南加「拼一条自己的流」（格式、先 `show flow` 后存、存完 `show workflows`，样例有测试）；`ClaudeCodeChat` 起会话关后台（`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`）、Bash 超时对齐本轮超时，指南写明前台等、跑不完分批。**2026-09-17 完成**（[#56](https://github.com/zephyr4123/TJU-AI4Science/issues/56) [#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)） | 主人：别停留在纸面，用真实协调 agent 对话拼装并跑通；workflow §5 |
 | R-13 | 第一个真任务包 `tasks/boehm-nll/`（学长案例二）：按 packs §2 的分工手工走一遍设计流程——协调层填 manifest、执行层写 harness / code / env、人签 evaluate.py——跑出 run_0 与 σ；这是设计能力的第二个实例，描述符之后从两个实例抽。**2026-09-16 完成**：run_0 200.33、σ 28.98，真跑 3 轮 + 分析 + 验证 PASS，手工流沉淀为 `coordinator/README.md` 固定流之二（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)） | packs §2，Q-5，#1 |
 
 ## 非目标（N-n）
@@ -132,3 +133,4 @@
 | 2026-09-16 | 加 R-20：命令行收成四类（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | 主人指出 CLI 上一堆没归类的动作，要求按纲领每样要么是能力要么是键要么是查询 | 主人 + Claude |
 | 2026-09-17 | 加 R-21：能力归到科研阶段下（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)） | 主人提出「模块 → 能力包 → workflow」三层；对齐后模块定名为阶段，反向归属不存只算 | 主人 + Claude |
 | 2026-09-17 | 加 R-22：文档即接口的两条加载时断言（[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)） | 主人问接口松怎么拼；结论是拼靠名字，把命名规矩变成断言 | 主人 + Claude |
+| 2026-09-17 | 加 R-23：自定义工坊前置的两处缺口（[#55](https://github.com/zephyr4123/TJU-AI4Science/issues/55) [#56](https://github.com/zephyr4123/TJU-AI4Science/issues/56) [#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)） | 真实协调 agent 四轮对话拼出并跑通自定义流，暴露存不下与长按钮被杀两处 | 主人 + Claude |
