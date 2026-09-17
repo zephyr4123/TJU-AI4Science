@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- README §4 加 P-13「文档即接口」：文件名就是接口、一个文件一个生产者、命名三规矩；workflow §1 契约段加种子清单与两处不齐的名字；spec 加 R-22（[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)）
 - workflow §1 与 README P-12：能力描述符加所属阶段与人话标题，七个科研阶段是能力上面的一层标签、反向归属不存只算；Q-1 补记；spec 加 R-21（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)）
 - workflow §5 协调层驱动面改成四类命令（cap / sign / show / chat serve），packs §2 的命令名跟着改；spec 加 R-20（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）
 - workflow §5 与 Q-13 补记：套餐改叫工作流并落成文件 `workflows/*.yaml`，`start` 成为第 6 颗能力，页面进度页换成工作流页（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）

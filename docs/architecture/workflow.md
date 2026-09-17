@@ -94,6 +94,10 @@ runs/<run_id>/
 
 **阶段是能力上面的一层标签**（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)）：上图的七个格子（文献、假设、设计、实验、分析、写作、验证）不是七个能力，是七个科研阶段；落地时设计拆成了 design + baseline，实验拆成了 start + experiment，所以一个阶段下挂几颗能力。描述符的 `stage` 只认这七个（`STAGES`），`discover()` 断言。阶段没有代码、没有运行时、不定先后（P-10），目录也不按阶段套子目录——契约挂在产物上，不挂在分组上。能力上**不写**「属于哪条工作流」：工作流文件引用能力，反过来写是两份真相；`ai4sci show caps` 与 `GET /cap` 的 `used_by` 是反查算出来的。工作流「覆盖哪几个阶段」（`covers`）同样现算；有实验或分析却没有验证，机器提醒一句（`remarks`），不拦。`title` / `what` 是给研究者看的人话，页面与以后的 TUI 读同一份，不在某个界面里另抄。
 
+**接口是文件名，不是 schema**（P-13，[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)）：`check_flow` 比的是路径字符串——上游吐的集合包含下游要的，就通。这够用，因为每条路径只有一个生产者，形状由生产者的代码定（`validate_task`、`contracts.analysis`、`schemas/report.schema.json`、账本的写函数）。命名三规矩见 README P-13；`discover()` 加载时就断言输出唯一、输入有出处，名字写错当场被拒，不等跑到一半。种子（不需要生产者的名字）在 `contracts/flow.py`：任务段是发布那一刻包里已有的 `manifest.yaml` `design.md` `publish.json` `data/` `env/`，run 段是 `start` 建 run 时就有的 `manifest.yaml` `work/` `checkpoint.json`（checkpoint 是 run 的状态，建它的是 start、experiment 只改它，所以是种子不是 experiment 的输出）。今天 17 个名字里两处不齐、都不改：`start` 声明的输出 `runs/<run_id>/` 是过桥用的位置不是接口，没人把它当输入，桥由 `flow.py` 按名字单独查；`run_0/` 说的是位置不是角色（基线），名字已发出，按第二条不改义也不改名。
+
+一个例子，工坊里以后拼进一颗「写作」能力：它只能往 `writing/` 里写，产物叫 `paper.md` 还是 `draft.md` 随它，撞不到别人；它声明「吃 `analysis/analysis.md` 与 `experiment/ledger.tsv`」，这两个名字上面有人吐，通；写成 `analysis/*.md` 或 `summary.md`，加载时就被拒。agent 拼流时看 `show caps` 每颗一句「吃什么、吐什么、里面有什么」，照名字接，不读 schema。
+
 ## 2. 实验内环（实验能力）
 
 唯一有循环的地方。这个循环是机械的，不做科研判断，所以可以留在框架里。核心是**四个角色分开**：三个仓都把它们混在一起了。
@@ -290,3 +294,4 @@ turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, bash_
 | 2026-09-16 | §5 协调层适配的端点清单补看板与两颗键；加「界面适配」：`ui/<kind>/` 一种界面一个目录、全是端点的客户端，网页第一版、验收记录 `accept.json`、门禁与浏览器闭环（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | MVP 第 5 件页面；主人红线：UI 也是适配器，GUI 之后有 TUI 要留位置 | 主人 + Claude |
 | 2026-09-16 | 「套餐」改叫工作流并落成文件 `workflows/*.yaml`（`intake` 接一个新课题、`auto-research` 自动做实验；步骤是能力、键或纯人的事，`assumes` 声明前提），`run new` 升成第 6 颗能力 `start`（`contracts.flow` 的桥改认它）；页面的进度页（写死五步）换成工作流页（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） | 主人指出页面把两条固定流拼起来当成了平台：平台是能力清单，工作流只是预装的拼法；每样东西要么是能力、要么是键、要么是查询 | 主人 + Claude |
 | 2026-09-17 | §1 描述符加阶段（`stage`，七个科研阶段，能力上面的一层标签）与人话字段（`title` / `what`）；工作流的覆盖范围与能力的「用在哪条流」都是算出来的，不存（[#53](https://github.com/zephyr4123/TJU-AI4Science/issues/53)） | 主人提出能力归科研模块、模块拼工作流；对齐后「模块」改叫阶段，反向归属不存 | 主人 + Claude |
+| 2026-09-17 | §1 契约段加「接口是文件名不是 schema」：种子清单、`checkpoint.json` 归 run 种子、两处不齐的名字与原因、写作能力的例子（[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)） | 文档即接口升成 P-13，落地两条加载时断言 | 主人 + Claude |
