@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""一次性迁移：把「步骤」形状的工作流文件改成「房间 + 断点」（内仓 P-18，外层 #99）。
+"""一次性迁移：把「步骤」形状的工作流文件改成「阶段 + 断点」（内仓 P-18，外层 #99）。
 
 跑法（在 platform 的 venv 里，数据根同起服务时的那几个环境变量）：
 
-    .venv/bin/python ../scripts/oneoff/migrate-flows-to-rooms.py <workflows 库> <workspaces 根>
+    .venv/bin/python ../scripts/oneoff/migrate-flows-to-stages.py <workflows 库> <workspaces 根>
 
 改三处：库 `workflows/*.yaml`、工作区 `flows/*.yaml`、run 里的快照 `runs/<id>/workflow/*.yaml`
-（连同 `flow.json` 的 step 按新项数重算）。已经是新形状的文件（有 `rooms`）原样跳过；读不出来的文件
+（连同 `flow.json` 的 step 按新项数重算）。已经是新形状的文件（有 `stages`）原样跳过；中间态的 `rooms` 键改名成 `stages`；读不出来的文件
 打一行原因、跳过，不吞。原文件不删：旧版留成 `<name>.yaml.steps.bak`。
 
-对照表（能力 → 房间）：init → 假设；design / baseline → 设计[design]；start / experiment →
+对照表（能力 → 阶段）：init → 假设；design / baseline → 设计[design]；start / experiment →
 实验[auto-research，带 experiment 那步的 with]；analysis → 分析[analysis]；verify → 验证[verify]。
 键：publish → 「断点: 发布」，accept → 「断点: 验收」；纯人的步 → 「断点: <does>」；助理的非能力步
-（填模板那种）并进它前面那一间。挨着的同一间合并、挨着的断点只留第一个。
+（填模板那种）并进它前面那个阶段。挨着的同一个阶段合并、挨着的断点只留第一个。
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ KEY_NOTE = {"publish": "发布", "accept": "验收"}
 
 def convert(doc: dict[str, Any]) -> tuple[dict[str, Any], list[int]]:
     """旧文档 → 新文档，外加「旧 step k → 新 step」的对照（下标 0..n）。"""
-    rooms: list[Any] = []
+    stages: list[Any] = []
     at: list[int] = [0]  # at[k] = 走完前 k 个旧步骤时新清单有几项
     for step in doc.get("steps") or []:
         cap, key = step.get("cap"), step.get("key")
@@ -43,40 +43,40 @@ def convert(doc: dict[str, Any]) -> tuple[dict[str, Any], list[int]]:
                 raise ValueError(f"不认识的能力 {cap!r}")
             new_cap = CAP_OF.get(cap)
             params = dict(step.get("with") or {})
-            last = rooms[-1] if rooms else None
+            last = stages[-1] if stages else None
             if isinstance(last, dict) and next(iter(last)) == stage:
-                # 同一间挨着：合并，点名与参数并进去
+                # 同一个阶段挨着：合并，点名与参数并进去
                 picks = last[stage]
                 if new_cap and new_cap not in picks:
                     picks[new_cap] = params or None
                 elif new_cap and params:
                     picks[new_cap] = {**(picks[new_cap] or {}), **params}
             elif new_cap:
-                rooms.append({stage: {new_cap: params or None}})
+                stages.append({stage: {new_cap: params or None}})
             else:
-                rooms.append(stage)
+                stages.append(stage)
         elif key:
-            if not (rooms and _is_stop(rooms[-1])):
-                rooms.append({"断点": KEY_NOTE[key]})
+            if not (stages and _is_stop(stages[-1])):
+                stages.append({"断点": KEY_NOTE[key]})
         elif step.get("by") == "人":
-            if not (rooms and _is_stop(rooms[-1])):
-                rooms.append({"断点": " ".join(str(step.get("does", "")).split()) or "看一眼"})
-        # 助理的非能力步：并进前面那一间，不占项
-        at.append(len(rooms))
-    if rooms and _is_stop(rooms[0]):
-        rooms.pop(0)
+            if not (stages and _is_stop(stages[-1])):
+                stages.append({"断点": " ".join(str(step.get("does", "")).split()) or "看一眼"})
+        # 助理的非能力步：并进前面那个阶段，不占项
+        at.append(len(stages))
+    if stages and _is_stop(stages[0]):
+        stages.pop(0)
         at = [max(0, n - 1) for n in at]
-    # 「设计 → ◆核对 → 设计」：旧的 design 与 baseline 被人的核对隔开，合并后是同一间；
-    # 后一间不添东西就删掉，断点留在合并后的那一间之后
+    # 「设计 → ◆核对 → 设计」：旧的 design 与 baseline 被人的核对隔开，合并后是同一个阶段；
+    # 后一个阶段不添东西就删掉，断点留在合并后的那个阶段之后
     i = 1
-    while i + 1 < len(rooms):
-        if _is_stop(rooms[i]) and rooms[i - 1] == rooms[i + 1]:
-            del rooms[i + 1]
+    while i + 1 < len(stages):
+        if _is_stop(stages[i]) and stages[i - 1] == stages[i + 1]:
+            del stages[i + 1]
             at = [n - 1 if n > i + 1 else n for n in at]
         else:
             i += 1
     out = {"name": doc["name"], "title": doc["title"], "summary": doc["summary"],
-           "rooms": [_tidy(item) for item in rooms]}
+           "stages": [_tidy(item) for item in stages]}
     return out, at
 
 
@@ -85,7 +85,7 @@ def _is_stop(item: Any) -> bool:
 
 
 def _tidy(item: Any) -> Any:
-    """点名但都没参数的房间写成列表；别的原样。"""
+    """点名但都没参数的阶段写成列表；别的原样。"""
     if isinstance(item, dict) and "断点" not in item:
         [(stage, picks)] = item.items()
         if all(v is None for v in picks.values()):
@@ -98,10 +98,16 @@ def migrate_file(path: Path) -> list[int] | None:
     if not isinstance(doc, dict):
         print(f"跳过 {path}：顶层不是映射")
         return None
-    if "rooms" in doc:
+    if "stages" in doc:
         return None  # 已经是新形状
+    if "rooms" in doc:  # 2026-09-18 的中间态：键名从 rooms 改成 stages，内容同形
+        doc = {**doc, "stages": doc.pop("rooms")}
+        path.write_text(yaml.safe_dump(doc, allow_unicode=True, sort_keys=False, width=100),
+                        encoding="utf-8")
+        print(f"改了 {path}：rooms → stages")
+        return None
     if "steps" not in doc:
-        print(f"跳过 {path}：既没有 steps 也没有 rooms")
+        print(f"跳过 {path}：既没有 steps 也没有 stages")
         return None
     try:
         new, at = convert(doc)
@@ -112,7 +118,7 @@ def migrate_file(path: Path) -> list[int] | None:
     backup.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
     path.write_text(yaml.safe_dump(new, allow_unicode=True, sort_keys=False, width=100),
                     encoding="utf-8")
-    print(f"改了 {path}：{len(doc['steps'])} 步 → {len(new['rooms'])} 项")
+    print(f"改了 {path}：{len(doc['steps'])} 步 → {len(new['stages'])} 项")
     return at
 
 
