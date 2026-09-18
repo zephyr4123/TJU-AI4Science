@@ -46,6 +46,8 @@
 | R-25 | 接流的前置（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58) 拟定，[#63](https://github.com/zephyr4123/TJU-AI4Science/issues/63) 落地）：工作流步骤 `with:` 参数按描述符校验；`cap start --workflow` 快照那条流进 run、`flow.json` 记步序（记录不是决策）、在等谁现算；每颗 `cap` 加 `--detach` 起成作业（`runs/jobs/`，`show jobs|job`，`GET /jobs`），跑完以「框架」身份叫醒那段对话（`Chat` 端口加 `chat_id`，`AI4SCI_CHAT_ID`），一轮带 `origin`。**2026-09-17 完成** | 主人 MVP 判断：真实长度实验一轮对话等不到 |
 | R-26 | CLI 主导封装（P-14）：协调 agent 的 Bash 白名单收成 `Bash(ai4sci *)`，服务把 venv bin 追加进 PATH；配置归环境变量、命令上不带；第 7 颗能力 `cap init <task_dir> --domain --materials --python --lock` 起任务包（材料整棵搬进 `data/`、`env/`、带「待填」的 manifest 与 design.md 模板，描述符 `creates_target`，`intake` 第一步）；「待填」进 `intake_problems`、发布键不签；指南接任务步骤改为 init + 填模板、尽头值问人或文献、不绕开按钮；指南 lint 测试。**2026-09-17 完成**（[#60](https://github.com/zephyr4123/TJU-AI4Science/issues/60)） | 主人：封装好给 agent 调用的东西，不能用原生裸露的命令，CLI 是一切的基础；README P-14 |
 | R-27 | 助理的话逐字流出（[#65](https://github.com/zephyr4123/TJU-AI4Science/issues/65)）：`Chat` 端口加 `delta`，契约要求每家适配器逐字吐；Claude Code 适配器开 partial messages；`chat send` / SSE / 页面三处都逐字；events.jsonl 只留完整事件。页面与指南说人话（[#69](https://github.com/zephyr4123/TJU-AI4Science/issues/69)）：不用「按钮」这类内部词，每条命令一句直白话，被拒的命令翻成人话；白名单放行带路径的老写法。**2026-09-17 完成** | 主人：流式是所有底座适配器都要做的，不然一整段蹦出来体验很差；要有用户思维 |
+| R-28 | 工作区即边界（P-15，[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70) [#72](https://github.com/zephyr4123/TJU-AI4Science/issues/72)）：`workspaces/<id>/`（`workspace.yaml` 标记、`task/` 任务包、`flows/` 流实例、`chats/` `runs/` `jobs/`），`studio/chats/` 编辑台对话；`framework/paths.py` 收拢仓根、`AI4SCI_HOME` 数据根与两个库目录；`run/workspace.py` 从 cwd 往上找工作区；task 级能力与 `sign task` 不带路径，`--runs-root` / `AI4SCI_RUNS_ROOT` / `show tasks` / `discover_tasks` 删；`workspace new`、`flow take`、`show workspaces` / `show flows`；三个样例任务包搬进工作区；旧 run 迁移脚本在外层 `scripts/` | README §2 §4，workflow §1 §5 |
+| R-29 | 造流与用流分权（P-16，[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70) [#73](https://github.com/zephyr4123/TJU-AI4Science/issues/73) [#74](https://github.com/zephyr4123/TJU-AI4Science/issues/74)）：`chat/scope.py` 两个域；两份指南（`coordinator/README.md` 研究助理不造流、`coordinator/studio.md` 造流助理不跑实验）与两组可写目录；端点按 `/workspaces/<id>/…` 与 `/studio/…` 分前缀；页面顶栏工作区切换与新建、脊柱按工作区读、编辑台加造流对话 | README §4，workflow §5 |
 | R-13 | 第一个真任务包 `tasks/boehm-nll/`（学长案例二）：按 packs §2 的分工手工走一遍设计流程——协调层填 manifest、执行层写 harness / code / env、人签 evaluate.py——跑出 run_0 与 σ；这是设计能力的第二个实例，描述符之后从两个实例抽。**2026-09-16 完成**：run_0 200.33、σ 28.98，真跑 3 轮 + 分析 + 验证 PASS，手工流沉淀为 `coordinator/README.md` 固定流之二（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)） | packs §2，Q-5，#1 |
 
 ## 非目标（N-n）
@@ -108,6 +110,7 @@
 | 09-2x | R-19：页面第一版；A-20。**2026-09-16 完成**：内仓分支 `feat/web-ui`（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)） |
 | 09-2x | R-18：协调 agent 服务化第一版；A-19。**2026-09-16 完成**：内仓分支 `feat/coordinator-service`（[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)） |
 | 09-2x | 主人 2026-09-17 的 MVP 判断与顺序：接任务侧真协调 agent 实验（同 #55 的方式）→ R-25 异步作业与等待状态 → 打 `v0.2.0` → 分工（文献 / 假设 / 写作三颗能力、第二个执行层适配器、ssh / slurm 算力、领域包、R-24 页面各一路并行）（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)） |
+| 09-2x | R-28 R-29：工作区与两位助理（[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70)）。文档先行，再改代码；两位助理各真跑一遍验收 |
 | 09-28 | R-8 R-9 R-10：门禁、文档、协调层入口指南、初级版 tag `v0.2.0` |
 
 ## 未决（挂 issue）
@@ -143,3 +146,4 @@
 | 2026-09-17 | 加 R-26：CLI 主导封装（[#60](https://github.com/zephyr4123/TJU-AI4Science/issues/60)） | 接任务实验 #59 暴露三条歪路：前缀命令、裸 python、手搬文件；主人立 P-14 | 主人 + Claude |
 | 2026-09-17 | R-25 标完成：异步作业、等待状态、叫醒、步骤参数（[#63](https://github.com/zephyr4123/TJU-AI4Science/issues/63)） | 主人：人话版是「作业号、便条、跑完叫醒」；真 agent 端到端跑通 | 主人 + Claude |
 | 2026-09-17 | R-24 标完成、加 R-27（[#64](https://github.com/zephyr4123/TJU-AI4Science/issues/64) [#65](https://github.com/zephyr4123/TJU-AI4Science/issues/65) [#69](https://github.com/zephyr4123/TJU-AI4Science/issues/69)） | 主人拍板页面全面重构：两块看板、脊柱、reactbits、Markdown、流式；实测后要求说人话、别设坎 | 主人 + Claude |
+| 2026-09-18 | 加 R-28 R-29 与 09-2x 一格（[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70) [#71](https://github.com/zephyr4123/TJU-AI4Science/issues/71)） | 主人：按工作区划分才有边界，一个工作区一份需求；主页面 agent 不能造流，编辑台另有造流助理；文档先行，该删的删不打补丁 | 主人 + Claude |

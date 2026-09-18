@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- 纲领 §2 加「工作区：一份需求的家」、§4 加 P-15 工作区即边界与 P-16 造流与用流分权、§5 目录换成 `workspaces/` `studio/`；workflow §1 流分三层、§5 命令行改成工作区口径、两位助理两个域、界面第四版；packs §1 §2 §4 任务包住进工作区；vision 产品形态补记二；spec 加 R-28 R-29；Q-9 Q-13 再记；`scripts/oneoff/migrate-runs-to-workspaces.py` 把旧 `runs/` 按 manifest 归进工作区（[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70) [#71](https://github.com/zephyr4123/TJU-AI4Science/issues/71) [#72](https://github.com/zephyr4123/TJU-AI4Science/issues/72)）
 - 纲领 P-14 补「前期别设坎」「不用内部词」；workflow §5 记页面第三版（两块看板、脊柱、编辑台）与逐字流式；spec R-24 标完成、加 R-27（[#64](https://github.com/zephyr4123/TJU-AI4Science/issues/64) [#65](https://github.com/zephyr4123/TJU-AI4Science/issues/65) [#69](https://github.com/zephyr4123/TJU-AI4Science/issues/69)）
 - workflow §4 人在环加「长按钮不占着对话等」、§5 协调层适配记异步作业落地；Q-7 再记；spec R-25 标完成（[#63](https://github.com/zephyr4123/TJU-AI4Science/issues/63)）
 - README §4 加 P-14「CLI 主导封装」：agent 面前只有 `ai4sci`、缺按钮就加按钮不放行裸命令；workflow §1 设计阶段三颗按钮、§5 协调层适配的白名单与 PATH；spec 加 R-26；实验 #59 记录真实协调 agent 从零接 rahman（[#59](https://github.com/zephyr4123/TJU-AI4Science/issues/59) [#60](https://github.com/zephyr4123/TJU-AI4Science/issues/60)）

@@ -25,8 +25,8 @@
  │       ├── tools/           可选：求解器封装、网格生成、单位换算
  │       └── skills/          可选：执行层用的 SKILL.md，与 Claude Code 原生同格式
  │
- └── tasks/                   任务包：一个任务一个目录
-     └── beam-deflection/
+ └── workspaces/              一个工作区一份需求（README §2，2026-09-18）；任务包住在它的 task/ 下
+     └── beam-deflection/task/
          ├── manifest.yaml    必有；format_version 必填
          ├── env/             必有：python-version + requirements.lock，任务自带环境，框架建成任务级 venv
          ├── harness/         必有：怎么算分、跑多久；只读，框架校验 hash
@@ -37,6 +37,8 @@
 ```
 
 ## 2. 任务包
+
+任务包住在工作区里：`workspaces/<id>/task/`，manifest 的 `id` 等于工作区名（2026-09-18，P-15）。下面的目录表以任务包根为准；围绕这份需求的对话、流实例、run 与作业是工作区的另外几个目录，不在包里。
 
 ### manifest.yaml
 
@@ -88,7 +90,7 @@ env/
 └── requirements.lock   逐行 name==version，钉死；可以为空（零依赖任务）
 ```
 
-框架把它建成 venv 的地方有两处，同一份 lock、同一个函数：`tasks/<id>/.venv/`（`ai4sci cap baseline <dir>` 缺了就建，给 `make_run0.sh` 用）和 `runs/<id>/.venv/`（`ai4sci run new` 建 run 时顺手建，run 跑起来后不回头看任务包，环境也一样）。venv 由 `uv` 建与同步（`uv venv` + `uv pip sync`），uv 是框架的运行时依赖；uv 不在或解释器拉不下来就明确报错，不静默退回到平台 venv。
+框架把它建成 venv 的地方有两处，同一份 lock、同一个函数：`<工作区>/task/.venv/`（`ai4sci cap baseline` 缺了就建，给 `make_run0.sh` 用）和 `runs/<id>/.venv/`（`ai4sci run new` 建 run 时顺手建，run 跑起来后不回头看任务包，环境也一样）。venv 由 `uv` 建与同步（`uv venv` + `uv pip sync`），uv 是框架的运行时依赖；uv 不在或解释器拉不下来就明确报错，不静默退回到平台 venv。
 
 `env/` 与 `harness/` 一样是只读的：依赖是问题定义的一部分，执行层改了它判 `readonly`。docker 按 Q-6 仍不上，依赖真要系统库时再谈。
 
@@ -109,7 +111,7 @@ harness/
 {"metrics": {"rel_l2_error": 0.0312, "runtime_s": 287.4}, "elapsed_s": 298.1, "seed": 42, "status": "ok"}
 ```
 
-`launcher.sh` 只准经 `"$AI4SCI_PYTHON"` 起 Python：框架提交 harness 时把任务 venv 的解释器路径放进这个环境变量，`make_run0.sh` 缺省指到 `tasks/<id>/.venv/bin/python`。`harness/*.sh` 里出现裸 `python` / `python3` 命令，`ai4sci task validate` 判不合法——这是「任务跑在自己的环境里」的机器判据。
+`launcher.sh` 只准经 `"$AI4SCI_PYTHON"` 起 Python：框架提交 harness 时把任务 venv 的解释器路径放进这个环境变量，`make_run0.sh` 缺省指到 `<工作区>/task/.venv/bin/python`。`harness/*.sh` 里出现裸 `python` / `python3` 命令，`ai4sci task validate` 判不合法——这是「任务跑在自己的环境里」的机器判据。
 
 harness 的接口约束（从 AutoResearchClaw 的 `harness_template.py` 取思路）：到预算 80% 让实验自己优雅停；NaN / Inf 计满即退出非零；指标只能经 harness 写出。`evaluate.py` 拒收产物（预测缺失、长度不对、NaN）时用 `SystemExit` 带一句话退出非零、**不抛 traceback**，runner 据此把假成功判成 `no_results` 而不是 `crash`；`status` 字段不是 ok 也判 `no_results`。任务包别带会挡住 `code/` 产物的 `.gitignore`：被挡住的改动提交不进去，那一轮记 `noop`。
 
@@ -135,7 +137,7 @@ harness 的接口约束（从 AutoResearchClaw 的 `harness_template.py` 取思�
 
 裁判文件的契约（[#43](https://github.com/zephyr4123/TJU-AI4Science/issues/43) [#44](https://github.com/zephyr4123/TJU-AI4Science/issues/44)）：框架起 harness 时**保证**给 `AI4SCI_PYTHON`、`AI4SCI_BUDGET_S`（= `wall_clock_s`）、`AI4SCI_INNER_K`（= `budget.inner_k`，评分内部重复次数，缺省 1）；内环与基线按钮走同一个函数给这组变量。harness 拿不到就必须停，给它们写默认值（`environ.get(名, x)`、`${名:-x}`）`task validate` 判不合法——第一版 rahman 评分脚本缺 INNER_K 时默认按 5 份算出一份看着合法的假成绩，签字的人没看出来。`AI4SCI_SEED` 缺省 42 是契约。这条安检只管裁判文件里的这几个变量，不是通用静态警察（前期不加隔栏）。
 
-参考实现：`tasks/mlp-regression/`（[#21](https://github.com/zephyr4123/TJU-AI4Science/issues/21)，零依赖）与 `tasks/boehm-nll/`（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)，第一个真任务，带依赖）；面向接任务的人的指南在内仓 `docs/add-a-task.md`，协调 agent 的操作步骤在内仓 `coordinator/README.md` 固定流之二。schema 只收有读取点的字段（P-8 反过来用）：`conditions` 没有读取点，不进 schema，写了会被判不合法。
+参考实现：`workspaces/mlp-regression/task/`（[#21](https://github.com/zephyr4123/TJU-AI4Science/issues/21)，零依赖）与 `workspaces/boehm-nll/task/`（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)，第一个真任务，带依赖）；面向接任务的人的指南在内仓 `docs/add-a-task.md`，协调 agent 的操作步骤在内仓 `coordinator/README.md` 固定流之二。schema 只收有读取点的字段（P-8 反过来用）：`conditions` 没有读取点，不进 schema，写了会被判不合法。
 
 纯契约工作量半天到一天；真正的成本在把仿真整理成能在预算内跑完。
 
@@ -169,9 +171,9 @@ paper_keywords: [mesh refinement, finite element, error estimate]
 
 ## 4. 发现与校验
 
-- 框架启动时扫 `domains/*/profile.yaml` 与 `tasks/*/manifest.yaml`，按目录名当 id；同名冲突直接报错。
+- 框架启动时扫 `domains/*/profile.yaml`，按目录名当 id；工作区扫 `workspaces/*/workspace.yaml`，任务包就是它下面的 `task/`（2026-09-18 起不再有 `tasks/*/manifest.yaml` 的发现）；同名冲突直接报错。
 - 用户自己的包可以放在包外目录，通过环境变量追加搜索路径；**所有搜索路径的包待遇相同**，不存在"包内的才有提示词"。
-- CI 门禁：删掉全部 `domains/` 与 `tasks/`，`framework/` 的测试照样过（P-5）。
+- CI 门禁：删掉全部 `domains/` 与 `workspaces/`，`framework/` 的测试照样过（P-5）。
 - `ai4sci task validate` 与 `ai4sci domain validate` 两条命令做 schema 校验，任务包与领域包各自有 schema 文件放在 `framework/schemas/`；`ai4sci task env build` 按 `env/` 建任务级 venv。
 
 ## 变更记录

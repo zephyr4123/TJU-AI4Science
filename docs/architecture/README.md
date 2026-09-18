@@ -86,6 +86,22 @@ run 以任务包为起点，但端到端的起点是一个研究问题；任务�
 
 三条推论：契约分两级，项目契约（研究问题、目标、论文形态）与实验契约（manifest）；记忆分两级，run 级已经有了，项目级是写作能力的前提（Q-9 改写）；协调层串的是项目里的能力，不是单个 run。目录与命令名在能力落地时定，实体关系现在就定。
 
+### 工作区：一份需求的家（2026-09-18）
+
+上面那棵树里 run 有家（`runs/<id>/`）、任务包也有（`tasks/<id>/`），但对话、后台作业、改过参数的流散在外面：十个 run 混着三个课题，对话不知道属于谁。主人 2026-09-18 定：**一个工作区 = 一份需求**（P-15）。课题组一个项目可以有几份需求，就开几个工作区；颗粒度按需求切，不按项目切——一个 run 的 manifest 就是一份需求，几份需求套在一起需求看板就混了。
+
+```
+ 工作区 workspaces/<id>/     一份需求的家
+ ├── workspace.yaml          标记：id、标题、建于；CLI 从 cwd 往上找它
+ ├── task/                   需求 = 任务包（上一节的「任务包」住在这里）
+ ├── flows/<name>.yaml       流实例：从库里取来、按这份需求改过参数
+ ├── chats/                  主页面的对话
+ ├── runs/<run_id>/          上一节的 run，快照的是 flows/ 里的实例
+ └── jobs/                   后台作业
+```
+
+库是全局的，实例是工作区的：能力代码、工作流库（`workflows/`）、领域包在库里；需求、对话、流实例、run、作业、产物全在工作区里。一个工作区一个文件夹，整个打包能交给同事。项目级（一篇论文、多份需求、文献与写作的产物）仍是上一节说的那一层，它的家等文献 / 写作能力落地再定（Q-9）；现在工作区之上没有目录。
+
 ### 可替换性
 
 协调层与执行层都是集成进来的 coding agent，都不手搓，各自可换：今天协调层与执行层都用 Claude Code；换成 Codex 做协调、Claude Code 做执行，框架一行不改。具体用哪个 CLI 开工时定（Q-8）。两层的 skill 物理隔离：协调层的 skill 讲"怎么当科研助理、怎么驱动框架"，跟项目走；执行层的 skill 讲"怎么在这个领域做实验"，跟领域包走。
@@ -122,12 +138,14 @@ run 以任务包为起点，但端到端的起点是一个研究问题；任务�
 - **P-12 能力可自由装配。** 模块的粒度是能力，不是函数：内环是一个节点带参数，不拆成十个节点；每个能力有机器可读的描述符（输入、输出、参数 schema、要不要执行层、判据、属于七个科研阶段中的哪一个、给研究者看的人话标题与一句说明）；能力对外是一个 Python 函数加磁盘契约，CLI 只是薄壳，协调 agent、UI 后端、测试调同一个函数。契约挂在产物上，不挂在"上游是谁"，所以任意子集都能单独成流。描述符与接口从两个真实例里抽，不先画接口再填。（每个能力子包有描述符且 CLI 参数与之一致，`capabilities.discover()` 断言；Q-13 拍板前 `framework/` 里没有图 DSL。2026-09-15 落地：`framework/contracts/capability.py`；2026-09-17 加阶段与人话字段。阶段是标签不是流程，目录不按阶段套，能力上不写「属于哪条工作流」，那是反查。2026-09-17 补：**页面同理**——主页面右侧是当前 run 照的那条工作流，一步一个模块，装什么流长什么样，不写死流程；两块看板以可写目录划界：编辑台改库 `workflows/`，主页面改实例 `tasks/` `runs/`，[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)）
 - **P-13 文档即接口。** 能力之间的接口是文件，不是 schema：文件名就是接口，一个文件只有一个生产者，格式由生产者定，谁要用就报名字、不问格式。这个系统里 agent 无处不在，读一句人话说明去发散，比读固定 schema 更好；schema 只在产物要给机器读时才补（那时生产者多吐一份 JSON，人读的从它渲染）。命名三规矩：**生产者就是命名空间**，run 级产物放 `<能力名>/…`，能力名唯一所以路径唯一；**名字是角色名词，版本在文件里**，叫 ledger、report，不带模型名、日期、版本号、第几轮，格式变了文件里记 `format_version`，含义变了换新名字、老名字不改义；**消费者只准报生产者原样声明过的名字**，不通配、不模板。任务包里的名字（`harness/`、`code/`、`run_0/`…）不带能力名，因为任务包本身是发布过的格式、命名空间就是包；任务级能力要新写一个顶层目录，先进 packs §2 的目录表。（`capabilities.discover()` 断言：同级别里没有两颗能力声明同一个输出路径；每个输入路径要么是种子、要么是同级某颗能力的输出。2026-09-17 落地，[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)）
 - **P-14 CLI 主导封装。** 协调 agent 面前只有 `ai4sci` 一个入口：它要做的每个动作都是一条直观的子命令，参数走 flag——不写路径、不在命令前挂环境变量、不接管道、不裸跑 python、不手搬文件。配置（模型、预算、超时、目录）归起服务的人和环境变量，不归命令。agent 需要做、却没有按钮的动作，是平台的缺口：立 issue 加按钮（一个能力子包、一张描述符，CLI 子命令、页面节点、流检查自动跟上），不放行裸命令、不开 `exec` 逃生口。（机器判据：服务的 Bash 白名单只有 `Bash(ai4sci *)`；指南代码块里每条命令以 `ai4sci ` 开头、不含 `|` `;` `&`、不含 `.venv/bin`、不含 `X=y ai4sci`，`test_chat_guide` 守着。2026-09-17 落地，[#60](https://github.com/zephyr4123/TJU-AI4Science/issues/60)：白名单收口、venv bin 进 PATH、第 7 颗能力 `cap init` 起任务包、指南去裸命令。2026-09-17 晚主人实测后补两条：**前期别设坎**——带 `.venv/bin/` 的老写法也放行，老会话会照自己以前几轮的写法来，指南只教裸写法；**给研究者看的话不用平台内部的词**——「按钮」「能力单元」不出现在指南、页面与 agent 的回话里，每条命令翻成「查了什么、跑了什么、写了什么」，[#69](https://github.com/zephyr4123/TJU-AI4Science/issues/69)）
+- **P-15 工作区即边界。** 一个工作区 = 一份需求；库是全局的（能力、工作流库 `workflows/`、领域包），实例是工作区的（需求 `task/`、流实例 `flows/`、对话、run、作业）。流分三层：库 → 工作区里的实例（`ai4sci flow take` 取来、改参数、增删步骤）→ run 里的快照；开 run 只认实例。命令不带工作区路径：CLI 从 cwd 往上找 `workspace.yaml`，agent 的工作目录就是工作区。（机器判据：`workspaces/<id>/` 之外没有 run、对话与作业；`framework/` 里读数据根的只有 `paths.py` 一处。2026-09-18 落地，[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70) [#72](https://github.com/zephyr4123/TJU-AI4Science/issues/72)）
+- **P-16 造流与用流分权。** 主页面的助理只能用流：取一条、按需求改参数、照着跑、跑偏了修；不造新流、不造能力。编辑台另有一位造流助理，只管把能力拼成流存进库，不跑实验、不动任何工作区。两位助理两份指南、两组可写目录、两个端点前缀，主页面的对话物理上到不了库；要新流，研究助理说一句「去编辑台拼」。（机器判据：研究助理的指南里没有 `workflows/` 的写法、没有「拼一条自己的流」；两组可写目录不相交；`test_chat_guide` 守着。2026-09-18 落地，[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70) [#73](https://github.com/zephyr4123/TJU-AI4Science/issues/73)）
 
 ## 5. 内仓目录约定（拟定，代码落地时以代码为准）
 
 ```
 platform/
-├── coordinator/        协调层入口指南：怎么当科研助理、怎么驱动框架跑固定流；注入到当协调层的那个 CLI
+├── coordinator/        两位助理的指南：README.md 研究助理（主页面，用流）、studio.md 造流助理（编辑台，造流）；注入到当协调层的那个 CLI
 ├── framework/          通用，不随任务改；按概念分子包，依赖单向（cli → capabilities → executor → memory → run → contracts）
 │   ├── cli/            驱动面：一个子命令一个模块
 │   ├── contracts/      schema 文件、任务包发现与校验、results 读取、能力描述符、analysis.md 与 report.json 契约
@@ -139,9 +157,10 @@ platform/
 ├── compute/            算力适配器：local.py  ssh.py …  put / submit / wait / cancel / get（见 workflow.md §5）
 ├── tools/              确定性脚本：文献 API、引用校验、出图、harness 基类
 ├── domains/            领域包，按工具链命名，一个领域一个目录，含执行层的 skill（prompt 注入，见 packs.md §3）
-├── tasks/              任务包，一个任务一个目录，自带 env/（见 packs.md §2）
-├── docs/               面向接任务的人的指南：add-a-task.md
-└── runs/               运行产物，不进 git；每个 run 自带 .venv/
+├── workflows/          工作流库：通用、不依附课题，编辑台改（见 workflow.md §1）
+├── workspaces/         一个工作区一份需求（§2）：task/ 任务包（样例进 git）、flows/ 流实例、chats/ runs/ jobs/ 不进 git
+├── studio/             编辑台的对话，不进 git
+└── docs/               面向接任务的人的指南：add-a-task.md
 ```
 
 ## 6. 文档关系
@@ -182,3 +201,4 @@ spec 与 milestone 用**产品版本**命名且带 `platform` 前缀（`specs/pl
 | 2026-09-17 | P-12 补「页面同理」：主页面随工作流生成、两块看板以可写目录划界（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)） | 主人指出我把三站画成了固定流程，与 P-12 相悖 | 主人 + Claude |
 | 2026-09-17 | §4 加 P-14 CLI 主导封装：agent 面前只有 `ai4sci`，缺按钮就加按钮、不放行裸命令（[#60](https://github.com/zephyr4123/TJU-AI4Science/issues/60)） | 接任务实验 #59 里协调 agent 照指南敲带环境变量前缀的命令被白名单拒、裸跑 python 探尽头被拒、只能逐文件重写搬数据；主人定「封装好给 agent 调用的东西，不能用原生裸露的命令，CLI 是一切的基础」 | 主人 + Claude |
 | 2026-09-17 | P-14 补「前期别设坎」与「不用内部词」；页面第三版落地：两块看板、流程脊柱、编辑台、逐字流式、Markdown（[#64](https://github.com/zephyr4123/TJU-AI4Science/issues/64) [#65](https://github.com/zephyr4123/TJU-AI4Science/issues/65) [#66](https://github.com/zephyr4123/TJU-AI4Science/issues/66) [#67](https://github.com/zephyr4123/TJU-AI4Science/issues/67) [#68](https://github.com/zephyr4123/TJU-AI4Science/issues/68) [#69](https://github.com/zephyr4123/TJU-AI4Science/issues/69)） | 主人实测：agent 跑带路径的老命令被拦，页面文案满是「按钮」；主人定「给 agent 的命令要像工具调用一样简洁」「要有用户思维，简洁直白通俗」 | 主人 + Claude |
+| 2026-09-18 | §2 加「工作区：一份需求的家」；§4 加 P-15 工作区即边界、P-16 造流与用流分权；§5 目录换成 `workspaces/` `studio/`、`coordinator/` 两份指南（[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70) [#71](https://github.com/zephyr4123/TJU-AI4Science/issues/71)） | 主人：一个项目里的东西不能像现在这样没有边界，按工作区切，一个工作区一份需求；主页面的 agent 居然能造新流是不对的，编辑台要另有一位专管造流的助理；文档先行，该删的删、不打补丁 | 主人 + Claude |
