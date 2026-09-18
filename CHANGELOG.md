@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- workflow §5 协调层适配加「run 记对话号」、界面适配加「第六版」（泳道、默认收起、承接的那条展开、风景背景）；spec 加 R-32（[#82](https://github.com/zephyr4123/TJU-AI4Science/issues/82) [#85](https://github.com/zephyr4123/TJU-AI4Science/issues/85)）
 - workflow §5 界面适配加「第五版」（地方栏、页眉归属、对话入口、门口那一屏）；spec 加 R-31（[#79](https://github.com/zephyr4123/TJU-AI4Science/issues/79) [#81](https://github.com/zephyr4123/TJU-AI4Science/issues/81)）
 - 纲领 §4 加 P-17 素材上 CDN、图标内联；workflow §5 界面适配加「素材」；spec 加 R-30（[#75](https://github.com/zephyr4123/TJU-AI4Science/issues/75) [#76](https://github.com/zephyr4123/TJU-AI4Science/issues/76)）
 - workflow §5 协调层适配补「库对研究助理可读不可写」：端口 `readable_paths`、`--add-dir`、前言写实路径（[#73](https://github.com/zephyr4123/TJU-AI4Science/issues/73)）
