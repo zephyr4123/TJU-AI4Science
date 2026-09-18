@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- workflow §5 界面适配加「第五版」（地方栏、页眉归属、对话入口、门口那一屏）；spec 加 R-31（[#79](https://github.com/zephyr4123/TJU-AI4Science/issues/79) [#81](https://github.com/zephyr4123/TJU-AI4Science/issues/81)）
 - 纲领 §4 加 P-17 素材上 CDN、图标内联；workflow §5 界面适配加「素材」；spec 加 R-30（[#75](https://github.com/zephyr4123/TJU-AI4Science/issues/75) [#76](https://github.com/zephyr4123/TJU-AI4Science/issues/76)）
 - workflow §5 协调层适配补「库对研究助理可读不可写」：端口 `readable_paths`、`--add-dir`、前言写实路径（[#73](https://github.com/zephyr4123/TJU-AI4Science/issues/73)）
 - 纲领 §2 加「工作区：一份需求的家」、§4 加 P-15 工作区即边界与 P-16 造流与用流分权、§5 目录换成 `workspaces/` `studio/`；workflow §1 流分三层、§5 命令行改成工作区口径、两位助理两个域、界面第四版；packs §1 §2 §4 任务包住进工作区；vision 产品形态补记二；spec 加 R-28 R-29；Q-9 Q-13 再记；`scripts/oneoff/migrate-runs-to-workspaces.py` 把旧 `runs/` 按 manifest 归进工作区（[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70) [#71](https://github.com/zephyr4123/TJU-AI4Science/issues/71) [#72](https://github.com/zephyr4123/TJU-AI4Science/issues/72)）
