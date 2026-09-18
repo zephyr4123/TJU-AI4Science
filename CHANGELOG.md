@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- workflow §5 协调层适配加「两个旋钮」、界面适配加「旋钮」（模型与思考深度：端口 `knobs()` / `tuning`、适配器 `--model` / `--effort`、对话记住、页面两枚下拉片）；spec 加 R-33（[#86](https://github.com/zephyr4123/TJU-AI4Science/issues/86)）
 - workflow §5 协调层适配加「run 记对话号」、界面适配加「第六版」（泳道、默认收起、承接的那条展开、风景背景）；spec 加 R-32（[#82](https://github.com/zephyr4123/TJU-AI4Science/issues/82) [#85](https://github.com/zephyr4123/TJU-AI4Science/issues/85)）
 - workflow §5 界面适配加「第五版」（地方栏、页眉归属、对话入口、门口那一屏）；spec 加 R-31（[#79](https://github.com/zephyr4123/TJU-AI4Science/issues/79) [#81](https://github.com/zephyr4123/TJU-AI4Science/issues/81)）
 - 纲领 §4 加 P-17 素材上 CDN、图标内联；workflow §5 界面适配加「素材」；spec 加 R-30（[#75](https://github.com/zephyr4123/TJU-AI4Science/issues/75) [#76](https://github.com/zephyr4123/TJU-AI4Science/issues/76)）
