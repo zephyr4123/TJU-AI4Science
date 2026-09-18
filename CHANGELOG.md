@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- 纲领 §4 加 P-18 三层：房间、能力、实现（流是走房间、断点是停下来等人确认），P-12 / P-13 收窄；workflow §1 重写成三层、§5 命令行按五颗能力改、界面适配加「第七版」；spec 加 R-34；open-questions Q-13 再记；一次性迁移脚本 `scripts/oneoff/migrate-flows-to-rooms.py`（[#93](https://github.com/zephyr4123/TJU-AI4Science/issues/93) [#94](https://github.com/zephyr4123/TJU-AI4Science/issues/94) [#99](https://github.com/zephyr4123/TJU-AI4Science/issues/99)）
 - workflow §5 协调层适配加「两个旋钮」、界面适配加「旋钮」（模型与思考深度：端口 `knobs()` / `tuning`、适配器 `--model` / `--effort`、对话记住、页面两枚下拉片）；spec 加 R-33（[#86](https://github.com/zephyr4123/TJU-AI4Science/issues/86)）
 - workflow §5 协调层适配加「run 记对话号」、界面适配加「第六版」（泳道、默认收起、承接的那条展开、风景背景）；spec 加 R-32（[#82](https://github.com/zephyr4123/TJU-AI4Science/issues/82) [#85](https://github.com/zephyr4123/TJU-AI4Science/issues/85)）
 - workflow §5 界面适配加「第五版」（地方栏、页眉归属、对话入口、门口那一屏）；spec 加 R-31（[#79](https://github.com/zephyr4123/TJU-AI4Science/issues/79) [#81](https://github.com/zephyr4123/TJU-AI4Science/issues/81)）
