@@ -1,6 +1,6 @@
 # 未决项
 
-- 最近变更：2026-09-15
+- 最近变更：2026-09-19
 
 纲领里还没定的事，一项一个编号。每项写清问题、候选方案与依据、建议、谁拍板。定了就把结论搬进对应文件，这里改成"已定，见 xxx"。每项一条 issue，见表末列。
 
@@ -19,6 +19,8 @@
 | Q-11 | 文献检索走 tools/ 学术 API 还是执行层联网 | 学科适配 / 验证 | tools/ 学术 API，引用才可验 | 主人 | [#31](https://github.com/zephyr4123/TJU-AI4Science/issues/31) |
 | Q-12 | 写作能力的形态 | 流水线 | 分节多次调用，模板放领域包，图由 tools 出，写完过三条判据 | 主人 | [#32](https://github.com/zephyr4123/TJU-AI4Science/issues/32) |
 | Q-13 | 低代码协调层的形状：图怎么描述、谁解释、与人 + agent 怎么混 | 协调层 | 图 = 能力描述符引用 + 边；确定性图运行器与"交给 agent"节点并存；描述符先于图 DSL | 主人 | [#34](https://github.com/zephyr4123/TJU-AI4Science/issues/34) |
+| Q-14 | 加一颗能力非得写代码吗（声明式能力：描述符 + 说明书） | 能力 | 两种并存 | 主人 | [#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110) |
+| Q-15 | 执行层的可写范围锁不锁在产出目录 | 能力 | 一律锁 | 主人 | [#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110) |
 
 ## Q-1 首版提供哪几个能力
 
@@ -132,6 +134,14 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 
 **2026-09-18 再记（[#93](https://github.com/zephyr4123/TJU-AI4Science/issues/93)，P-18）**：图的形状定了——不是带端口的积木，是**阶段 + 断点**：`rooms` 列表里一项是一个阶段（可点名能力、带参数）或一个断点（停下来等人确认）。阶段之间不做数据流校验，机器只查阶段名、能力归属、参数、断点位置；顺序与回头由人定。编辑台的拼流台就是排阶段、挂能力、插断点；解释图的仍是主页面的研究助理，走到断点停下来等人说「继续」。「等谁拍板」机器可读了：进度记录 `flow.json` 记走到第几项，下一项是断点就是等人。
 
+## Q-14 加一颗能力非得写代码吗
+
+现在必须：能力子包导出 `run()`。另一条路是声明式能力——目录里只有描述符（YAML）与 `prompt.md`，框架用一段通用驱动起执行层、在产出目录里照说明书干、把结论写回。好处是「新 skill 想当一格」不用工程师；代价是没有代码核对产出，只能靠下游开工时报错与人签字。倾向两种并存：机器能力写代码，模型能力可以只写说明书。主人未拍板（2026-09-19，[#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110)）。
+
+## Q-15 执行层的可写范围锁不锁在产出目录
+
+auto-research 的 `work/` 已经在产出目录里，但没有机制拦执行层写到别处。建议一律锁：cwd = 产出目录，输入目录只读挂进去——「能力是纯函数」才不靠自觉。主人未拍板（2026-09-19，[#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110)）。
+
 ## Q-10 协调层 skill 包放哪、怎么注入
 
 候选：
@@ -155,3 +165,4 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 > Q-13 补记（2026-09-16 深夜）：套餐文件提前落地了，改叫工作流 `workflows/*.yaml`，因为页面要列出来、下一步的自定义工坊要让 agent 在对话里拼出来存进去。格式故意最小：name / title / summary / assumes / steps，见内仓 `framework/contracts/workflows.py` 文件头（[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）。
 | 2026-09-17 | Q-7 补记：长按钮暂用关后台兜住，异步作业是无人值守的正解（[#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)） | 实验 #55 第三轮长按钮被挪到后台杀掉 | 主人 + Claude |
 | 2026-09-17 | Q-13 补记：等待状态的形状、两块看板、页面随工作流生成、步骤参数（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)） | 主人拍板产品形态补记 | 主人 + Claude |
+| 2026-09-19 | 加 Q-14 声明式能力、Q-15 执行层可写范围（[#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110)） | P-20 探讨里主人未拍板的两条 | 主人 + Claude |

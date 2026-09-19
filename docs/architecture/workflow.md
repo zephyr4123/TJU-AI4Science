@@ -1,7 +1,7 @@
 # 流水线：能力与实验内环
 
 - 状态：**aligned**（形状）；首版提供哪几个能力，见 Q-1
-- 最近变更：2026-09-19
+- 最近变更：2026-09-19（P-20 阶段主文件表）
 - 依据：[InternAgent 深读](../../research/selection/2026-0909-pipeline-frameworks/internagent.md)、[autoresearch 深读](../../research/selection/2026-0909-pipeline-frameworks/autoresearch.md)、[AutoResearchClaw 深读](../../research/selection/2026-0909-pipeline-frameworks/autoresearchclaw.md)
 
 三个仓的编排形态都是"外层 for + 硬编码状态判断"，差别全在循环之外：用什么承载状态、用什么规则收敛、用什么机器判据卡住造假。我们不写那个 for：**串联能力的是协调层（人 + agent），框架只提供能力**。流水线层因此只有两样东西：**各自可调的能力**和住在其中一个能力里的**实验内环**。
@@ -24,7 +24,7 @@
 - **能力是细颗粒度的。** 一颗只干一件说得清的活：分析阶段里的「写分析初稿」只读实验留下的东西写三节初稿，不是「分析」的全部；以后的对比、作图、复盘都是这个阶段里另外的能力。写作阶段同理：写综述、写正文、画图各是一颗。
 - **能力的描述符五栏必填**（`framework/contracts/capability.py`）：干什么、不干什么、要带什么进来、留下什么、什么时候停。讲机制、带通用的专业术语（auto-research 要讲清 git 分支 tip 是 best、refs/attempts 留档、统计门棘轮），不是小学生作文，也不是路径表。研究者、协调 agent、工程师读同一份；`ai4sci show caps` 与 `GET /cap` 就是它。
 - **能力是纯函数：显式输入 → 一个产出目录。** 输入用 `--from <stage>/<n>` 点名（读了哪几个产出），产出是它所属阶段下的一个新目录。能力自己没有「最新」这种状态，不默认读谁：选输入是协调层的事——agent 看盘决定，或人指定（2026-09-19 主人：能力挂在流的某个阶段上，天然解耦，给 agent 用也给人用，不随任务变）。
-- **实现是能力下面的一层。** 一段自己写的代码（auto-research）、一个 skill（nature 写作 skill 归写正文，nature image skill 归画图）、领域包里的东西都算。领域包不是一层，只是打包单位：拆开各归各的能力。代码里只在出现第二种实现时才建模（有第二个用例才抽象）。
+- **实现是能力下面的一层。** 一段自己写的代码（auto-research）、一个 skill（nature 写作 skill 归写正文，nature image skill 归画图）、领域包里的东西都算。领域包不是一层，只是打包单位：拆开各归各的能力。代码里只在出现第二种实现时才建模（有第二个用例才抽象）。 **skill 不是一格**：它是随某颗执行层能力进去的只读知识（快照进产出目录、进提示的「领域约定」段），自己不写盘、不出现在流里；要当一格就包成能力（P-20）。
 - **阶段之间没有显式的输入输出接口，机器不做数据流校验。** 能力开工时 `from` 里没有它要的文件就报错说清缺哪个阶段的哪个文件（P-7）；流的检查只查三件事：阶段名对不对、点名的能力在不在那个阶段、参数名与类型对不对。**文件仍是产物的载体**——一个文件一个生产者、命名三规矩（P-13）保留——但不是拼流的接口。
 
 现在有的（2026-09-19，[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104) [#106](https://github.com/zephyr4123/TJU-AI4Science/issues/106)）：
@@ -114,6 +114,22 @@ experiment/2/                  一个产出目录
 ```
 
 框架看它们都一样：`design/1/meta.yaml` 加一堆文件。原来 `framework/contracts/` 里的 manifest schema、results、report、headroom 都是实验这一族的，搬进对应能力的包里（P-4 的「契约机器可校验」在能力里落，不在框架里）。
+
+**产出目录里的文件分两层，能力不自创名字**（P-20，2026-09-19，[#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110)）：**阶段主文件**按阶段定、不按能力定——进这个阶段的任何能力都必须留下它，下游只认它、不认是哪颗能力产的，所以换一颗同阶段的能力下游不改；**族文件**是同族能力私下的约定（上面三族各自那一堆），只在族包 `framework/<族>/` 里定，开新族是一次决策；能力另外留的文件是**私有的**，谁都不许依赖，下游要用就提成族文件。一个阶段一行、第一颗进来的能力定名、之后锁死；还没有能力的阶段不预填（有第二个用例才抽象）：
+
+| 阶段 | 主文件 | 状态 |
+|---|---|---|
+| 文献 | — | 待第一颗能力定（助理手写时留 `notes.md`） |
+| 假设 | — | 待第一颗能力定 |
+| 设计 | `scoring.yaml` | 已定（`design`） |
+| 实验 | `ledger.tsv` + `iters/iter_N/results.json` | 已定（`auto-research`） |
+| 分析 | `analysis.md` | 已定（`analysis`） |
+| 写作 | — | 待第一颗能力定（Q-12 的方向是 `draft.md`） |
+| 验证 | `report.json` | 已定（`verify`） |
+
+设计那一行现在是实验族定的名；第二个族（综述、仿真）进设计阶段那天，要么留同一个名、要么把主文件改成族无关的，那是一次决策不是顺手（`capabilities.MAIN_FILES`，`discover()` 守着「留下什么」里写到了它）。
+
+**谁产的记在 meta，不记在文件名。** `writing/1/draft.md` 与 `writing/2/draft.md` 同名，`meta.yaml` 的 `by`（哪颗能力）、`from`（读了谁，带 hash）、`requirement`（按哪版需求）、`result`（一句结论）不同；页面的「来源 / 输入」、`ai4sci show output`、冻结的 hash 核对都读它。扫全部 `meta.yaml` 就是一张有向无环图：节点是产出、边是 `from`、需求版本是根、签字是节点状态；一条流是图里的一条路径，主页面的「一条流一张表」是沿一条流的投影。两个局限如实记：助理 `output new` 手写的产出 `from` 可能为空（是助理的纪律，框架补不了）；原件 `materials/` 不是节点（没记谁读了哪份）。
 
 **能力描述符**（`framework/contracts/capability.py`）：每个能力子包导出 `DESCRIPTOR`（name、stage、title、五栏、params）与统一入口 `run(output_dir, inputs, ports, **params)`；`capabilities.discover()` 扫子包并断言入口签名与描述符的参数表一致，子包名下划线对命令名连字符（`auto_research/` 就是 `ai4sci cap auto-research`）；`ai4sci cap` 的子命令从描述符生成，每颗都有 `--from`，所以 CLI 参数与描述符一致是构造保证。能力上**不写**「属于哪条工作流」：工作流文件点名能力，反过来写是两份真相；`show caps` 与 `GET /cap` 的 `used_by` 是反查算出来的。
 
