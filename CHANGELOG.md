@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- workflow §5 界面：编辑台按现状回写成两个镜头「流程 / 能力」（文件名由标题生成、配置板只剩名字与参数、能力陈列与详情页）；能力表与示例流程里 `auto-research` 写 AutoResearch、断点改「评分指标核对」；名的上限改为八字（[#112](https://github.com/zephyr4123/TJU-AI4Science/issues/112)）
 - 纲领 §4 加 P-21 页面词表（一个概念一个词、名词做标签、内部名不上屏、能力文案三层对三种动作、编辑台加「能力」镜头）；workflow §1 契约加能力文案三层的规矩、§5 界面适配加词表与文案两条；活文档「流」「工作流」改「流程」、「颗」改「个」、五栏改名 职责 / 边界 / 输入 / 产出 / 终止条件（[#112](https://github.com/zephyr4123/TJU-AI4Science/issues/112)）
 - workflow §5 界面：主页面加文件镜头（页眉「看板 / 文件」切换、带平台语义的目录树、只读）；门口与主页面两段按现状回写（学科、一条流一张表、工具调用不折叠）（[#111](https://github.com/zephyr4123/TJU-AI4Science/issues/111)）
 - 纲领 §4 加 P-20 能力的接法（形状归框架、主文件归阶段、来源归 meta；skill 不是一格）；workflow §1 契约加阶段主文件表与两层文件规则、`from` 边成图的说明；open-questions 加 Q-14 声明式能力、Q-15 执行层可写范围（[#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110)）
