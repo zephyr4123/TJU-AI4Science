@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- workflow §5 界面适配加「第八版」（编辑台节点画布：线性链、节点 = 阶段、阶段梯 + 玻璃题头、悬浮对话窗、`Param.in_flow`；全站文案清洗）；spec 加 R-35（[#100](https://github.com/zephyr4123/TJU-AI4Science/issues/100) [#101](https://github.com/zephyr4123/TJU-AI4Science/issues/101) [#102](https://github.com/zephyr4123/TJU-AI4Science/issues/102) [#103](https://github.com/zephyr4123/TJU-AI4Science/issues/103)）
 - 纲领 §4 加 P-18 三层：研究阶段、能力、实现（流是按顺序经过几个阶段、断点是停下来等人确认），P-12 / P-13 收窄；workflow §1 重写成三层、§5 命令行按五颗能力改、界面适配加「第七版」；spec 加 R-34；open-questions Q-13 再记；一次性迁移脚本 `scripts/oneoff/migrate-flows-to-stages.py`（[#93](https://github.com/zephyr4123/TJU-AI4Science/issues/93) [#94](https://github.com/zephyr4123/TJU-AI4Science/issues/94) [#99](https://github.com/zephyr4123/TJU-AI4Science/issues/99)）
 - workflow §5 协调层适配加「两个旋钮」、界面适配加「旋钮」（模型与思考深度：端口 `knobs()` / `tuning`、适配器 `--model` / `--effort`、对话记住、页面两枚下拉片）；spec 加 R-33（[#86](https://github.com/zephyr4123/TJU-AI4Science/issues/86)）
 - workflow §5 协调层适配加「run 记对话号」、界面适配加「第六版」（泳道、默认收起、承接的那条展开、风景背景）；spec 加 R-32（[#82](https://github.com/zephyr4123/TJU-AI4Science/issues/82) [#85](https://github.com/zephyr4123/TJU-AI4Science/issues/85)）
