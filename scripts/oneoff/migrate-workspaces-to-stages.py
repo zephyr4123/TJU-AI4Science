@@ -178,7 +178,7 @@ def migrate_workspace(root: Path) -> None:
             copy_tree(task / name, design / name)
     if (task / "run_0").is_dir():
         copy_tree(task / "run_0", design / "baseline")
-    write_meta(design, meta("design/1", "design", "写评分脚本、跑基线", "design", [],
+    write_meta(design, meta("design/1", "design", "评分脚本与基线", "design", [],
                             params={"domain": manifest.get("domain", "generic")},
                             requirement=1 if confirmed else None))
 
@@ -230,14 +230,14 @@ def migrate_workspace(root: Path) -> None:
                 n_ana += 1
                 ana = root / "analysis" / str(n_ana)
                 copy_tree(run / "analysis", ana)
-                write_meta(ana, meta(f"analysis/{n_ana}", "analysis", "写分析初稿", "analysis",
+                write_meta(ana, meta(f"analysis/{n_ana}", "analysis", "分析初稿", "analysis",
                                      [(f"experiment/{n_exp}", exp)],
                                      requirement=1 if confirmed else None))
                 if (run / "verify" / "report.json").is_file():
                     n_ver += 1
                     ver = root / "verification" / str(n_ver)
                     copy_tree(run / "verify", ver)
-                    write_meta(ver, meta(f"verification/{n_ver}", "verification", "核对数字",
+                    write_meta(ver, meta(f"verification/{n_ver}", "verification", "数字核对",
                                          "verify", [(f"analysis/{n_ana}", ana),
                                                     (f"experiment/{n_exp}", exp)],
                                          requirement=1 if confirmed else None))
