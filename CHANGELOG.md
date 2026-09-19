@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- 一次性迁移脚本 `scripts/oneoff/migrate-workspaces-to-stages.py`：旧 `task/` + `runs/` 布局的工作区搬成 P-19 的阶段目录（requirement.md + lock、materials/、design/1、experiment / analysis / verification）；纲领 §5 内仓目录表与 workflow §1 §2 对齐内仓落地（`framework/experiment/` 子包、`.ai4sci/` 不含 work/、分析表列名「来源」、`docs/start-a-workspace.md`）（[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104) [#108](https://github.com/zephyr4123/TJU-AI4Science/issues/108)）
 - 纲领 §4 加 P-19 工作区按阶段分目录、需求是根、产出多对多、框架只认 meta；§2 工作区那棵树重画；workflow §1 磁盘布局与契约重定、§4 人只做两件事、§5 命令行按 P-19 改、协调层与界面两节改成只写现状；vision 补记三；spec 加 R-36（[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）
 - workflow §5 界面适配加「第八版」（编辑台节点画布：线性链、节点 = 阶段、阶段梯 + 玻璃题头、悬浮对话窗、`Param.in_flow`；全站文案清洗）；spec 加 R-35（[#100](https://github.com/zephyr4123/TJU-AI4Science/issues/100) [#101](https://github.com/zephyr4123/TJU-AI4Science/issues/101) [#102](https://github.com/zephyr4123/TJU-AI4Science/issues/102) [#103](https://github.com/zephyr4123/TJU-AI4Science/issues/103)）
 - 纲领 §4 加 P-18 三层：研究阶段、能力、实现（流是按顺序经过几个阶段、断点是停下来等人确认），P-12 / P-13 收窄；workflow §1 重写成三层、§5 命令行按五颗能力改、界面适配加「第七版」；spec 加 R-34；open-questions Q-13 再记；一次性迁移脚本 `scripts/oneoff/migrate-flows-to-stages.py`（[#93](https://github.com/zephyr4123/TJU-AI4Science/issues/93) [#94](https://github.com/zephyr4123/TJU-AI4Science/issues/94) [#99](https://github.com/zephyr4123/TJU-AI4Science/issues/99)）

@@ -88,7 +88,7 @@ stages:
     ├── analysis/     1/
     ├── writing/
     ├── verification/ 1/
-    └── .ai4sci/               平台记录，不是研究产物：chats/ jobs/ logs/ work/ requirement/v1.md …
+    └── .ai4sci/               平台记录，不是研究产物：chats/ jobs/ logs/ requirement/v1.md …
 
 experiment/2/                  一个产出目录
 ├── meta.yaml                  框架只读这一份：id、stage、title、from（读了谁，每项带 sha256）、by（能力名 / assistant / human）、
@@ -98,7 +98,7 @@ experiment/2/                  一个产出目录
 ```
 
 - **产出的 id 就是路径**：`experiment/2`、`analysis/1`。读出来就知道是什么，不用查表；`title` 是给人看的标签，目录名不动。
-- **接口 = `from` + 文件名。** 不把上游整包抄进自己目录；执行层要的合成工作树在 `.ai4sci/work/`，是实现细节。
+- **接口 = `from` + 文件名。** 不把上游整包抄进自己目录；执行层要的合成工作树在自己那次产出里（`experiment/<n>/work/`），是实现细节。
 - **冻结**：产出和需求同一条规则——没被 `from` 引用、没被签之前随便改；一旦被引用或被签就冻住，改了框架按 hash 查得出并拒读。需求确认之后再改，页面显示 diff、人再确认成 v2，旧版存 `.ai4sci/requirement/`。
 - **助理不经能力也能产出**（文献、写作现在没有能力）：`ai4sci output new <stage> --title … --from …` 建目录写 meta，然后直接写文件。
 - **一个工作区一份需求，一对一；工作区上方不加层。** 哪天一篇论文要拆几个子课题，再加 `projects/`，现在没有第二个用例。
@@ -160,7 +160,7 @@ experiment/2/                  一个产出目录
 **规则**
 
 - 执行层只改 `code/`，`harness` 与 `data/` 只读；runner 事后 diff 与 hash 双重校验，变了判 `readonly_violated` 并回滚。
-- runner 是裁判：比较、留或回滚、记账、**git 提交**全由 runner 做，执行层不参与也不需要任何 Bash 权限（P-2）。每个 run 的 `work/` 是独立 git 仓：分支 tip = 当前 best，`refs/attempts/iter-N` 留档每一个被弃或失败的尝试。
+- runner 是裁判：比较、留或回滚、记账、**git 提交**全由 runner 做，执行层不参与也不需要任何 Bash 权限（P-2）。每次实验的 `work/` 是独立 git 仓：分支 tip = 当前 best，`refs/attempts/iter-N` 留档每一个被弃或失败的尝试。
 - **统计门**：σ 来自设计阶段基线的 `sigma.json`（同配置重复 k 次，k 与阈值来自 scoring.yaml，默认 k=3、阈值 2σ）；gate = max(accept_sigma × σ, `budget.min_delta`)，差值不过门的判"持平"不留。σ = 0 且没给 min_delta 时 fail-closed：确定性 harness 必须显式声明最小改进量，否则浮点噪声会被当成改进锁进棘轮。这是 autoresearch 跑档里"被 keep 的改进比换种子的波动还小一个量级"的直接教训。
 - **固定预算**：墙钟预算写在 scoring.yaml，harness 到时自停；超时 1.5 倍必杀，记 timeout。
 - **失败分类**：确定性规则，不调模型，按优先级判：`readonly_violated`（diff 或 hash 发现 harness / data 被改）→ `timeout` → `missing_dependency`（stderr 有 ModuleNotFoundError / ImportError）→ `crash`（stderr 有 Python traceback）→ `no_results`（results.json 缺失、不合 schema、或 harness 自报 status ≠ ok；假成功落在这里）→ `nan_metric`。执行层会话自己没走完（超时、被杀、CLI 崩）判 `executor_failed`，半截改动丢弃，同样计入连续三次。另有两个非失败状态：`noop`（执行层什么都没改，或改动全被 .gitignore 挡住）、`interrupted`（那一轮被杀）。分类结果与修复提示一起给执行层；同类失败连续 3 次判 `unrecoverable`，停。
@@ -193,8 +193,8 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 
 ### 数字回溯（已落地：分析与验证两个能力）
 
-- **分析的形状**（`contracts/analysis.py`）：`analysis/analysis.md` 固定三节 `## 结论` / `## 数据` / `## 证伪与未决`；`## 数据` 是表 `| run | 指标 | 值 |`，值从 results.json 原样抄，是数字回溯的锚。执行层的 prompt 里附每个 run 的指标清单，只许从清单抄。分析能力只校验形状（三节齐全、表至少一行），不裁判自己的数字（P-2）。
-- **验证的四项检查**（`capabilities/verify/checks.py`，零模型）：分析存在；数据表每行 (run, 指标, 值) 在那个 run 的 `results.json` 里能找到，相对容差 1%（`--tolerance` 可调，实际值为 0 时声称也必须为 0）；正文里带小数点或指数的数与表里某个值在容差内相等；账本 × git 对账（复用内环那把尺子）。
+- **分析的形状**（`experiment/analysis.py`）：`analysis/<n>/analysis.md` 固定三节 `## 结论` / `## 数据` / `## 证伪与未决`；`## 数据` 是表 `| 来源 | 指标 | 值 |`（来源写 `experiment/<n>/baseline` 或 `experiment/<n>/iter_N`），值从 results.json 原样抄，是数字回溯的锚。执行层的 prompt 里附每次实验每一轮的指标清单，只许从清单抄。分析能力只校验形状（三节齐全、表至少一行），不裁判自己的数字（P-2）。
+- **验证的四项检查**（`capabilities/verify/checks.py`，零模型）：分析存在；数据表每行 (来源, 指标, 值) 在那个来源的 `results.json` 里能找到，相对容差 1%（`--tolerance` 可调，实际值为 0 时声称也必须为 0）；正文里带小数点或指数的数与表里某个值在容差内相等；账本 × git 对账（复用内环那把尺子）。
 - **已知边界**（写在这里，不在代码里静默放宽）：整数不查（轮次、行数都是整数），百分比不查（相对变化没有绝对来源），行内代码与代码块不查。执行层被告知相对变化只写百分比、不写版本号之类带小数点的东西。
 - **报告**：`verify/report.json`（schema `contracts/schemas/report.schema.json`）：`status` PASS / FAIL、每项 `passed` 与 `details` 一行一条。PASS 与 FAIL 都写报告，FAIL 再退 1——协调层看退出码，读报告看细节。
 - **重跑**：分析与验证重跑时旧目录改名 `analysis_v{n}` / `verify_v{n}`，不覆盖。

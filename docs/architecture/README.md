@@ -132,13 +132,14 @@
 ```
 platform/
 ├── coordinator/        两位助理的指南：README.md 研究助理（主页面，用流）、studio.md 造流助理（编辑台，造流）；注入到当协调层的那个 CLI
-├── framework/          通用，不随任务改；按概念分子包，依赖单向（cli → capabilities → chat → executor → memory → workspace → contracts）
+├── framework/          通用，不随任务改；按概念分子包，依赖单向（cli → capabilities → chat → experiment → executor → workspace → contracts）
 │   ├── cli/            驱动面：一个子命令一个模块
-│   ├── contracts/      框架认的几样形状：需求与确认、产出 meta、签字、流文件、能力描述符、领域包
+│   ├── contracts/      框架认的几样形状：阶段表、需求与确认、产出 meta 与签字、流文件、能力描述符
 │   ├── workspace/      工作区实体：根与七个阶段目录、产出的建与读、冻结、流的进度、后台作业
-│   ├── memory/         账本、实验笔记；项目级记忆以后加在这
 │   ├── executor/       组 prompt、调 Runner、搬取证日志
-│   └── capabilities/   一个能力一个子包，互不 import，各带五栏描述符：design/ auto_research/ analysis/ verify/；实验族私下的契约（scoring、results、report）住在能力包里；文献、假设、写作三个阶段还空着
+│   ├── experiment/     实验这一族能力私下的约定：scoring.yaml 与三份 schema、env 与 uv venv、预检、一次实验的布局、账本、笔记、结果、分析表、验证报告
+│   ├── chat/           两位助理的对话、看板读盘、HTTP + SSE 服务
+│   └── capabilities/   一个能力一个子包，互不 import，各带五栏描述符：design/ auto_research/ analysis/ verify/；文献、假设、写作三个阶段还空着
 ├── backends/           执行层适配器：claude_code.py  codex.py …  每个 60 到 80 行
 ├── compute/            算力适配器：local.py  ssh.py …  put / submit / wait / cancel / get（见 workflow.md §5）
 ├── tools/              确定性脚本：文献 API、引用校验、出图、harness 基类
@@ -147,7 +148,7 @@ platform/
 ├── templates/          需求模板的库：通用一份，按学科加
 ├── workspaces/         一个工作区一份需求（§2，P-19）：requirement.md、materials/、flows/、七个阶段目录；样例只进需求与原件，.ai4sci/ 不进 git
 ├── studio/             编辑台的对话，不进 git
-└── docs/               面向接任务的人的指南：add-a-task.md
+└── docs/               面向接课题的人的指南：start-a-workspace.md
 ```
 
 ## 6. 文档关系
