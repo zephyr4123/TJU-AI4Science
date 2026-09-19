@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- workflow §5 界面：主页面加文件镜头（页眉「看板 / 文件」切换、带平台语义的目录树、只读）；门口与主页面两段按现状回写（学科、一条流一张表、工具调用不折叠）（[#111](https://github.com/zephyr4123/TJU-AI4Science/issues/111)）
 - 纲领 §4 加 P-20 能力的接法（形状归框架、主文件归阶段、来源归 meta；skill 不是一格）；workflow §1 契约加阶段主文件表与两层文件规则、`from` 边成图的说明；open-questions 加 Q-14 声明式能力、Q-15 执行层可写范围（[#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110)）
 - 一次性迁移脚本 `scripts/oneoff/migrate-workspaces-to-stages.py`：旧 `task/` + `runs/` 布局的工作区搬成 P-19 的阶段目录（requirement.md + lock、materials/、design/1、experiment / analysis / verification）；纲领 §5 内仓目录表与 workflow §1 §2 对齐内仓落地（`framework/experiment/` 子包、`.ai4sci/` 不含 work/、分析表列名「来源」、`docs/start-a-workspace.md`）（[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104) [#108](https://github.com/zephyr4123/TJU-AI4Science/issues/108)）
 - 纲领 §4 加 P-19 工作区按阶段分目录、需求是根、产出多对多、框架只认 meta；§2 工作区那棵树重画；workflow §1 磁盘布局与契约重定、§4 人只做两件事、§5 命令行按 P-19 改、协调层与界面两节改成只写现状；vision 补记三；spec 加 R-36（[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）
