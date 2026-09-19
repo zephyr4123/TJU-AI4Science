@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- 纲领 §4 加 P-21 页面词表（一个概念一个词、名词做标签、内部名不上屏、能力文案三层对三种动作、编辑台加「能力」镜头）；workflow §1 契约加能力文案三层的规矩、§5 界面适配加词表与文案两条；活文档「流」「工作流」改「流程」、「颗」改「个」、五栏改名 职责 / 边界 / 输入 / 产出 / 终止条件（[#112](https://github.com/zephyr4123/TJU-AI4Science/issues/112)）
 - workflow §5 界面：主页面加文件镜头（页眉「看板 / 文件」切换、带平台语义的目录树、只读）；门口与主页面两段按现状回写（学科、一条流一张表、工具调用不折叠）（[#111](https://github.com/zephyr4123/TJU-AI4Science/issues/111)）
 - 纲领 §4 加 P-20 能力的接法（形状归框架、主文件归阶段、来源归 meta；skill 不是一格）；workflow §1 契约加阶段主文件表与两层文件规则、`from` 边成图的说明；open-questions 加 Q-14 声明式能力、Q-15 执行层可写范围（[#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110)）
 - 一次性迁移脚本 `scripts/oneoff/migrate-workspaces-to-stages.py`：旧 `task/` + `runs/` 布局的工作区搬成 P-19 的阶段目录（requirement.md + lock、materials/、design/1、experiment / analysis / verification）；纲领 §5 内仓目录表与 workflow §1 §2 对齐内仓落地（`framework/experiment/` 子包、`.ai4sci/` 不含 work/、分析表列名「来源」、`docs/start-a-workspace.md`）（[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104) [#108](https://github.com/zephyr4123/TJU-AI4Science/issues/108)）
