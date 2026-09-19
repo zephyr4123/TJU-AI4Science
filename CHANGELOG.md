@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- 纲领 §4 加 P-19 工作区按阶段分目录、需求是根、产出多对多、框架只认 meta；§2 工作区那棵树重画；workflow §1 磁盘布局与契约重定、§4 人只做两件事、§5 命令行按 P-19 改、协调层与界面两节改成只写现状；vision 补记三；spec 加 R-36（[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）
 - workflow §5 界面适配加「第八版」（编辑台节点画布：线性链、节点 = 阶段、阶段梯 + 玻璃题头、悬浮对话窗、`Param.in_flow`；全站文案清洗）；spec 加 R-35（[#100](https://github.com/zephyr4123/TJU-AI4Science/issues/100) [#101](https://github.com/zephyr4123/TJU-AI4Science/issues/101) [#102](https://github.com/zephyr4123/TJU-AI4Science/issues/102) [#103](https://github.com/zephyr4123/TJU-AI4Science/issues/103)）
 - 纲领 §4 加 P-18 三层：研究阶段、能力、实现（流是按顺序经过几个阶段、断点是停下来等人确认），P-12 / P-13 收窄；workflow §1 重写成三层、§5 命令行按五颗能力改、界面适配加「第七版」；spec 加 R-34；open-questions Q-13 再记；一次性迁移脚本 `scripts/oneoff/migrate-flows-to-stages.py`（[#93](https://github.com/zephyr4123/TJU-AI4Science/issues/93) [#94](https://github.com/zephyr4123/TJU-AI4Science/issues/94) [#99](https://github.com/zephyr4123/TJU-AI4Science/issues/99)）
 - workflow §5 协调层适配加「两个旋钮」、界面适配加「旋钮」（模型与思考深度：端口 `knobs()` / `tuning`、适配器 `--model` / `--effort`、对话记住、页面两枚下拉片）；spec 加 R-33（[#86](https://github.com/zephyr4123/TJU-AI4Science/issues/86)）
@@ -44,6 +45,9 @@
 - 高度模块化对齐（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)）：纲领加 P-12 能力可自由装配（粒度是能力、机器可读描述符、Python 函数 + 磁盘契约、契约挂产物不挂上游）与"协调层形态可换"（低代码图是第二种协调层）；workflow §1 加"装配与固定流"与"能力描述符"，§5 注明 CLI 薄壳；spec R-5 加描述符；新增 Q-13 低代码协调层的形状（[#34](https://github.com/zephyr4123/TJU-AI4Science/issues/34)）；纪要 `docs/meetings/2026-0915-modularity.md`
 - 架构纲领三箱改四层：加协调层（人 + 协调 agent），科研判断归它，框架降为诚实执行基底，不连跑、不等人；"阶段"改"能力"、"底座"改"执行层"，人在环模式与文件通道移除；加 P-10 P-11 与 `coordinator/` 目录。spec 的 R-5 R-7 N-2 改写，新增 R-10 C-7 A-11；未决项加 Q-10；决策 issue #18，Q-10 是 #19；纪要 `docs/meetings/2026-0910-coordinator-layer.md`。spec 状态改为滚动：只驱动下一步，不设 aligned 门槛。纲领 workflow §5 加算力端口 `Compute`（put / submit / wait / cancel / get，句柄落盘，靠名字选择、不静默回退），目录加 `compute/`
 - 内仓远端就位：`repos.json` 的 url 由 `TBD` 改为 <https://github.com/zephyr4123/TJU-AI4Science-Platform>（私有），`./repos remotes --fix` 接好 origin，骨架与 v0.1.0 首次推送；根 README、spec、纪要同步
+
+### 移除
+- `docs/architecture/packs.md` 的「任务包」一节整节删掉，文档改名 `domains.md` 只讲领域包（[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）
 
 ## [0.3.0] - 2026-09-10
 

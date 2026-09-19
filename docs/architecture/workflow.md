@@ -1,7 +1,7 @@
 # 流水线：能力与实验内环
 
 - 状态：**aligned**（形状）；首版提供哪几个能力，见 Q-1
-- 最近变更：2026-09-18
+- 最近变更：2026-09-19
 - 依据：[InternAgent 深读](../../research/selection/2026-0909-pipeline-frameworks/internagent.md)、[autoresearch 深读](../../research/selection/2026-0909-pipeline-frameworks/autoresearch.md)、[AutoResearchClaw 深读](../../research/selection/2026-0909-pipeline-frameworks/autoresearchclaw.md)
 
 三个仓的编排形态都是"外层 for + 硬编码状态判断"，差别全在循环之外：用什么承载状态、用什么规则收敛、用什么机器判据卡住造假。我们不写那个 for：**串联能力的是协调层（人 + agent），框架只提供能力**。流水线层因此只有两样东西：**各自可调的能力**和住在其中一个能力里的**实验内环**。
@@ -15,32 +15,33 @@
    └ 能力        一个阶段里的一件活；对协调 agent 就是一条 ai4sci cap 命令   细颗粒度，五栏说清边界
        └ 实现    这件活怎么干：一段代码、一个 skill、领域包里的东西     一颗能力可以有几种实现，也可以暂时零实现（空槽照样列出）
 
- 一条流 = 经过几个阶段、按什么顺序、每个阶段挂哪些能力（可以不挂：助理看着办）、阶段之间哪儿插断点
+ 一条流 = 经过几个阶段、按什么顺序、每个阶段挂哪些能力（可以不挂：助理看着办）、哪几个阶段完了要人签
 
- 断点 = 停下来等人确认。出厂两个：「发布」（publish.json）与「验收」（accept.json），机器守着记录；
-        别的断点是助理的纪律——把该看的念给人听，人说「继续」才调用下一条命令——页面上看得见
+ 断点 = 这个阶段的产出要人签了下游才能读。几个、放哪由流定：端到端全自动的流一个没有，步步确认的流每步一个。
+        签字落在产出目录里（signed.json）；「发布」「验收」只是两个常见的放法，不再是框架里的特例（2026-09-19，P-19）
 ```
 
-- **能力是细颗粒度的。** 一颗只干一件说得清的活：分析阶段里的「写分析初稿」只读 auto-research 留下的东西写三节初稿，不是「分析」的全部；以后的对比、作图、复盘都是这个阶段里另外的能力。写作阶段同理：写综述、写正文、画图各是一颗。
+- **能力是细颗粒度的。** 一颗只干一件说得清的活：分析阶段里的「写分析初稿」只读实验留下的东西写三节初稿，不是「分析」的全部；以后的对比、作图、复盘都是这个阶段里另外的能力。写作阶段同理：写综述、写正文、画图各是一颗。
 - **能力的描述符五栏必填**（`framework/contracts/capability.py`）：干什么、不干什么、要带什么进来、留下什么、什么时候停。讲机制、带通用的专业术语（auto-research 要讲清 git 分支 tip 是 best、refs/attempts 留档、统计门棘轮），不是小学生作文，也不是路径表。研究者、协调 agent、工程师读同一份；`ai4sci show caps` 与 `GET /cap` 就是它。
+- **能力是纯函数：显式输入 → 一个产出目录。** 输入用 `--from <stage>/<n>` 点名（读了哪几个产出），产出是它所属阶段下的一个新目录。能力自己没有「最新」这种状态，不默认读谁：选输入是协调层的事——agent 看盘决定，或人指定（2026-09-19 主人：能力挂在流的某个阶段上，天然解耦，给 agent 用也给人用，不随任务变）。
 - **实现是能力下面的一层。** 一段自己写的代码（auto-research）、一个 skill（nature 写作 skill 归写正文，nature image skill 归画图）、领域包里的东西都算。领域包不是一层，只是打包单位：拆开各归各的能力。代码里只在出现第二种实现时才建模（有第二个用例才抽象）。
-- **阶段之间没有显式的输入输出接口，机器不做数据流校验。** 进入下一个阶段时助理自己看盘上有什么，缺了它当场说（P-7）；能力自己也查——要的东西不在就退 1 说清缺什么。所以流的检查只查三件事：阶段名对不对、点名的能力在不在那个阶段、参数名与类型对不对（外加断点不能开头、不能挨着）；提醒两句不拦：有实验或分析却没有验证、设计或实验之前没有「发布」断点。**文件仍是产物的载体**——一个文件一个生产者、命名三规矩（P-13）保留——但不再是拼流的接口：inputs / outputs 路径表、种子、桥、`check_flow` 全删。
+- **阶段之间没有显式的输入输出接口，机器不做数据流校验。** 能力开工时 `from` 里没有它要的文件就报错说清缺哪个阶段的哪个文件（P-7）；流的检查只查三件事：阶段名对不对、点名的能力在不在那个阶段、参数名与类型对不对。**文件仍是产物的载体**——一个文件一个生产者、命名三规矩（P-13）保留——但不是拼流的接口。
 
-现在有的（2026-09-18，[#96](https://github.com/zephyr4123/TJU-AI4Science/issues/96)）：
+现在有的（2026-09-19，[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104) [#106](https://github.com/zephyr4123/TJU-AI4Science/issues/106)）：
 
 | 阶段 | 能力（命令） | 谁跑 | 一句话 |
 |---|---|---|---|
-| 文献 | — | | |
-| 假设 | `init` 说清课题 | 机器 | 起任务包、搬材料、放模板；之后助理和研究者在对话里填 manifest 与 design.md |
-| 设计 | `design` 写评分脚本、跑基线 | 执行层 + 机器 | 执行层写 harness/ 与 code/，框架封 harness，接着跑 make_run0.sh 出 run_0/、算预检（原 design + baseline） |
-| 实验 | `auto-research` | 执行层 + 机器 | run 不在就开一个，然后一轮一轮改代码：过统计门才 keep，否则回退到 best（原 start + experiment） |
-| 分析 | `analysis` 写分析初稿 | 执行层 | 读账本与每轮结果，写三节固定的 analysis.md |
+| 文献 | — | | 没有能力时助理自己开产出目录写 notes.md |
+| 假设 | — | | 同上；原来的 `init` 删了：建工作区 = 写需求 + 搬原件，不是一个阶段的能力 |
+| 设计 | `design` 写评分脚本、跑基线 | 执行层 + 机器 | 读需求与假设，执行层写 harness/ 与 code/，框架封 harness，跑基线、算预检；留下 scoring.yaml（原 manifest 里机器读的那半） |
+| 实验 | `auto-research` | 执行层 + 机器 | 读设计的产出，一轮一轮改代码：过统计门才 keep，否则回退到 best |
+| 分析 | `analysis` 写分析初稿 | 执行层 | 读一个或几个实验的账本与结果，写三节固定的 analysis.md |
 | 写作 | — | | |
-| 验证 | `verify` 核对数字 | 机器 | 分析里的数回溯到 results.json，账本与 git 对账，PASS / FAIL |
+| 验证 | `verify` 核对数字 | 机器 | 分析里的数回溯到实验的 results.json，账本与 git 对账，PASS / FAIL |
 
 - **每个能力一次执行层调用，新会话。** 上下文从磁盘来，不靠上一个能力的会话。这是 P-1 与 P-3 的直接推论。
 - **失败处理**：FAILED 就停，不模板兜底、不静默跳过（P-7）。重试是显式配置，默认 0。
-- **回退**：框架不判断"要不要回到设计"，协调层看了分析结论决定。框架只提供留档：重跑一个能力时把旧目录改名成 `_v{n}`，不覆盖。
+- **回退**：框架不判断"要不要回到设计"，协调层看了分析结论决定。重做一个阶段就是这个阶段下多一个产出目录，旧的原样留着。
 - **并行**：v0.x 不做。
 
 ### 流：经过几个阶段
@@ -50,57 +51,73 @@
 ```yaml
 name: research
 title: 从课题到验证
-summary: 说清课题，人发布；写评分脚本跑基线，人核对；一轮一轮改，写分析初稿，核对数字；人验收。
+summary: 写评分脚本跑基线，人核对；一轮一轮改，写分析初稿，核对数字；人验收。
 stages:
-  - 假设                                     # 一个阶段：用什么能力由助理看着办
-  - 断点: 发布                               # 停下来等人：出厂的两个断点之一
-  - 设计
-  - 断点: 核对评分脚本算的是不是你要的数     # 别的断点写一句要人确认什么
+  - 设计                                     # 一个阶段：用什么能力由助理看着办
+  - 断点: 核对评分脚本算的是不是你要的数     # 设计的产出要人签
   - 实验: {auto-research: {max_iters: 3}}   # 点名能力、带参数（参数名是描述符里的 Param）
   - 分析: [analysis]                         # 点名不带参数
   - 验证
-  - 断点: 验收
+  - 断点: 验收                               # 验证的产出要人签
 ```
 
-- **出厂只有一条 `research`**，从课题到验证；截它的一段、改参数、换断点都是新的流。原来的 intake / auto-research / quick-look 是同一条路的三个截段，删了。
+- **出厂只有一条 `research`**；截它的一段、改参数、换断点都是新的流。
 - **子集也是流、任何顺序都是流。** 只想根据实验结果写综述就是 `[实验, 写作: [review]]` 两行——等写作阶段有了那颗能力就能挂。
-- **流分三层：库、实例、快照**（P-15，[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70)）。库在 `workflows/`，通用、不依附课题，编辑台的造流助理改它；实例在工作区 `flows/`，研究助理 `ai4sci flow take <name>` 从库里取来，按这份需求改阶段、能力参数、断点（`show flows` 用同一套检查）；快照在 `runs/<id>/workflow/`，开 run 时照的那一份，之后实例再改不影响跑过的 run。`cap auto-research --workflow` 只认实例：库里的流要先取到工作区才能跑。
-- **进度记录**（`run/flow_state.py`）：`flow.json` 记走到第几项（项是阶段或断点），一颗能力跑成后从当前项往后找第一个阶段对得上的阶段——点了名看名字，没点名看这颗能力属于哪个阶段——记到那儿；流外的不动。「在等谁」不存、现算：作业在跑 → 等作业；下一项是断点 → 等人确认（出厂的两个说是发布还是验收）；下一项是阶段 → 轮到助理；走完 → done。
+- **流分两层：库、实例**（P-15）。库在 `workflows/`，通用、不依附课题，编辑台的造流助理改它；实例在工作区 `flows/`，几条都行，研究助理 `ai4sci flow take <name>` 从库里取来，按这份需求改阶段、能力参数、断点。选流在需求确认之后、与需求独立：一份需求会走多条流。
+- **进度不另存**（2026-09-19，删了 `flow.json`）：每个产出的 `meta.yaml` 记它是在哪条流的第几项下产的，「这条流走到哪」沿 `from` 链算出来；同一条流走两遍就是两条链，看板都列。「在等谁」也现算：作业在跑 → 等作业；这一项的产出还没签而流说要签 → 等人；下一项是阶段 → 轮到助理；走完 → done。
 - **编排工作台的意义是立规矩，不是做数据流校验。** 研究者要的是三样：看得见接下来会发生什么、在关键处能拦一手、下次能照做。排阶段、挂能力、插断点正好是这三样；"能力之间的输入输出对不对得上"是工程师给自己发明的问题。
-- **固定流是存好的图，不是代码。** 图怎么描述、谁解释，见 Q-13：库里的文件就是图，解释它的是主页面的研究助理。
 
 ### 磁盘布局
 
+2026-09-19 与主人从第一性原理重定（[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）。原来的目录以「一次 auto-research」为单位建模（`runs/<id>/work + experiment`），工作区、流、分析、验证都是后挂上去的；任务包抄三遍以上；文献、写作没有落点。科研是频繁返修、多对多的：实验不止跑一次，数据不只一份，假设也不只一版。所以：**一个阶段一个目录，里面每次产出一个子目录，产出之间靠 `from` 引用；需求是根；平台自己的记录藏起来。**
+
 ```
-runs/<run_id>/
-├── manifest.yaml           任务包 manifest 的快照，协调层拍板后写入，跑起来后不再读任务包
-├── checkpoint.json         {run_id, last_iter, best_iter, best_metric, best_commit, stop_reason}；原子写；续跑只看它
-├── journal.md              协调层的决定：为什么跑这个能力、看到什么、下一步；指回 issue
-├── prompts/                领域包提示的快照，跑起来后不再回头读 domains/
-├── work/                   任务包的拷贝，独立 git 仓：分支 tip = best，refs/attempts/* 留档被弃的尝试
-├── workflow/<name>.yaml    照的那条流的快照；flow.json 记走到第几项
-├── experiment/             实验内环整个住在这里，见第 2 节
-│   ├── runs/               每轮一个 run_N/ 快照 + results.json + job.json + .job/ 日志
-│   ├── ledger.tsv
-│   ├── notebook.md         实验笔记：每轮的自述、改动、裁决，下一轮整本进 prompt
-│   ├── inflight.json       在飞的那一轮，结账即删
-│   └── stop.json           停止原因
-├── analysis/  analysis.md
-├── writing/   paper.md
-└── verify/    report.json
+<数据根>/
+├── workflows/                 流的库（编辑台改）
+├── templates/                 需求模板的库：通用一份，按学科加，可扩展
+├── studio/                    编辑台的对话记录
+└── workspaces/<id>/
+    ├── requirement.md         需求：助理和人对话攒出来的，形式开放，按模板起草不定死大纲
+    ├── requirement.lock       需求确认：谁、何时、hash、版本。唯一内置的门：没确认任何阶段不开工
+    ├── materials/             原件（PDF / 数据 / 代码），只增不改
+    ├── flows/                 这个课题取来的流，几条都行
+    ├── literature/   1/ 2/    七个阶段各一个目录（英文 slug，阶段名 ↔ slug 一张表在 contracts）
+    ├── hypothesis/   1/ 2/    流没走的阶段没有目录：ls 一眼看出走到哪
+    ├── design/       1/
+    ├── experiment/   1/ 2/ 3/
+    ├── analysis/     1/
+    ├── writing/
+    ├── verification/ 1/
+    └── .ai4sci/               平台记录，不是研究产物：chats/ jobs/ logs/ work/ requirement/v1.md …
+
+experiment/2/                  一个产出目录
+├── meta.yaml                  框架只读这一份：id、stage、title、from（读了谁，每项带 sha256）、by（能力名 / assistant / human）、
+│                              params、flow、step、requirement（哪版需求）、created_at
+├── signed.json                流里有断点才有：人签的——谁、何时、签的哪些文件的 hash、一句话
+└── …                          其余全是产它的那颗能力自己的文件，框架不看、不定、不校验
 ```
 
-跨能力读取按**生产者原样声明过的名字**找文件，不按目录名 glob 倒序（AutoResearchClaw 在这一点上打了四层补丁）。名字在描述符的「留下什么」里说，不再是机器对表的接口。
+- **产出的 id 就是路径**：`experiment/2`、`analysis/1`。读出来就知道是什么，不用查表；`title` 是给人看的标签，目录名不动。
+- **接口 = `from` + 文件名。** 不把上游整包抄进自己目录；执行层要的合成工作树在 `.ai4sci/work/`，是实现细节。
+- **冻结**：产出和需求同一条规则——没被 `from` 引用、没被签之前随便改；一旦被引用或被签就冻住，改了框架按 hash 查得出并拒读。需求确认之后再改，页面显示 diff、人再确认成 v2，旧版存 `.ai4sci/requirement/`。
+- **助理不经能力也能产出**（文献、写作现在没有能力）：`ai4sci output new <stage> --title … --from …` 建目录写 meta，然后直接写文件。
+- **一个工作区一份需求，一对一；工作区上方不加层。** 哪天一篇论文要拆几个子课题，再加 `projects/`，现在没有第二个用例。
 
 ### 契约
 
-每个能力留下的产物有没有形状要求由生产者定（P-4）：`validate_task`、`contracts.analysis`、`schemas/report.schema.json`、账本的写函数。契约测试属于框架自己的测试，删掉全部任务包也要过（P-5）。
+**框架只认 `meta.yaml`、`signed.json`、`requirement.lock`、流文件、能力描述符这几样的形状。** 产出目录里其它一切归产它的那颗能力：设计能力留 `scoring.yaml`、实验能力就去读它，两颗能力私下约好的文件名写在各自描述符的「留下什么 / 要带什么进来」两栏里，框架从头到尾不知道有 `scoring.yaml` 这回事。换一个学科就是换一族能力：
 
-契约里的值从哪来：**manifest 由协调层（人 + agent）拍板后填写**，方向、预算、统计门、验收判据都在里面；框架只读，并在每轮证明它们没被改（hash、`elapsed_s`）。
+```
+实验族   design/1   scoring.yaml · harness/ · env/ · baseline/
+综述族   design/1   search-plan.md · inclusion-criteria.md
+仿真族   design/1   model.cfg · sweep.yaml
+```
 
-**能力描述符**（`framework/contracts/capability.py`）：每个能力子包导出 `DESCRIPTOR`（name、level、stage、title、五栏、params、needs_executor、needs_compute）与统一入口 `run(run_dir, ports, **params) -> str`（task 级是 `run(workspace, ports, ...)`）；`capabilities.discover()` 扫子包并断言入口签名与描述符的参数表一致，子包名下划线对命令名连字符（`auto_research/` 就是 `ai4sci cap auto-research`）；`ai4sci cap` 的子命令从描述符生成，所以 CLI 参数与描述符一致是构造保证。能力上**不写**「属于哪条工作流」：工作流文件点名能力，反过来写是两份真相；`show caps` 与 `GET /cap` 的 `used_by` 是反查算出来的。
+框架看它们都一样：`design/1/meta.yaml` 加一堆文件。原来 `framework/contracts/` 里的 manifest schema、results、report、headroom 都是实验这一族的，搬进对应能力的包里（P-4 的「契约机器可校验」在能力里落，不在框架里）。
 
-**接口是文件名，不是 schema**（P-13，[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)；2026-09-18 收窄，[#93](https://github.com/zephyr4123/TJU-AI4Science/issues/93)）：一个文件只有一个生产者，格式由生产者定，谁要用就报名字、不问格式；命名三规矩见 README P-13。它管的是**产物怎么命名、谁能写**，不再管**流能不能拼**——按路径字符串对表让七颗能力只能拼成一条线（枚举 13699 种排列只有掐头去尾的那一条通），而且是「有名字的耦合、没内容的契约」。内容契约现在在描述符的「留下什么」里用人话说（账本有哪几列、report.json 的 status 是什么）。
+**能力描述符**（`framework/contracts/capability.py`）：每个能力子包导出 `DESCRIPTOR`（name、stage、title、五栏、params）与统一入口 `run(output_dir, inputs, ports, **params)`；`capabilities.discover()` 扫子包并断言入口签名与描述符的参数表一致，子包名下划线对命令名连字符（`auto_research/` 就是 `ai4sci cap auto-research`）；`ai4sci cap` 的子命令从描述符生成，每颗都有 `--from`，所以 CLI 参数与描述符一致是构造保证。能力上**不写**「属于哪条工作流」：工作流文件点名能力，反过来写是两份真相；`show caps` 与 `GET /cap` 的 `used_by` 是反查算出来的。
+
+**接口是文件名，不是 schema**（P-13，[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)；2026-09-18 收窄，[#93](https://github.com/zephyr4123/TJU-AI4Science/issues/93)）：一个文件只有一个生产者，格式由生产者定，谁要用就报名字、不问格式；命名三规矩见 README P-13。它管的是**产物怎么命名、谁能写**，不管**流能不能拼**。内容契约在描述符的「留下什么」里用人话说（账本有哪几列、report.json 的 status 是什么）。
 
 ## 2. 实验内环（实验能力）
 
@@ -117,14 +134,14 @@ runs/<run_id>/
    │  runner（框架，确定性代码，零模型）                                         │
    │                                                                          │
    │   ① 拷快照 run_N/   ② 起独立进程跑 launcher   ③ 读 harness 吐出的产物      │
-   │   ④ 跟 best 比：看 manifest 的 direction，过统计门                         │
+   │   ④ 跟 best 比：看 scoring.yaml 的 direction，过统计门                         │
    │   ⑤ 好 → 分支前进 / 差 → git reset 回 best     ⑥ ledger 记一行             │
    │   ⑦ 把「分数、好坏、失败分类」压成一小段文本给执行层，回到顶上                 │
    └─────────────┬────────────────────────┬──────────────────────┬────────────┘
                  │                        │                      │
                  ▼                        ▼                      ▼
    ┌────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-   │ harness（任务包带的）│   │ git（状态载体）        │   │ ledger.tsv（账本）    │
+   │ harness（设计阶段留的）│   │ git（状态载体）        │   │ ledger.tsv（账本）    │
    │ 框架注入，只读，    │   │ 分支 tip = 当前最好   │   │ 每轮一行，活过 reset  │
    │ 校验 hash；独立进程 │   │ 失败的 commit 被 reset│   │ 每行能跟 git 对账     │
    │ 只吃产物文件      │   │ 物理销毁              │   │ 不进 git             │
@@ -144,8 +161,8 @@ runs/<run_id>/
 
 - 执行层只改 `code/`，`harness` 与 `data/` 只读；runner 事后 diff 与 hash 双重校验，变了判 `readonly_violated` 并回滚。
 - runner 是裁判：比较、留或回滚、记账、**git 提交**全由 runner 做，执行层不参与也不需要任何 Bash 权限（P-2）。每个 run 的 `work/` 是独立 git 仓：分支 tip = 当前 best，`refs/attempts/iter-N` 留档每一个被弃或失败的尝试。
-- **统计门**：σ 来自 `run_0/sigma.json`（同配置重复 k 次，k 与阈值来自 manifest，默认 k=3、阈值 2σ）；gate = max(accept_sigma × σ, `budget.min_delta`)，差值不过门的判"持平"不留。σ = 0 且没给 min_delta 时 fail-closed：确定性 harness 必须显式声明最小改进量，否则浮点噪声会被当成改进锁进棘轮。这是 autoresearch 跑档里"被 keep 的改进比换种子的波动还小一个量级"的直接教训。
-- **固定预算**：墙钟预算写在 manifest，harness 到时自停；超时 1.5 倍必杀，记 timeout。
+- **统计门**：σ 来自设计阶段基线的 `sigma.json`（同配置重复 k 次，k 与阈值来自 scoring.yaml，默认 k=3、阈值 2σ）；gate = max(accept_sigma × σ, `budget.min_delta`)，差值不过门的判"持平"不留。σ = 0 且没给 min_delta 时 fail-closed：确定性 harness 必须显式声明最小改进量，否则浮点噪声会被当成改进锁进棘轮。这是 autoresearch 跑档里"被 keep 的改进比换种子的波动还小一个量级"的直接教训。
+- **固定预算**：墙钟预算写在 scoring.yaml，harness 到时自停；超时 1.5 倍必杀，记 timeout。
 - **失败分类**：确定性规则，不调模型，按优先级判：`readonly_violated`（diff 或 hash 发现 harness / data 被改）→ `timeout` → `missing_dependency`（stderr 有 ModuleNotFoundError / ImportError）→ `crash`（stderr 有 Python traceback）→ `no_results`（results.json 缺失、不合 schema、或 harness 自报 status ≠ ok；假成功落在这里）→ `nan_metric`。执行层会话自己没走完（超时、被杀、CLI 崩）判 `executor_failed`，半截改动丢弃，同样计入连续三次。另有两个非失败状态：`noop`（执行层什么都没改，或改动全被 .gitignore 挡住）、`interrupted`（那一轮被杀）。分类结果与修复提示一起给执行层；同类失败连续 3 次判 `unrecoverable`，停。
 - **停止条件**：`max_iterations`、连续 `patience` 轮不改进（缺省 5）、`max_cost_usd` 累计用尽、`unrecoverable`；任一触发写 `experiment/stop.json` 并停。已停的 run 再跑一轮都不跑：要不要加预算续命是协调层的决定（P-10）。`--max-iters N` 只是本次调用的配额，用完返回 `batch_exhausted`，不算停止。
 - **续跑**：每轮开跑前写 `experiment/inflight.json`，结账后删。`loop resume` 先做 checkpoint、账本、git 三方对账，对不上就 fail-closed；有 in-flight 标记的那一轮记 `interrupted`、在飞的 job 先收尸、候选 commit 进 `refs/attempts/` 再回到 best。`loop run` 撞到 in-flight 标记直接拒绝并指引用 resume。
@@ -171,7 +188,7 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 ## 3. 裁判与验证
 
 - **确定性优先**：能用规则判的不用模型。实验能力的 accept / reject 完全确定性；验证能力首批三条零 LLM 判据：报告里的每个数字能回溯到 `results.json`，每条引用在真实学术 API 里存在，每张图由数据文件生成。
-- **模型裁判**：需要模型判断的（假设质量、写作质量、manifest 里 `requirements` 的 discussion 类验收），由框架派**一个新会话**，可指定与执行者不同的模型，只给产物不给轨迹，输出结构化 verdict（P-2）。
+- **模型裁判**：需要模型判断的（假设质量、写作质量、需求里 discussion 类的验收），由框架派**一个新会话**，可指定与执行者不同的模型，只给产物不给轨迹，输出结构化 verdict（P-2）。
 - **协调层只读判决**：验证结论回到协调层，由它决定接受、重跑还是换方向；协调层不替裁判改判，也不裁自己派出去的活。
 
 ### 数字回溯（已落地：分析与验证两个能力）
@@ -190,30 +207,31 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 - 框架不等人：每条子命令跑完一个能力就退出并写状态，需要人判断的事由协调 agent 在对话里问。
 - 自主程度是协调 agent 的行为，不是框架的模式：可逆的自己定并记录，贵的带方案来问，拿不准的停。
 - 无人值守（挂机过夜）时协调 agent 怎么把问题留给人、人怎么异步回复，是协调层自己的通道问题，platform 0.2.0 不做（Q-7）。
-- **长命令不占着对话等**（2026-09-17，[#63](https://github.com/zephyr4123/TJU-AI4Science/issues/63)）：每颗能力都有 `--detach`，框架把同一条命令起成独立进程当作业（`<runs 根>/jobs/<id>.json` + 日志），命令立刻返回作业号，agent 这一轮就结束；作业跑完，子进程以「框架」的身份给那段对话发一轮（transcript 与 history 标 origin），agent 看结果再向人汇报。run 记那张便条：`cap start --workflow <name>` 快照那条流进 `runs/<id>/workflow/`，`flow.json` 记步序——推进步序是记录不是决策，按哪颗仍是 agent 定；「在等谁」不存现算（等作业 / 等人按键 / 等人 / 轮到助理 / 走完）。步骤可带 `with:` 参数，按描述符核对。
+- **长命令不占着对话等**（2026-09-17，[#63](https://github.com/zephyr4123/TJU-AI4Science/issues/63)）：每颗能力都有 `--detach`，框架把同一条命令起成独立进程当作业（`.ai4sci/jobs/<id>.json` + 日志），命令立刻返回作业号，agent 这一轮就结束；作业跑完，子进程以「框架」的身份给那段对话发一轮（transcript 与 history 标 origin），agent 看结果再向人汇报。能力在哪条流第几项下跑的记进产出的 `meta.yaml`——记录不是决策，按哪颗仍是 agent 定；「在等谁」不存现算（等作业 / 等人签 / 轮到助理 / 走完）。
+- **人只做两件事，都落成文件**（2026-09-19，[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）：确认需求（`requirement.lock`，唯一内置的门）、在流定的断点上签产出（`signed.json`）。两件事在页面上做，或终端 `ai4sci sign`；协调 agent 不替人签。自动化程度是人定的：流里放几个断点就确认几次，一个不放就是端到端。
 
 ## 5. 框架的驱动面与执行层适配
 
 ### 协调层怎么驱动框架
 
-框架是一个 Python 包加一条 `ai4sci` CLI。命令行上只有五类东西，每样要么是能力、要么是人的确认、要么是查询、要么是取流、要么是入口（2026-09-16 收纳，[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)；2026-09-18 按三层纲领收编，[#96](https://github.com/zephyr4123/TJU-AI4Science/issues/96)）：
+框架是一个 Python 包加一条 `ai4sci` CLI。命令行上只有五类东西，每样要么是能力、要么是人的确认、要么是查询、要么是取流或建产出、要么是入口（2026-09-19 按 P-19 重定，[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）：
 
 ```
-ai4sci cap <name> [run_id] [--backend] [--compute] [--<param>]
-                                      能力：协调 agent 调用的 tool，产出文件；子命令从描述符生成，用法错退 2、没通过退 1
-                                      五颗：init design auto-research（当前工作区的任务包上，不带路径）analysis verify（run 上）
-                                      auto-research：run 不在就建（--run-id 缺省按时间起名，--workflow 只在开 run 时认）；
-                                      续跑 = --resume；续命 = --patience/--max-iterations/--max-cost-usd --reason
-ai4sci sign task --by <谁>            人的确认：发布当前工作区的需求，写 task/publish.json
-ai4sci sign run <id> --by <谁>        人的确认：验收结果，写 accept.json
-ai4sci show workspaces | task | run <id> | jobs | job <id> | flows | caps | workflows
-                                      查询：只读，与 serve 的 GET 端点同一批函数；task / run / jobs / flows 看当前工作区；
-                                      caps 七个研究阶段各有什么、每颗五栏；workflows / flows 每条经过哪几个阶段、有没有问题
+ai4sci cap <name> --from <stage>/<n>... [--backend] [--compute] [--<param>] [--detach]
+                                      能力：协调 agent 调用的 tool，读 --from 点名的产出，在自己阶段下开一个新产出目录；
+                                      子命令从描述符生成，用法错退 2、没通过退 1；需求没确认不开工
+                                      四颗：design（读需求 + 假设）auto-research（读设计）analysis（读一个或几个实验）verify（读分析 + 实验）
+ai4sci sign <stage>/<n> --by <谁> [--note]   人的确认：给一次产出签字，写它目录里的 signed.json（流里那一项是断点才需要）
+ai4sci requirement confirm --by <谁>  人的确认：确认当前工作区的需求，写 requirement.lock（页面上按同一个函数）
+ai4sci show workspaces | workspace | outputs [<stage>] | output <stage>/<n> | jobs | job <id> | flows | caps | workflows | templates | template <name>
+                                      查询：只读，与 serve 的 GET 端点同一批函数；workspace 是当前工作区的全貌（需求状态、每个阶段有几次产出、
+                                      每条流走到哪、在等谁）；caps 七个研究阶段各有什么、每颗五栏；templates 需求模板的库
 ai4sci flow take <name> [--as <新名>]  取流：把库里的一条流复制成当前工作区的实例（P-15）
-ai4sci workspace new <id> [--title]   入口：起一个工作区；chat new|send|list [--studio] 终端里聊；serve 网页后端
+ai4sci output new <stage> --title <一句> [--from ...]   建产出：助理不经能力也能在一个阶段下开目录写东西（文献、写作现在没有能力）
+ai4sci workspace new <id> [--title]   入口：起一个工作区（写模板起的 requirement.md、建 materials/）；chat new|send|list [--studio] 终端里聊；serve 网页后端
 ```
 
-并掉的旧命令：`task validate|list|env build|publish`、`run new|extend|accept`、`loop run|resume`、`status`、`cap list`、`flow list|check`、`show flow`；`cap start` / `cap baseline` / `cap experiment` 并进 `cap auto-research` 与 `cap design`。环境由 `cap design` 的后半段缺了就建，不再单独跑。2026-09-18 起（P-15，[#72](https://github.com/zephyr4123/TJU-AI4Science/issues/72)）：task 级能力与 `sign task` 不再带任务包路径，`--runs-root` 与 `AI4SCI_RUNS_ROOT` 删掉——当前工作区由 cwd 决定（往上找 `workspace.yaml`，`AI4SCI_WORKSPACE` 可指定），agent 的工作目录就是工作区；`show tasks` 换成 `show workspaces`；数据根 `AI4SCI_HOME` 缺省仓根。
+当前工作区由 cwd 决定（往上找 `requirement.md`，`AI4SCI_WORKSPACE` 可指定），agent 的工作目录就是工作区；命令不带工作区路径；数据根 `AI4SCI_HOME` 缺省仓根。
 
 CLI 是薄壳：每个能力对外是一个 Python 函数（auto-research 是 `capabilities.auto_research.run`），子命令只做参数解析与退出码。协调 agent 走 CLI，低代码 UI 后端与测试直接调函数，三者跑的是同一段代码（P-12）。
 
@@ -264,39 +282,34 @@ run(prompt, cwd, timeout_s, allowed_paths)
 同一批 CLI 的第二种用法：多轮、按 session id 续接、事件边跑边出。端口 `Chat` 与 `Runner` 放同一个 `backends/__init__.py`，适配器放同一个文件（一个 CLI 一个文件）；换一家 CLI 就是加一个文件，自研 agent 就是第三个适配器（主人红线：涉及 agent 的一律可替换，[#51](https://github.com/zephyr4123/TJU-AI4Science/issues/51)）：
 
 ```
-turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, bash_rules)
-  -> Iterator[ChatEvent{kind: init|text|tool_use|tool_result|denied|done|error, text, tool, tool_input, session_id, cost_usd, duration_s, raw}]
+turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, readable_paths, bash_rules, tuning, chat_id)
+  -> Iterator[ChatEvent{kind: init|delta|text|tool_use|tool_result|denied|done|error, text, tool, tool_input, session_id, cost_usd, duration_s, raw}]
+knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什么
 ```
 
-- **续接**：Claude Code 走 `claude -p <message> --resume <session id> --append-system-prompt <指南>`；隔离位与执行层同一组，但**不带** `--no-session-persistence`，多轮靠的就是 CLI 自己的会话持久化。实测两轮记得住（haiku 两轮 $0.02；sonnet 列任务包并复述、续接答预算，两轮 $0.12）。
-- **指南注入**：服务会话隔离了所有设置源，`coordinator/README.md` 由 `framework/chat/guide.py` 连同一段"你在服务里"的前言塞进 system prompt（命令写裸 `ai4sci`、一条一行、不加路径不挂前缀不接管道、没有对应命令就停下来说缺按钮、发布键不由你按、先说结论用人话）。指南本身受 lint：代码块里每条命令以 `ai4sci ` 开头（P-14，[#60](https://github.com/zephyr4123/TJU-AI4Science/issues/60)）。
-- **权限**：Bash 白名单是 `Bash(ai4sci *)`（带 `.venv/bin/` 路径的老写法也放行：老会话照自己以前几轮的写法来，前期别设坎；规则按命令文本前缀匹配，挂环境变量前缀对不上；裸 `ai4sci` 找得到是因为 `ClaudeCodeChat.build_env` 把本 venv 的 bin **追加**到 PATH 末尾，不遮系统命令），配置一律走起服务的人的环境变量（`AI4SCI_EXECUTOR_MODEL` 等），命令上不带；写只放行 `tasks/`、`runs/` 与 `workflows/`（后者是自定义工坊的前置：agent 拼出的流要存得下来，[#56](https://github.com/zephyr4123/TJU-AI4Science/issues/56)；指南教它先 `show flow` 后存、存完 `show workflows` 校验）；dontAsk 下只读 Bash 自动放行，但带 `for` / `cat` 的复合命令实测被拒，agent 会改用 Read 工具。
-- **长命令不进后台**（[#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)）：`claude -p` 里 Bash 超过 CLI 缺省的 2 分钟会被自动挪到后台，一轮结束后台子进程约 5 秒后被杀。实验 #55 里 `cap experiment --max-iters 3` 第 4 轮就这样死在半路（框架记 `interrupted`、回滚到 best、下一轮 `--resume` 接上，P-3 兑现，但研究者看到的是「卡住了」）。适配器起会话时设 `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` 关掉全部后台机制，并把 `BASH_DEFAULT_TIMEOUT_MS` / `BASH_MAX_TIMEOUT_MS` 抬到与本轮超时（`AI4SCI_COORDINATOR_TIMEOUT_S`，缺省 900 s）一样长：唯一会杀它的只有我们自己的定时器。2026-09-17 起真正的解落地（[#63](https://github.com/zephyr4123/TJU-AI4Science/issues/63)）：长按钮加 `--detach` 起成框架自己的作业（`start_new_session`，活过 agent 的轮次），`Chat` 端口多一个 `chat_id`，适配器经 `AI4SCI_CHAT_ID` 传给 agent 按的按钮，作业记下它、跑完 `chat/notify.py` 叫醒那段对话（忙就隔 15 秒再试，最多半小时，等不到记回作业记录）。指南改为长按钮一律 `--detach`、不在一轮里干等。
-- **逐字流出**（[#65](https://github.com/zephyr4123/TJU-AI4Science/issues/65)）：端口多一种 `delta` 事件（刚到的几个字，不是累计；同一段说完仍有完整 `text`），契约写明每家适配器都必须逐字吐——不吐的话页面上一整段突然蹦出来是体验事故。Claude Code 适配器开 `--include-partial-messages` 只翻 `text_delta`；对话层往外吐但 events.jsonl 只留完整事件；`chat send` 逐字打，SSE 多一种 `event: delta`，页面攒段带光标、完整 text 到了整段替换。
-- **落盘**：会话内容存在 CLI 自己的目录里，我们只记 session id；但每一轮的原生事件流自己留一份在 `runs/chats/<id>/turn-N/events.jsonl`，它是"agent 那一轮到底按了什么"的唯一证据（P-3）。meta 记后端、session id、cwd、完成的轮数、累计花费；transcript 给人翻；忙锁 `inflight.json` 让同一段对话同一时刻只跑一轮；半途放弃的轮次目录留着不计数。
-- **两张脸同一套函数**：`ai4sci chat new|send|list` 在终端里聊，`ai4sci serve` 起标准库 HTTP + SSE 给页面：对话（`POST /chats`、`POST /chats/<id>/messages` 逐事件推、`GET /chats[/<id>]` 带第一句话标题与一轮一条的 history）、需求看板（`GET /tasks[/<id>]`：阶段、钥匙状态、manifest、design.md、预检；`POST /tasks/<id>/publish` 发布键）、编排看板（`GET /cap` 节点清单、`GET /flow/check?steps=` 通不通）、结果看板（`GET /runs[/<id>]`：best 对基线、账本、分析、验证、验收状态；`POST /runs/<id>/accept` 验收键）、`GET /health`；不是接口前缀的路径端页面的静态文件。节点清单与流检查由 cli 以函数传入，chat 层不认识 capabilities；看板读盘在 `framework/chat/boards.py`，全是纯函数，NaN 出门前换 None。十来个端点仍是标准库，页面要更多再说。
-- **两位助理、两个域**（2026-09-18，P-16，[#73](https://github.com/zephyr4123/TJU-AI4Science/issues/73)）：一段对话属于一个域——工作区（研究助理：cwd 是 `workspaces/<id>/`，可写 `task/` `flows/` `runs/`，指南 `coordinator/README.md`，对话在 `<工作区>/chats/`，作业在 `<工作区>/jobs/`、跑完叫醒同一个工作区里的对话）或编辑台（造流助理：cwd 是库的上级，只可写 `workflows/`，指南 `coordinator/studio.md`，对话在 `studio/chats/`）。`chat/scope.py` 定这两个域，`guide.system_prompt(kind)` 按域给指南、域给可写目录与可读目录。**库对研究助理可读不可写**（2026-09-18 主人指出：不看库怎么把通用的流具体化）：端口多一组 `readable_paths`，Claude Code 适配器走 `--add-dir`（Read / Glob / Grep 在 dontAsk 下不被拒）而写的白名单不含它；前言把库的实路径写给它、告诉它看全文用 `show workflows --json`、内测让它试权限也不许拼 `find`。实测里它就是不知道库在哪才去 `find /`（被 Bash 白名单拦下）。端点按域分前缀：`GET/POST /workspaces`、`GET /workspaces/<id>`（工作区 + 任务包 + 流实例 + run 清单）、`POST /workspaces/<id>/publish`、`GET /workspaces/<id>/flows`、`GET /workspaces/<id>/runs[/<rid>]`、`POST …/runs/<rid>/accept`、`GET …/jobs[/<jid>]`；对话四个端点在 `/workspaces/<id>/chats…` 与 `/studio/chats…` 两个前缀下共用一套实现。旧的 `/tasks` `/runs` `/jobs` `/chats` 没了。研究助理的指南里没有「拼一条自己的流」，要新流就说「去编辑台拼」；造流助理不跑实验、不动工作区。
-- **run 记对话号**（2026-09-18，[#82](https://github.com/zephyr4123/TJU-AI4Science/issues/82) [#83](https://github.com/zephyr4123/TJU-AI4Science/issues/83)）：`cap start` 把 `AI4SCI_CHAT_ID` 记进 run 的 checkpoint（终端里开的是空），`GET /workspaces/<id>` 的 run 摘要带 `chat_id`。对话不绑流：流走到哪写在盘上，谁驱动的都一样；页面只拿它判断「当前对话最近碰的是哪条」。
-- **两个旋钮**（2026-09-18，[#86](https://github.com/zephyr4123/TJU-AI4Science/issues/86) [#87](https://github.com/zephyr4123/TJU-AI4Science/issues/87)）：主人要求每家底座 CLI 都能换模型、换思考深度，适配器把这一层暴露出来，人在对话框上随时改。端口 `Chat` 多 `knobs()`——这家 CLI 有哪些模型、哪几档思考深度、不选时用什么（清单由适配器自报，页面照单渲染，不写死哪家有什么；拿不准的缺省报 None，页面写「默认」不猜）——与每轮的 `tuning`（模型 + 思考深度，None 是后端缺省）。Claude Code 适配器翻成 `--model` / `--effort`（low / medium / high / xhigh / max）；对话 meta 记住上次的选、之后每轮沿用；`GET /backends` 给页面清单，`POST …/chats` 与 `POST …/messages` 收 `model` / `effort`（不在清单上 400），`ai4sci chat new|send --model --effort` 终端同款。证据：events.jsonl 的 init 事件回报的模型就是所选的那个。
+- **续接**：Claude Code 走 `claude -p <message> --resume <session id> --append-system-prompt <指南>`；隔离位与执行层同一组，但**不带** `--no-session-persistence`，多轮靠的就是 CLI 自己的会话持久化。
+- **指南注入**：服务会话隔离了所有设置源，两份指南（`coordinator/README.md` 研究助理、`coordinator/studio.md` 造流助理）由 `framework/chat/guide.py` 连同一段"你在服务里"的前言按域塞进 system prompt（命令写裸 `ai4sci`、一条一行、不加路径不挂前缀不接管道、没有对应命令就停下来说缺什么、需求确认与签字不由你做、先说结论用人话）。研究助理的指南分两段：需求未确认——只问、只写 `requirement.md`（先 `show templates` 看有哪些模板）、不跑任何阶段；已确认——取流、跑阶段、断点处等人。指南本身受 lint：代码块里每条命令以 `ai4sci ` 开头（P-14）；研究助理的指南里没有 `workflows/` 的写法（P-16）。
+- **权限**：Bash 白名单是 `Bash(ai4sci *)`（带 `.venv/bin/` 路径的老写法也放行，前期别设坎；裸 `ai4sci` 找得到是因为适配器把本 venv 的 bin **追加**到 PATH 末尾），配置一律走起服务的人的环境变量，命令上不带。研究助理可写当前工作区（需求、原件、流实例、七个阶段目录），库 `workflows/` 与 `templates/` 可读不可写（端口 `readable_paths`，适配器走 `--add-dir`；前言把库的实路径写给它）；造流助理只可写 `workflows/`。两组可写目录不相交，分权靠目录不靠指南里的一句「请不要」。
+- **长命令不进后台**：`claude -p` 里 Bash 超过 CLI 缺省的 2 分钟会被自动挪到后台、一轮结束就被杀。适配器起会话时设 `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` 关掉全部后台机制，并把 Bash 超时抬到与本轮超时一致；指南写明前台等、跑不完分批；真长的活走 `--detach` 作业。
+- **逐字流出**：端口的 `delta` 事件（刚到的几个字，不是累计；同一段说完仍有完整 `text`），契约写明每家适配器都必须逐字吐。Claude Code 适配器开 `--include-partial-messages` 只翻 `text_delta`；对话层往外吐但 events.jsonl 只留完整事件。
+- **落盘**：会话内容存在 CLI 自己的目录里，我们只记 session id；但每一轮的原生事件流自己留一份在 `.ai4sci/chats/<id>/turn-N/events.jsonl`（编辑台在 `studio/chats/`），它是"agent 那一轮到底做了什么"的唯一证据（P-3）。meta 记后端、session id、cwd、完成的轮数、累计花费、记着的旋钮；transcript 给人翻；忙锁 `inflight.json` 让同一段对话同一时刻只跑一轮；一轮有 `origin`：人，或框架来叫醒（作业跑完）。
+- **两张脸同一套函数**：`ai4sci chat new|send|list [--studio]` 在终端里聊，`ai4sci serve` 起标准库 HTTP + SSE 给页面。端点按域分前缀：`GET/POST /workspaces`、`GET /workspaces/<id>`（需求状态、每个阶段的产出、每条流走到哪、在等谁）、`GET /workspaces/<id>/requirement`、`POST …/requirement/confirm`、`GET …/outputs/<stage>/<n>`、`POST …/outputs/<stage>/<n>/sign`、`GET …/flows`、`GET …/jobs[/<jid>]`；对话四个端点在 `/workspaces/<id>/chats…` 与 `/studio/chats…` 两个前缀下共用一套实现；库：`GET /stages` `GET /cap` `GET /workflows` `POST /workflows` `POST /workflows/check` `GET /templates[/<name>]` `GET /backends`；`GET /health`。清单在 `framework/chat/server.py` 文件头，看板读盘在 `boards.py`，全是纯函数，NaN 出门前换 None。
+- **产出记对话号**：能力开工时把 `AI4SCI_CHAT_ID` 记进产出的 `meta.yaml`（终端里开的是空）。对话不绑流：流走到哪写在盘上，谁驱动的都一样；页面只拿它判断「当前对话最近碰的是哪条」。
+- **两个旋钮**：`knobs()` 由适配器自报（页面照单渲染，不写死哪家有什么；拿不准的缺省报 None，页面写「默认」不猜），每轮的 `tuning`（模型 + 思考深度）翻成 Claude Code 的 `--model` / `--effort`；对话 meta 记住上次的选。
 - 配置从环境变量读：`AI4SCI_COORDINATOR_MODEL`（缺省不传）、`_EFFORT`（缺省不传，人在页面上改）、`_MAX_TURNS`（50）、`_MAX_BUDGET_USD`（每轮 2.0）、`_TIMEOUT_S`（900：它会调用命令等基线跑完）。
-- 不做：token 级流式、多用户、鉴权（本机单人服务）。协调 agent 从终端里技术上也能签发布与验收（`sign task` / `sign run`），只有页面上那两处能做到"只有人能确认"；指南写明它不替人签。
+- 不做：多用户、鉴权（本机单人服务）。协调 agent 从终端里技术上也能 `requirement confirm` 与 `sign`，只有页面上那两处能做到"只有人能确认"；指南写明它不替人做。
 
 ### 界面适配
 
 界面也是适配器（主人 2026-09-16：现在是 GUI，之后有 TUI，要留位置，[#52](https://github.com/zephyr4123/TJU-AI4Science/issues/52)）。一种界面一个目录 `ui/<kind>/`，全部是上面那套端点的客户端，互相不认识、也不认识框架内部；换一种界面后端一行不改。契约就是端点清单（`framework/chat/server.py` 文件头）+ 响应体（`boards.py`），网页的 `ui/web/src/api/client.ts` 是它的照抄，写 TUI 时照抄一份即可。
 
-- **网页 `ui/web/`**：React 19 + Tailwind v4 + shadcn（radix-nova 预设）+ reactbits 两个动效件，Vite 构建成静态文件，`ai4sci serve` 缺省端 `ui/web/dist`（`--ui` 可换目录，没构建只开接口）。三栏：左边对话列表，中间对话（SSE 事件流，agent 按的每个按钮以工具行显示、可展开看输入输出、denied 标红），右边一张看板三个页签，每页是助理写给研究者的一页纸（一句话结论 → 三个大数字 → 几段人话 → 细节折叠 → 键在文末；状态码、判决、命令一律翻成句子，原始值只在折叠层）——需求（想解决什么、怎么算好、花多少、**发布键**）、工作流（现在有几条工作流、几颗能力，都从后端读，页面不写死顺序）、结果（比原来好了多少、可信吗、助理的结论、每一轮一句话、**验收键**）。编排画布等自定义工坊再做。两颗键都要署名，署名记在浏览器里。设计口径在内仓 `docs/PRODUCT.md` / `docs/DESIGN.md`。
-- **验收记录**：与发布记录对称。`runs/<id>/accept.json` 签 best_iter / best_metric / best_commit 与验证报告的结论（`framework/run/accept.py`，放 run 层因为它读 checkpoint）；内环在跑、只有基线、报告不合约都拒绝；验收之后 best 又变了记录标 stale，看板要人再看一遍，不让旧签名盖住新结果。
-- **门禁**：`make ui-check`（tsc + oxlint + vitest + 构建）并入 `make check` 与 CI（setup-node 22）；依赖只进 `ui/web/node_modules`。浏览器闭环实测（playwright）：发布 → `publish.json`、验收 → `accept.json`、流通不通报「第 4 步 design 是 task 级能力，run 段之后不能回到任务包」、haiku 两轮对话（第二轮 `ls -1 tasks/` 的工具行）。
+- **网页 `ui/web/`**：React 19 + Tailwind v4 + shadcn + React Bits 改装件（从 registry 捞来改，不手搓）+ React Flow，Vite 构建成静态文件，`ai4sci serve` 缺省端 `ui/web/dist`。视觉系统在内仓 `docs/DESIGN.md`：纸 / 墨 / 靛 / 铜绿 / 琥珀五色都是信息，思源宋体只给结论与标题，IBM Plex 正文；配图一律风景、走自己的 CDN（P-17，`assets.ts` 一处）；图标全站一套 Phosphor 内联；文案短词名词、不用谓宾串、不造词、不写解释性小标题；输入框不画下划线。
+- **地方栏**：最左一条，先选世界再选世界里的东西——底下「工作区 / 编辑台」双向开关，上面工作区世界里列封面块与「新建」，编辑台世界里工作区块收掉；页眉只属于当前地方。对话列表是抽屉，入口带字。
+- **门口那一屏**：一句话起工作区——写课题回车即建（文件夹名从标题推、可改，封面随名字换），进主页面时需求还没确认。
+- **主页面**按 `requirement.lock` 在不在分两个状态。未确认——需求文档就是页面：助理按模板起草的 `requirement.md` 渲染成看板（文档里实际有的二级标题各一格，模板留的「待填」是空格子），右边对话，一个动作「确认需求」；页面只渲染不编辑，改需求只走对话（一个文件一个生产者，diff 才有意义）。已确认——需求收成顶部一条（版本、时间、点开侧滑看全文；助理又改了就显示 diff 与「确认下一版」），下面流铺开：取来的每条流一条，每个阶段一格、格里列这个阶段的产出（标题、谁产的、读了谁）与签字状态；流里哪一项是断点，那一格就有「签」；作业在跑的那格描边，有作业时轮询摘要。对话：研究者的话进气泡，助理逐字流出的 Markdown，做过的事折成「助理做了 N 件事」、每条命令一句直白话、被拒的翻成人话；输入框上两枚下拉片换模型与思考深度。
+- **编辑台**：React Flow 节点画布，线性链，节点 = 研究阶段（能力 + 参数在节点里）或断点，画布铺满、左上角阶段梯 + 玻璃题头、右上角库与保存、选中节点配置参数（`Param.in_flow` 分开每次调用才定的参数）、问题贴节点；节点可自由摆、坐标进文件的 `layout` 块、「整理」回自动排；造流助理是右下角入口弹出的悬浮对话窗。
+- **门禁**：`make ui-check`（tsc + oxlint + vitest + 构建）并入 `make check` 与 CI；依赖只进 `ui/web/node_modules`；`git ls-files ui/` 里没有二进制。浏览器闭环用 playwright 取证。
 - **`ui/tui/`**：留位置没建。
-- **第三版（2026-09-17 落地，[#64](https://github.com/zephyr4123/TJU-AI4Science/issues/64)）**：两块看板以可写目录划界。顶栏一条（名字、当前对话、花费一句话、reactbits PillNav 改装的主页面 / 编辑台胶囊）。**主页面**改「实例」：左边对话（研究者的话进靛蓝气泡；助理逐字流出的 Markdown，开头那句短结论用宋体立起来；做过的事折成「助理做了 N 件事」，每条命令一句直白话，被拒的翻成人话），右边**流程脊柱**——当前 run 照的那条流一步一个模块（`ui/web/src/spine/derive.ts` 从便条、作业、两颗键的记录算出实心 / 跑着 / 轮到助理 / 等你发布或验收 / 轮到你 / 还没；没照流的老 run 按 auto-research 从文件推），模块内容按能力种类通用渲染，跑着的那步 ElectricBorder 描边，两颗键 StarBorder 琥珀，没有 run 时脊柱就是需求对齐（intake 那条流）。**编辑台**改「库」：工作流墙（SpotlightCard）、七段能力货架、拼流台（通不通当场问 `/flow/check`，`POST /workflows` 存成文件）。视觉系统在内仓 `docs/DESIGN.md`：纸 / 墨 / 靛 / 铜绿 / 琥珀五色都是信息，思源宋体只给结论与步骤标题，IBM Plex 正文，方格纸只铺脊柱那一列。三个页签废了。
-- **第四版（2026-09-18，[#74](https://github.com/zephyr4123/TJU-AI4Science/issues/74)）**：顶栏多一个工作区切换（下拉，末项「新建工作区」）；主页面没有工作区时是「起一个工作区」的欢迎屏，有了就是这个工作区的对话 + 脊柱（脊柱只读这一个工作区：需求对齐看 `task/`，run 看 `runs/`）；编辑台左边加造流助理的对话（`/studio/chats`），右边照旧墙、货架、拼流台。页面的取数层按域取前缀（`api/client.ts` 的 `Scope`）。
-- **素材（2026-09-18，[#75](https://github.com/zephyr4123/TJU-AI4Science/issues/75)，纲领 P-17）**：页面里的图片与视频只写腾讯云 CDN 的 URL（`ui/web/src/assets.ts` 一处），仓里不放；来源站的文件先下到本机、裁成无缝循环、faststart，再推桶。视频只在「新建工作区」那一屏做背景（浅色一段云雾、深色一段光线汇聚，减少动效或省流量只给首帧），对话欢迎屏一张配图；图标全站一套 Phosphor 内联；输入框是 reactbits GlassSurface 改装、RotatingText 轮换提示语，没有对话时打字回车就开一段。
-- **第五版（2026-09-18，[#79](https://github.com/zephyr4123/TJU-AI4Science/issues/79)）**：最左一条**地方栏**，先选世界再选世界里的东西：底下「工作区 / 编辑台」两块是双向开关（两个平行的世界，各有自己的对话），上面那段是当前世界的：工作区世界里列一块块封面（靠近放大、点即切换）与「新建」，编辑台世界里工作区块整段收掉——编辑台是全局一个库，结构上就切不了工作区；页眉只属于当前地方（工作区标题 + 走到哪 + 封面色；编辑台注「不分工作区」；门口宽屏无页眉）；对话列表仍是抽屉，入口改成带字的大按钮「对话 · N」；门口那一屏改成一句话起工作区（写课题回车即建，文件夹名从标题推、可改，封面卡随名字换）。
-- **第六版（2026-09-18，[#82](https://github.com/zephyr4123/TJU-AI4Science/issues/82)）**：脊柱改成一块板几条**泳道**——顶上需求对齐，每个 run 一条（照的那条流），取了没开跑的流一行「备着」；默认全部收着只给流的目录，只有助理正在承接的那条（作业在跑，或当前对话开的、还没验收）自动展开、动态渲染，人点哪条展开哪条；有作业在跑时每 10 秒重拉摘要；脊柱顶上写「工作流」与一句怎么用，地方栏每段带字（工作区 / 新建 / 主页面 / 编辑台）。背景换风景：对话正文底下淡彩的云、脊柱底下层层山影，方格纸删；欢迎屏、库横幅、六张封面全换成风景（主人：别用玻璃瓶、实验室味的图）。
-- **旋钮（2026-09-18，[#86](https://github.com/zephyr4123/TJU-AI4Science/issues/86) [#88](https://github.com/zephyr4123/TJU-AI4Science/issues/88)）**：输入框工具位的第一件——左下两枚下拉片「模型」「思考」（reactbits GlideSelect 改装：菜单挂在 body 上从片的一角弹出、高亮在行间滑动；片上带前缀字），清单来自 `GET /backends`，显示这段对话记着的选或后端缺省，换了随下一条消息发出去、开新对话时带上。上传以后排在它们后面。
-- **第七版（2026-09-18，[#98](https://github.com/zephyr4123/TJU-AI4Science/issues/98)，纲领 P-18）**：页面按阶段画。编辑台的拼流台改成排阶段（点货架上的阶段名加一个阶段）、挂能力（点能力挂进最后一个阶段，同一个阶段连着挂）、插断点（一行可写要人确认什么，「发布」「验收」两颗快捷），边拼边 `POST /workflows/check`，存出的文件与手写同形；能力卡箭头展开五栏与参数；空阶段写「这个阶段还没有能力」。脊柱一项一格：顶上那条是流开头属于任务包的那一段（假设 / 设计两个阶段与它们之间的断点，从工作区取来的流里截、没取就照库里的），状态从任务包阶段与发布记录推；每个 run 一条按便条画全部阶段；断点画 ◆、等人时说「轮到你：看完跟助理说继续」；老 run 没便条按库里的样板推；坏掉的实例一行报原因。`GET /flow/check` 删。
-- **第八版（2026-09-19，[#100](https://github.com/zephyr4123/TJU-AI4Science/issues/100) [#101](https://github.com/zephyr4123/TJU-AI4Science/issues/101) [#102](https://github.com/zephyr4123/TJU-AI4Science/issues/102)）**：编辑台改成节点画布（React Flow，Dify 同款引擎；主人：像 Dify / Coze 那样拖拖点点）。两条定死：先线性——一条链，节点一进一出，边只表示顺序，坐标不进文件、按顺序自动排、放不下换行；一个节点 = 一个研究阶段，能力与参数装在节点里，断点是另一种节点。画布铺满整页，底下压一层风景：左上角一根阶段梯（七个阶段竖排成方块 + 三种断点，拖进画布落在哪就插在哪、点一下加到末尾，拖节点换顺序）与题头（一块玻璃板，宋体标题、mono 名字、一行说明直接写在板上——主人：下划线式填空线「低劣」，全站禁）；右上角库的弹层与保存（名字与库里重了才出「覆盖同名」开关），选中节点在右上角浮出配置：勾能力、按描述符逐个参数给输入框、断点写确认事项——**能力参数终于有了落点**，`Param.in_flow` 标出每次调用时才定的参数（run_id、resume、材料路径）不进流；`POST /workflows/check` 的问题句贴到节点上打红点。造流助理不占一列：右下角圆形入口（reactbits Magnet）点开弹出 GlassSurface 悬浮对话窗，画布是主角、对话是辅助。同一轮全站文案清洗（主人：短词名词、不用谓宾串、「拼流台」这类自造词杜绝；「不分工作区」这类解释性小标题一律删、要解释放展开层）。
 
 ## 变更记录
 
@@ -324,3 +337,4 @@ turn(message, cwd, timeout_s, *, session_id, system_prompt, allowed_paths, bash_
 | 2026-09-18 | §5 协调层适配加「run 记对话号」；界面适配加「第六版」：泳道、默认收起、承接的那条展开、风景背景（[#82](https://github.com/zephyr4123/TJU-AI4Science/issues/82) [#85](https://github.com/zephyr4123/TJU-AI4Science/issues/85)） | 主人问「右边这条流什么情况下渲染」：助理一段对话可同时开几条流，原来只显示最近一条；对齐后定对话不绑流、看板归工作区 | 主人 + Claude |
 | 2026-09-18 | §5 协调层适配加「两个旋钮」；界面适配加「旋钮」：模型与思考深度在输入框上随时换（[#86](https://github.com/zephyr4123/TJU-AI4Science/issues/86) [#87](https://github.com/zephyr4123/TJU-AI4Science/issues/87) [#88](https://github.com/zephyr4123/TJU-AI4Science/issues/88)） | 主人要求每家底座 CLI 都能换模型、换思考深度，适配器先暴露这一层，再同步输入框 UI | 主人 + Claude |
 | 2026-09-18 | §1 重写成「三层：阶段、能力、实现」：七个阶段任意组合、能力五栏必填、实现是能力下一层、阶段之间不做数据流校验、流是 stages + 断点、出厂只留 `research`、文件退出拼流接口；§5 命令行按五颗能力改、界面适配加第七版（[#93](https://github.com/zephyr4123/TJU-AI4Science/issues/93) [#94](https://github.com/zephyr4123/TJU-AI4Science/issues/94)–[#99](https://github.com/zephyr4123/TJU-AI4Science/issues/99)） | 主人：按吃吐路径对表的检查器让七颗能力只能拼成一条线，工作坊搓不出东西；第一性原理：编排工作台是立规矩不是接管子；文档用直白的工程语言 | 主人 + Claude |
+| 2026-09-19 | §1 磁盘布局与契约重定：一个阶段一个目录、每次产出一个子目录、`from` 引用、需求是根且是唯一内置的门、断点开放、框架只认 meta / signed / lock；能力改成纯函数（`--from`）；`init` 删；§4 人只做两件事；§5 界面第九版（[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)） | 主人：现有目录为 auto-research 量身定做、没法涵盖七个阶段；科研是频繁返修、多对多的；需求形式开放、断点不能卡太死；能力解耦不随最新状态变 | 主人 + Claude |
