@@ -7,7 +7,7 @@
 | 编号 | 问题 | 层 | 建议 | 拍板 | issue |
 |---|---|---|---|---|---|
 | Q-1 | 首版提供哪几个能力 | 流水线 | 拟定 7 个，platform 0.2.0 只做设计、实验、分析、验证 4 个；顺序不由框架定 | 主人 | [#8](https://github.com/zephyr4123/TJU-AI4Science/issues/8) |
-| Q-2 | 执行层 skill 怎么注入 | 学科适配 | 2026-09-16 翻案：走 prompt 整文件追加（原方案 1 被隔离参数关掉了），不做关键词匹配 | 主人 | [#9](https://github.com/zephyr4123/TJU-AI4Science/issues/9) |
+| Q-2 | 执行层 skill 怎么注入 | 学科适配 | 2026-09-20 关闭（P-22）：框架拼清单注入 + `ai4sci skill`；此前 2026-09-16 翻案：走 prompt 整文件追加（原方案 1 被隔离参数关掉了），不做关键词匹配 | 主人 | [#9](https://github.com/zephyr4123/TJU-AI4Science/issues/9) |
 | Q-3 | 验收怎么定义 | 验证 | manifest.requirements 的 must_pass + 零 LLM 判据；discussion 类交隔离裁判 | 主人 | [#10](https://github.com/zephyr4123/TJU-AI4Science/issues/10) |
 | Q-4 | 评测怎么做 | 评测 | rubric 树 + 组件消融 + 噪声基线；首个工科 bench 3 到 5 题 | 主人 | [#11](https://github.com/zephyr4123/TJU-AI4Science/issues/11) |
 | Q-5 | 第一个真任务与学院 | 任务 | 玩具任务已跑通；2026-09-16 案例到，案例二选为第一个真任务包，学院是交叉领域 | 主人 | [#12](https://github.com/zephyr4123/TJU-AI4Science/issues/12) [#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1) |
@@ -15,7 +15,7 @@
 | Q-7 | 无人值守时协调层怎么找人 | 协调层 | 大方向已定：人在协调层对话里，框架不等人；异步通道 0.2.0 不做 | 主人 | [#14](https://github.com/zephyr4123/TJU-AI4Science/issues/14) |
 | Q-8 | 协调层与执行层各用哪个 CLI | 协调层 / 执行层 | 开工时定；执行层 Claude Code 先行，Codex 第二 | 主人 | [#15](https://github.com/zephyr4123/TJU-AI4Science/issues/15) |
 | Q-9 | 项目级记忆怎么做 | 协调层 | 改写：run 级已有（账本、笔记）；项目级（文献笔记、假设台账、跨 run 结论）是写作前提，0.2.0 之后第一优先 | 主人 | [#16](https://github.com/zephyr4123/TJU-AI4Science/issues/16) |
-| Q-10 | 协调层 skill 包放哪、怎么注入 | 协调层 | 内仓 `coordinator/`，按 CLI 原生机制挂进去；与执行层路径不相交 | 主人 | [#19](https://github.com/zephyr4123/TJU-AI4Science/issues/19) |
+| Q-10 | 协调层 skill 包放哪、怎么注入 | 协调层 | 2026-09-20 关闭（P-22）：指南在 `coordinator/` 由框架注入，工具型 skill 用通用 `skills/`；不走原生机制 | 主人 | [#19](https://github.com/zephyr4123/TJU-AI4Science/issues/19) |
 | Q-11 | 文献检索走 tools/ 学术 API 还是执行层联网 | 学科适配 / 验证 | tools/ 学术 API，引用才可验 | 主人 | [#31](https://github.com/zephyr4123/TJU-AI4Science/issues/31) |
 | Q-12 | 写作能力的形态 | 流水线 | 分节多次调用，模板放领域包，图由 tools 出，写完过三条判据 | 主人 | [#32](https://github.com/zephyr4123/TJU-AI4Science/issues/32) |
 | Q-13 | 低代码协调层的形状：图怎么描述、谁解释、与人 + agent 怎么混 | 协调层 | 图 = 能力描述符引用 + 边；确定性图运行器与"交给 agent"节点并存；描述符先于图 DSL | 主人 | [#34](https://github.com/zephyr4123/TJU-AI4Science/issues/34) |
@@ -37,6 +37,8 @@ AutoResearchClaw 的 23 段太细（大量阶段是一次 LLM 调用），Intern
 建议 1。依据：[AutoResearchClaw 深读 §6.2](../../research/selection/2026-0909-pipeline-frameworks/autoresearchclaw.md#62-自进化在默认配置下不存在)。风险：换一个不支持 skill 的执行层时这层失效，届时再做方案 2 的最简版（按 `applicable-capabilities` 字段整文件追加，不做关键词匹配）。无论哪种，搜索路径里都不能有 `coordinator/`（P-11）。
 
 **2026-09-16 翻案，取方案 2 的最简版**（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)）：R-1 spike 实测（[#20](https://github.com/zephyr4123/TJU-AI4Science/issues/20)）执行层的承重隔离位是 `--setting-sources ""` 加 `--disable-slash-commands`，这两个参数正是把本机 CLAUDE.md、plugin、skill 一并关掉的东西——P-11 的隔离与"CLI 原生加载领域 skill"是同一个开关的两面，不能只要一半。所以领域 skill 由框架在 `run new` 时快照进 run，随执行层提示的「领域约定」段整文件追加，不做关键词匹配；实验与分析两个能力都吃。这样换执行层也不失效。
+
+> **2026-09-20 再记（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)，P-22）**：方案 2 收成正式规矩且不再限于执行层——框架起会话时把 `skills/`（通用）与所选领域包 `skills/`（领域）拼成 `<available_skills>` 清单进 prompt，agent 用 `ai4sci skill show / run` 读全文、起脚本；格式照 agentskills.io，脚本 PEP 723 自带依赖。快照进产出目录的做法保留。此问题关闭。
 
 ## Q-3 验收怎么定义
 
@@ -142,6 +144,7 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 
 auto-research 的 `work/` 已经在产出目录里，但没有机制拦执行层写到别处。建议一律锁：cwd = 产出目录，输入目录只读挂进去——「能力是纯函数」才不靠自觉。主人未拍板（2026-09-19，[#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110)）。
 
+
 ## Q-10 协调层 skill 包放哪、怎么注入
 
 候选：
@@ -150,10 +153,13 @@ auto-research 的 `work/` 已经在产出目录里，但没有机制拦执行层
 
 建议 1。0.2.0 只放一份入口指南（spec R-10），skill 目录等真有第二条 skill 再建。
 
+> **2026-09-20 再记（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)，P-22）**：入口指南仍在 `coordinator/`、仍由框架塞进 system prompt；协调层的**工具型** skill 不另建目录，用平台通用的 `skills/`（与执行层共用同一个库、同一套 `ai4sci skill` 命令），不走各家原生机制。P-11 的隔离只剩「指南不给执行层、领域 skill 不给协调层」。此问题关闭。
+
 ## 变更记录
 
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
+| 2026-09-20 | Q-2、Q-10 关闭：skill 系统定型为 P-22（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 三路调研后与主人定 | 主人 + Claude |
 | 2026-09-10 | 建档，九项 | 三层未定，先把问题与候选写下来 | 主人 + Claude |
 | 2026-09-15 | 加 Q-13 低代码协调层的形状（[#34](https://github.com/zephyr4123/TJU-AI4Science/issues/34)） | 主人对齐高度模块化，低代码图是第二种协调层 | 主人 + Claude |
 | 2026-09-10 | Q-9 改写为项目级记忆；加 Q-11 文献、Q-12 写作（[#29](https://github.com/zephyr4123/TJU-AI4Science/issues/29)） | 端到端对齐 | 主人 + Claude |

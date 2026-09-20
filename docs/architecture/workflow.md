@@ -24,7 +24,7 @@
 - **能力是细颗粒度的。** 一个只干一件说得清的活：分析阶段里的「写分析初稿」只读实验留下的东西写三节初稿，不是「分析」的全部；以后的对比、作图、复盘都是这个阶段里另外的能力。写作阶段同理：写综述、写正文、画图各是一个。
 - **能力的描述符五栏必填**（`framework/contracts/capability.py`）：职责、边界、输入、产出、终止条件。讲机制、带通用的专业术语（auto-research 要讲清 git 分支 tip 是 best、refs/attempts 留档、统计门棘轮），不是小学生作文，也不是路径表。研究者、协调 agent、工程师读同一份；`ai4sci show caps` 与 `GET /cap` 就是它。
 - **能力是纯函数：显式输入 → 一个产出目录。** 输入用 `--from <stage>/<n>` 点名（读了哪几个产出），产出是它所属阶段下的一个新目录。能力自己没有「最新」这种状态，不默认读谁：选输入是协调层的事——agent 看盘决定，或人指定（2026-09-19 主人：能力挂在流程的某个阶段上，天然解耦，给 agent 用也给人用，不随任务变）。
-- **实现是能力下面的一层。** 一段自己写的代码（auto-research）、一个 skill（nature 写作 skill 归写正文，nature image skill 归画图）、领域包里的东西都算。领域包不是一层，只是打包单位：拆开各归各的能力。代码里只在出现第二种实现时才建模（有第二个用例才抽象）。 **skill 不是一格**：它是随某个执行层能力进去的只读知识（快照进产出目录、进提示的「领域约定」段），自己不写盘、不出现在流程里；要当一格就包成能力（P-20）。
+- **实现是能力下面的一层。** 一段自己写的代码（auto-research）、一个 skill（nature 写作 skill 归写正文，nature image skill 归画图）、领域包里的东西都算。领域包不是一层，只是打包单位：拆开各归各的能力。代码里只在出现第二种实现时才建模（有第二个用例才抽象）。 **skill 不是一格**：它是 agent 用的工具包（见下面「skill」一节，P-22），不开产出目录、不出现在流程里，写哪里由调用它的人定；要当一格就包成能力（P-20）。
 - **阶段之间没有显式的输入输出接口，机器不做数据流校验。** 能力开工时 `from` 里没有它要的文件就报错说清缺哪个阶段的哪个文件（P-7）；流程的检查只查三件事：阶段名对不对、点名的能力在不在那个阶段、参数名与类型对不对。**文件仍是产物的载体**——一个文件一个生产者、命名三规矩（P-13）保留——但不是拼流程的接口。
 
 现在有的（2026-09-19，[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104) [#106](https://github.com/zephyr4123/TJU-AI4Science/issues/106)）：
@@ -137,6 +137,83 @@ experiment/2/                  一个产出目录
 
 **接口是文件名，不是 schema**（P-13，[#54](https://github.com/zephyr4123/TJU-AI4Science/issues/54)；2026-09-18 收窄，[#93](https://github.com/zephyr4123/TJU-AI4Science/issues/93)）：一个文件只有一个生产者，格式由生产者定，谁要用就报名字、不问格式；命名三规矩见 README P-13。它管的是**产物怎么命名、谁能写**，不管**流程能不能拼**。内容契约在描述符的「产出」栏里用工程语言说（账本有哪几列、report.json 的 status 是什么）。
 
+### skill
+
+**skill 是给 agent 用的工具包，不是流程里的一格**（P-22，2026-09-20，[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)）。能力是流程里的一格、开产出目录、由框架驱动；skill 是 agent 在任何时候都能拿起来用的一套东西——一份说明、几个脚本、几份参考——协调层（研究助理起草需求时读论文）与执行层（能力的会话里解析文件）都能用。它不开 `<stage>/<n>/`，写哪里由调用它的人定：助理写进 `materials/`，能力写进自己的产出目录。三样东西的关系：
+
+| | 是什么 | 谁调 | 写到哪 | 在哪儿定义 |
+|---|---|---|---|---|
+| 能力 | 流程里的一格，`ai4sci cap <name>` | 协调层（照流程） | 自己的 `<stage>/<n>/` | `framework/capabilities/<name>/` |
+| skill | agent 的工具包，`ai4sci skill run <name>` | 协调层或执行层，随时 | 调用方给的 `--out` | `skills/<name>/` 或 `domains/<包>/skills/<name>/` |
+| 领域包 | 打包单位：提示补充 + 领域 skill + 工具 | 设计阶段按 `--domain` 选 | — | `domains/<包>/` |
+
+**格式照 agentskills.io 开放规范**，不自造：
+
+```
+skills/<name>/                     name 等于目录名，全局唯一（与 domains/*/skills/ 合起来也唯一）
+├── SKILL.md                       frontmatter + 正文；正文五百行以内，细节进 references/
+├── scripts/                       可执行脚本，每个自带依赖声明与锁文件
+│   ├── extract.py                 头部 # /// script 块：requires-python、dependencies
+│   └── extract.py.lock            uv lock --script 生成，进仓
+├── references/                    agent 按需读的长文档（格式说明、坏页处理、后端差异）
+└── assets/                        模板、样例文件（可选）
+```
+
+frontmatter 只用规范里的字段，不用任何一家 agent 的专有字段（换适配器就失效，也过不了别家的校验）：
+
+| 字段 | 必填 | 写什么 |
+|---|---|---|
+| `name` | 是 | 小写字母数字连字符，等于目录名 |
+| `description` | 是 | 一句话：做什么、什么时候用——清单里只显示它，agent 靠它决定要不要读全文 |
+| `compatibility` | 否 | 自由文本：Python 版本、系统包（poppler、tesseract 这类 uv 装不了的）、要不要 GPU |
+| `metadata` | 否 | string → string；我们自己的键加 `ai4sci-` 前缀（如 `ai4sci-layer: coordinator, executor`） |
+
+正文按 progressive disclosure：清单里只有名字与一句话（约百字），`ai4sci skill show` 才给正文，脚本与参考按需读。正文写：什么时候用、命令怎么敲、留下哪几个文件（文档即接口，P-13）、常见失败怎么办。
+
+**脚本的规矩**（agentskills.io 的脚本指南 + 我们的 CLI 口径）：
+
+- 非交互、有 `--help`；结果 JSON 到 stdout，诊断到 stderr；幂等；退出码 0 成、非 0 败且 stderr 说清。
+- 输入用参数点名，输出目录由调用方 `--out` 给（缺省：输入文件旁同名目录）；脚本不猜路径、不写别处。
+- 依赖用 PEP 723 内联元数据（`uv add --script` 写），`uv lock --script` 出锁文件进仓；`requires-python` 由脚本自己定，与框架的 3.14 解耦（pdf 后端要 3.12 就写 3.12）。
+- 运行一律 `uv run --locked --offline <脚本>`：uv 按脚本在全机缓存（`~/.cache/uv/environments-v2/`）建隔离环境，所有工作区共享一份；锁漂移报错不静默；沙箱断网也照跑。
+- 系统包（uv 管不了的）写进 `compatibility`，`make skills` 探测，缺了报错说装什么。
+- 三套环境互不 import：平台 venv（框架）、课题 venv（`materials/env/` → 每次实验一份）、skill 环境（uv 缓存）；只用文件与 JSON 交接。
+
+**不建工作区级 venv。** 业界（agentskills.io、Anthropic 自家 skills 仓、MCP 的 uvx 惯例）没有一家这么做；skill 的依赖是 skill 的属性，不是工作区的属性——每工作区一份意味着装 N 份、版本各自漂，而工作区打包交同事时 venv 本身搬不走，真正让它自包含的是锁文件。只在「某课题要求 skill 用别的版本」时，用 uv 的 `UV_PROJECT_ENVIRONMENT=<工作区>/.venv-skills` 把那一个工作区的 skill 环境落进去；那是例外不是缺省。
+
+**承接与门禁**：`make skills`（承接第一步之后）对每个脚本 `uv lock --script` 核对并预热环境，这是唯一允许联网的一步；之后运行全部 `--locked --offline`。门禁：每个 `scripts/*.py` 有 PEP 723 头与锁文件、`uv run --locked` 能过；每个 skill 目录有 SKILL.md、name 等于目录名、frontmatter 只含规范字段；正文不超过五百行。
+
+**加载：框架自己注入，不靠任何 agent 的原生机制。** 执行层的隔离参数（`--setting-sources ""`、`--disable-slash-commands`）把 Claude Code 原生的 skill 加载关掉了，协调层同样不开——原生机制各家目录不同（Claude Code 读 `.claude/skills`，Codex、Cursor、Gemini CLI 读 `.agents/skills`），靠它就绑死适配器。做法照 agentskills.io 的接入指南：起会话时扫 `skills/`（执行层再加所选领域包的 `skills/`），拼一份清单进 prompt——
+
+```
+<available_skills>
+  <skill><name>pdf</name><description>解析论文 PDF 成 markdown、图片与结构化 JSON；研究者给了 PDF、要起草需求或读论文细节时用</description></skill>
+</available_skills>
+匹配到就 ai4sci skill show <name> 读全文，照它写的命令 ai4sci skill run <name> … 跑。
+```
+
+协调层拼进 system prompt（`chat/guide.py` 的前言），执行层拼进能力组的 prompt（`executor/prompting.py`）。没有 skill 不输出空块；名字撞了起会话就报错。P-11 的两层隔离不变：指南（`coordinator/`）只给协调层，领域 skill 只进执行层的清单，通用 skill 两层都有。
+
+**三个子命令**（P-14：agent 面前只有裸 `ai4sci`，白名单 `ai4sci *` 已经放行）：
+
+```
+ai4sci skill list                        清单：名字 + 一句话（与注入 prompt 的同一份）
+ai4sci skill show <name>                 正文 + skill 目录的绝对路径 + scripts/ references/ 清单
+ai4sci skill run <name> [--out <dir>] [--<arg> …]   起脚本：uv run --locked --offline；stdout 原样透出，退出码原样透出
+```
+
+`run` 只做一件事：找到脚本、按锁起环境、把参数原样递过去；不解析脚本的输出，不替脚本猜路径。
+
+**第一个 skill：`pdf`。** 一篇论文 PDF → 三样东西，契约固定、后端可换：
+
+| 文件 | 内容 |
+|---|---|
+| `paper.md` | 正文 markdown：标题层级、段落、公式（LaTeX）、表格、图的引用（指向 `images/`）、参考文献原文 |
+| `images/` | 抽出来的图，文件名与 `paper.md` 里的引用一致 |
+| `structured.json` | 分节（标题、页码）、表格（表头 + 行）、图（文件名 + 图注）、参考文献条目、元数据（题目、作者、年份、DOI 若有） |
+
+后端先用 pymupdf4llm 打通接口（秒级、纯 CPU、不认公式）；MinerU 4.0 `--tier basic`（ONNX 小模型 0.8 GB、2 GB 内存、纯 CPU，公式 LaTeX、表格、图片；流水线阵营里 OmniDocBench 最高）在真论文上实测过关就切主选，效果好的当缺省；GPU 可用时同一 CLI 改 tier 升 VLM。切后端不改契约。研究助理的用法：研究者给一个链接或文件 → 助理下载进 `materials/`（只追加）→ `ai4sci skill run pdf --input materials/<x>.pdf` → 按 `paper.md` 起草需求；文献阶段的能力要解析论文，调同一个脚本、写进自己的产出目录。
+
 ## 2. 实验内环（实验能力）
 
 唯一有循环的地方。这个循环是机械的，不做科研判断，所以可以留在框架里。核心是**四个角色分开**：三个仓都把它们混在一起了。
@@ -232,7 +309,7 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 
 ### 协调层怎么驱动框架
 
-框架是一个 Python 包加一条 `ai4sci` CLI。命令行上只有五类东西，每样要么是能力、要么是人的确认、要么是查询、要么是取流程或建产出、要么是入口（2026-09-19 按 P-19 重定，[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）：
+框架是一个 Python 包加一条 `ai4sci` CLI。命令行上只有六类东西，每样要么是能力、要么是人的确认、要么是查询、要么是取流程或建产出、要么是入口、要么是 skill（2026-09-19 按 P-19 重定，[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）：
 
 ```
 ai4sci cap <name> --from <stage>/<n>... [--backend] [--compute] [--<param>] [--detach]
@@ -247,6 +324,8 @@ ai4sci show workspaces | workspace | outputs [<stage>] | output <stage>/<n> | jo
 ai4sci flow take <name> [--as <新名>]  取流程：把库里的一条流程复制成当前工作区的实例（P-15）
 ai4sci output new <stage> --title <一句> [--from ...]   建产出：助理不经能力也能在一个阶段下开目录写东西（文献、写作现在没有能力）
 ai4sci workspace new <id> [--title]   入口：起一个工作区（写模板起的 requirement.md、建 materials/）；chat new|send|list [--studio] 终端里聊；serve 网页后端
+ai4sci skill list | show <name> | run <name> [--out <dir>] [--<arg> …]
+                                      skill（P-22）：agent 的工具包，不是流程里的一格；清单、正文、起脚本（uv run --locked --offline）
 ```
 
 当前工作区由 cwd 决定（往上找 `requirement.md`，`AI4SCI_WORKSPACE` 可指定），agent 的工作目录就是工作区；命令不带工作区路径；数据根 `AI4SCI_HOME` 缺省仓根。
@@ -356,6 +435,7 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
+| 2026-09-20 | §1 加「skill」一节：与能力 / 领域包的关系表、agentskills.io 格式与 frontmatter、脚本规矩（PEP 723 + uv 锁 + `--locked --offline`）、不建工作区级 venv、承接与门禁、清单注入、三个子命令、第一个 skill `pdf` 的契约；§5 命令行加 `skill`（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 主人要通用的 skill 系统与解析论文 PDF 的第一个 skill；调研后定不做工作区级 venv、先简单后端再 MinerU 实测 | 主人 + Claude |
 | 2026-09-10 | 建档。阶段骨架、实验内环四角色、账本、裁判、人在环、Runner 协议 | 三个仓深读的收敛结论；棘轮来自 autoresearch，harness 注入来自 AutoResearchClaw，目录形态来自 InternAgent | 主人 + Claude |
 | 2026-09-15 | 第 1 节标实验 / 分析 / 验证已落地，能力描述符改为已落地的形状；第 3 节加"数字回溯（已落地）"：分析三节与数据表、验证四项检查、1% 容差、已知边界、report.json、重跑轮转；第 5 节 CLI 加 `cap list` / `cap <name>`（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35) [#36](https://github.com/zephyr4123/TJU-AI4Science/issues/36) [#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37)） | 09-22 单元的分析与验证做完，纲领不能描述另一套行为 | 主人 + Claude |
 | 2026-09-15 | 第 1 节加"装配与固定流程"（子集也是流程、入口契约由人填、固定流程是存好的图、产物跨流程复用），契约加"能力描述符"；第 5 节注明 CLI 是薄壳、能力对外是 Python 函数（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)） | 主人对齐高度模块化：不同任务用不同子集流程，低代码图是第二种协调层 | 主人 + Claude |
