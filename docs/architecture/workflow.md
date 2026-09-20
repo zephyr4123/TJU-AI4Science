@@ -303,7 +303,7 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 - 框架不等人：每条子命令跑完一个能力就退出并写状态，需要人判断的事由协调 agent 在对话里问。
 - 自主程度是协调 agent 的行为，不是框架的模式：可逆的自己定并记录，贵的带方案来问，拿不准的停。
 - 无人值守（挂机过夜）时协调 agent 怎么把问题留给人、人怎么异步回复，是协调层自己的通道问题，platform 0.2.0 不做（Q-7）。
-- **长命令不占着对话等**（2026-09-17，[#63](https://github.com/zephyr4123/TJU-AI4Science/issues/63)）：每个能力都有 `--detach`，框架把同一条命令起成独立进程当作业（`.ai4sci/jobs/<id>.json` + 日志），命令立刻返回作业号，agent 这一轮就结束；作业跑完，子进程以「框架」的身份给那段对话发一轮（transcript 与 history 标 origin），agent 看结果再向人汇报。能力在哪条流程第几项下跑的记进产出的 `meta.yaml`——记录不是决策，按哪个仍是 agent 定；「在等谁」不存现算（等作业 / 等人签 / 轮到助理 / 走完）。
+- **长命令不占着对话等**（2026-09-17，[#63](https://github.com/zephyr4123/TJU-AI4Science/issues/63)）：每个能力都有 `--detach`，框架把同一条命令起成独立进程当作业（`.ai4sci/jobs/<id>.json` + 日志），命令等作业过门、开了产出再返回（作业号旁带 `output=<产出 id>`；当场没开起来的——输入被改过、设计那包不合约——直接退 1 把原因带回来，不让 agent 拿着作业号说「开了」，2026-09-20 演练 [#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)），agent 这一轮就结束；作业跑完，子进程以「框架」的身份给那段对话发一轮（transcript 与 history 标 origin），agent 看结果再向人汇报。能力在哪条流程第几项下跑的记进产出的 `meta.yaml`——记录不是决策，按哪个仍是 agent 定；「在等谁」不存现算（等作业 / 等人签 / 轮到助理 / 走完）。
 - **人只做两件事，都落成文件**（2026-09-19，[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）：确认需求（`requirement.lock`，唯一内置的门）、在流程定的断点上签产出（`signed.json`）。两件事在页面上做，或终端 `ai4sci sign`；协调 agent 不替人签。自动化程度是人定的：流程里放几个断点就确认几次，一个不放就是端到端。
 
 ## 5. 框架的驱动面与执行层适配
@@ -357,7 +357,7 @@ default: local
 - **接机器是对话里的事**：助理能跑 `ai4sci compute add <名字> --ssh user@host:port --key <路径>`，人只提供 ssh 那一行与密钥路径（主机、端口、密钥路径都不是秘密，进对话记录无妨）。`add` 写进文件并就地探测：连得上、Python 版本、uv 在不在（缺就装：`curl -LsSf https://astral.sh/uv/install.sh | sh`）、GPU（`nvidia-smi`）、磁盘；一行一项报告。探测不过也只是报告，记录照留，用的时候再拒。不设的坎（主人：不设自我感动的坎，先放开再收）：加机器不用人确认、不做主机白名单、不限助理改这份文件。唯一一次人手动作是把本机公钥贴进算力平台的控制台（AutoDL 有账号级「SSH 公钥」设置，贴一次以后开的机器都带），那是它的门不是我们的。AutoDL 关机重开端口会变：`compute check` 报连不上，`compute add` 同名覆盖。
 - **agent 按名字选**：助理看到的是 `ai4sci show computes`（名字、种类、GPU、可不可用、上次探测），`--compute <名字>` 每次调用给，记进产出 `meta.yaml` 的 `compute`（名字、主机名、GPU 型号）当出处；不给就用文件里的 `default:`；流程实例里也能写。需求只写要求（要 GPU、单卡几小时），不写机器名；需求要 GPU 而清单里没有，助理该说「去接一台」，不是绕。
 - **接上先盘点、再问两问**（主人 2026-09-20）：`compute add` / `check` 盘点那台机器上已有的 Python 环境（conda 各环境与系统 python：解释器、版本、torch / cuda），助理念给研究者，问「隔离新建还是用现成的」「用哪个」，两边的取舍说清（隔离：版本锁死可复现、第一次下几 GB；现成：几秒起跑、版本以那台机器为准、换机器要重选）；研究者说「你看着办」才选隔离。
-- **环境按目标机器算**：隔离新建 `ai4sci env resolve --compute autodl …` 到那台机器上 `uv pip compile`（CUDA 版 torch 只在那边解析得对）；用现成的 `ai4sci env use --compute autodl /root/miniconda3/bin/python`——`materials/env/interpreter` 记 `<算力名字>:<解释器>`，那个环境的 `pip freeze` 当清单留出处，那台机器上直接用不建 venv，换机器拒。远端 uv 用那台机器 pip 配的镜像当额外索引（AutoDL 直连 pypi.org 19 KB/s）；建 venv 这类长命令也走 nohup + 轮询，不在一条 ssh 长连接里干等。
+- **环境按目标机器算**：隔离新建 `ai4sci env resolve --compute autodl …` 到那台机器上 `uv pip compile`（CUDA 版 torch 只在那边解析得对）；用现成的 `ai4sci env use --compute autodl /root/miniconda3/bin/python`——`materials/env/interpreter` 记 `<算力名字>:<解释器>`，那个环境的 `pip freeze` 当清单留出处，那台机器上直接用不建 venv，换机器拒。远端 uv 用那台机器 pip 配的镜像当额外索引（AutoDL 直连 pypi.org 19 KB/s）；建 venv 这类长命令也走 nohup + 轮询，不在一条 ssh 长连接里干等。基线是远端 `make_run0.sh` 从头写出的一整个 `baseline/`：跑之前本地那份先删干净，拿回来（只加不删）后按开跑那套合约查全——「design ok」就等于实验阶段会接，不留设计说过、实验说不过的缝（演练里上一版基线的 `results-<seed>.json` 留在本地 `repeats/`，人签了字实验一数文件数就拒开）。
 - 页面「设置 → 算力」：一张表（名字、种类、GPU、状态、上次探测）+ 添加表单，字段同 `compute add`——settings 系统的第一项，等 ssh 适配器跑通 PINNs 之后做。
 
 ```

@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 变更
+- workflow §5 按演练回写两处：`--detach` 等作业过门、开了产出再返回（带 `output=`，当场没开起来的退 1）；基线跑之前删本地 `baseline/`、拿回来按开跑的合约查全（[#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)）
 - P-23 补「接上先盘点、再问两问」（盘点机器上已有的环境，问研究者隔离新建还是用现成的、用哪个；`ai4sci env use` 记 `materials/env/interpreter`）；workflow §5 算力适配加同一段与 `env use`、远端 uv 走镜像当额外索引、长命令 nohup + 轮询（[#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)）
 
 ### 新增
