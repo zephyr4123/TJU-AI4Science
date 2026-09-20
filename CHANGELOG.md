@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 变更
+- workflow §5 命令行加 `job stop`、`env resolve`，记第一轮真任务（PINNs，Claude 扮小白研究者）逼出的三条改动：停作业、研究者没环境时按包名算完整清单 + 建完查完整 + `--continue` 遇环境变了拒、设计草稿先 `ruff --fix-only` 修 import 顺序（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)）
 - 纲领 P-22 按内仓落地回写：pdf skill 的后端定为 pymupdf4llm 版面模式（PINNs 22 页 1.7 s，表里的数全对），MinerU 4.0 basic 同一篇实测 27.6 s、1.2 GB 带 torch、常驻服务，不当缺省；`ai4sci skill run` 加 `--script`；执行层 Bash 白名单只有 `ai4sci skill *`；领域 skill 不再全文注入执行层 prompt、不再随实验快照（workflow §1 §5、domains.md、README P-22）（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)）
 - P-14 补「联网只用 CLI 自带的搜索与网页读取工具」：实测 dontAsk 下 WebSearch / WebFetch 不放行就被拒、agent 拿 curl 硬凑；两层适配器必须放行，prompt 写清什么时候查、查到的带来源（workflow §5 执行层适配）（[#114](https://github.com/zephyr4123/TJU-AI4Science/issues/114)）
 

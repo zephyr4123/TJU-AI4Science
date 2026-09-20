@@ -325,10 +325,12 @@ ai4sci flow take <name> [--as <新名>]  取流程：把库里的一条流程复
 ai4sci output new <stage> --title <一句> [--from ...]   建产出：助理不经能力也能在一个阶段下开目录写东西（文献、写作现在没有能力）
 ai4sci workspace new <id> [--title]   入口：起一个工作区（写模板起的 requirement.md、建 materials/）；chat new|send|list [--studio] 终端里聊；serve 网页后端
 ai4sci skill list | show <name> | run <name> [--script <文件>] [--out <dir>] [--<arg> …]
+ai4sci job stop <作业号>                     人叫停一个后台作业：杀整棵进程树，作业记 stopped、它的产出记失败（页面同一个动作）
+ai4sci env resolve [--python X.Y] <包名>…   研究者没有环境时按包名算出钉死传递依赖的完整清单进 materials/env/（uv pip compile，会联网）
                                       skill（P-22）：agent 的工具包，不是流程里的一格；清单、正文、起脚本（uv run --locked --offline）
 ```
 
-当前工作区由 cwd 决定（往上找 `requirement.md`，`AI4SCI_WORKSPACE` 可指定），agent 的工作目录就是工作区；命令不带工作区路径；数据根 `AI4SCI_HOME` 缺省仓根。
+当前工作区由 cwd 决定（往上找 `requirement.md`，`AI4SCI_WORKSPACE` 可指定），agent 的工作目录就是工作区；命令不带工作区路径；数据根 `AI4SCI_HOME` 缺省仓根。`job stop` 与 `env resolve` 是 2026-09-20 第一轮真任务（PINNs，Claude 扮小白研究者）逼出来的两条（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)）：研究者说「先停一下」平台没有停的动作；「我不懂环境」时助理手写的三行清单让基线一 import 就炸——非工程师没有现成环境是常态，清单要框架按包名算（`uv pip compile`），建完 venv `uv pip check` 查完整，`--continue design/<n>` 遇 `materials/env/` 变了就拒、要重开。同一轮还定了设计草稿封 harness 前先 `ruff --fix-only --select I`（[#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116)：两版草稿各因一条 I001 让执行层重来 13 分钟）。
 
 CLI 是薄壳：每个能力对外是一个 Python 函数（auto-research 是 `capabilities.auto_research.run`），子命令只做参数解析与退出码。协调 agent 走 CLI，低代码 UI 后端与测试直接调函数，三者跑的是同一段代码（P-12）。
 
@@ -438,6 +440,7 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 |---|---|---|---|
 | 2026-09-20 | §1 加「skill」一节：与能力 / 领域包的关系表、agentskills.io 格式与 frontmatter、脚本规矩（PEP 723 + uv 锁 + `--locked --offline`）、不建工作区级 venv、承接与门禁、清单注入、三个子命令、第一个 skill `pdf` 的契约；§5 命令行加 `skill`（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 主人要通用的 skill 系统与解析论文 PDF 的第一个 skill；调研后定不做工作区级 venv、先简单后端再 MinerU 实测 | 主人 + Claude |
 | 2026-09-20 | §1「skill」按落地回写：`run` 加 `--script`、执行层白名单 `ai4sci skill *`、领域 skill 不再全文注入也不随实验快照、两家 pdf 后端的实测与缺省；§5 执行层适配 `run()` 加 `bash_rules`、加「联网只用 CLI 自带的工具」一条（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113) [#114](https://github.com/zephyr4123/TJU-AI4Science/issues/114)） | 落地时的实测与取舍 | 主人 + Claude |
+| 2026-09-20 | §5 命令行加 `job stop`、`env resolve`，记第一轮真任务（PINNs）逼出的三条：停作业、按包名算环境清单 + 建完查完整 + `--continue` 遇环境变了拒、设计草稿先 `ruff --fix-only` 修 import 顺序（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)） | Claude 扮小白研究者跑第一轮闭环，助理与执行层行为都对，坑全在平台 | 主人 + Claude |
 | 2026-09-10 | 建档。阶段骨架、实验内环四角色、账本、裁判、人在环、Runner 协议 | 三个仓深读的收敛结论；棘轮来自 autoresearch，harness 注入来自 AutoResearchClaw，目录形态来自 InternAgent | 主人 + Claude |
 | 2026-09-15 | 第 1 节标实验 / 分析 / 验证已落地，能力描述符改为已落地的形状；第 3 节加"数字回溯（已落地）"：分析三节与数据表、验证四项检查、1% 容差、已知边界、report.json、重跑轮转；第 5 节 CLI 加 `cap list` / `cap <name>`（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35) [#36](https://github.com/zephyr4123/TJU-AI4Science/issues/36) [#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37)） | 09-22 单元的分析与验证做完，纲领不能描述另一套行为 | 主人 + Claude |
 | 2026-09-15 | 第 1 节加"装配与固定流程"（子集也是流程、入口契约由人填、固定流程是存好的图、产物跨流程复用），契约加"能力描述符"；第 5 节注明 CLI 是薄壳、能力对外是 Python 函数（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)） | 主人对齐高度模块化：不同任务用不同子集流程，低代码图是第二种协调层 | 主人 + Claude |
