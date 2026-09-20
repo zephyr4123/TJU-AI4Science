@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### 新增
+- 纲领 §4 加 P-23 算力归人（平台开源去中心化，算力由使用者自己配）：按人的 `~/.config/ai4sci/computes.yaml`、只有 SSH 只认密钥、agent 按名字选并记进 meta、对话里接机器（助理跑 `ai4sci compute add`，不设自我感动的坎）、远端只跑 harness；workflow §5 算力适配按它重写、命令行加 `compute` 与 `env resolve --compute`、meta 加 `compute`；P-14 补一句；open-questions Q-6 再记（[#119](https://github.com/zephyr4123/TJU-AI4Science/issues/119)）
+
 ### 变更
 - workflow §5 命令行加 `job stop`、`env resolve`，记第一轮真任务（PINNs，Claude 扮小白研究者）逼出的三条改动：停作业、研究者没环境时按包名算完整清单 + 建完查完整 + `--continue` 遇环境变了拒、设计草稿先 `ruff --fix-only` 修 import 顺序（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)）
 - 纲领 P-22 按内仓落地回写：pdf skill 的后端定为 pymupdf4llm 版面模式（PINNs 22 页 1.7 s，表里的数全对），MinerU 4.0 basic 同一篇实测 27.6 s、1.2 GB 带 torch、常驻服务，不当缺省；`ai4sci skill run` 加 `--script`；执行层 Bash 白名单只有 `ai4sci skill *`；领域 skill 不再全文注入执行层 prompt、不再随实验快照（workflow §1 §5、domains.md、README P-22）（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)）

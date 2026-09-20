@@ -1,6 +1,6 @@
 # 未决项
 
-- 最近变更：2026-09-19
+- 最近变更：2026-09-20
 
 纲领里还没定的事，一项一个编号。每项写清问题、候选方案与依据、建议、谁拍板。定了就把结论搬进对应文件，这里改成"已定，见 xxx"。每项一条 issue，见表末列。
 
@@ -11,7 +11,7 @@
 | Q-3 | 验收怎么定义 | 验证 | manifest.requirements 的 must_pass + 零 LLM 判据；discussion 类交隔离裁判 | 主人 | [#10](https://github.com/zephyr4123/TJU-AI4Science/issues/10) |
 | Q-4 | 评测怎么做 | 评测 | rubric 树 + 组件消融 + 噪声基线；首个工科 bench 3 到 5 题 | 主人 | [#11](https://github.com/zephyr4123/TJU-AI4Science/issues/11) |
 | Q-5 | 第一个真任务与学院 | 任务 | 玩具任务已跑通；2026-09-16 案例到，案例二选为第一个真任务包，学院是交叉领域 | 主人 | [#12](https://github.com/zephyr4123/TJU-AI4Science/issues/12) [#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1) |
-| Q-6 | 执行环境 | 执行层 / 工具 | 任务级 venv（uv 建，任务自带 env/），独立进程；docker 与集群按需 | 主人 | [#13](https://github.com/zephyr4123/TJU-AI4Science/issues/13) |
+| Q-6 | 执行环境 | 执行层 / 工具 | 任务级 venv（uv 建，任务自带 env/），独立进程；2026-09-20 加：算力按人配（P-23，`~/.config/ai4sci/computes.yaml`，只有 SSH 只认密钥），远端只跑 harness；docker 与集群按需 | 主人 | [#13](https://github.com/zephyr4123/TJU-AI4Science/issues/13) |
 | Q-7 | 无人值守时协调层怎么找人 | 协调层 | 大方向已定：人在协调层对话里，框架不等人；异步通道 0.2.0 不做 | 主人 | [#14](https://github.com/zephyr4123/TJU-AI4Science/issues/14) |
 | Q-8 | 协调层与执行层各用哪个 CLI | 协调层 / 执行层 | 开工时定；执行层 Claude Code 先行，Codex 第二 | 主人 | [#15](https://github.com/zephyr4123/TJU-AI4Science/issues/15) |
 | Q-9 | 项目级记忆怎么做 | 协调层 | 改写：run 级已有（账本、笔记）；项目级（文献笔记、假设台账、跨 run 结论）是写作前提，0.2.0 之后第一优先 | 主人 | [#16](https://github.com/zephyr4123/TJU-AI4Science/issues/16) |
@@ -69,6 +69,8 @@ AutoResearchClaw 的 23 段太细（大量阶段是一次 LLM 调用），Intern
 platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker 模式在 harness 需要装东西时再加；集群按 ADR-0001 的判据到时候拆仓。AutoResearchClaw 的教训：docker 不可用时静默降级成裸进程是错的，隔离降级必须显式失败。
 
 **2026-09-16 细化**（[#39](https://github.com/zephyr4123/TJU-AI4Science/issues/39)）：venv 是**任务级**不是平台级——任务包自带 `env/`，框架用 uv 建 `tasks/<id>/.venv` 与 `runs/<id>/.venv`，平台 venv 一个包不多装；harness 经 `$AI4SCI_PYTHON` 起 Python。第一个真任务（案例二）走纯 pip 栈就够，没触发 docker；uv 或解释器拉不下来时明确报错，不退回平台 venv。
+
+**2026-09-20 再记**（[#119](https://github.com/zephyr4123/TJU-AI4Science/issues/119)）：环境在哪台机器上建，由 P-23 定——算力按人配在 `~/.config/ai4sci/computes.yaml`，只有 SSH 只认密钥，助理按名字选、能在对话里帮人接机器；远端只跑 harness，venv 在远端按 `env/` 建，清单按目标机器算（`env resolve --compute`）。研究者没有现成环境的情形（非工程师的常态）由 `ai4sci env resolve` 按包名算完整清单（[#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)）。docker 仍未触发。
 
 ## Q-7 无人值守时协调层怎么找人
 
@@ -172,3 +174,4 @@ auto-research 的 `work/` 已经在产出目录里，但没有机制拦执行层
 | 2026-09-17 | Q-7 补记：长按钮暂用关后台兜住，异步作业是无人值守的正解（[#57](https://github.com/zephyr4123/TJU-AI4Science/issues/57)） | 实验 #55 第三轮长按钮被挪到后台杀掉 | 主人 + Claude |
 | 2026-09-17 | Q-13 补记：等待状态的形状、两块看板、页面随流程生成、步骤参数（[#58](https://github.com/zephyr4123/TJU-AI4Science/issues/58)） | 主人拍板产品形态补记 | 主人 + Claude |
 | 2026-09-19 | 加 Q-14 声明式能力、Q-15 执行层可写范围（[#110](https://github.com/zephyr4123/TJU-AI4Science/issues/110)） | P-20 探讨里主人未拍板的两条 | 主人 + Claude |
+| 2026-09-20 | Q-6 加算力按人配（P-23）与「没有环境」的清单命令（[#119](https://github.com/zephyr4123/TJU-AI4Science/issues/119) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)） | 平台开源去中心化，算力由使用者自己配；第一轮真任务暴露小白没有环境 | 主人 + Claude |

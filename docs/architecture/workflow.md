@@ -92,7 +92,8 @@ stages:
 
 experiment/2/                  一个产出目录
 ├── meta.yaml                  框架只读这一份：id、stage、title、from（读了谁，每项带 sha256）、by（能力名 / assistant / human）、
-│                              params、flow、step、requirement（哪版需求）、created_at
+│                              params、flow、step、requirement（哪版需求）、created_at、
+│                              compute（在哪台机器上跑的：名字、主机名、GPU 型号；P-23 的出处）
 ├── signed.json                流程里有断点才有：人签的——谁、何时、签的哪些文件的 hash、一句话
 └── …                          其余全是产它的那个能力自己的文件，框架不看、不定、不校验
 ```
@@ -326,7 +327,9 @@ ai4sci output new <stage> --title <一句> [--from ...]   建产出：助理不�
 ai4sci workspace new <id> [--title]   入口：起一个工作区（写模板起的 requirement.md、建 materials/）；chat new|send|list [--studio] 终端里聊；serve 网页后端
 ai4sci skill list | show <name> | run <name> [--script <文件>] [--out <dir>] [--<arg> …]
 ai4sci job stop <作业号>                     人叫停一个后台作业：杀整棵进程树，作业记 stopped、它的产出记失败（页面同一个动作）
-ai4sci env resolve [--python X.Y] <包名>…   研究者没有环境时按包名算出钉死传递依赖的完整清单进 materials/env/（uv pip compile，会联网）
+ai4sci env resolve [--python X.Y] [--compute <名字>] <包名>…   研究者没有环境时按包名算出钉死传递依赖的完整清单进 materials/env/（uv pip compile，会联网；--compute 到那台机器上算）
+ai4sci compute add <名字> --ssh user@host:port --key <路径> [--root <远端目录>]   接一台机器：写进按人的 computes.yaml，就地探测并报告（P-23）
+ai4sci compute check <名字> | list | remove <名字>   再探一遍 / 清单 / 删一条
                                       skill（P-22）：agent 的工具包，不是流程里的一格；清单、正文、起脚本（uv run --locked --offline）
 ```
 
@@ -336,7 +339,24 @@ CLI 是薄壳：每个能力对外是一个 Python 函数（auto-research 是 `c
 
 ### 算力适配
 
-harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各自一个端口、各自一组适配器。算力端口是策略模式在 Python 里的形态：一个 `Protocol`，一个后端一个文件，靠名字选择。runner 对算力的全部需求只有三件事：快照放过去、跑 `launcher.sh`、产物拿回来。
+harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各自一个端口、各自一组适配器。算力端口是策略模式在 Python 里的形态：一个 `Protocol`，一个后端一个文件，靠名字选择。runner 对算力的全部需求只有三件事：快照放过去、跑 `launcher.sh`、产物拿回来。执行层 agent（写代码的那个）永远在本机；远端只跑 harness。
+
+**算力归人（P-23，2026-09-20，[#119](https://github.com/zephyr4123/TJU-AI4Science/issues/119)）。** 平台开源、去中心化，算力由使用者自己配，配置按人不按仓：
+
+```
+~/.config/ai4sci/computes.yaml        AI4SCI_COMPUTES 可指向别处；读取点只在 paths.py；不进 git、不进工作区、不进数据根
+computes:
+  local:  {kind: local}                                          # 出厂自带，永远在
+  autodl: {kind: ssh, host: connect.xxx.seetacloud.com, port: 12345,
+           user: root, key: ~/.ssh/id_ed25519, root: /root/ai4sci}
+default: local
+```
+
+- **只有 SSH、只认密钥**：一条记录只有 主机 / 端口 / 用户 / 密钥路径 / 远端根目录；schema 里没有 password 字段（读取点断言）。密钥本身留在 `~/.ssh`，`ssh` 自己去读，不经过对话、不经过文件。AutoDL、实验室机器、学校集群都只是「一台能 ssh 上去的 Linux」，`ssh` 一个适配器通吃；Slurm 是第二个适配器，有第二个用例再写。
+- **接机器是对话里的事**：助理能跑 `ai4sci compute add <名字> --ssh user@host:port --key <路径>`，人只提供 ssh 那一行与密钥路径（主机、端口、密钥路径都不是秘密，进对话记录无妨）。`add` 写进文件并就地探测：连得上、Python 版本、uv 在不在（缺就装：`curl -LsSf https://astral.sh/uv/install.sh | sh`）、GPU（`nvidia-smi`）、磁盘；一行一项报告。探测不过也只是报告，记录照留，用的时候再拒。不设的坎（主人：不设自我感动的坎，先放开再收）：加机器不用人确认、不做主机白名单、不限助理改这份文件。唯一一次人手动作是把本机公钥贴进算力平台的控制台（AutoDL 有账号级「SSH 公钥」设置，贴一次以后开的机器都带），那是它的门不是我们的。AutoDL 关机重开端口会变：`compute check` 报连不上，`compute add` 同名覆盖。
+- **agent 按名字选**：助理看到的是 `ai4sci show computes`（名字、种类、GPU、可不可用、上次探测），`--compute <名字>` 每次调用给，记进产出 `meta.yaml` 的 `compute`（名字、主机名、GPU 型号）当出处；不给就用文件里的 `default:`；流程实例里也能写。需求只写要求（要 GPU、单卡几小时），不写机器名；需求要 GPU 而清单里没有，助理该说「去接一台」，不是绕。
+- **环境按目标机器算**：`ai4sci env resolve --compute autodl …` 到那台机器上 `uv pip compile`（CUDA 版 torch 只在那边解析得对）；远端按 `env/` 用远端的 uv 建 venv。
+- 页面「设置 → 算力」：一张表（名字、种类、GPU、状态、上次探测）+ 添加表单，字段同 `compute add`——settings 系统的第一项，等 ssh 适配器跑通 PINNs 之后做。
 
 ```
 class Compute(Protocol):
@@ -352,9 +372,9 @@ slurm:  put=rsync     submit=sbatch           cancel=scancel     get=rsync
 ```
 
 - **submit / wait 而不是阻塞的 run**：句柄落盘到 `run_N/job.json`，`loop resume` 重启后能重新接上还在远端跑的任务或 reap 已死的任务，这是 A-5 续跑的前提。阻塞改异步是最疼的方向，反过来不疼。
-- **选择靠名字**：manifest 或命令行 `--compute local` / `ssh:<host>`，名字对不上就报错退出；要的算力不可用绝不静默退回本地（P-7，AutoResearchClaw 的 docker 反例）。
-- **凭据在 git 外**：ssh 主机与密钥路径放本地配置文件；远端 venv 是否就绪由 `ai4sci doctor --compute <name>` 事先查，查不过不开跑。
-- platform 0.2.0 只写 `local`（Q-6）；Protocol 现在就定，因为调用点已经存在（P-8），ssh 是第二个实现时再校验接口没漏。
+- **选择靠名字**：`--compute <名字>` 或文件里的缺省，名字对不上就报错退出；要的算力不可用（连不上、venv 建不出）绝不静默退回本地（P-7，AutoResearchClaw 的 docker 反例）。
+- **ssh 适配器**（[#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)）：`put` = rsync 任务目录到 `<root>/<产出 id>/`；`submit` = `ssh … nohup setsid launcher.sh` 拿远端 pid / pgid 写 `Job`（句柄落盘，续跑接得回）；`wait` 轮询；`cancel` = 远端 `kill -- -pgid`；`get` = rsync 产物回来。远端 venv 按 `env/` 用远端 uv 建，建不出就 EnvBuildError。冒烟测试 `AI4SCI_LIVE=1` 连真机器，CI 不跑。
+- 0.2.0 只有 `local`；ssh 是第一轮真任务（PINNs 纯 CPU 一次训练 8.5 分钟、基线 2–3 小时）逼出来的第二个实现，主人租了 AutoDL。
 - 不做：抽象基类加模板方法、装饰器注册表、工厂套工厂。一个后端一个文件，60 到 80 行，与 `backends/` 同一标准。
 
 ### 执行层适配
@@ -441,6 +461,7 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 | 2026-09-20 | §1 加「skill」一节：与能力 / 领域包的关系表、agentskills.io 格式与 frontmatter、脚本规矩（PEP 723 + uv 锁 + `--locked --offline`）、不建工作区级 venv、承接与门禁、清单注入、三个子命令、第一个 skill `pdf` 的契约；§5 命令行加 `skill`（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 主人要通用的 skill 系统与解析论文 PDF 的第一个 skill；调研后定不做工作区级 venv、先简单后端再 MinerU 实测 | 主人 + Claude |
 | 2026-09-20 | §1「skill」按落地回写：`run` 加 `--script`、执行层白名单 `ai4sci skill *`、领域 skill 不再全文注入也不随实验快照、两家 pdf 后端的实测与缺省；§5 执行层适配 `run()` 加 `bash_rules`、加「联网只用 CLI 自带的工具」一条（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113) [#114](https://github.com/zephyr4123/TJU-AI4Science/issues/114)） | 落地时的实测与取舍 | 主人 + Claude |
 | 2026-09-20 | §5 命令行加 `job stop`、`env resolve`，记第一轮真任务（PINNs）逼出的三条：停作业、按包名算环境清单 + 建完查完整 + `--continue` 遇环境变了拒、设计草稿先 `ruff --fix-only` 修 import 顺序（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)） | Claude 扮小白研究者跑第一轮闭环，助理与执行层行为都对，坑全在平台 | 主人 + Claude |
+| 2026-09-20 | §5 算力适配按 P-23 重写：按人的 computes.yaml、只有 SSH 只认密钥、对话里接机器、按名字选记进 meta、ssh 适配器的五个动作；命令行加 `compute add / check / list / remove`、`env resolve --compute`；磁盘布局 meta 加 `compute`（[#119](https://github.com/zephyr4123/TJU-AI4Science/issues/119)） | 算力由使用者自己配，AutoDL 到位 | 主人 + Claude |
 | 2026-09-10 | 建档。阶段骨架、实验内环四角色、账本、裁判、人在环、Runner 协议 | 三个仓深读的收敛结论；棘轮来自 autoresearch，harness 注入来自 AutoResearchClaw，目录形态来自 InternAgent | 主人 + Claude |
 | 2026-09-15 | 第 1 节标实验 / 分析 / 验证已落地，能力描述符改为已落地的形状；第 3 节加"数字回溯（已落地）"：分析三节与数据表、验证四项检查、1% 容差、已知边界、report.json、重跑轮转；第 5 节 CLI 加 `cap list` / `cap <name>`（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35) [#36](https://github.com/zephyr4123/TJU-AI4Science/issues/36) [#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37)） | 09-22 单元的分析与验证做完，纲领不能描述另一套行为 | 主人 + Claude |
 | 2026-09-15 | 第 1 节加"装配与固定流程"（子集也是流程、入口契约由人填、固定流程是存好的图、产物跨流程复用），契约加"能力描述符"；第 5 节注明 CLI 是薄壳、能力对外是 Python 函数（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)） | 主人对齐高度模块化：不同任务用不同子集流程，低代码图是第二种协调层 | 主人 + Claude |
