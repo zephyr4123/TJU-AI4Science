@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### 变更
+- P-23 补「接上先盘点、再问两问」（盘点机器上已有的环境，问研究者隔离新建还是用现成的、用哪个；`ai4sci env use` 记 `materials/env/interpreter`）；workflow §5 算力适配加同一段与 `env use`、远端 uv 走镜像当额外索引、长命令 nohup + 轮询（[#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)）
+
 ### 新增
 - 纲领 §4 加 P-23 算力归人（平台开源去中心化，算力由使用者自己配）：按人的 `~/.config/ai4sci/computes.yaml`、只有 SSH 只认密钥、agent 按名字选并记进 meta、对话里接机器（助理跑 `ai4sci compute add`，不设自我感动的坎）、远端只跑 harness；workflow §5 算力适配按它重写、命令行加 `compute` 与 `env resolve --compute`、meta 加 `compute`；P-14 补一句；open-questions Q-6 再记（[#119](https://github.com/zephyr4123/TJU-AI4Science/issues/119)）
 
