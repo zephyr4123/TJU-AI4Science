@@ -38,7 +38,7 @@ paper_keywords: [mesh refinement, finite element, error estimate]
 
 - `prompts/<capability>.md`：该能力的领域补充提示，框架在组装能力指令时追加；缺了就不追加，不回退到别的领域（AutoResearchClaw 让 26 个领域静默用 ML 提示词，这是反例）。
 - `tools/`：确定性脚本，执行层可以调用；求解器怎么起、结果怎么读、单位怎么换。
-- `skills/<name>/SKILL.md`：领域 skill，格式与平台通用的 `skills/` 一样（agentskills.io 规范，P-22：SKILL.md + scripts/ + references/，脚本 PEP 723 自带依赖）；只进**执行层**的清单——起执行层会话时框架把所选领域包的 skill 与通用 skill 一起拼成 `<available_skills>`，agent 用 `ai4sci skill show / run` 读与跑。不走 CLI 原生机制：执行层的隔离参数（`--setting-sources ""`、`--disable-slash-commands`，见 workflow §5）把本机 CLAUDE.md、plugin、skill 一并关掉了，这正是 P-11 要的。AutoResearch 开实验时仍把领域包的提示补充与 skill 快照进产出目录，跑起来后不回头看库。
+- `skills/<name>/SKILL.md`：领域 skill，格式与平台通用的 `skills/` 一样（agentskills.io 规范，P-22：SKILL.md + scripts/ + references/，脚本 PEP 723 自带依赖）；只进**执行层**的清单——起执行层会话时框架把所选领域包的 skill 与通用 skill 一起拼成 `<available_skills>`，agent 用 `ai4sci skill show / run` 读与跑。不走 CLI 原生机制：执行层的隔离参数（`--setting-sources ""`、`--disable-slash-commands`，见 workflow §5）把本机 CLAUDE.md、plugin、skill 一并关掉了，这正是 P-11 要的。AutoResearch 开实验时仍把领域包的提示补充（`prompts/experiment.md`）快照进产出目录；skill 不快照——清单里只有名字，执行层 `ai4sci skill show` 读的是库里的现版本，读了什么在那一轮的事件流里（2026-09-20 落地时定，[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)）。
 
 ### 加一个新领域
 
@@ -58,6 +58,7 @@ paper_keywords: [mesh refinement, finite element, error estimate]
 | 2026-09-10 | budget 加可选 patience / min_delta / max_cost_usd；harness 约束加 evaluate 退出方式与 status 字段的读取点、.gitignore 提醒（[#24](https://github.com/zephyr4123/TJU-AI4Science/issues/24)） | 内环实现的读取点反推回契约 | 主人 + Claude |
 | 2026-09-10 | run_0 布局、验证集拆两份、make_run0.sh、schema 只收有读取点的字段（[#21](https://github.com/zephyr4123/TJU-AI4Science/issues/21)） | 第一个任务包落地后的实测形态 | 主人 + Claude |
 | 2026-09-20 | `skills/` 改按 P-22：与平台通用 skill 同格式（agentskills.io），由框架拼清单注入、`ai4sci skill` 读与跑，不再说「与 Claude Code 原生同格式」（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | skill 系统对所有适配器通用 | 主人 + Claude |
+| 2026-09-20 | 领域 skill 不再随实验快照、不再全文注入：只进执行层的清单，`ai4sci skill show` 读库里的现版本（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 落地时定：快照与清单二选一，事件流已经记了执行层读了什么 | 主人 + Claude |
 | 2026-09-10 | manifest 明确由协调层拍板后填写；全景加 `coordinator/`；领域包 `skills/` 限定为执行层用，与协调层 skill 隔离；"阶段"改"能力"、"底座"改"执行层"（[#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)） | 加了协调层，契约的填写权归它；两层 agent 的 skill 必须物理隔离（P-11） | 主人 + Claude |
 | 2026-09-16 | 裁判文件的契约：`budget.inner_k`、框架保证给 harness 的三个环境变量、写默认值判不合法、`ai4sci task baseline` 按钮（[#43](https://github.com/zephyr4123/TJU-AI4Science/issues/43) [#44](https://github.com/zephyr4123/TJU-AI4Science/issues/44)） | 模仿研究者测试里评分脚本的静默默认值只被 agent 的眼睛抓到；栏杆只加在裁判文件、只加在出过事的变量上 | 主人 + Claude |
 | 2026-09-16 | 接任务清单加人发布（`publish.json` 钥匙）与机器预检（`attainable` 尽头值），接任务与跑基线升格成 task 级能力 `cap design` / `cap baseline`，加 `flow check`；「人签 evaluate.py」改为协调 agent 对照 design.md 核对（[#47](https://github.com/zephyr4123/TJU-AI4Science/issues/47) [#48](https://github.com/zephyr4123/TJU-AI4Science/issues/48) [#49](https://github.com/zephyr4123/TJU-AI4Science/issues/49) [#50](https://github.com/zephyr4123/TJU-AI4Science/issues/50)） | 产品形态定为两个发布键一次验收（vision）：签字挪到脚本之前、签的是规则不是代码；「看基线」那个停点机器能算 | 主人 + Claude |

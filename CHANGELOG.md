@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+### 变更
+- 纲领 P-22 按内仓落地回写：pdf skill 的后端定为 pymupdf4llm 版面模式（PINNs 22 页 1.7 s，表里的数全对），MinerU 4.0 basic 同一篇实测 27.6 s、1.2 GB 带 torch、常驻服务，不当缺省；`ai4sci skill run` 加 `--script`；执行层 Bash 白名单只有 `ai4sci skill *`；领域 skill 不再全文注入执行层 prompt、不再随实验快照（workflow §1 §5、domains.md、README P-22）（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)）
+- P-14 补「联网只用 CLI 自带的搜索与网页读取工具」：实测 dontAsk 下 WebSearch / WebFetch 不放行就被拒、agent 拿 curl 硬凑；两层适配器必须放行，prompt 写清什么时候查、查到的带来源（workflow §5 执行层适配）（[#114](https://github.com/zephyr4123/TJU-AI4Science/issues/114)）
+
 ### 新增
 - 纲领 §4 加 P-22 skill 系统（按 agentskills.io 规范写、框架自己注入清单、`ai4sci skill list / show / run`、脚本 PEP 723 自带依赖不建工作区级 venv、第一个 skill `pdf` 的契约）；workflow §1 加「skill」一节、§5 命令行加 `skill`；P-20 的「skill 不写盘」改为「写哪里由调用者定」；domains.md `skills/` 回写；open-questions Q-2 / Q-10 关闭（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)）
 - workflow §5 界面：编辑台按现状回写成两个镜头「流程 / 能力」（文件名由标题生成、配置板只剩名字与参数、能力陈列与详情页）；能力表与示例流程里 `auto-research` 写 AutoResearch、断点改「评分指标核对」；名的上限改为八字（[#112](https://github.com/zephyr4123/TJU-AI4Science/issues/112)）

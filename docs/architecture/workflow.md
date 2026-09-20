@@ -192,17 +192,17 @@ frontmatter 只用规范里的字段，不用任何一家 agent 的专有字段�
 匹配到就 ai4sci skill show <name> 读全文，照它写的命令 ai4sci skill run <name> … 跑。
 ```
 
-协调层拼进 system prompt（`chat/guide.py` 的前言），执行层拼进能力组的 prompt（`executor/prompting.py`）。没有 skill 不输出空块；名字撞了起会话就报错。P-11 的两层隔离不变：指南（`coordinator/`）只给协调层，领域 skill 只进执行层的清单，通用 skill 两层都有。
+协调层拼进 system prompt（`chat/guide.py` 的前言之后、指南之前），执行层拼进能力组的 prompt 的通用段（`executor/prompting.build_prompt`：领域约定 → 工具包 → 联网）。没有 skill 不输出空块；名字撞了起会话就报错。P-11 的两层隔离不变：指南（`coordinator/`）只给协调层，领域 skill 只进执行层的清单，通用 skill 两层都有。领域 skill 不再全文注入执行层 prompt、不再随实验快照（2026-09-20 落地前是那样）：执行层 `ai4sci skill show` 时读库里的现版本，读了什么在那一轮的事件流里；领域包的 `prompts/experiment.md` 仍快照、仍以「领域约定」注入。
 
 **三个子命令**（P-14：agent 面前只有裸 `ai4sci`，白名单 `ai4sci *` 已经放行）：
 
 ```
 ai4sci skill list                        清单：名字 + 一句话（与注入 prompt 的同一份）
 ai4sci skill show <name>                 正文 + skill 目录的绝对路径 + scripts/ references/ 清单
-ai4sci skill run <name> [--out <dir>] [--<arg> …]   起脚本：uv run --locked --offline；stdout 原样透出，退出码原样透出
+ai4sci skill run <name> [--script <文件>] [--out <dir>] [--<arg> …]   起脚本：uv run --locked --offline；stdout 原样透出，退出码原样透出
 ```
 
-`run` 只做一件事：找到脚本、按锁起环境、把参数原样递过去；不解析脚本的输出，不替脚本猜路径。
+`run` 只做一件事：找到脚本、按锁起环境、把参数原样递过去；不解析脚本的输出，不替脚本猜路径。一个 skill 只有一个脚本时直接起它，几个脚本时 `--script <文件名>` 点名（SKILL.md 写清）；`--out` 与其余参数都是递给脚本的。执行层会话的 Bash 白名单只有 `ai4sci skill *`（能力与签字是协调层的），执行层子进程的环境与协调层同一份（venv 的 bin 进 PATH、关后台、Bash 超时对齐本轮）。
 
 **第一个 skill：`pdf`。** 一篇论文 PDF → 三样东西，契约固定、后端可换：
 
@@ -212,7 +212,7 @@ ai4sci skill run <name> [--out <dir>] [--<arg> …]   起脚本：uv run --locke
 | `images/` | 抽出来的图，文件名与 `paper.md` 里的引用一致 |
 | `structured.json` | 分节（标题、页码）、表格（表头 + 行）、图（文件名 + 图注）、参考文献条目、元数据（题目、作者、年份、DOI 若有） |
 
-后端先用 pymupdf4llm 打通接口（秒级、纯 CPU、不认公式）；MinerU 4.0 `--tier basic`（ONNX 小模型 0.8 GB、2 GB 内存、纯 CPU，公式 LaTeX、表格、图片；流水线阵营里 OmniDocBench 最高）在真论文上实测过关就切主选，效果好的当缺省；GPU 可用时同一 CLI 改 tier 升 VLM。切后端不改契约。研究助理的用法：研究者给一个链接或文件 → 助理下载进 `materials/`（只追加）→ `ai4sci skill run pdf --input materials/<x>.pdf` → 按 `paper.md` 起草需求；文献阶段的能力要解析论文，调同一个脚本、写进自己的产出目录。
+后端（2026-09-20 同一篇论文实测，PINNs arXiv 1711.10561，22 页，Apple M5 Pro 纯 CPU；细节在内仓 `skills/pdf/references/backends.md`）：**缺省 pymupdf4llm 1.28 版面模式**——1.7 s，214 MB 脚本环境，一个脚本跑完退出；节标题、四张表的数、图与图注、24 条参考文献全对，公式不出 LaTeX、切成图。MinerU 4.0.4 `--tier basic`——同一篇 27.6 s 推理外加常驻服务约 20 s 启动，1.2 GB venv（Apple Silicon 上无条件带 torch）+ 854 MB 模型，运行形态是常驻服务（UDS socket、SQLite 文档库、解析子进程）不是脚本，不合 skill 的形状；多出来的只有公式 LaTeX。所以不当缺省：复现要抄论文公式的课题出现时先手工用 MinerU 出一份放 `materials/`，第二个这样的课题再决定要不要包成 `--script mineru`。切后端不改契约。研究助理的用法：研究者给一个链接或文件 → `ai4sci skill run pdf --input <链接或 materials/<x>.pdf> --out materials/<x>/`（链接由脚本自己下载，原件存成 `source.pdf`；`--input` 收链接就是「联网」的一种：agent 自带的网页读取工具拿不到二进制）→ 按 `paper.md` 起草需求，引用论文报的数从 `structured.json` 的 `tables` 抄；文献阶段的能力要解析论文，调同一个脚本、写进自己的产出目录。
 
 ## 2. 实验内环（实验能力）
 
@@ -324,7 +324,7 @@ ai4sci show workspaces | workspace | outputs [<stage>] | output <stage>/<n> | jo
 ai4sci flow take <name> [--as <新名>]  取流程：把库里的一条流程复制成当前工作区的实例（P-15）
 ai4sci output new <stage> --title <一句> [--from ...]   建产出：助理不经能力也能在一个阶段下开目录写东西（文献、写作现在没有能力）
 ai4sci workspace new <id> [--title]   入口：起一个工作区（写模板起的 requirement.md、建 materials/）；chat new|send|list [--studio] 终端里聊；serve 网页后端
-ai4sci skill list | show <name> | run <name> [--out <dir>] [--<arg> …]
+ai4sci skill list | show <name> | run <name> [--script <文件>] [--out <dir>] [--<arg> …]
                                       skill（P-22）：agent 的工具包，不是流程里的一格；清单、正文、起脚本（uv run --locked --offline）
 ```
 
@@ -360,13 +360,14 @@ slurm:  put=rsync     submit=sbatch           cancel=scancel     get=rsync
 一个 `Runner` 协议，每个 CLI 一个适配器。形状由 R-1 spike 实测定案（[#20](https://github.com/zephyr4123/TJU-AI4Science/issues/20)，代码 `backends/`）：
 
 ```
-run(prompt, cwd, timeout_s, allowed_paths)
+run(prompt, cwd, timeout_s, allowed_paths, bash_rules=())
   -> RunResult{exit_code, events[], changed_files[], cost_usd, duration_s, timed_out, stdout_tail}
 ```
 
 - **非交互 + 结构化输出**：Claude Code 走 `claude -p ... --output-format stream-json --verbose`，Codex 走 `codex exec --json`（落地前对账）。
 - **隔离**（P-11）：`--setting-sources ""` 是承重位，不带它项目 CLAUDE.md 会原样进上下文、plugin / hook / 自定义 agent 全加载；再加 `--strict-mcp-config`（MCP 清零）与 `--disable-slash-commands`（skill 清零）。`--bare` 看似等价但会跳过 keychain 读取导致未登录，不能用。隔离后一句 pong 从 $0.46 降到 $0.05。
-- **权限**：`--permission-mode dontAsk` + `--allowedTools` 白名单，只放行 `allowed_paths` 内的 Edit / Write；绝对路径规则必须写 `//`（单个 `/` 被当作项目根相对路径，会把该放行的也拒掉）。dontAsk 下只读 Bash 自动放行、写操作 Bash 被拒；Bash 规则默认一条不给。不用 `--dangerously-skip-permissions` / `bypassPermissions`。这是第一道门，真正的门仍是 runner 事后拿 `changed_files` 判：`code/` 之外有改动就判 crash 回滚（P-7）。
+- **权限**：`--permission-mode dontAsk` + `--allowedTools` 白名单，只放行 `allowed_paths` 内的 Edit / Write；绝对路径规则必须写 `//`（单个 `/` 被当作项目根相对路径，会把该放行的也拒掉）。dontAsk 下只读 Bash 自动放行、写操作 Bash 被拒；Bash 规则由框架按会话给，执行层只有 `Bash(ai4sci skill *)`（P-22）。不用 `--dangerously-skip-permissions` / `bypassPermissions`。这是第一道门，真正的门仍是 runner 事后拿 `changed_files` 判：`code/` 之外有改动就判 crash 回滚（P-7）。
+- **联网只用 CLI 自带的工具**（主人 2026-09-20，[#114](https://github.com/zephyr4123/TJU-AI4Science/issues/114)）：两层适配器都必须放行这家 CLI 自带的联网搜索与网页读取工具（Claude Code 是 `WebSearch` / `WebFetch`）。实测 dontAsk 下不在白名单就被拒，拒绝信息还教 agent「用别的工具试」，它于是在 Bash 里拿 curl 硬凑，效果差；放行后一轮里搜索 + 读页都通。prompt 那一侧：研究助理的前言与指南、执行层 prompt 的通用段写了什么时候查（研究者给链接、论文有没有公开代码与数据、API / 报错拿不准、近期事实）、只用自带工具、查到的带来源链接。执行层子进程的环境与协调层同一份（`build_env`：venv 的 bin 进 PATH、关后台、Bash 超时对齐本轮）——执行层要跑 `ai4sci skill`，skill 脚本可能跑几分钟。
 - **changed_files 不采信 CLI 自报**：调用前后对 cwd 做 sha256 快照 diff。事件流里的 `file_path` 实测与 diff 一致，但 Bash 改文件不产生 `file_path`，改完再改回去也看不出来。
 - **超时**：`kill_tree` 逐进程组杀。CLI 的 Bash 工具把 shell 起在自己的新进程组里，只 `killpg` CLI 那一组会留下 PPID=1 的孤儿；先趟进程树再叶子组先杀。
 - **成本**：只认最终 `result` 事件的 `total_cost_usd` 与 `duration_ms`；超时被杀时 result 不会发出，成本填 NaN 表示未知，绝不填 0。
@@ -436,6 +437,7 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
 | 2026-09-20 | §1 加「skill」一节：与能力 / 领域包的关系表、agentskills.io 格式与 frontmatter、脚本规矩（PEP 723 + uv 锁 + `--locked --offline`）、不建工作区级 venv、承接与门禁、清单注入、三个子命令、第一个 skill `pdf` 的契约；§5 命令行加 `skill`（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 主人要通用的 skill 系统与解析论文 PDF 的第一个 skill；调研后定不做工作区级 venv、先简单后端再 MinerU 实测 | 主人 + Claude |
+| 2026-09-20 | §1「skill」按落地回写：`run` 加 `--script`、执行层白名单 `ai4sci skill *`、领域 skill 不再全文注入也不随实验快照、两家 pdf 后端的实测与缺省；§5 执行层适配 `run()` 加 `bash_rules`、加「联网只用 CLI 自带的工具」一条（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113) [#114](https://github.com/zephyr4123/TJU-AI4Science/issues/114)） | 落地时的实测与取舍 | 主人 + Claude |
 | 2026-09-10 | 建档。阶段骨架、实验内环四角色、账本、裁判、人在环、Runner 协议 | 三个仓深读的收敛结论；棘轮来自 autoresearch，harness 注入来自 AutoResearchClaw，目录形态来自 InternAgent | 主人 + Claude |
 | 2026-09-15 | 第 1 节标实验 / 分析 / 验证已落地，能力描述符改为已落地的形状；第 3 节加"数字回溯（已落地）"：分析三节与数据表、验证四项检查、1% 容差、已知边界、report.json、重跑轮转；第 5 节 CLI 加 `cap list` / `cap <name>`（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35) [#36](https://github.com/zephyr4123/TJU-AI4Science/issues/36) [#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37)） | 09-22 单元的分析与验证做完，纲领不能描述另一套行为 | 主人 + Claude |
 | 2026-09-15 | 第 1 节加"装配与固定流程"（子集也是流程、入口契约由人填、固定流程是存好的图、产物跨流程复用），契约加"能力描述符"；第 5 节注明 CLI 是薄壳、能力对外是 Python 函数（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)） | 主人对齐高度模块化：不同任务用不同子集流程，低代码图是第二种协调层 | 主人 + Claude |
