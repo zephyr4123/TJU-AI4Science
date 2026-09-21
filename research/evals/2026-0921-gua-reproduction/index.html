@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>research/ 调研</title>
+<title>平台第一次完整跑通的论文复现</title>
 <!--
   阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
   设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
@@ -133,113 +133,33 @@
 <div class="page">
   <header class="doc">
     <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
-    <h1>research/ 调研</h1>
-    <p class="subtitle"></p>
-    
+    <h1>平台第一次完整跑通的论文复现</h1>
+    <p class="subtitle">arXiv 2609.01558（PINN 的 Gradient–Update Alignment）· 一级复现 · 验收已签</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>平台演练记录</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-21</dd></div><div class="meta-row"><dt>范围</dt><dd>一篇 2026-09 挂出的 PINN 论文，只复现附录表 8 Burgers · 2-loss 两行；研究者由 Claude 扮演、只给链接与八句话，研究助理自走全链</dd></div><div class="meta-row"><dt>状态</dt><dd>已验收</dd></div></dl>
   </header>
   <nav class="toc" aria-label="目录">
     <details open>
       <summary>目录</summary>
       <div class="toc">
 <ul>
-<li><a href="#目录">目录</a></li>
-<li><a href="#一篇调研长什么样">一篇调研长什么样</a></li>
-<li><a href="#生成阅读版">生成阅读版</a></li>
-<li><a href="#调研索引">调研索引</a></li>
+<li><a href="#三句话">三句话</a></li>
 </ul>
 </div>
 
     </details>
   </nav>
   <main>
-<p>课题组的知识资产。结论进 git；原始产物（PDF、数据集、原始导出）不进 git，放 LFS 或 NAS，这里只放索引与来源链接。</p>
-<p><strong>这个目录是公开区。</strong> main 上的每次变动都会把这里全部 <code>.md</code> 渲染成 html 并整体发布到 <a href="https://zephyr4123.github.io/TJU-AI4Science/">https://zephyr4123.github.io/TJU-AI4Science/</a>，新加一篇调研不用碰任何配置；不想公开的材料不要放进来。</p>
-<h2 id="目录">目录<a class="permalink" href="#目录" title="本节链接">#</a></h2>
-<div class="table-wrap"><table>
-<thead>
-<tr>
-<th>目录</th>
-<th>放什么</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>landscape/</code></td>
-<td>同类系统、开源项目与行业现状调研</td>
-</tr>
-<tr>
-<td><code>selection/</code></td>
-<td>开源项目选型深读：一轮选型一目录，<code>README.md</code> 做横向对比，每个候选项目一个 md</td>
-</tr>
-<tr>
-<td><code>literature/</code></td>
-<td>文献综述，按主题一目录，附 <code>refs.bib</code></td>
-</tr>
-<tr>
-<td><code>domain/</code></td>
-<td>课题组学科的领域知识</td>
-</tr>
-<tr>
-<td><code>evals/</code></td>
-<td>方案评测、benchmark 结论</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="一篇调研长什么样">一篇调研长什么样<a class="permalink" href="#一篇调研长什么样" title="本节链接">#</a></h2>
-<p>一篇调研一个目录，目录名 <code>YYYY-MMDD-slug</code>，天然按时间排：</p>
-<pre><code>landscape/2026-0908-auto-research-agents/
-├── README.md        正文，唯一原始稿。开头是 YAML 元数据（title / subtitle / kind / date / scope / status）
-├── references.md    文献与项目台账：类型、机构、链接、一句话、正文位置
-├── index.html       由 README.md 生成的阅读版，随 md 一起提交
-└── assets/          图
-</code></pre>
-<p>选型类目录（<code>selection/</code>）允许一个目录里多个 md：<code>README.md</code> 放候选清单、横向对比与当前结论，每个候选项目一个 <code>&lt;slug&gt;.md</code> 深读，都会各自渲染成 html。</p>
-<p>写法上的两条规则，让文献和内容真正连起来：</p>
+<blockquote>
+<p><strong>结论先行</strong>：用官方代码（一字未改）、官方数据、论文种子在同款 RTX 4090 上原样重跑，ConFIG 与 ConFIG+GUA 两行的相对 L2 误差都落在论文均值 ±2σ 内，加 GUA 误差降 62.2%（论文 62.6%），五个种子无一反例。对话 $7.41 + 执行层 $3.02，GPU 2 小时 40 分，从第一句话到验收签字 3 小时 25 分。</p>
+<p>完整记录页（链路每一步、命令原文、图表、涌现清单）：<strong><a href="report.html">report.html</a></strong>。原物（需求、材料来源、评分脚本、五个种子、分析、核对报告、整段对话）在仓库 <code>docs/cases/gua-pinn-reproduction/</code>，过程记录在 <a href="https://github.com/zephyr4123/TJU-AI4Science/issues/120">#120</a>。</p>
+</blockquote>
+<h2 id="三句话">三句话<a class="permalink" href="#三句话" title="本节链接">#</a></h2>
 <ol>
-<li>项目、论文、基准的名字在<strong>每一节首次出现处</strong>链接到正文里它自己的条目（<code>#锚点</code>），条目里放全部外链，并写一行"被引用：§x、§y"作为回跳。</li>
-<li>具体数字与判断用脚注 <code>[^id]</code> 挂到来源；脚注在文末自动汇成参考列表，阅读版里可回跳正文。</li>
+<li><strong>复现的是什么</strong>：一篇计算物理 × 机器学习交叉的论文——用物理信息神经网络解 Burgers 等六个偏微分方程，提出在优化器之后再做一次梯度投影（GUA）。平台接入了它最小的一组：官方仓库 commit <code>8bbbcd5</code>、随仓库附带的 Burgers 数据、<code>trainer.py</code> 一条命令的两个变体、上游自己写出的 <code>formal_metrics.json</code>。</li>
+<li><strong>算力与能力</strong>：算力是研究者租的 AutoDL 4090，一行 ssh 接进按人的清单，用镜像自带的环境。为跑通这条流程，平台新搭了复现流程、需求模板、文献格主文件、<code>download</code> 工具、「原码复现基线」与「复现性分析」两颗能力，并在演练中补上了 <code>env add</code>、执行层会话额度、分析的 <code>--feedback</code>、对话锁与指南更新提醒。</li>
+<li><strong>平台涌现</strong>：助理自己找到仓库、把大题切成两行小题、定了 ±2σ 的统计口径、看日志诊断失败、自己起数字核对再通读抓文字错、给自己立验收线不无限重写、把中途新加的命令接进正在跑的活、结尾提醒关机——没有一条是提示词里写好的做法。</li>
 </ol>
-<h2 id="生成阅读版">生成阅读版<a class="permalink" href="#生成阅读版" title="本节链接">#</a></h2>
-<pre><code class="language-bash">make html          # research/*/*/README.md → 同目录 index.html；文内链接与脚注不能落地会直接报错
-make check         # 含 html-check：index.html 落后于 README.md 时门禁不过
-</code></pre>
-<p>md 是原始稿，html 是构建产物；本地 <code>make html</code> 生成并随 md 提交（离线可读），<code>.github/workflows/pages.yml</code> 在 main 更新时重新渲染并发布到 GitHub Pages。视觉层遵守 <code>artifact-design</code> 的规范（阅读列宽、层级、明暗主题、表格可横向滚动、脚注回跳），模板在 <code>.github/scripts/md2html/template.html</code>。</p>
-<p><code>.venv/bin/python .github/scripts/md2html/md2html.py backrefs &lt;README.md&gt;</code> 能打印每个标题被哪些章节链接到，写"被引用"行时用。</p>
-<h2 id="调研索引">调研索引<a class="permalink" href="#调研索引" title="本节链接">#</a></h2>
-<div class="table-wrap"><table>
-<thead>
-<tr>
-<th>日期</th>
-<th>标题</th>
-<th>状态</th>
-<th>原稿</th>
-<th>公网阅读版</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>2026-09-08</td>
-<td>新工科自动化科研智能体：2026 年工业界现状与架构设计</td>
-<td>第一版</td>
-<td><a href="landscape/2026-0908-auto-research-agents/index.html">README</a></td>
-<td><a href="https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/">https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/</a></td>
-</tr>
-<tr>
-<td>2026-09-09</td>
-<td>流水线层选型（已评 InternAgent、autoresearch、AutoResearchClaw，代码级深读）</td>
-<td>进行中</td>
-<td><a href="selection/2026-0909-pipeline-frameworks/index.html">README</a> · <a href="selection/2026-0909-pipeline-frameworks/internagent.html">InternAgent</a> · <a href="selection/2026-0909-pipeline-frameworks/autoresearch.html">autoresearch</a> · <a href="selection/2026-0909-pipeline-frameworks/autoresearchclaw.html">AutoResearchClaw</a></td>
-<td><a href="https://zephyr4123.github.io/TJU-AI4Science/selection/2026-0909-pipeline-frameworks/">https://zephyr4123.github.io/TJU-AI4Science/selection/2026-0909-pipeline-frameworks/</a></td>
-</tr>
-<tr>
-<td>2026-09-21</td>
-<td>平台第一次完整跑通的论文复现（arXiv 2609.01558，PINN，一级复现，验收已签）</td>
-<td>已验收</td>
-<td><a href="evals/2026-0921-gua-reproduction/index.html">README</a> · <a href="evals/2026-0921-gua-reproduction/report.html">完整记录页</a></td>
-<td><a href="https://zephyr4123.github.io/TJU-AI4Science/evals/2026-0921-gua-reproduction/">https://zephyr4123.github.io/TJU-AI4Science/evals/2026-0921-gua-reproduction/</a> · <a href="https://zephyr4123.github.io/TJU-AI4Science/evals/2026-0921-gua-reproduction/report.html">https://zephyr4123.github.io/TJU-AI4Science/evals/2026-0921-gua-reproduction/report.html</a></td>
-</tr>
-</tbody>
-</table></div>
+<p>保留意见：这篇是预筛过的「好材料」；执行层写分析会编文字事实，靠助理通读兜底；「对上」是人判的。</p>
   </main>
   <footer class="doc">原始稿是同目录的 README.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
 </div>

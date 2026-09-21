@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GUA 复现记录</title>
+<meta name="description" content="TJU AI for Science 平台第一次完整跑通的论文复现：一个只丢了链接的研究者，研究助理自己找代码、拉、写壳、在 4090 上跑、与论文值并排、写复现性分析、核对数字。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #F5F6F2;
+  --surface: #FFFFFF;
+  --surface-2: #ECEFE9;
+  --ink: #1A222B;
+  --ink-2: #3E4852;
+  --muted: #66707A;
+  --line: #D6DCD5;
+  --accent: #0B6B67;        /* 我们的值：青绿，像 PINN 论文里的误差曲线 */
+  --accent-ink: #085552;
+  --paper: #55667F;         /* 论文的值：灰蓝 */
+  --band: rgba(85, 102, 127, 0.14);
+  --ok: #2C7A4B;
+  --warn: #9A6A12;
+  --code-bg: #EEF1EC;
+  --shadow: 0 1px 0 rgba(26, 34, 43, 0.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131816; --surface: #1A211E; --surface-2: #222B27; --ink: #E4E9E3; --ink-2: #C4CCC6;
+    --muted: #97A29B; --line: #2E3834; --accent: #58BDB6; --accent-ink: #8AD8D2; --paper: #9AAAC0;
+    --band: rgba(154, 170, 192, 0.18); --ok: #6CC493; --warn: #D9A94A; --code-bg: #202925;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131816; --surface: #1A211E; --surface-2: #222B27; --ink: #E4E9E3; --ink-2: #C4CCC6;
+  --muted: #97A29B; --line: #2E3834; --accent: #58BDB6; --accent-ink: #8AD8D2; --paper: #9AAAC0;
+  --band: rgba(154, 170, 192, 0.18); --ok: #6CC493; --warn: #D9A94A; --code-bg: #202925;
+  --shadow: none;
+}
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: "IBM Plex Sans", -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 16px; line-height: 1.7; padding-inline: 20px; padding-block: 0 96px;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 78ch; margin: 0 auto; }
+a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+code { background: var(--code-bg); padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.9em; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 6px; overflow-x: auto; font-size: 0.86em; line-height: 1.55; margin: 12px 0; }
+pre code { background: none; padding: 0; font-size: inherit; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.25; margin: 0; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-weight: 600; margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line); }
+h3 { font-size: 1.05rem; font-weight: 600; margin-top: 28px; }
+p { margin: 12px 0; max-width: 72ch; }
+ul, ol { padding-left: 1.4em; max-width: 72ch; }
+li { margin: 5px 0; }
+.eyebrow { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+header { padding-block: 56px 28px; border-bottom: 1px solid var(--line); }
+.sub { color: var(--ink-2); font-size: 1.1rem; margin-top: 14px; max-width: 66ch; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px 24px; margin-top: 28px; }
+.fact .k { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.04em; }
+.fact .v { font-weight: 500; margin-top: 2px; }
+.verdict { margin-top: 28px; padding: 18px 20px; background: var(--surface); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; box-shadow: var(--shadow); }
+.verdict p { margin: 0; max-width: none; }
+table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+.tw { overflow-x: auto; margin: 14px 0; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 500; color: var(--muted); font-size: 0.8rem; letter-spacing: 0.04em; }
+td.num, th.num { text-align: right; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tag { display: inline-block; font-size: 0.74rem; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); margin-right: 4px; white-space: nowrap; }
+.tag.ok { color: var(--ok); border-color: var(--ok); }
+.tag.warn { color: var(--warn); border-color: var(--warn); }
+.tag.ours { color: var(--accent-ink); border-color: var(--accent); }
+.tag.paper { color: var(--paper); border-color: var(--paper); }
+figure { margin: 22px 0; }
+figcaption { font-size: 0.86rem; color: var(--muted); margin-top: 8px; }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px 6px; }
+.chart svg { width: 100%; height: auto; display: block; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 0.82rem; color: var(--ink-2); margin: 6px 0 4px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.legend .l-paper::before { background: var(--paper); }
+.legend .l-ours::before { background: var(--accent); }
+.legend .l-seed::before { background: transparent; border: 2px solid var(--accent); width: 8px; height: 8px; }
+.legend .l-band::before { background: var(--band); border-radius: 2px; width: 14px; height: 10px; }
+.chain { display: grid; gap: 0; margin: 20px 0; border-left: 2px solid var(--line); }
+.step { position: relative; padding: 10px 0 14px 22px; }
+.step::before { content: ""; position: absolute; left: -7px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
+.step.human::before { background: var(--accent); }
+.step .who { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.04em; }
+.step .what { margin: 2px 0 0; }
+.step .said { font-style: italic; color: var(--ink-2); }
+.step pre { margin: 8px 0 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 16px 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; box-shadow: var(--shadow); }
+.card h3 { margin-top: 0; }
+.card p, .card ul { margin-bottom: 0; }
+.quote { border-left: 3px solid var(--line); padding: 4px 16px; color: var(--ink-2); margin: 14px 0; }
+.quote p { margin: 6px 0; }
+.num-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 18px 0; }
+.num-strip .n { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.num-strip .n b { display: block; font-size: 1.35rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+.num-strip .n span { font-size: 0.8rem; color: var(--muted); }
+footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 0.86rem; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { a { transition: color 120ms ease; } }
+@media (max-width: 480px) { header { padding-block: 36px 22px; } h2 { margin-top: 48px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">TJU AI for Science · 复现记录 01 · 2026-09-21</div>
+  <h1 style="margin-top:10px">一篇 PINN 论文，平台自己复现出来了</h1>
+  <p class="sub">研究者只给了一个 arXiv 链接和八句话，研究助理自己找到官方代码、拉下来、给它写壳、在租来的 4090 上跑满五个种子、把两列数摆在论文值旁边、写复现性分析、核对每一个数。两行结果都落在论文 ±2σ 内，上游代码一字未改。</p>
+  <div class="facts">
+    <div class="fact"><div class="k">论文</div><div class="v"><a href="https://arxiv.org/abs/2609.01558">arXiv 2609.01558</a>（2026-09-01）</div></div>
+    <div class="fact"><div class="k">复现级别</div><div class="v">一级：官方代码 + 官方数据 + 论文种子原样重跑</div></div>
+    <div class="fact"><div class="k">算力</div><div class="v">AutoDL 租的 RTX 4090，2 小时 40 分</div></div>
+    <div class="fact"><div class="k">人做了什么</div><div class="v">8 句话、2 次签字、去关机</div></div>
+  </div>
+  <div class="verdict">
+    <p><b>结论。</b>Burgers 方程、2-loss 设置下，ConFIG 与 ConFIG+GUA 两行的相对 L2 误差都落在论文均值 ±2σ 内；加 GUA 误差降 62.2%（论文 62.6%），五个种子无一反例。两个均值都比论文高一成左右，最可能是 torch 版本差（2.8 对论文的 2.12），分析里给了下一步只换这一项验证的路。</p>
+  </div>
+</header>
+
+<h2 id="paper">1 · 复现的是什么：一篇交叉学科的论文</h2>
+<p>《Gradient–Update Mismatch: Rethinking Conflict-Free Training of Physics-Informed Neural Networks》，国防科技大学，2026 年 9 月 1 日挂出，代码 <a href="https://github.com/JingXiao10/GUA">JingXiao10/GUA</a>（MIT）。</p>
+<p>它站在两个学科的交界上。<b>计算物理</b>那一侧是偏微分方程求解：Burgers、Schrödinger、Kovasznay、Heat、Beltrami、Poisson 六个经典方程，用<b>物理信息神经网络</b>（PINN）代替传统数值格式去逼近解，误差按相对 L2 范数对解析解或参考解算。<b>机器学习</b>那一侧是多目标优化：PINN 的损失由方程残差、边界条件、初始条件几项拼成，几项的梯度会互相打架；已有的「梯度手术」方法（PCGrad、ConFIG 等）在优化器之前把方向修成不冲突的，论文指出 Adam 这类优化器会把修好的方向再变回冲突的——它叫这个现象 Gradient–Update Mismatch——并提出 GUA：在优化器之后再把更新方向投影回不冲突的锥里。</p>
+<p>平台这次接入的是它最小的一组：<b>附录表 8，Burgers 方程、2-loss 拆分的两行</b>——ConFIG（基线）与 ConFIG+GUA——论文报的是五个种子的均值 ± 标准差。选这一组是助理自己定的：Burgers 只训 3 万轮（其余五个方程 10 万轮）、数据随仓库附带不用另外下、ConFIG 是论文通篇的主基线。这两行对上，「加 GUA 有效」这个核心主张就算重跑成立。</p>
+<div class="tw"><table>
+<tr><th>接入的东西</th><th>具体是什么</th></tr>
+<tr><td>代码</td><td>官方仓库 commit <code>8bbbcd545436493602bb82a91d08afb449b5b750</code>，80 个文件，<code>experiments/PINN/trainer.py</code> 是入口</td></tr>
+<tr><td>数据</td><td><code>experiments/PINN/data/burgers/simulation_data_cole_hopf.npy</code>，Cole–Hopf 解析解，随仓库附带，零下载</td></tr>
+<tr><td>运行方式</td><td><code>trainer.py --equation burgers --method config --n-losses 2 --optimizer-correction none | gua --random-seed &lt;n&gt;</code>，两个变体只差一个 flag</td></tr>
+<tr><td>产物</td><td>上游自己写出的 <code>formal_metrics.json</code>，里面有 <code>relative_l2</code>；评分脚本读它，不信 stdout 打印的一句话</td></tr>
+<tr><td>训练设置</td><td>5 层 × 50 宽 tanh；配点 10000、边界 250、初值 250；30000 轮全批 Adam，100 轮预热后余弦 1e-3 → 1e-4；每轮拉丁超立方重采样；种子 {0,1,2,3,4}</td></tr>
+<tr><td>环境</td><td>仓库钉 Python 3.10.12 + torch 2.12.0+cu130；机器上用的是镜像自带的 Python 3.12.3 + torch 2.8.0+cu128，差异写进需求与分析</td></tr>
+</table></div>
+
+<h2 id="result">2 · 结果：论文值 vs 我们的值</h2>
+<div class="tw"><table>
+<tr><th>方法</th><th class="num">论文（均值 ± σ）</th><th class="num">我们（均值 ± σ）</th><th class="num">论文 ±2σ 的范围</th><th>落在范围内</th></tr>
+<tr><td>ConFIG</td><td class="num">1.74e-3 ± 3.38e-4</td><td class="num">1.94e-3 ± 3.3e-4</td><td class="num">1.06e-3 ~ 2.42e-3</td><td><span class="tag ok">是</span></td></tr>
+<tr><td>ConFIG + GUA</td><td class="num">6.50e-4 ± 1.27e-4</td><td class="num">7.33e-4 ± 1.8e-4</td><td class="num">3.96e-4 ~ 9.04e-4</td><td><span class="tag ok">是</span></td></tr>
+<tr><td>加 GUA 的改进</td><td class="num">62.6%</td><td class="num">62.2%</td><td class="num">—</td><td><span class="tag ok">方向一致</span></td></tr>
+</table></div>
+
+<figure>
+  <div class="chart">
+    <div class="legend"><span class="l-band">论文均值 ±2σ（需求定的「对上」范围）</span><span class="l-paper">论文均值</span><span class="l-ours">我们的均值（横线 ±σ）</span><span class="l-seed">单个种子</span></div>
+    <div id="chart"></div>
+  </div>
+  <figcaption>相对 L2 误差，两条各自的刻度。五个种子里 GUA 每一个都比 ConFIG 低；两组的均值都偏向范围的上半段。</figcaption>
+</figure>
+
+<div class="tw"><table>
+<tr><th>种子</th><th class="num">ConFIG</th><th class="num">ConFIG + GUA</th><th class="num">一个种子两个变体用时</th></tr>
+<tr><td>0</td><td class="num">2.33e-3</td><td class="num">7.69e-4</td><td class="num">34.2 min</td></tr>
+<tr><td>1</td><td class="num">2.16e-3</td><td class="num">6.70e-4</td><td class="num">31.6 min</td></tr>
+<tr><td>2</td><td class="num">2.00e-3</td><td class="num">6.29e-4</td><td class="num">29.6 min</td></tr>
+<tr><td>3</td><td class="num">1.66e-3</td><td class="num">5.74e-4</td><td class="num">31.2 min</td></tr>
+<tr><td>4</td><td class="num">1.54e-3</td><td class="num">1.02e-3</td><td class="num">32.0 min</td></tr>
+</table></div>
+<p>「对上」的标准是助理提、研究者认的：我们五个种子的均值落在论文均值 ± 2 倍论文标准差内，且加 GUA 后误差要下降。平台没有替人判——它只把两列数摆出来，研究者看着签。</p>
+
+<h2 id="chain">3 · 整条链路是怎么走的</h2>
+<p>平台里的复现是一条独立的流程 <code>reproduce</code>：文献 → 设计 → 人签 → 分析 → 验证 → 人验收。每一格由一颗能力（一条 <code>ai4sci</code> 命令）完成，格与格之间只靠文件名接。下面是这次真实发生的每一步，命令是助理自己敲的。</p>
+
+<div class="chain">
+  <div class="step human"><div class="who">研究者 · 12:18</div><p class="what said">「我有一篇论文 https://arxiv.org/abs/2609.01558 你帮我复现一下」</p></div>
+  <div class="step"><div class="who">助理 · 需求</div><p class="what">看模板库发现有「论文复现」这一份；用 pdf 工具解析论文；在正文里 grep 表格与训练设置；顺着摘要里的链接读仓库 README；写需求初稿，问四件事：为什么复现、哪几行、复现到第几级、怎么算对上——外加有没有能跑 GPU 的机器。</p>
+<pre><code>ai4sci show templates
+ai4sci show template reproduce
+ai4sci skill run pdf --input https://arxiv.org/pdf/2609.01558 --out materials/paper/
+WebFetch https://github.com/JingXiao10/GUA</code></pre></div>
+  <div class="step human"><div class="who">研究者 · 12:25</div><p class="what said">「老师让我复现的，想看看这个方法靠不靠谱。级别和对上的标准都听你的。机器：之前那台 AutoDL 开不了机了，我克隆了一台新的，登录是 ssh -p … root@…，密钥还是原来那个，卡是 4090。时间就今天下午吧，钱别超过一百块」</p></div>
+  <div class="step"><div class="who">助理 · 算力与环境</div><p class="what">一句命令把新机器接进按人的算力清单（同名覆盖旧的），探测到 4090 / 24 GB / 磁盘；租来的机器不隔离新建、直接登记镜像自带的 conda 环境（126 个包冻成清单当出处）；把版本差写进需求。研究者在页面上确认需求 v1。</p>
+<pre><code>ai4sci compute add autodl --ssh root@&lt;host&gt;:&lt;port&gt; --key ~/.ssh/id_rsa --root /root/autodl-tmp/ai4sci
+ai4sci env use --compute autodl /root/miniconda3/bin/python</code></pre></div>
+  <div class="step"><div class="who">助理 · 文献格</div><p class="what">取 <code>reproduce</code> 流程到工作区；用 download 工具拉官方仓库（收据记下 commit、文件数、许可证）；手写文献格的主文件 <code>sources.md</code>：论文值、训练设置、代码版本、数据在哪、我们的环境与论文的差异、还缺什么。</p>
+<pre><code>ai4sci flow take reproduce
+ai4sci skill run download git https://github.com/JingXiao10/GUA --out materials/GUA
+ai4sci output new literature --title 材料来源</code></pre></div>
+  <div class="step"><div class="who">助理 · 设计格「原码复现基线」</div><p class="what">框架把仓库搬进 <code>code/</code>、记下出处；执行层（另一个 agent，只能读和写、不能跑）写三个文件：起上游代码的 <code>launcher.sh</code>、把它的输出算成论文那两个数的 <code>evaluate.py</code>、目标值 = 论文值的 <code>scoring.yaml</code>；框架封住评分脚本、跑 lint 与契约校验，然后在 4090 上起 <code>make_run0.sh</code>：种子 0 一次 + 种子 1–4 重复 + σ。</p>
+<pre><code>ai4sci cap reproduction --from literature/1 --code GUA --compute autodl --detach</code></pre>
+<p class="what">这一步撞了两次：执行层读完 79 个文件后用完了 30 轮额度、还没来得及自述；补上额度后草稿过了校验、连上 4090，<code>import scipy</code> 炸了——镜像环境里没有仓库要的九个包。助理看日志各自诊断了原因（种子写成 42–46 应为 0–4；平台没有「往现成环境里补包」这一步），见第 4 节。</p></div>
+  <div class="step human"><div class="who">研究者 · 12:43</div><p class="what said">「我不太会登录机器，命令行那些我搞不来。你不能帮我装吗？」……「你再帮我看看平台上有没有别的办法？」</p></div>
+  <div class="step"><div class="who">助理 · 补包重跑</div><p class="what">重翻 <code>ai4sci --help</code>，发现平台刚加的 <code>env add</code>，照仓库的 <code>requirements.txt</code> 往那台机器的现成环境补了九个包、重新登记清单；接着上次的草稿只重跑基线，壳没动。4090 上跑了 2 小时 40 分。</p>
+<pre><code>ai4sci env add --compute autodl --from materials/GUA/requirements.txt
+ai4sci cap reproduction --continue design/1 --detach</code></pre></div>
+  <div class="step"><div class="who">助理 · 断点</div><p class="what">跑完框架叫醒助理，它把论文值与我们的值并排、每个种子的数、改动数 = 0 摆给研究者，停在断点请签字。</p></div>
+  <div class="step human"><div class="who">研究者 · 15:26</div><p class="what said">「看着是对上了，签了。你接着写吧」</p></div>
+  <div class="step"><div class="who">助理 · 分析格「复现性分析」→ 验证格「数字核对」</div><p class="what">执行层读设计那包（论文值、五个种子、σ、上游 commit、改动 diff、环境）写 <code>analysis.md</code>：结论、数据表、方法与环境、偏离与改动、容易与困难、证伪与未决。助理自己起零模型的数字核对：正文 14 个数逐条回溯到结果文件。第一版核对通过，但助理通读时发现两处文字错（编了个论文里没有的方程名、「单 loss」写错）；第二、三版被数字核对拦（超参裸写、「1.84 倍」）；第四版带着前三版的问题喂回执行层，三关全过。</p>
+<pre><code>ai4sci cap reproducibility --from design/1 --from literature/1 --detach
+ai4sci cap verify --from analysis/4 --from design/1</code></pre></div>
+  <div class="step human"><div class="who">研究者 · 15:43</div><p class="what said">「验收了，辛苦。我拿去给老师看」</p></div>
+  <div class="step"><div class="who">助理 · 收尾</div><p class="what">列出交付在哪（分析、核对报告、能重跑的评分脚本、原始结果、材料来源），给老师的一句话结论，提醒去关 AutoDL、下一步可以只换 torch 版本再跑一次看差距会不会缩小。</p></div>
+</div>
+
+<h2 id="compute">4 · 算力与能力：这个案例逼出了什么</h2>
+<p>算力是按人接的：研究者手里只有 AutoDL 租来的一台 4090 和一行 ssh，平台只认密钥、不收密码，助理一句命令接上；远端只跑评分脚本，写代码的执行层留在本机。租来的机器直接用镜像自带的环境，不整套隔离新建——上一轮演练在同一家平台装 CUDA 版 torch 两个多小时没装完，这条规矩就是那时定的。</p>
+<p>为了跑通这条复现流，平台在这两天里新搭或补上的东西：</p>
+<div class="tw"><table>
+<tr><th>能力</th><th>做什么</th><th>这次用在哪</th></tr>
+<tr><td>流程 <code>reproduce</code></td><td>文献 → 原码复现基线 → 人签 → 复现性分析 → 数字核对 → 验收；与「改进」那条流程并列，复现不再被塞进改进的流程里去凑数</td><td>助理看库里有两条流程，按需求选了它</td></tr>
+<tr><td>需求模板「论文复现」</td><td>哪篇、哪几个数、复现到第几级、对上的标准、算力与预算</td><td>助理据此问了四件事，写完研究者确认</td></tr>
+<tr><td>文献格主文件 <code>sources.md</code></td><td>材料来源：找到了什么、选了哪个、为什么、每样的链接 / commit / 许可证；框架只认文件名，不定 schema</td><td>助理手写，下游两颗能力都读它</td></tr>
+<tr><td>skill <code>download</code></td><td>git / 文件 / Hugging Face 三个子命令，落到工作区、留收据；两层 agent 的命令只有 <code>ai4sci</code>，clone 一个仓库得经它</td><td>拉官方代码到指定 commit</td></tr>
+<tr><td>能力「原码复现基线」</td><td>别人的代码进 <code>code/</code>，执行层只写壳，框架跑一次、论文值与我们的值并排、改动写进 <code>upstream.diff</code>；不判「对没对上」</td><td>设计格</td></tr>
+<tr><td>能力「复现性分析」</td><td>读设计那包写六节分析；数字来源写成 <code>design/1/scoring | baseline | repeat_&lt;seed&gt; | sigma</code>，验证阶段回溯</td><td>分析格，四版</td></tr>
+<tr><td><code>env add</code></td><td>往机器上现成的环境里补几个包，重新登记清单；接着跑不重写壳</td><td>镜像缺 scipy / torchjd 那一步</td></tr>
+<tr><td>执行层会话额度按能力给</td><td>读懂别人整个仓库再写壳比从零写多得多；复现给 80 轮，提示里写清「读文件用 Read / Grep，Bash 只放行 ai4sci skill」</td><td>第一次撞 30 轮上限之后</td></tr>
+<tr><td>分析的 <code>--feedback</code></td><td>重写仍是新开一份，但上一版的问题进提示，执行层不盲改</td><td>第四版一次过</td></tr>
+<tr><td>对话锁记 pid、指南更新提醒</td><td>人打断留下的死锁自己收；平台中途加了命令，下一轮话前提醒助理重看 <code>--help</code></td><td>补包那一步助理照上一轮记忆答「做不了」，之后才重翻</td></tr>
+<tr><td>上一轮留下的：ssh 算力适配器、<code>env use</code>、<code>job stop</code></td><td>接机器、用现成环境、停作业</td><td>接新 4090、登记环境</td></tr>
+</table></div>
+<p>每个坑都当真用户会撞的修根因，不当一次性成本——不会 ssh 的研究者撞到「你去机器上 pip install 一下」就死在那里了。</p>
+
+<h2 id="emergence">5 · 平台涌现出了什么</h2>
+<p>下面这些没有一条是提示词里写好的具体做法，也没有一条是维护者喂的答案。指南只给了结构：该搜什么、问什么、拉材料用什么、每一格用哪颗能力、走到断点要停。选什么、怎么判、错了怎么办，是助理自己的。</p>
+<div class="grid2">
+  <div class="card"><h3>找对了材料</h3><p>从摘要里的链接直接读到官方仓库；从解析出的 <code>structured.json</code> 里抄表 8 的数，不凭记忆；拉到 commit、记下许可证与文件数。事后与维护者预筛的答案卷逐项对得上。</p></div>
+  <div class="card"><h3>把大题切成能跑的小题</h3><p>论文有 6 个方程 × 6 种方法 × 2 种拆分 × 5 种子，它挑了训练最短、数据现成、又是主基线的那两行，并说清「这两行对上核心主张就成立」。</p></div>
+  <div class="card"><h3>自己定了统计口径</h3><p>提出「五个种子均值落在论文 ±2σ 内，且方向对」当标准，同时留了「时间不够减到三个种子」的退路——它知道单种子会抖。</p></div>
+  <div class="card"><h3>看日志诊断，而不是猜</h3><p>执行层第一次没跑完，它读会话日志，说清是额度用完、还发现草稿种子写成 42–46 应为论文的 0–4；<code>import scipy</code> 炸了，它判断出是平台缺「补包」这一步，不是代码错。</p></div>
+  <div class="card"><h3>自己起核对、自己通读</h3><p>没人要求它跑数字核对，它跑了；核对通过后又逐句读，抓出机器核不出的文字错——编了个论文里没有的方程名。</p></div>
+  <div class="card"><h3>给自己立验收线，不无限重写</h3><p>第三版没过时它写下三条验收标准（数字回溯、文字事实、按需求口径明确判定），并说「再不过就把对的部分指给你，不再重写」。</p></div>
+  <div class="card"><h3>把新命令接进正在跑的活</h3><p>平台中途加了 <code>env add</code> 与 <code>--feedback</code>，它在被追问时重翻 <code>--help</code> 发现、当轮用上，接着上一次的草稿跑，没有推倒重来。</p></div>
+  <div class="card"><h3>说人话、管闲事</h3><p>全程没让研究者碰命令行；结尾给老师的一句话结论、交付清单、下一步建议，还提醒去关按小时计费的机器。</p></div>
+</div>
+<p>研究者说过的全部八句话在<a href="#chain">第 3 节</a>里，没有一句超过两行。</p>
+
+<h2 id="cost">6 · 花了多少</h2>
+<div class="num-strip">
+  <div class="n"><b>$7.41</b><span>研究助理 15 轮对话（含 6 轮框架叫醒）</span></div>
+  <div class="n"><b>$3.02</b><span>执行层 6 次会话（含一次撞额度 $1.44）</span></div>
+  <div class="n"><b>2 h 40 m</b><span>4090 训练：5 种子 × 2 变体</span></div>
+  <div class="n"><b>3 h 25 m</b><span>从第一句话到验收签字</span></div>
+</div>
+
+<h2 id="caveats">7 · 保留意见</h2>
+<ul>
+  <li><b>这篇是预筛过的「好材料」。</b>选它之前维护者派读者核实过：数据在仓库里、一条命令、MIT、单卡半小时。同批被筛掉的三篇——数据链接死、README 命令跑不起来、发布的权重与测试集重叠——才是复现里更常见的坑，还没考助理「发现材料有问题时该怎么说」。</li>
+  <li><b>执行层写分析会编文字事实。</b>数字核得住、文字核不住，靠助理通读兜底；四版才过。</li>
+  <li><b>「对上」是人判的。</b>平台只把两列数与全部差异摆清楚；前期不把机器校验卡太死，是有意的。</li>
+  <li><b>一级复现的意思是「结果可重跑」</b>，不是「论文写清楚了」：换实现、只照论文重写这两级没做。</li>
+</ul>
+
+<h2 id="links">8 · 原物在哪</h2>
+<ul>
+  <li>案例卡与全部产物（需求、材料来源、评分脚本、五个种子、分析、核对报告、整段对话，主机端口已抹）：仓库 <code>docs/cases/gua-pinn-reproduction/</code></li>
+  <li>过程记录：<a href="https://github.com/zephyr4123/TJU-AI4Science/issues/120">issue #120</a>（伞）及 #121–#129</li>
+  <li>论文：<a href="https://arxiv.org/abs/2609.01558">arXiv 2609.01558</a>；代码：<a href="https://github.com/JingXiao10/GUA">JingXiao10/GUA</a> commit <code>8bbbcd5</code></li>
+  <li>平台：<a href="https://github.com/zephyr4123/TJU-AI4Science">zephyr4123/TJU-AI4Science</a>（纲领 P-24「论文复现是另一条流程」）</li>
+</ul>
+
+<footer>研究者由 Claude 扮演（水平一般、问题模糊，只说研究者会说的话，不碰工作区）；研究助理与执行层是平台里的两个 agent；维护者中途只修平台，不喂答案。数字全部来自工作区里的结果文件。</footer>
+
+</div>
+<script>
+(function () {
+  var rows = [
+    { name: "ConFIG", paper: 1.74e-3, sigma: 3.38e-4, ours: 1.938e-3, oursSigma: 3.34e-4,
+      seeds: [2.3326e-3, 2.1625e-3, 1.9970e-3, 1.6592e-3, 1.5395e-3], lo: 1.0e-3, hi: 2.5e-3,
+      ticks: [1.0e-3, 1.5e-3, 2.0e-3, 2.5e-3] },
+    { name: "ConFIG + GUA", paper: 6.50e-4, sigma: 1.27e-4, ours: 7.328e-4, oursSigma: 1.77e-4,
+      seeds: [7.693e-4, 6.698e-4, 6.294e-4, 5.740e-4, 1.0216e-3], lo: 3.5e-4, hi: 1.1e-3,
+      ticks: [4e-4, 6e-4, 8e-4, 1.0e-3] }
+  ];
+  var W = 640, L = 120, R = 24, rowH = 84, topPad = 10;
+  var H = topPad + rows.length * rowH + 4;
+  var css = getComputedStyle(document.documentElement);
+  var col = function (name) { return css.getPropertyValue(name).trim(); };
+  function fmt(v) { return v.toExponential(2).replace("e-", "e-"); }
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="论文值与我们的值对照图">';
+  rows.forEach(function (r, i) {
+    var y = topPad + i * rowH + 36;
+    var x = function (v) { return L + (v - r.lo) / (r.hi - r.lo) * (W - L - R); };
+    s += '<text x="0" y="' + (y + 5) + '" font-size="13" font-weight="600" fill="' + col("--ink") + '">' + r.name + '</text>';
+    // 2σ band
+    var b0 = x(r.paper - 2 * r.sigma), b1 = x(r.paper + 2 * r.sigma);
+    s += '<rect x="' + b0 + '" y="' + (y - 16) + '" width="' + (b1 - b0) + '" height="32" rx="3" fill="' + col("--band") + '"/>';
+    // axis + ticks
+    s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + (y + 24) + '" y2="' + (y + 24) + '" stroke="' + col("--line") + '"/>';
+    r.ticks.forEach(function (t) {
+      s += '<line x1="' + x(t) + '" x2="' + x(t) + '" y1="' + (y + 24) + '" y2="' + (y + 28) + '" stroke="' + col("--line") + '"/>';
+      s += '<text x="' + x(t) + '" y="' + (y + 40) + '" font-size="10" text-anchor="middle" fill="' + col("--muted") + '" font-family="IBM Plex Mono, monospace">' + fmt(t) + '</text>';
+    });
+    // seeds
+    r.seeds.forEach(function (v) {
+      s += '<circle cx="' + x(v) + '" cy="' + (y + 10) + '" r="3.5" fill="none" stroke="' + col("--accent") + '" stroke-width="1.6"/>';
+    });
+    // ours mean ± σ
+    s += '<line x1="' + x(r.ours - r.oursSigma) + '" x2="' + x(r.ours + r.oursSigma) + '" y1="' + (y - 4) + '" y2="' + (y - 4) + '" stroke="' + col("--accent") + '" stroke-width="2"/>';
+    s += '<circle cx="' + x(r.ours) + '" cy="' + (y - 4) + '" r="5.5" fill="' + col("--accent") + '"/>';
+    // paper mean
+    s += '<line x1="' + x(r.paper) + '" x2="' + x(r.paper) + '" y1="' + (y - 16) + '" y2="' + (y + 16) + '" stroke="' + col("--paper") + '" stroke-width="2"/>';
+    s += '<circle cx="' + x(r.paper) + '" cy="' + (y - 4) + '" r="4.5" fill="' + col("--paper") + '"/>';
+    // labels
+    s += '<text x="' + x(r.paper) + '" y="' + (y - 22) + '" font-size="10" text-anchor="middle" fill="' + col("--paper") + '" font-family="IBM Plex Mono, monospace">论文 ' + fmt(r.paper) + '</text>';
+    s += '<text x="' + x(r.ours) + '" y="' + (y + 20) + '" font-size="10" text-anchor="middle" fill="' + col("--accent-ink") + '" font-family="IBM Plex Mono, monospace">我们 ' + fmt(r.ours) + '</text>';
+  });
+  s += '</svg>';
+  var el = document.getElementById("chart");
+  if (el) el.innerHTML = s;
+})();
+</script>
+</body>
+</html>
