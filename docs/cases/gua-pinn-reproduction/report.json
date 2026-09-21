@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "generated_at": "2026-09-21T07:41:22+00:00",
+  "analysis": "analysis/4",
+  "checks": [
+    {
+      "name": "analysis_present",
+      "passed": true,
+      "details": [
+        "analysis.md"
+      ]
+    },
+    {
+      "name": "numbers_traceable",
+      "passed": true,
+      "details": [
+        "核对 14 个值，全部在 1% 容差内"
+      ]
+    },
+    {
+      "name": "prose_numbers_in_table",
+      "passed": true,
+      "details": [
+        "正文 2 个小数都在数据表里"
+      ]
+    }
+  ]
+}

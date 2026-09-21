@@ -1,0 +1,12 @@
+name: reproduce
+title: 论文复现
+summary: 找齐材料，原样跑一遍，人核对；复现性分析、数字核对，人验收。
+stages:
+- 文献
+- 设计:
+  - reproduction
+- 断点: 复现结果核对
+- 分析:
+  - reproducibility
+- 验证
+- 断点: 验收

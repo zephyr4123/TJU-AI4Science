@@ -10,6 +10,7 @@
 | [boehm-stat5-petab](boehm-stat5-petab/) | 调参型 | 连续参数优化 | 系统生物学 | 第三方 benchmark | **已成任务包** `platform/tasks/boehm-nll`，run_0 均值 224.74、σ 28.8，真跑 3 轮出第一个 keep 148.26 | 实验内环 |
 | [vlm-hard-negatives](vlm-hard-negatives/) | 过程访谈 | 表示学习 | 多模态 ML | 学长本人工作 | 已入库 | 协调层 |
 | [rahman-ode-petab](rahman-ode-petab/) | 平台自测 | 连续参数优化 | 流行病学 | 第三方 benchmark | **已成任务包** `platform/tasks/rahman-nll`，只经 `ai4sci task design` 接入（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)），run_0 均值 21.5958、σ 0.056，8 轮出 1 个 keep 21.339，验证 PASS | 实验内环；接任务入口测试 |
+| [gua-pinn-reproduction](gua-pinn-reproduction/) | 平台演练 | 论文复现（一级） | 计算物理 | 第三方论文 arXiv 2609.01558 | **已复现，验收已签**（2026-09-21）：两行都在论文 ±2σ 内，加 GUA 降 62.2%（论文 62.6%），代码一字未改；助理自走全链、研究者 8 句话两次签字（[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)） | 复现流全链 |
 
 ## 案例卡怎么写
 

@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- 案例库加 `docs/cases/gua-pinn-reproduction/`：平台第一次完整跑通的论文复现（arXiv 2609.01558，一级，已验收）——案例卡、需求、材料来源、评分脚本、五个种子的结果、复现性分析、核对报告、整段对话，主机端口已抹（[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)）
 - P-24 补「现成环境缺包就补（`ai4sci env add`）」「执行层会话额度按能力给」；workflow §5 命令行加 `env add`（[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120) #122）
 - 纲领 §4 加 P-24 论文复现：另一条流程 `reproduce`（文献手写 `sources.md` → `reproduction` 原码复现基线 → 人签 → `reproducibility` 复现性分析 → 验证）、复现三级、两颗新能力与现有的同阶段可替换、搜索用 agent 自带工具不做定位器、`download` skill、机器只卡三条；workflow §1 §5 同步；Q-11 关闭（[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)）
 

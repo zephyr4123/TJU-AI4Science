@@ -1,0 +1,25 @@
+format_version: 1
+metrics:
+- name: config_relative_l2
+  direction: minimize
+  attainable: 0.00174
+- name: config_gua_relative_l2
+  direction: minimize
+  primary: true
+  attainable: 0.00065
+budget:
+  wall_clock_s: 7200
+  max_iterations: 1
+  repeat_k: 4
+  accept_sigma: 2.0
+  inner_k: 1
+requirements:
+- id: R1
+  type: numeric
+  must_pass: true
+  description: ConFIG（无 GUA）相对 L2 误差落在论文均值 1.74e-3 ± 2×3.38e-4（6.8e-4）内
+- id: R2
+  type: numeric
+  must_pass: true
+  description: ConFIG+GUA 相对 L2 误差落在论文均值 6.50e-4 ± 2×1.27e-4（2.5e-4）内，且低于同批 ConFIG
+domain: generic
