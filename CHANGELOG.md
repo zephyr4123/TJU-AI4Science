@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### 新增
+- 纲领 §4 加 P-24 论文复现：另一条流程 `reproduce`（文献手写 `sources.md` → `reproduction` 原码复现基线 → 人签 → `reproducibility` 复现性分析 → 验证）、复现三级、两颗新能力与现有的同阶段可替换、搜索用 agent 自带工具不做定位器、`download` skill、机器只卡三条；workflow §1 §5 同步；Q-11 关闭（[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)）
+
 ### 变更
 - P-23 两问改口（主人 2026-09-20 演练拍板）：租来的第三方平台一律用镜像自带的现成环境、租时选好带 PyTorch + CUDA 的镜像，隔离新建只在实验室自己的机器上谈；纲领与 workflow §5 同步（[#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)）
 - workflow §5 按演练回写两处：`--detach` 等作业过门、开了产出再返回（带 `output=`，当场没开起来的退 1）；基线跑之前删本地 `baseline/`、拿回来按开跑的合约查全（[#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)）

@@ -61,7 +61,22 @@ stages:
   - 断点: 验收                               # 验证的产出要人签
 ```
 
-- **出厂只有一条 `research`**；截它的一段、改参数、换断点都是新的流程。
+- **出厂两条**：`research`（改进：设计 → 实验 → 分析 → 验证）与 `reproduce`（复现，P-24，2026-09-21）；截一段、改参数、换断点都是新的流程。`reproduce` 长这样：
+
+  ```yaml
+  name: reproduce
+  title: 论文复现
+  summary: 找齐材料，原样跑一遍，人核对；复现性分析、数字核对，人验收。
+  stages:
+    - 文献                                   # 助理自带搜索找材料，手写 sources.md（材料来源）
+    - 设计: [reproduction]                   # 原码复现基线：别人的代码进 code/，跑一次
+    - 断点: 复现结果核对                     # 论文值与我们的值并排，研究者签
+    - 分析: [reproducibility]                # 复现性分析
+    - 验证
+    - 断点: 验收
+  ```
+
+  没对上再进实验做差距归因，那条分支第一次撞上再拼。
 - **子集也是流程、任何顺序都是流程。** 只想根据实验结果写综述就是 `[实验, 写作: [review]]` 两行——等写作阶段有了那个能力就能挂。
 - **流程分两层：库、实例**（P-15）。库在 `workflows/`，通用、不依附课题，编辑台的流程助理改它；实例在工作区 `flows/`，几条都行，研究助理 `ai4sci flow take <name>` 从库里取来，按这份需求改阶段、能力参数、断点。选流程在需求确认之后、与需求独立：一份需求会走多条流程。
 - **进度不另存**（2026-09-19，删了 `flow.json`）：每个产出的 `meta.yaml` 记它是在哪条流程的第几项下产的，「这条流程走到哪」沿 `from` 链算出来；同一条流程走两遍就是两条链，看板都列。「在等谁」也现算：作业在跑 → 等作业；这一项的产出还没签而流程说要签 → 等人；下一项是阶段 → 轮到助理；走完 → done。
@@ -101,7 +116,7 @@ experiment/2/                  一个产出目录
 - **产出的 id 就是路径**：`experiment/2`、`analysis/1`。读出来就知道是什么，不用查表；`title` 是给人看的标签，目录名不动。
 - **接口 = `from` + 文件名。** 不把上游整包抄进自己目录；执行层要的合成工作树在自己那次产出里（`experiment/<n>/work/`），是实现细节。
 - **冻结**：产出和需求同一条规则——没被 `from` 引用、没被签之前随便改；一旦被引用或被签就冻住，改了框架按 hash 查得出并拒读。需求确认之后再改，页面显示 diff、人再确认成 v2，旧版存 `.ai4sci/requirement/`。
-- **助理不经能力也能产出**（文献、写作现在没有能力）：`ai4sci output new <stage> --title … --from …` 建目录写 meta，然后直接写文件。
+- **助理不经能力也能产出**（文献、写作现在没有能力）：`ai4sci output new <stage> --title … --from …` 建目录写 meta，然后直接写文件。文献格的主文件 `sources.md`「材料来源」就是这么写的（P-24）：它是文献阶段第一个定下的主文件（`MAIN_FILES`），形状只有文件名——助理写 markdown，下游是 agent 在读。
 - **一个工作区一份需求，一对一；工作区上方不加层。** 哪天一篇论文要拆几个子课题，再加 `projects/`，现在没有第二个用例。
 
 ### 契约
@@ -316,7 +331,8 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 ai4sci cap <name> --from <stage>/<n>... [--backend] [--compute] [--<param>] [--detach]
                                       能力：协调 agent 调用的 tool，读 --from 点名的产出，在自己阶段下开一个新产出目录；
                                       子命令从描述符生成，用法错退 2、没通过退 1；需求没确认不开工
-                                      四个：design（读需求 + 假设）auto-research（读设计）analysis（读一个或几个实验）verify（读分析 + 实验）
+                                      六个：design（读需求 + 假设）reproduction（读需求 + 文献的 sources.md + 原件里拉来的代码，P-24）
+                                      auto-research（读设计）analysis（读一个或几个实验）reproducibility（读一次设计，P-24）verify（读分析 + 实验或设计）
 ai4sci sign <stage>/<n> --by <谁> [--note]   人的确认：给一次产出签字，写它目录里的 signed.json（流程里那一项是断点才需要）
 ai4sci requirement confirm --by <谁>  人的确认：确认当前工作区的需求，写 requirement.lock（页面上按同一个函数）
 ai4sci show workspaces | workspace | outputs [<stage>] | output <stage>/<n> | jobs | job <id> | flows | caps | workflows | templates | template <name>
@@ -326,6 +342,8 @@ ai4sci flow take <name> [--as <新名>]  取流程：把库里的一条流程复
 ai4sci output new <stage> --title <一句> [--from ...]   建产出：助理不经能力也能在一个阶段下开目录写东西（文献、写作现在没有能力）
 ai4sci workspace new <id> [--title]   入口：起一个工作区（写模板起的 requirement.md、建 materials/）；chat new|send|list [--studio] 终端里聊；serve 网页后端
 ai4sci skill list | show <name> | run <name> [--script <文件>] [--out <dir>] [--<arg> …]
+ai4sci skill run download git <url> [--commit <sha>] [--into <名字>] | file <url> [--sha256 <hash>] | hf <repo> [--type dataset|model]
+                                      拉材料（P-24）：落工作区 materials/<名字>/，stdout 一行收据（来源、commit / hash、路径）；两层 agent 都能按
 ai4sci job stop <作业号>                     人叫停一个后台作业：杀整棵进程树，作业记 stopped、它的产出记失败（页面同一个动作）
 ai4sci env resolve [--python X.Y] [--compute <名字>] <包名>…   隔离新建：按包名算出钉死传递依赖的完整清单进 materials/env/（uv pip compile，会联网；--compute 到那台机器上算）
 ai4sci env use --compute <名字> <解释器绝对路径>   用那台机器上现成的环境：探版本、pip freeze 当清单、写 materials/env/interpreter（P-23 的两问）
@@ -465,6 +483,7 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 | 2026-09-20 | §5 命令行加 `job stop`、`env resolve`，记第一轮真任务（PINNs）逼出的三条：停作业、按包名算环境清单 + 建完查完整 + `--continue` 遇环境变了拒、设计草稿先 `ruff --fix-only` 修 import 顺序（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)） | Claude 扮小白研究者跑第一轮闭环，助理与执行层行为都对，坑全在平台 | 主人 + Claude |
 | 2026-09-20 | §5 算力适配按 P-23 重写：按人的 computes.yaml、只有 SSH 只认密钥、对话里接机器、按名字选记进 meta、ssh 适配器的五个动作；命令行加 `compute add / check / list / remove`、`env resolve --compute`；磁盘布局 meta 加 `compute`（[#119](https://github.com/zephyr4123/TJU-AI4Science/issues/119)） | 算力由使用者自己配，AutoDL 到位 | 主人 + Claude |
 | 2026-09-20 | §5 算力适配加「接上先盘点、再问两问」与 `env use`；远端 uv 用镜像当额外索引、长命令走 nohup + 轮询（[#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)） | 演练实测：AutoDL 直连 pypi.org 19 KB/s、长连接被掐、一律隔离新建让非工程师干等 | 主人 + Claude |
+| 2026-09-21 | §1 流程加出厂第二条 `reproduce`；磁盘布局记文献格主文件 `sources.md` 由助理手写；§5 命令行能力加 `reproduction` `reproducibility`、skill 加 `download`（[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)） | P-24 论文复现另起一条流程 | 主人 + Claude |
 | 2026-09-10 | 建档。阶段骨架、实验内环四角色、账本、裁判、人在环、Runner 协议 | 三个仓深读的收敛结论；棘轮来自 autoresearch，harness 注入来自 AutoResearchClaw，目录形态来自 InternAgent | 主人 + Claude |
 | 2026-09-15 | 第 1 节标实验 / 分析 / 验证已落地，能力描述符改为已落地的形状；第 3 节加"数字回溯（已落地）"：分析三节与数据表、验证四项检查、1% 容差、已知边界、report.json、重跑轮转；第 5 节 CLI 加 `cap list` / `cap <name>`（[#35](https://github.com/zephyr4123/TJU-AI4Science/issues/35) [#36](https://github.com/zephyr4123/TJU-AI4Science/issues/36) [#37](https://github.com/zephyr4123/TJU-AI4Science/issues/37)） | 09-22 单元的分析与验证做完，纲领不能描述另一套行为 | 主人 + Claude |
 | 2026-09-15 | 第 1 节加"装配与固定流程"（子集也是流程、入口契约由人填、固定流程是存好的图、产物跨流程复用），契约加"能力描述符"；第 5 节注明 CLI 是薄壳、能力对外是 Python 函数（[#33](https://github.com/zephyr4123/TJU-AI4Science/issues/33)） | 主人对齐高度模块化：不同任务用不同子集流程，低代码图是第二种协调层 | 主人 + Claude |

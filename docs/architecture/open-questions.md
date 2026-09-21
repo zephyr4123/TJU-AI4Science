@@ -92,7 +92,9 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 
 ## Q-11 文献检索走 tools/ 学术 API 还是执行层联网
 
-执行层被隔离后 MCP 清零，内建 WebSearch 仍在但不受控。建议 `tools/` 里做确定性脚本走学术 API（Semantic Scholar / arXiv / OpenAlex），执行层调脚本，结果带 DOI 或 arXiv id 落 `lit.jsonl`，验证能力用同一套 API 核引用真伪。给执行层开 WebSearch 快，但引用来源不可核，三条零 LLM 判据里"引用真伪"就做不了。
+**已定（2026-09-21，P-24，[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)）：用 agent 自带的搜索与读网页，不做按站点的学术 API 脚本。** 理由：论文的产物散在作者主页、README 里的网盘链接、Zenodo、issue 里，按 GitHub / HF / Semantic Scholar API 查的脚本只覆盖规整的那部分，漏的恰恰是难找的；两层适配器已放行 WebSearch / WebFetch（P-14）。找与挑在协调层对话里做，结果手写进文献格的 `sources.md` 带来源；「引用真伪」的零 LLM 判据以后在验证阶段按 DOI / arXiv id 核，与检索怎么做无关。原先的想法留档：
+
+> 执行层被隔离后 MCP 清零，内建 WebSearch 仍在但不受控。建议 `tools/` 里做确定性脚本走学术 API（Semantic Scholar / arXiv / OpenAlex），执行层调脚本，结果带 DOI 或 arXiv id 落 `lit.jsonl`，验证能力用同一套 API 核引用真伪。
 
 ## Q-12 写作能力的形态
 
@@ -161,6 +163,7 @@ auto-research 的 `work/` 已经在产出目录里，但没有机制拦执行层
 
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
+| 2026-09-21 | Q-11 关闭：文献检索用 agent 自带工具，不做学术 API 脚本（P-24，[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)） | 复现流定下来时一并定 | 主人 + Claude |
 | 2026-09-20 | Q-2、Q-10 关闭：skill 系统定型为 P-22（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 三路调研后与主人定 | 主人 + Claude |
 | 2026-09-10 | 建档，九项 | 三层未定，先把问题与候选写下来 | 主人 + Claude |
 | 2026-09-15 | 加 Q-13 低代码协调层的形状（[#34](https://github.com/zephyr4123/TJU-AI4Science/issues/34)） | 主人对齐高度模块化，低代码图是第二种协调层 | 主人 + Claude |
