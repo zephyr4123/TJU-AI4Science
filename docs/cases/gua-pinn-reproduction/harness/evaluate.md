@@ -1,3 +1,6 @@
+# harness/evaluate.py（原文照抄；外层仓不放 .py，所以放在代码块里）
+
+```python
 """评分脚本：从 ConFIG、ConFIG+GUA 两个变体各自的 formal_metrics.json 里，
 读取上游代码按论文定义（run_test 对参考解的相对 L2 范数）算好的误差，写 results.json。
 这是上游训练代码自己保存的表，不是 stdout 打印的一行字；任何一个变体的产物缺失、
@@ -89,3 +92,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+```

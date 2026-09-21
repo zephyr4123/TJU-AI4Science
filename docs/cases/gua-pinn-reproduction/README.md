@@ -97,7 +97,7 @@
 | `requirement.md` | 研究者确认的需求 v1（助理起草） |
 | `sources.md` | 文献阶段主文件：材料来源（助理手写） |
 | `flow.yaml` | 取到工作区的流程实例 |
-| `scoring.yaml`、`harness/` | 执行层写的壳：评分契约（`attainable` = 论文值）、launcher、evaluate、make_run0 |
+| `scoring.yaml`、`harness/` | 执行层写的壳：评分契约（`attainable` = 论文值）、`launcher.sh`、`make_run0.sh`、`evaluate.md`（evaluate.py 原文放代码块里：外层仓不放 .py） |
 | `upstream.json` | 上游代码的出处与 commit；`upstream.diff` 为空（一字未改），没抄 |
 | `baseline/` | 五个种子的结果与 σ |
 | `analysis.md` | 复现性分析（第四版，过核对与通读的那份） |
