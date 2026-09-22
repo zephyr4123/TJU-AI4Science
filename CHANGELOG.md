@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- workflow §5 执行层适配加 Codex 适配器的实测清单（私有 CODEX_HOME 是隔离承重位、skills 要按 SKILL.md 逐个关、沙箱是门没有按命令的白名单、无逐字事件、订阅报不出美元、嵌套会话里环境的 CODEX_HOME 会把 auth.json 软链指向自己）；协调层适配加 Codex 续接、`guide_channel` 与 `tool_guide`（[#131](https://github.com/zephyr4123/TJU-AI4Science/issues/131)）
 - 纲领 §4 加 P-25 底座归人：按人的 `~/.config/ai4sci/agents.yaml` 与 `computes.yaml` 并列、助理与执行层各选一家（可不同）、四句话自检（`probe()`、`ai4sci agent list|check|use`、`ai4sci check`）、旋钮删「默认」只留具体值、接新 CLI 只信官方文档先 spike、页面「设置」悬浮板（入口在地方栏脚、主题搬进去加「跟随系统」）；workflow §5 加「设置与自检」、命令行加 `agent` `check`、词表加「设置」「AI」；Q-8 关闭（[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)）
 - research/evals 加「平台第一次完整跑通的论文复现」：README（阅读版）+ 手写的完整记录页 `report.html`（链路每一步与命令原文、论文值 vs 我们的值图表、算力与能力、涌现清单、成本、保留意见），随 Pages 公开（[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)）
 - 案例库加 `docs/cases/gua-pinn-reproduction/`：平台第一次完整跑通的论文复现（arXiv 2609.01558，一级，已验收）——案例卡、需求、材料来源、评分脚本、五个种子的结果、复现性分析、核对报告、整段对话，主机端口已抹（[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)）
