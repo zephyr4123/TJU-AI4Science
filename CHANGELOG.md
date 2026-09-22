@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- workflow §5 界面适配「项目」改成已落地（地方栏三键、首页项目墙、门口一句话起项目、项目页正中间的对话入口 + 工作区清单、工作区页页眉「‹ 项目名  工作区 ▾」），词表「主页面 / 编辑台」改「首页 / 项目页 / 工作区页 / 编辑台」；变更记录（[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)）
 - 纲领加「项目」：README §2 改「项目与工作区」、P-15 改「项目即助理的边界，工作区即需求的边界」；workflow §1 磁盘布局加 `projects/<p>/`（对话与共用原件归项目、每段对话一个收件箱）、跨工作区 `from` 只限同项目、§4 叫醒改收件箱、§5 命令行加 `project` / `--ws` / `AI4SCI_PROJECT`、删除边界加项目、端点改 `/projects/<p>/…`、词表加「项目」；Q-9 记「工作区之上」已定；变更记录（[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)）
 - workflow §5 加「删除边界」：平台出厂的不能删、人产生的都能删、删就从根级联删干净（对话连 CLI 那边的会话、工作区连机器上的镜像）、没有软删除；产出只删叶子；命令行加五条 remove；变更记录（[#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134)）
 - 纲领 P-22 改「skill 是能力的一种」：一个词「能力」、两个 tag（步骤 / skill），两种都进能力库、都能挂到流程的格子上、都上看板；P-20 那句「skill 不是一格」改成「skill 不开产出目录」；workflow §1 skill 一节、关系表、流程示例（文献格挂 pdf 与 download）、词表（能力 / 步骤 / skill 三行）同步；变更记录（[#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134)）
