@@ -68,7 +68,7 @@ stages:
   title: 论文复现
   summary: 找齐材料，原样跑一遍，人核对；复现性分析、数字核对，人验收。
   stages:
-    - 文献                                   # 助理自带搜索找材料，手写 sources.md（材料来源）
+    - 文献: [pdf, download]                  # 挂两个 skill：这一步推荐的工具；材料来源 sources.md 助理手写
     - 设计: [reproduction]                   # 原码复现基线：别人的代码进 code/，跑一次
     - 断点: 复现结果核对                     # 论文值与我们的值并排，研究者签
     - 分析: [reproducibility]                # 复现性分析
@@ -155,12 +155,12 @@ experiment/2/                  一个产出目录
 
 ### skill
 
-**skill 是给 agent 用的工具包，不是流程里的一格**（P-22，2026-09-20，[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)）。能力是流程里的一格、开产出目录、由框架驱动；skill 是 agent 在任何时候都能拿起来用的一套东西——一份说明、几个脚本、几份参考——协调层（研究助理起草需求时读论文）与执行层（能力的会话里解析文件）都能用。它不开 `<stage>/<n>/`，写哪里由调用它的人定：助理写进 `materials/`，能力写进自己的产出目录。三样东西的关系：
+**skill 是能力的一种：tag 为 skill 的能力**（P-22，2026-09-20 立、2026-09-22 主人改，[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113) [#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134)）。能力一个词、两个 tag：步骤是流程里的一格、开产出目录、由框架驱动；skill 是 agent 在任何时候都能拿起来用的一套东西——一份说明、几个脚本、几份参考——协调层（研究助理起草需求时读论文）与执行层（步骤的会话里解析文件）都能用。它不开 `<stage>/<n>/`，写哪里由调用它的人定：助理写进 `materials/`，步骤写进自己的产出目录。两种都进能力库、都能挂到流程的格子上：`- 文献: [pdf, download]` 是「这一步推荐用这两个」，看板显示、助理走到这一步时 `show flows` 里标 `[skill]`；不是门，没挂的照样能用；skill 不带参数（参数在调用时给）。三样东西的关系：
 
 | | 是什么 | 谁调 | 写到哪 | 在哪儿定义 |
 |---|---|---|---|---|
-| 能力 | 流程里的一格，`ai4sci cap <name>` | 协调层（照流程） | 自己的 `<stage>/<n>/` | `framework/capabilities/<name>/` |
-| skill | agent 的工具包，`ai4sci skill run <name>` | 协调层或执行层，随时 | 调用方给的 `--out` | `skills/<name>/` 或 `domains/<包>/skills/<name>/` |
+| 能力·步骤 | 流程里的一格，`ai4sci cap <name>` | 协调层（照流程） | 自己的 `<stage>/<n>/` | `framework/capabilities/<name>/` |
+| 能力·skill | agent 的工具包，`ai4sci skill run <name>`；也能挂在格子上当这一步推荐的工具 | 协调层或执行层，随时 | 调用方给的 `--out` | `skills/<name>/` 或 `domains/<包>/skills/<name>/` |
 | 领域包 | 打包单位：提示补充 + 领域 skill + 工具 | 设计阶段按 `--domain` 选 | — | `domains/<包>/` |
 
 **格式照 agentskills.io 开放规范**，不自造：
@@ -475,8 +475,10 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
   |---|---|---|
   | 工作区 | 一份需求的目录 `workspaces/<id>/` | 项目、任务、房间 |
   | 需求 | `requirement.md` 与它的确认 `requirement.lock` | 提纲、任务书 |
-  | 阶段 | 七个研究阶段之一：文献、假设、设计、实验、分析、写作、验证 | 步骤、环节 |
-  | 能力 | 一个阶段里的一件活，`ai4sci cap <name>` 一条命令 | 按钮、键、能力单元、工具 |
+  | 阶段 | 七个研究阶段之一：文献、假设、设计、实验、分析、写作、验证 | 环节、步 |
+  | 能力 | 平台会干的一件事，两个 tag：步骤、skill；页面与流程文件里只叫能力 | 按钮、键、能力单元、工具 |
+  | 步骤 | 能力的 tag：走到流程那一格框架起执行层、开产出、能签，`ai4sci cap <name>` | 能力单元、动作、任务 |
+  | skill | 能力的 tag：教 agent 做一件事的指南 + 脚本，随手用、不开产出，`ai4sci skill run <name>` | 技能、插件、工具包（文档里可说） |
   | 流程 | `workflows/<name>.yaml` 一份：经过哪些阶段、挂哪些能力、哪儿有断点 | 流、库、工作流、套餐 |
   | 流程库 | 全部流程文件 | 库 |
   | 断点 | 流程里停下来等人确认的一项 | 门、关卡、闸 |
@@ -509,6 +511,7 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 |---|---|---|---|
 | 2026-09-22 | §5 执行层适配加 Codex 适配器实测清单（私有 CODEX_HOME、skills 逐个关、沙箱是门、无逐字事件、订阅无美元、嵌套会话的 CODEX_HOME 坑）；协调层适配加 Codex 续接、`guide_channel` 与 `tool_guide`（[#131](https://github.com/zephyr4123/TJU-AI4Science/issues/131)） | 适配器落地并演练到 `cap design` 后回写 | 主人 + Claude |
 | 2026-09-22 | §5 加「设置与自检」（`agents.yaml`、三层就近生效、`probe()`、`ai4sci check`、端点、环境变量退役）；命令行加 `agent` `check`；执行层 / 协调层适配的模型配置改读文件、旋钮删「默认」；界面适配加「设置」悬浮板与词表两行（P-25，[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)） | 全面适配 Codex 要先有「用哪家」的家；冷启动自检与设置页一并定 | 主人 + Claude |
+| 2026-09-22 | §1 skill 一节改成「skill 是能力的一种：tag 为 skill」，关系表两行改「能力·步骤 / 能力·skill」，流程示例文献格挂 pdf 与 download；词表改「能力」加「步骤」「skill」两行、「阶段」的不这么叫去掉「步骤」（[#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134)） | 主人看到复现看板文献格「能力 无」，定：skill 就是能力，打 tag 收纳；tag 就叫 skill、原来的能力叫步骤 | 主人 + Claude |
 | 2026-09-20 | §1 加「skill」一节：与能力 / 领域包的关系表、agentskills.io 格式与 frontmatter、脚本规矩（PEP 723 + uv 锁 + `--locked --offline`）、不建工作区级 venv、承接与门禁、清单注入、三个子命令、第一个 skill `pdf` 的契约；§5 命令行加 `skill`（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 主人要通用的 skill 系统与解析论文 PDF 的第一个 skill；调研后定不做工作区级 venv、先简单后端再 MinerU 实测 | 主人 + Claude |
 | 2026-09-20 | §1「skill」按落地回写：`run` 加 `--script`、执行层白名单 `ai4sci skill *`、领域 skill 不再全文注入也不随实验快照、两家 pdf 后端的实测与缺省；§5 执行层适配 `run()` 加 `bash_rules`、加「联网只用 CLI 自带的工具」一条（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113) [#114](https://github.com/zephyr4123/TJU-AI4Science/issues/114)） | 落地时的实测与取舍 | 主人 + Claude |
 | 2026-09-20 | §5 命令行加 `job stop`、`env resolve`，记第一轮真任务（PINNs）逼出的三条：停作业、按包名算环境清单 + 建完查完整 + `--continue` 遇环境变了拒、设计草稿先 `ruff --fix-only` 修 import 顺序（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)） | Claude 扮小白研究者跑第一轮闭环，助理与执行层行为都对，坑全在平台 | 主人 + Claude |

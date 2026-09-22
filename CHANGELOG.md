@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- 纲领 P-22 改「skill 是能力的一种」：一个词「能力」、两个 tag（步骤 / skill），两种都进能力库、都能挂到流程的格子上、都上看板；P-20 那句「skill 不是一格」改成「skill 不开产出目录」；workflow §1 skill 一节、关系表、流程示例（文献格挂 pdf 与 download）、词表（能力 / 步骤 / skill 三行）同步；变更记录（[#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134)）
 - 案例库加 `docs/cases/boehm-codex-drill/`：两层都换成 Codex 跑通研究流全链的演练（Boehm PEtab 参数拟合，验收已签）——案例卡（时间线、七个坑与修法、Codex 观察、token 数）、需求、流程实例、评分契约与壳、拟合脚本、三个种子的基线、助理三次喂回执行层的意见、账本与笔记、分析、核对报告、整段对话（主机端口路径已抹、指南全文略去）；案例库索引加一行（[#135](https://github.com/zephyr4123/TJU-AI4Science/issues/135)）
 - workflow §5 执行层适配加 Codex 适配器的实测清单（私有 CODEX_HOME 是隔离承重位、skills 要按 SKILL.md 逐个关、`ai4sci` 靠 execpolicy 规则在沙箱外跑而其余命令留在沙箱里、嵌套沙箱走不通、无逐字事件、订阅报不出美元、嵌套会话里环境的 CODEX_HOME 会把 auth.json 软链指向自己）；协调层适配加 Codex 续接、`guide_channel` 与 `tool_guide`（[#131](https://github.com/zephyr4123/TJU-AI4Science/issues/131)）
 - 纲领 §4 加 P-25 底座归人：按人的 `~/.config/ai4sci/agents.yaml` 与 `computes.yaml` 并列、助理与执行层各选一家（可不同）、四句话自检（`probe()`、`ai4sci agent list|check|use`、`ai4sci check`）、旋钮删「默认」只留具体值、接新 CLI 只信官方文档先 spike、页面「设置」悬浮板（入口在地方栏脚、主题搬进去加「跟随系统」）；workflow §5 加「设置与自检」、命令行加 `agent` `check`、词表加「设置」「AI」；Q-8 关闭（[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)）
