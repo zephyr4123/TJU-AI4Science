@@ -91,19 +91,23 @@ stages:
 ├── workflows/                 流程的库（编辑台改）
 ├── templates/                 需求模板的库：通用一份，按学科加，可扩展
 ├── studio/                    编辑台的对话记录
-└── workspaces/<id>/
-    ├── requirement.md         需求：助理和人对话攒出来的，形式开放，按模板起草不定死大纲
-    ├── requirement.lock       需求确认：谁、何时、hash、版本。唯一内置的门：没确认任何阶段不开工
-    ├── materials/             原件（PDF / 数据 / 代码），只增不改
-    ├── flows/                 这个课题取来的流程，几条都行
-    ├── literature/   1/ 2/    七个阶段各一个目录（英文 slug，阶段名 ↔ slug 一张表在 contracts）
-    ├── hypothesis/   1/ 2/    流程没走的阶段没有目录：ls 一眼看出走到哪
-    ├── design/       1/
-    ├── experiment/   1/ 2/ 3/
-    ├── analysis/     1/
-    ├── writing/
-    ├── verification/ 1/
-    └── .ai4sci/               平台记录，不是研究产物：chats/ jobs/ logs/ requirement/v1.md …
+└── projects/<p>/              一个项目一位助理（P-15，[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)）
+    ├── project.md             目标一段；一级标题是项目名
+    ├── materials/             几个工作区共用的原件
+    ├── .ai4sci/chats/<cid>/   助理的对话；每段一个收件箱 inbox/，作业跑完排队等它念
+    └── workspaces/<id>/
+        ├── requirement.md         需求：助理和人对话攒出来的，形式开放，按模板起草不定死大纲
+        ├── requirement.lock       需求确认：谁、何时、hash、版本。唯一内置的门：没确认任何阶段不开工
+        ├── materials/             原件（PDF / 数据 / 代码），只增不改
+        ├── flows/                 这个课题取来的流程，几条都行
+        ├── literature/   1/ 2/    七个阶段各一个目录（英文 slug，阶段名 ↔ slug 一张表在 contracts）
+        ├── hypothesis/   1/ 2/    流程没走的阶段没有目录：ls 一眼看出走到哪
+        ├── design/       1/
+        ├── experiment/   1/ 2/ 3/
+        ├── analysis/     1/
+        ├── writing/
+        ├── verification/ 1/
+        └── .ai4sci/               平台记录，不是研究产物：jobs/ logs/ requirement/v1.md …
 
 experiment/2/                  一个产出目录
 ├── meta.yaml                  框架只读这一份：id、stage、title、from（读了谁，每项带 sha256）、by（能力名 / assistant / human）、
@@ -117,7 +121,8 @@ experiment/2/                  一个产出目录
 - **接口 = `from` + 文件名。** 不把上游整包抄进自己目录；执行层要的合成工作树在自己那次产出里（`experiment/<n>/work/`），是实现细节。
 - **冻结**：产出和需求同一条规则——没被 `from` 引用、没被签之前随便改；一旦被引用或被签就冻住，改了框架按 hash 查得出并拒读。需求确认之后再改，页面显示 diff、人再确认成 v2，旧版存 `.ai4sci/requirement/`。
 - **助理不经能力也能产出**（文献、写作现在没有能力）：`ai4sci output new <stage> --title … --from …` 建目录写 meta，然后直接写文件。文献格的主文件 `sources.md`「材料来源」就是这么写的（P-24）：它是文献阶段第一个定下的主文件（`MAIN_FILES`），形状只有文件名——助理写 markdown，下游是 agent 在读。
-- **一个工作区一份需求，一对一；工作区上方不加层。** 哪天一篇论文要拆几个子课题，再加 `projects/`，现在没有第二个用例。
+- **一个项目一位助理，一个工作区一份需求**（主人 2026-09-22，[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)）：项目是一个课题、一篇论文，工作区是它里面的一份需求；助理站在项目里管全部工作区——看状态、给某个工作区取流程、起作业、收汇报——执行层照旧关在一次产出里。工作区上方就这一层，项目上方不加。
+- **跨工作区引用只限同一项目**：`--from <ws>:<stage>/<n>` 读兄弟工作区的产出，`meta.yaml` 的 `from` 原样记 `gua:analysis/3`，冻结照旧按 hash 查；不写工作区名就是自己的。合成论文就是项目里再开一个走写作流的工作区、`from` 各兄弟——聚合的角色是这位助理，不是第二种 agent。
 
 ### 契约
 
@@ -318,7 +323,7 @@ iter  commit   parent   metric   direction  elapsed_s  seed  status   sigma   ha
 - 框架不等人：每条子命令跑完一个能力就退出并写状态，需要人判断的事由协调 agent 在对话里问。
 - 自主程度是协调 agent 的行为，不是框架的模式：可逆的自己定并记录，贵的带方案来问，拿不准的停。
 - 无人值守（挂机过夜）时协调 agent 怎么把问题留给人、人怎么异步回复，是协调层自己的通道问题，platform 0.2.0 不做（Q-7）。
-- **长命令不占着对话等**（2026-09-17，[#63](https://github.com/zephyr4123/TJU-AI4Science/issues/63)）：每个能力都有 `--detach`，框架把同一条命令起成独立进程当作业（`.ai4sci/jobs/<id>.json` + 日志），命令等作业过门、开了产出再返回（作业号旁带 `output=<产出 id>`；当场没开起来的——输入被改过、设计那包不合约——直接退 1 把原因带回来，不让 agent 拿着作业号说「开了」，2026-09-20 演练 [#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)），agent 这一轮就结束；作业跑完，子进程以「框架」的身份给那段对话发一轮（transcript 与 history 标 origin），agent 看结果再向人汇报。能力在哪条流程第几项下跑的记进产出的 `meta.yaml`——记录不是决策，按哪个仍是 agent 定；「在等谁」不存现算（等作业 / 等人签 / 轮到助理 / 走完）。
+- **长命令不占着对话等**（2026-09-17，[#63](https://github.com/zephyr4123/TJU-AI4Science/issues/63)）：每个能力都有 `--detach`，框架把同一条命令起成独立进程当作业（`.ai4sci/jobs/<id>.json` + 日志），命令等作业过门、开了产出再返回（作业号旁带 `output=<产出 id>`；当场没开起来的——输入被改过、设计那包不合约——直接退 1 把原因带回来，不让 agent 拿着作业号说「开了」，2026-09-20 演练 [#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)），agent 这一轮就结束；作业跑完进那段对话的**收件箱**（`chats/<cid>/inbox/`，2026-09-22 [#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)；原来是「忙就 15 秒重试、30 分钟放弃」，一个项目几个工作区同时跑、都来敲同一段对话就会丢）：对话空闲，子进程当场以「框架」的身份发一轮把收件箱念完；忙，就留在收件箱，正跑着的那一轮结束后接着发，直到空——一条不丢、先到先念。transcript 与 history 标 origin，agent 看结果再向人汇报。能力在哪条流程第几项下跑的记进产出的 `meta.yaml`——记录不是决策，按哪个仍是 agent 定；「在等谁」不存现算（等作业 / 等人签 / 轮到助理 / 走完）。
 - **人只做两件事，都落成文件**（2026-09-19，[#104](https://github.com/zephyr4123/TJU-AI4Science/issues/104)）：确认需求（`requirement.lock`，唯一内置的门）、在流程定的断点上签产出（`signed.json`）。两件事在页面上做，或终端 `ai4sci sign`；协调 agent 不替人签。自动化程度是人定的：流程里放几个断点就确认几次，一个不放就是端到端。
 
 ## 5. 框架的驱动面与执行层适配
@@ -335,17 +340,18 @@ ai4sci cap <name> --from <stage>/<n>... [--backend] [--compute] [--<param>] [--d
                                       auto-research（读设计）analysis（读一个或几个实验）reproducibility（读一次设计，P-24）verify（读分析 + 实验或设计）
 ai4sci sign <stage>/<n> --by <谁> [--note]   人的确认：给一次产出签字，写它目录里的 signed.json（流程里那一项是断点才需要）
 ai4sci requirement confirm --by <谁>  人的确认：确认当前工作区的需求，写 requirement.lock（页面上按同一个函数）
-ai4sci show workspaces | workspace | outputs [<stage>] | output <stage>/<n> | jobs | job <id> | flows | caps | workflows | templates | template <name>
-                                      查询：只读，与 serve 的 GET 端点同一批函数；workspace 是当前工作区的全貌（需求状态、每个阶段有几次产出、
+ai4sci show projects | project | workspace | outputs [<stage>] | output <stage>/<n> | jobs | job <id> | flows | caps | workflows | templates | template <name>
+                                      查询：只读，与 serve 的 GET 端点同一批函数；project 是当前项目的全貌（每个工作区一行：需求状态、走到哪、在等谁、跑着的作业）；workspace 是一个工作区的全貌（需求状态、每个阶段有几次产出、
                                       每条流程走到哪、在等谁）；caps 七个研究阶段各有什么、每个五栏；templates 需求模板的库
 ai4sci flow take <name> [--as <新名>]  取流程：把库里的一条流程复制成当前工作区的实例（P-15）
 ai4sci output new <stage> --title <一句> [--from ...]   建产出：助理不经能力也能在一个阶段下开目录写东西（文献、写作现在没有能力）
-ai4sci workspace new <id> [--title]   入口：起一个工作区（写模板起的 requirement.md、建 materials/）；chat new|send|list [--studio] 终端里聊；serve 网页后端
+ai4sci project new <id> [--title]     入口：起一个项目（写 project.md、建 materials/）；workspace new <id> [--title] [--template] 在当前项目里起一个工作区（写模板起的 requirement.md、建 materials/）；
+                                      chat new|send|list [--studio] 终端里和当前项目的助理聊；serve 网页后端
 ai4sci skill list | show <name> | run <name> [--script <文件>] [--out <dir>] [--<arg> …]
 ai4sci skill run download git <url> [--commit <sha>] [--into <名字>] | file <url> [--sha256 <hash>] | hf <repo> [--type dataset|model]
                                       拉材料（P-24）：落工作区 materials/<名字>/，stdout 一行收据（来源、commit / hash、路径）；两层 agent 都能按
 ai4sci job stop <作业号>                     人叫停一个后台作业：杀整棵进程树，作业记 stopped、它的产出记失败（页面同一个动作）
-ai4sci output remove <id> | flow remove <name> | chat remove <对话号> [--studio] | workspace remove <id> | workflow remove <name>
+ai4sci output remove <id> | flow remove <name> | chat remove <对话号> [--studio] | workspace remove <id> | project remove <id> | workflow remove <name>
                                       删人产生的东西（主人 2026-09-22，见下「删除边界」）：产出只删叶子、流程实例挂着产出拒、对话连 CLI 那边的会话、
                                       工作区连每台机器上的镜像；出厂的流程拒。目录外没清干净的逐条打出、退 1，本机已删照说
 ai4sci env resolve [--python X.Y] [--compute <名字>] <包名>…   隔离新建：按包名算出钉死传递依赖的完整清单进 materials/env/（uv pip compile，会联网；--compute 到那台机器上算）
@@ -358,7 +364,7 @@ ai4sci check                           冷启动自检（P-25）：底座每家 
                                       skill（P-22）：agent 的工具包，不是流程里的一格；清单、正文、起脚本（uv run --locked --offline）
 ```
 
-当前工作区由 cwd 决定（往上找 `requirement.md`，`AI4SCI_WORKSPACE` 可指定），agent 的工作目录就是工作区；命令不带工作区路径；数据根 `AI4SCI_HOME` 缺省仓根。`job stop` 与 `env resolve` 是 2026-09-20 第一轮真任务（PINNs，Claude 扮小白研究者）逼出来的两条（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)）：研究者说「先停一下」平台没有停的动作；「我不懂环境」时助理手写的三行清单让基线一 import 就炸——非工程师没有现成环境是常态，清单要框架按包名算（`uv pip compile`），建完 venv `uv pip check` 查完整，`--continue design/<n>` 遇 `materials/env/` 变了就拒、要重开。同一轮还定了设计草稿封 harness 前先 `ruff --fix-only --select I`（[#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116)：两版草稿各因一条 I001 让执行层重来 13 分钟）。
+命令不带路径。助理的工作目录是项目（往上找 `project.md`，`AI4SCI_PROJECT` 可指定），工作区级的命令带 `--ws <id>` 说清哪个工作区；不带就从 cwd 往上找 `requirement.md`（人在终端、执行层在产出目录里都是这样），在项目里却不在任何工作区里又没带 `--ws` 就退 2 并列出有哪些（[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)）；数据根 `AI4SCI_HOME` 缺省仓根。`job stop` 与 `env resolve` 是 2026-09-20 第一轮真任务（PINNs，Claude 扮小白研究者）逼出来的两条（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)）：研究者说「先停一下」平台没有停的动作；「我不懂环境」时助理手写的三行清单让基线一 import 就炸——非工程师没有现成环境是常态，清单要框架按包名算（`uv pip compile`），建完 venv `uv pip check` 查完整，`--continue design/<n>` 遇 `materials/env/` 变了就拒、要重开。同一轮还定了设计草稿封 harness 前先 `ruff --fix-only --select I`（[#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116)：两版草稿各因一条 I001 让执行层重来 13 分钟）。
 
 CLI 是薄壳：每个能力对外是一个 Python 函数（auto-research 是 `capabilities.auto_research.run`），子命令只做参数解析与退出码。协调 agent 走 CLI，低代码 UI 后端与测试直接调函数，三者跑的是同一段代码（P-12）。
 
@@ -411,7 +417,8 @@ slurm:  put=rsync     submit=sbatch           cancel=scancel     get=rsync
 |---|---|---|---|
 | 能力（步骤 / skill）、出厂流程、需求模板、领域包、底座 | **不能**，平台的底 | — | — |
 | 流程库里人存的流程 | 能 | 那份文件；取到工作区的实例是拷贝，不受影响 | — |
-| 工作区 | 能 | 整个目录（需求、原件、产出、流程实例、对话、作业记录）+ 每段对话在 CLI 那边的会话（`Chat.forget`）+ 每台 ssh 机器上的镜像（`Compute.remove_dir`） | 有作业或对话在跑 |
+| 项目 | 能 | 整个目录：全部工作区、共用原件、每段对话及其在 CLI 那边的会话（`Chat.forget`）、每台 ssh 机器上的镜像（`Compute.remove_dir`） | 有作业或对话在跑 |
+| 工作区 | 能 | 整个目录（需求、原件、产出、流程实例、作业记录）+ 每台 ssh 机器上的镜像 | 有作业在跑、兄弟工作区 `from` 过它的产出（先删下游） |
 | 对话 | 能 | 目录 + CLI 那边的会话 | 这一轮还在跑 |
 | 产出 | 能，**只能删叶子** | 目录；作业记录留着、结论行补「产出已删」；编号不复用 | 被下游 `from` 读过（删了 hash 对账断）、正在跑 |
 | 流程实例 | 能 | 那份文件 | 有产出挂着、正在照它跑 |
@@ -477,8 +484,8 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 - **权限**：Bash 白名单是 `Bash(ai4sci *)`（带 `.venv/bin/` 路径的老写法也放行，前期别设坎；裸 `ai4sci` 找得到是因为适配器把本 venv 的 bin **追加**到 PATH 末尾），配置一律走起服务的人的环境变量，命令上不带。研究助理可写当前工作区（需求、原件、流程实例、七个阶段目录），库 `workflows/` 与 `templates/` 可读不可写（端口 `readable_paths`，适配器走 `--add-dir`；前言把库的实路径写给它）；流程助理只可写 `workflows/`。两组可写目录不相交，分权靠目录不靠指南里的一句「请不要」。
 - **长命令不进后台**：`claude -p` 里 Bash 超过 CLI 缺省的 2 分钟会被自动挪到后台、一轮结束就被杀。适配器起会话时设 `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` 关掉全部后台机制，并把 Bash 超时抬到与本轮超时一致；指南写明前台等、跑不完分批；真长的活走 `--detach` 作业。
 - **逐字流出**：端口的 `delta` 事件（刚到的几个字，不是累计；同一段说完仍有完整 `text`），契约写明每家适配器都必须逐字吐。Claude Code 适配器开 `--include-partial-messages` 只翻 `text_delta`；对话层往外吐但 events.jsonl 只留完整事件。
-- **落盘**：会话内容存在 CLI 自己的目录里，我们只记 session id；但每一轮的原生事件流自己留一份在 `.ai4sci/chats/<id>/turn-N/events.jsonl`（编辑台在 `studio/chats/`），它是"agent 那一轮到底做了什么"的唯一证据（P-3）。meta 记后端、session id、cwd、完成的轮数、累计花费、记着的旋钮；transcript 给人翻；忙锁 `inflight.json` 让同一段对话同一时刻只跑一轮；一轮有 `origin`：人，或框架来叫醒（作业跑完）。
-- **两张脸同一套函数**：`ai4sci chat new|send|list [--studio]` 在终端里聊，`ai4sci serve` 起标准库 HTTP + SSE 给页面。端点按域分前缀：`GET/POST /workspaces`、`GET /workspaces/<id>`（需求状态、每个阶段的产出、每条流程走到哪、在等谁）、`GET /workspaces/<id>/requirement`、`POST …/requirement/confirm`、`GET …/outputs/<stage>/<n>`、`POST …/outputs/<stage>/<n>/sign`、`GET …/flows`、`GET …/jobs[/<jid>]`；对话四个端点在 `/workspaces/<id>/chats…` 与 `/studio/chats…` 两个前缀下共用一套实现；库：`GET /stages` `GET /cap` `GET /workflows` `POST /workflows` `POST /workflows/check` `GET /templates[/<name>]` `GET /backends`；`GET /health`。清单在 `framework/chat/server.py` 文件头，看板读盘在 `boards.py`，全是纯函数，NaN 出门前换 None。
+- **落盘**：会话内容存在 CLI 自己的目录里，我们只记 session id；但每一轮的原生事件流自己留一份在 `projects/<p>/.ai4sci/chats/<cid>/turn-N/events.jsonl`（编辑台在 `studio/chats/`），`inbox/` 里是排队等念的作业结果，它是"agent 那一轮到底做了什么"的唯一证据（P-3）。meta 记后端、session id、cwd、完成的轮数、累计花费、记着的旋钮；transcript 给人翻；忙锁 `inflight.json` 让同一段对话同一时刻只跑一轮；一轮有 `origin`：人，或框架来叫醒（作业跑完）。
+- **两张脸同一套函数**：`ai4sci chat new|send|list [--studio]` 在终端里聊，`ai4sci serve` 起标准库 HTTP + SSE 给页面。端点按域分前缀：`GET/POST /projects`、`GET /projects/<p>`（每个工作区一行）、`POST /projects/<p>/workspaces`、`GET /projects/<p>/workspaces/<id>`（需求状态、每个阶段的产出、每条流程走到哪、在等谁）、`GET …/workspaces/<id>/requirement`、`POST …/requirement/confirm`、`GET …/outputs/<stage>/<n>`、`POST …/outputs/<stage>/<n>/sign`、`GET …/flows`、`GET …/jobs[/<jid>]`；对话四个端点在 `/projects/<p>/chats…` 与 `/studio/chats…` 两个前缀下共用一套实现；库：`GET /stages` `GET /cap` `GET /workflows` `POST /workflows` `POST /workflows/check` `GET /templates[/<name>]` `GET /backends`；`GET /health`。清单在 `framework/chat/server.py` 文件头，看板读盘在 `boards.py`，全是纯函数，NaN 出门前换 None。
 - **产出记对话号**：能力开工时把 `AI4SCI_CHAT_ID` 记进产出的 `meta.yaml`（终端里开的是空）。对话不绑流程：流程走到哪写在盘上，谁驱动的都一样；页面只拿它判断「当前对话最近碰的是哪条」。
 - **两个旋钮**：`knobs()` 由适配器自报（页面照单渲染，不写死哪家有什么），每轮的 `tuning`（模型 + 思考深度）翻成 Claude Code 的 `--model` / `--effort`。旋钮上只有具体值：开新对话时把 `agents.yaml` 里这家的缺省抄进对话 meta，之后每轮沿用、改了记进去；meta 里没有 `null`（P-25，老对话一次性填成当时的缺省）。「哪家」只在开新对话那一屏选，缺省照设置；旋钮清单拿这段对话那家的，不是缺省那家的。
 - 配置：哪家、模型、深度从 `agents.yaml` 读（P-25）；环境变量只剩 `AI4SCI_COORDINATOR_MAX_TURNS`（50）、`_MAX_BUDGET_USD`（每轮 2.0）、`_TIMEOUT_S`（900：它会调用命令等基线跑完）。
@@ -492,7 +499,8 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 
   | 词 | 指的是 | 不这么叫 |
   |---|---|---|
-  | 工作区 | 一份需求的目录 `workspaces/<id>/` | 项目、任务、房间 |
+  | 项目 | 一个课题的目录 `projects/<p>/`：一位助理、几个工作区、共用原件 | 课题组、仓库、文件夹 |
+  | 工作区 | 项目里一份需求的目录 `workspaces/<id>/` | 任务、房间、子项目 |
   | 需求 | `requirement.md` 与它的确认 `requirement.lock` | 提纲、任务书 |
   | 阶段 | 七个研究阶段之一：文献、假设、设计、实验、分析、写作、验证 | 环节、步 |
   | 能力 | 平台会干的一件事，两个 tag：步骤、skill；页面与流程文件里只叫能力 | 按钮、键、能力单元、工具 |
@@ -516,6 +524,7 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 
 - **文案**（P-21）：标签、列名、状态、节点名是两到四字名词；动词只在按钮上；句子只进解释层（hover、空态、展开层），一句为限，工程语言不口语。机器的名字不上屏——流程文件名、能力名、产出 id、参数名、CLI 参数一律翻译，翻译在源头：后端随数据给中文（能力 `title` `brief`、参数 `label`、流程 `title`、阶段名、阶段主文件的中文名），前端不拼不猜；流程文件名照工作区 id 的规矩由标题生成、不显示不让填；唯一例外是文件镜头，路径在那里是内容。能力三层对三种动作：名直接显示、一行 hover、详情点击跳转，一个阶段挂再多能力也只是名字的清单；执行者种类不上屏。机器判据：描述符 `label` / `brief` 由 `discover()` 断言；页面一条测试扫中文串、命中禁用词即失败，`font-mono` 只在文件镜头与代码块；给页面的 JSON 里凡 id / name / slug 必伴随中文字段。
 - **网页 `ui/web/`**：React 19 + Tailwind v4 + shadcn + React Bits 改装件（从 registry 捞来改，不手搓）+ React Flow，Vite 构建成静态文件，`ai4sci serve` 缺省端 `ui/web/dist`。视觉系统在内仓 `docs/DESIGN.md`：纸 / 墨 / 靛 / 铜绿 / 琥珀五色都是信息，思源宋体只给结论与标题，IBM Plex 正文；配图一律风景、走自己的 CDN（P-17，`assets.ts` 一处）；图标全站一套 Phosphor 内联；文案照上面的词表与三层规矩；输入框不画下划线。
+- **项目**（[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)，页面待做，先改后端）：地方栏列项目；门口那一屏起项目（一句话 = 研究问题）并顺手建第一个工作区，单课题看起来和只有工作区时一模一样；项目页 = 各工作区走到哪 + 对话 + 「新建工作区」；工作区页 = 看板 / 文件两个镜头，对话仍是项目那一段。下面几条写的是项目落地前的页面。
 - **地方栏**：最左一条，先选世界再选世界里的东西——底下「工作区 / 编辑台」双向开关，上面工作区世界里列封面块与「新建」，编辑台世界里工作区块收掉；页眉只属于当前地方。对话列表是抽屉，入口带字。
 - **门口那一屏**：一句话起工作区——写课题、选学科（需求提纲按学科起草）、回车即建；文件夹名从标题推、是内部 id 不显示也不让人填（[#109](https://github.com/zephyr4123/TJU-AI4Science/issues/109)），封面随名字换；进主页面时需求还没确认。
 - **主页面**按 `requirement.lock` 在不在分两个状态。未确认——需求文档就是页面：助理按模板起草的 `requirement.md` 渲染成看板（文档里实际有的二级标题各一格，模板留的「待填」是空格子），右边对话，一个动作「确认需求」；页面只渲染不编辑，改需求只走对话（一个文件一个生产者，diff 才有意义）。已确认——需求收成顶部一条（版本、时间、点开侧滑看全文；助理又改了就显示 diff 与「确认下一版」），下面**一条流程一张表**：横向是流程经过的阶段（有什么阶段就几列，列头阶段名 + 能力），纵向是每一列跑过的每一次产出（编号 + 一个词），断点是两列之间一道线，右上角一句话说在等谁；产出点开侧滑看记录、文件、确认（[#107](https://github.com/zephyr4123/TJU-AI4Science/issues/107)）。主页面还有第二个**镜头**——页眉「看板 / 文件」切换，对话列两边都在（[#111](https://github.com/zephyr4123/TJU-AI4Science/issues/111)，主人：每个工作区要能看见盘上实际的目录，之后单独 Git 管理）：不是地方栏上第三个地方（地方栏按数据边界分），是同一个工作区的另一个镜头——看板答「做到哪了、在等谁」，文件答「盘上到底有什么」。左边一棵带平台语义的目录树（阶段目录写阶段名 + 图标、产出那一层编号 + 状态词 + 冻结锁、`.ai4sci/` 灰显、懒加载），右边按种类渲染；只看不改，改动走对话（手改会撞冻结）；Git 状态先不画。对话：研究者的话进气泡，助理逐字流出的 Markdown，工具调用一行一条原样显示（不折叠、不翻译、刷新后不消失）；输入框上两枚下拉片换模型与思考深度。
@@ -528,6 +537,7 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
+| 2026-09-22 | §1 磁盘布局加 `projects/<p>/`（project.md、共用原件、对话归项目、收件箱）、规矩改「一个项目一位助理、一个工作区一份需求」加「跨工作区引用只限同一项目」；§4 长命令那条改收件箱；§5 命令行加 `project`、`show projects | project`、`--ws`、`AI4SCI_PROJECT`，删除边界加项目一行、工作区一行改，协调层适配的落盘与端点改 `/projects/<p>/…`，词表加「项目」、工作区改「项目里一份需求」，界面适配加「项目」一条（[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)） | 主人：一个课题要几个工作区支撑、最后合成一篇论文，缺一个聚合的边界；助理按工作区隔离没有全局视角会陷进茧房。定一个项目一位助理、工作区是它的工位 | 主人 + Claude |
 | 2026-09-22 | §5 执行层适配加 Codex 适配器实测清单（私有 CODEX_HOME、skills 逐个关、沙箱是门、无逐字事件、订阅无美元、嵌套会话的 CODEX_HOME 坑）；协调层适配加 Codex 续接、`guide_channel` 与 `tool_guide`（[#131](https://github.com/zephyr4123/TJU-AI4Science/issues/131)） | 适配器落地并演练到 `cap design` 后回写 | 主人 + Claude |
 | 2026-09-22 | §5 加「设置与自检」（`agents.yaml`、三层就近生效、`probe()`、`ai4sci check`、端点、环境变量退役）；命令行加 `agent` `check`；执行层 / 协调层适配的模型配置改读文件、旋钮删「默认」；界面适配加「设置」悬浮板与词表两行（P-25，[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)） | 全面适配 Codex 要先有「用哪家」的家；冷启动自检与设置页一并定 | 主人 + Claude |
 | 2026-09-22 | §1 skill 一节改成「skill 是能力的一种：tag 为 skill」，关系表两行改「能力·步骤 / 能力·skill」，流程示例文献格挂 pdf 与 download；词表改「能力」加「步骤」「skill」两行、「阶段」的不这么叫去掉「步骤」（[#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134)） | 主人看到复现看板文献格「能力 无」，定：skill 就是能力，打 tag 收纳；tag 就叫 skill、原来的能力叫步骤 | 主人 + Claude |

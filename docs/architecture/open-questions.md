@@ -92,6 +92,8 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 
 **2026-09-18 再记（[#70](https://github.com/zephyr4123/TJU-AI4Science/issues/70)）**：run 之上有了工作区（一份需求的家，P-15），但工作区之上仍没有目录：项目级产物（文献、假设、论文）的家等文献 / 写作能力落地时定，多半是「几个工作区 + 项目级文件」的一层。
 
+**2026-09-22 定（[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)）**：工作区之上加了 `projects/<p>/`——一个项目一位助理、共用原件 `materials/`、对话归项目。项目级产物（综述、论文）不是项目自己的文件：是项目里走写作流的那个工作区的产出，`--from` 兄弟工作区；项目级记忆仍是助理看盘（`show project`）不是对话记忆。
+
 ## Q-11 文献检索走 tools/ 学术 API 还是执行层联网
 
 **已定（2026-09-21，P-24，[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)）：用 agent 自带的搜索与读网页，不做按站点的学术 API 脚本。** 理由：论文的产物散在作者主页、README 里的网盘链接、Zenodo、issue 里，按 GitHub / HF / Semantic Scholar API 查的脚本只覆盖规整的那部分，漏的恰恰是难找的；两层适配器已放行 WebSearch / WebFetch（P-14）。找与挑在协调层对话里做，结果手写进文献格的 `sources.md` 带来源；「引用真伪」的零 LLM 判据以后在验证阶段按 DOI / arXiv id 核，与检索怎么做无关。原先的想法留档：
