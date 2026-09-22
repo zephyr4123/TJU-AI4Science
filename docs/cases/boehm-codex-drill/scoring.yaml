@@ -1,0 +1,30 @@
+format_version: 1
+metrics:
+- name: negative_log_likelihood
+  direction: minimize
+  primary: true
+- name: initial_negative_log_likelihood
+  direction: minimize
+- name: relative_nll_decrease
+  direction: maximize
+budget:
+  wall_clock_s: 60
+  max_iterations: 12
+  repeat_k: 3
+  accept_sigma: 2
+  min_delta: 0.1
+  inner_k: 1
+requirements:
+- id: R1
+  type: numeric
+  must_pass: true
+  description: 九个待估计参数均在 PEtab 给定边界内。
+- id: R2
+  type: numeric
+  must_pass: true
+  description: 最终负对数似然严格低于初始参数。
+- id: R3
+  type: numeric
+  must_pass: true
+  description: PEtab 目标函数能对全部测量数据返回有限值。
+domain: generic

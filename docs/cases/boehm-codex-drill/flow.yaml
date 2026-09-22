@@ -1,0 +1,12 @@
+name: research
+title: 从设计到验证
+summary: 评分脚本与基线，人核对；AutoResearch、分析初稿、数字核对，人验收。
+stages:
+- 设计
+- 断点: 评分指标核对
+- 实验:
+    auto-research:
+      max_iters: 3
+- 分析
+- 验证
+- 断点: 验收
