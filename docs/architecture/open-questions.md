@@ -13,7 +13,7 @@
 | Q-5 | 第一个真任务与学院 | 任务 | 玩具任务已跑通；2026-09-16 案例到，案例二选为第一个真任务包，学院是交叉领域 | 主人 | [#12](https://github.com/zephyr4123/TJU-AI4Science/issues/12) [#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1) |
 | Q-6 | 执行环境 | 执行层 / 工具 | 任务级 venv（uv 建，任务自带 env/），独立进程；2026-09-20 加：算力按人配（P-23，`~/.config/ai4sci/computes.yaml`，只有 SSH 只认密钥），远端只跑 harness；docker 与集群按需 | 主人 | [#13](https://github.com/zephyr4123/TJU-AI4Science/issues/13) |
 | Q-7 | 无人值守时协调层怎么找人 | 协调层 | 大方向已定：人在协调层对话里，框架不等人；异步通道 0.2.0 不做 | 主人 | [#14](https://github.com/zephyr4123/TJU-AI4Science/issues/14) |
-| Q-8 | 协调层与执行层各用哪个 CLI | 协调层 / 执行层 | 开工时定；执行层 Claude Code 先行，Codex 第二 | 主人 | [#15](https://github.com/zephyr4123/TJU-AI4Science/issues/15) |
+| Q-8 | 协调层与执行层各用哪个 CLI | 协调层 / 执行层 | 2026-09-22 关闭（P-25）：两层各选一家、可以不同，写在按人的 `agents.yaml`；Codex 先接执行层再接协调层 | 主人 | [#15](https://github.com/zephyr4123/TJU-AI4Science/issues/15) [#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130) |
 | Q-9 | 项目级记忆怎么做 | 协调层 | 改写：run 级已有（账本、笔记）；项目级（文献笔记、假设台账、跨 run 结论）是写作前提，0.2.0 之后第一优先 | 主人 | [#16](https://github.com/zephyr4123/TJU-AI4Science/issues/16) |
 | Q-10 | 协调层 skill 包放哪、怎么注入 | 协调层 | 2026-09-20 关闭（P-22）：指南在 `coordinator/` 由框架注入，工具型 skill 用通用 `skills/`；不走原生机制 | 主人 | [#19](https://github.com/zephyr4123/TJU-AI4Science/issues/19) |
 | Q-11 | 文献检索走 tools/ 学术 API 还是执行层联网 | 学科适配 / 验证 | tools/ 学术 API，引用才可验 | 主人 | [#31](https://github.com/zephyr4123/TJU-AI4Science/issues/31) |
@@ -83,6 +83,8 @@ platform 0.2.0 本机 venv 里起独立进程，隔离只到进程级；docker �
 ## Q-8 协调层与执行层各用哪个 CLI
 
 两层各自选，可以不一样。执行层：Claude Code 先行（本机有、flag 已对账），Codex 第二（本机有、flag 未对账），每加一个适配器必须带真 CLI 冒烟测试。协调层：开工时定，0.2.0 就是主人加交互态的 Claude Code。
+
+**2026-09-22 关闭（P-25，[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)）**：不再是「开工时定」——两层各用哪家是使用者自己的设置（`~/.config/ai4sci/agents.yaml`），页面「设置 → AI」两个下拉；Codex 适配器 [#131](https://github.com/zephyr4123/TJU-AI4Science/issues/131) 先接执行层、再接协调层，flag 只信官方文档并本机 spike。
 
 ## Q-9 项目级记忆怎么做
 
@@ -163,6 +165,7 @@ auto-research 的 `work/` 已经在产出目录里，但没有机制拦执行层
 
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
+| 2026-09-22 | Q-8 关闭：两层各用哪家是按人的设置（P-25，[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)） | 全面适配 Codex 时一并定 | 主人 + Claude |
 | 2026-09-21 | Q-11 关闭：文献检索用 agent 自带工具，不做学术 API 脚本（P-24，[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)） | 复现流定下来时一并定 | 主人 + Claude |
 | 2026-09-20 | Q-2、Q-10 关闭：skill 系统定型为 P-22（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 三路调研后与主人定 | 主人 + Claude |
 | 2026-09-10 | 建档，九项 | 三层未定，先把问题与候选写下来 | 主人 + Claude |

@@ -350,6 +350,8 @@ ai4sci env use --compute <名字> <解释器绝对路径>   用那台机器上�
 ai4sci env add --compute <名字> [--from <requirements.txt>] <包名>…   往那台机器现成的环境里补几个包：pip 进 env use 登记的解释器、重新 freeze、清单头部记补了什么（P-24：复现时镜像环境缺论文仓库要的包）
 ai4sci compute add <名字> --ssh user@host:port --key <路径> [--root <远端目录>]   接一台机器：写进按人的 computes.yaml，就地探测并报告（P-23）
 ai4sci compute check <名字> | list | remove <名字>   再探一遍 / 清单 / 删一条
+ai4sci agent list | check <名字> | use <名字> --for chat|executor [--model <id>] [--effort <id>]   底座（P-25）：有哪几家 coding agent CLI、装了没 / 版本 / 登录 / 能不能说话；换助理或执行层用哪家、每家新对话用的模型与深度，写按人的 agents.yaml
+ai4sci check                           冷启动自检（P-25）：底座每家 probe、算力每台 check、存放（数据根在哪、可写、余量）；一项不过退出码非零
                                       skill（P-22）：agent 的工具包，不是流程里的一格；清单、正文、起脚本（uv run --locked --offline）
 ```
 
@@ -398,6 +400,27 @@ slurm:  put=rsync     submit=sbatch           cancel=scancel     get=rsync
 - 0.2.0 只有 `local`；ssh 是第一轮真任务（PINNs 纯 CPU 一次训练 8.5 分钟、基线 2–3 小时）逼出来的第二个实现，主人租了 AutoDL。
 - 不做：抽象基类加模板方法、装饰器注册表、工厂套工厂。一个后端一个文件，60 到 80 行，与 `backends/` 同一标准。
 
+### 设置与自检
+
+底座照算力办（P-25，[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)）。按人的 `~/.config/ai4sci/` 下两个文件并列，各自一个读取点：
+
+```
+computes.yaml   我有哪几台机器          framework/computes.py（P-23）
+agents.yaml     我用哪家 coding agent   framework/agents.py
+  chat: claude_code        # 助理用哪家
+  executor: codex          # 执行层用哪家
+  agents:
+    claude_code: {model: sonnet, effort: medium, last_check: {...}}
+    codex:       {model: gpt-5.3-codex, effort: medium, last_check: {...}}
+```
+
+- **人的选择只有这几样**：两层各用哪家、每家新对话用的模型与思考深度。值必须在那家 `knobs()` 的清单上（`Knobs.check`），不在就报错，不静默回落；一律具体值，没有「跟缺省」。文件里没有的家（`_BACKENDS` 没这一行）读到就报错。
+- **三层就近生效**：这一轮实际用什么 = 这段对话 meta 里记的（旋钮改的）← 开新对话时从 `agents.yaml` 抄进去 ← 冷启动时清单第一项。改设置只影响之后开的对话。执行层：`agents.yaml` 的缺省 ← `ai4sci cap --backend / --model` 覆盖，记进产出 `meta.yaml`。
+- **`probe()`**：端口第三个方法，每家适配器实现，返回 `Probe{installed, version, min_version_ok, logged_in, spoke: {duration_s, cost_usd}, notes[]}`；`agent check` 把它写进 `last_check`，页面与 `agent list` 读文件不再连。说一句话那步走与真跑一样的隔离参数。
+- **`ai4sci check`**：三项同一种形状「探测 → 报告 → 写 `last_check`」，一项不过退出码非零；`GET /health` 带一位「有没有没过的自检项」给页面亮点用。
+- **端点**：`GET /settings`（三段事实 + 人的选择）、`POST /settings/agents`（改用哪家与缺省，过 `Knobs.check`）、`POST /settings/check`（全盘或单项）、算力的增删走现有 `compute` 函数。页面「设置」是这些端点的客户端。
+- **环境变量**：`AI4SCI_COORDINATOR_MODEL` `_EFFORT`、`AI4SCI_EXECUTOR_MODEL` 退役；留下的只有位置（`AI4SCI_HOME`、各 `_ROOT`、`AI4SCI_COMPUTES` / `AI4SCI_AGENTS` 指向别处给测试用）与能力级的轮数 / 预算 / 超时。
+
 ### 执行层适配
 
 一个 `Runner` 协议，每个 CLI 一个适配器。形状由 R-1 spike 实测定案（[#20](https://github.com/zephyr4123/TJU-AI4Science/issues/20)，代码 `backends/`）：
@@ -407,7 +430,7 @@ run(prompt, cwd, timeout_s, allowed_paths, bash_rules=())
   -> RunResult{exit_code, events[], changed_files[], cost_usd, duration_s, timed_out, stdout_tail}
 ```
 
-- **非交互 + 结构化输出**：Claude Code 走 `claude -p ... --output-format stream-json --verbose`，Codex 走 `codex exec --json`（落地前对账）。
+- **非交互 + 结构化输出**：Claude Code 走 `claude -p ... --output-format stream-json --verbose`，Codex 走 `codex exec --json`（[#131](https://github.com/zephyr4123/TJU-AI4Science/issues/131)，flag 与事件按官方文档对账、本机 spike 实测后回写到这里）。
 - **隔离**（P-11）：`--setting-sources ""` 是承重位，不带它项目 CLAUDE.md 会原样进上下文、plugin / hook / 自定义 agent 全加载；再加 `--strict-mcp-config`（MCP 清零）与 `--disable-slash-commands`（skill 清零）。`--bare` 看似等价但会跳过 keychain 读取导致未登录，不能用。隔离后一句 pong 从 $0.46 降到 $0.05。
 - **权限**：`--permission-mode dontAsk` + `--allowedTools` 白名单，只放行 `allowed_paths` 内的 Edit / Write；绝对路径规则必须写 `//`（单个 `/` 被当作项目根相对路径，会把该放行的也拒掉）。dontAsk 下只读 Bash 自动放行、写操作 Bash 被拒；Bash 规则由框架按会话给，执行层只有 `Bash(ai4sci skill *)`（P-22）。不用 `--dangerously-skip-permissions` / `bypassPermissions`。这是第一道门，真正的门仍是 runner 事后拿 `changed_files` 判：`code/` 之外有改动就判 crash 回滚（P-7）。
 - **联网只用 CLI 自带的工具**（主人 2026-09-20，[#114](https://github.com/zephyr4123/TJU-AI4Science/issues/114)）：两层适配器都必须放行这家 CLI 自带的联网搜索与网页读取工具（Claude Code 是 `WebSearch` / `WebFetch`）。实测 dontAsk 下不在白名单就被拒，拒绝信息还教 agent「用别的工具试」，它于是在 Bash 里拿 curl 硬凑，效果差；放行后一轮里搜索 + 读页都通。prompt 那一侧：研究助理的前言与指南、执行层 prompt 的通用段写了什么时候查（研究者给链接、论文有没有公开代码与数据、API / 报错拿不准、近期事实）、只用自带工具、查到的带来源链接。执行层子进程的环境与协调层同一份（`build_env`：venv 的 bin 进 PATH、关后台、Bash 超时对齐本轮）——执行层要跑 `ai4sci skill`，skill 脚本可能跑几分钟。
@@ -415,7 +438,7 @@ run(prompt, cwd, timeout_s, allowed_paths, bash_rules=())
 - **超时**：`kill_tree` 逐进程组杀。CLI 的 Bash 工具把 shell 起在自己的新进程组里，只 `killpg` CLI 那一组会留下 PPID=1 的孤儿；先趟进程树再叶子组先杀。
 - **成本**：只认最终 `result` 事件的 `total_cost_usd` 与 `duration_ms`；超时被杀时 result 不会发出，成本填 NaN 表示未知，绝不填 0。
 - **事件流落盘**：完整 stream-json 与 stderr 写 `cwd/.ai4sci/executor-<ts>.jsonl|.stderr.log`，给执行层的只有摘要（P-9）。stdin 给 DEVNULL（否则 CLI 等 3 秒），stdout 与 stderr 各一个线程排空。
-- 配置从环境变量读：`AI4SCI_EXECUTOR_MAX_TURNS`（30）、`AI4SCI_EXECUTOR_MAX_BUDGET_USD`（2.0）、`AI4SCI_EXECUTOR_MODEL`（缺省不传）、`AI4SCI_EXECUTOR_TIMEOUT_S`（内环里执行层单次调用的墙钟上限，缺省 900）、`AI4SCI_RUNS_ROOT`（runs 根目录，缺省仓根 `runs/`）。执行层模型该由 manifest 或协调层显式指定，这是待办。
+- 配置从环境变量读：`AI4SCI_EXECUTOR_MAX_TURNS`（30）、`AI4SCI_EXECUTOR_MAX_BUDGET_USD`（2.0）、模型从 `agents.yaml` 读（P-25，`AI4SCI_EXECUTOR_MODEL` 退役）、`AI4SCI_EXECUTOR_TIMEOUT_S`（内环里执行层单次调用的墙钟上限，缺省 900）、`AI4SCI_RUNS_ROOT`（runs 根目录，缺省仓根 `runs/`）。用哪家、哪个模型由 `agents.yaml` 定、调用时可覆盖、记进产出 meta（P-25）。
 - 任何适配器合入必须带一个真实调用点和一个真 CLI 的冒烟测试（P-8）；冒烟测试 `AI4SCI_LIVE=1` 才跑，CI 不跑。
 
 ### 协调层适配
@@ -436,8 +459,8 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 - **落盘**：会话内容存在 CLI 自己的目录里，我们只记 session id；但每一轮的原生事件流自己留一份在 `.ai4sci/chats/<id>/turn-N/events.jsonl`（编辑台在 `studio/chats/`），它是"agent 那一轮到底做了什么"的唯一证据（P-3）。meta 记后端、session id、cwd、完成的轮数、累计花费、记着的旋钮；transcript 给人翻；忙锁 `inflight.json` 让同一段对话同一时刻只跑一轮；一轮有 `origin`：人，或框架来叫醒（作业跑完）。
 - **两张脸同一套函数**：`ai4sci chat new|send|list [--studio]` 在终端里聊，`ai4sci serve` 起标准库 HTTP + SSE 给页面。端点按域分前缀：`GET/POST /workspaces`、`GET /workspaces/<id>`（需求状态、每个阶段的产出、每条流程走到哪、在等谁）、`GET /workspaces/<id>/requirement`、`POST …/requirement/confirm`、`GET …/outputs/<stage>/<n>`、`POST …/outputs/<stage>/<n>/sign`、`GET …/flows`、`GET …/jobs[/<jid>]`；对话四个端点在 `/workspaces/<id>/chats…` 与 `/studio/chats…` 两个前缀下共用一套实现；库：`GET /stages` `GET /cap` `GET /workflows` `POST /workflows` `POST /workflows/check` `GET /templates[/<name>]` `GET /backends`；`GET /health`。清单在 `framework/chat/server.py` 文件头，看板读盘在 `boards.py`，全是纯函数，NaN 出门前换 None。
 - **产出记对话号**：能力开工时把 `AI4SCI_CHAT_ID` 记进产出的 `meta.yaml`（终端里开的是空）。对话不绑流程：流程走到哪写在盘上，谁驱动的都一样；页面只拿它判断「当前对话最近碰的是哪条」。
-- **两个旋钮**：`knobs()` 由适配器自报（页面照单渲染，不写死哪家有什么；拿不准的缺省报 None，页面写「默认」不猜），每轮的 `tuning`（模型 + 思考深度）翻成 Claude Code 的 `--model` / `--effort`；对话 meta 记住上次的选。
-- 配置从环境变量读：`AI4SCI_COORDINATOR_MODEL`（缺省不传）、`_EFFORT`（缺省不传，人在页面上改）、`_MAX_TURNS`（50）、`_MAX_BUDGET_USD`（每轮 2.0）、`_TIMEOUT_S`（900：它会调用命令等基线跑完）。
+- **两个旋钮**：`knobs()` 由适配器自报（页面照单渲染，不写死哪家有什么），每轮的 `tuning`（模型 + 思考深度）翻成 Claude Code 的 `--model` / `--effort`。旋钮上只有具体值：开新对话时把 `agents.yaml` 里这家的缺省抄进对话 meta，之后每轮沿用、改了记进去；meta 里没有 `null`（P-25，老对话一次性填成当时的缺省）。「哪家」只在开新对话那一屏选，缺省照设置；旋钮清单拿这段对话那家的，不是缺省那家的。
+- 配置：哪家、模型、深度从 `agents.yaml` 读（P-25）；环境变量只剩 `AI4SCI_COORDINATOR_MAX_TURNS`（50）、`_MAX_BUDGET_USD`（每轮 2.0）、`_TIMEOUT_S`（900：它会调用命令等基线跑完）。
 - 不做：多用户、鉴权（本机单人服务）。协调 agent 从终端里技术上也能 `requirement confirm` 与 `sign`，只有页面上那两处能做到"只有人能确认"；指南写明它不替人做。
 
 ### 界面适配
@@ -465,6 +488,8 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
   | 职责 / 边界 / 输入 / 产出 / 终止条件 | 能力描述符的五栏 | 干什么 / 不干什么 / 要带什么进来 / 留下什么 / 什么时候停 |
   | 状态词 | 运行中、失败、待确认、已确认、完成 | 在跑、没成、签了 |
   | 按钮 | 保存、覆盖、排列、确认、打开对话、打开目录 | 整理、提交 |
+  | 设置 | 按人的 `~/.config/ai4sci/` 两个文件加外观，页面上那块悬浮板 | 配置、偏好、系统 |
+  | AI | 设置里「助理用哪家、执行层用哪家」那一段；每一家写产品名（Claude Code、Codex） | 底座、后端、backend、模型（那是旋钮） |
 
 - **文案**（P-21）：标签、列名、状态、节点名是两到四字名词；动词只在按钮上；句子只进解释层（hover、空态、展开层），一句为限，工程语言不口语。机器的名字不上屏——流程文件名、能力名、产出 id、参数名、CLI 参数一律翻译，翻译在源头：后端随数据给中文（能力 `title` `brief`、参数 `label`、流程 `title`、阶段名、阶段主文件的中文名），前端不拼不猜；流程文件名照工作区 id 的规矩由标题生成、不显示不让填；唯一例外是文件镜头，路径在那里是内容。能力三层对三种动作：名直接显示、一行 hover、详情点击跳转，一个阶段挂再多能力也只是名字的清单；执行者种类不上屏。机器判据：描述符 `label` / `brief` 由 `discover()` 断言；页面一条测试扫中文串、命中禁用词即失败，`font-mono` 只在文件镜头与代码块；给页面的 JSON 里凡 id / name / slug 必伴随中文字段。
 - **网页 `ui/web/`**：React 19 + Tailwind v4 + shadcn + React Bits 改装件（从 registry 捞来改，不手搓）+ React Flow，Vite 构建成静态文件，`ai4sci serve` 缺省端 `ui/web/dist`。视觉系统在内仓 `docs/DESIGN.md`：纸 / 墨 / 靛 / 铜绿 / 琥珀五色都是信息，思源宋体只给结论与标题，IBM Plex 正文；配图一律风景、走自己的 CDN（P-17，`assets.ts` 一处）；图标全站一套 Phosphor 内联；文案照上面的词表与三层规矩；输入框不画下划线。
@@ -473,12 +498,14 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 - **主页面**按 `requirement.lock` 在不在分两个状态。未确认——需求文档就是页面：助理按模板起草的 `requirement.md` 渲染成看板（文档里实际有的二级标题各一格，模板留的「待填」是空格子），右边对话，一个动作「确认需求」；页面只渲染不编辑，改需求只走对话（一个文件一个生产者，diff 才有意义）。已确认——需求收成顶部一条（版本、时间、点开侧滑看全文；助理又改了就显示 diff 与「确认下一版」），下面**一条流程一张表**：横向是流程经过的阶段（有什么阶段就几列，列头阶段名 + 能力），纵向是每一列跑过的每一次产出（编号 + 一个词），断点是两列之间一道线，右上角一句话说在等谁；产出点开侧滑看记录、文件、确认（[#107](https://github.com/zephyr4123/TJU-AI4Science/issues/107)）。主页面还有第二个**镜头**——页眉「看板 / 文件」切换，对话列两边都在（[#111](https://github.com/zephyr4123/TJU-AI4Science/issues/111)，主人：每个工作区要能看见盘上实际的目录，之后单独 Git 管理）：不是地方栏上第三个地方（地方栏按数据边界分），是同一个工作区的另一个镜头——看板答「做到哪了、在等谁」，文件答「盘上到底有什么」。左边一棵带平台语义的目录树（阶段目录写阶段名 + 图标、产出那一层编号 + 状态词 + 冻结锁、`.ai4sci/` 灰显、懒加载），右边按种类渲染；只看不改，改动走对话（手改会撞冻结）；Git 状态先不画。对话：研究者的话进气泡，助理逐字流出的 Markdown，工具调用一行一条原样显示（不折叠、不翻译、刷新后不消失）；输入框上两枚下拉片换模型与思考深度。
 - **编辑台**：两个镜头，页眉「流程 / 能力」切换（[#112](https://github.com/zephyr4123/TJU-AI4Science/issues/112)）。流程：React Flow 节点画布，线性链，节点 = 研究阶段（能力小片 + 参数在节点里）或断点，画布铺满、左上角阶段梯 + 玻璃题头（标题与说明；文件名由标题生成，不显示不让填）、右上角流程库与保存、选中节点配置参数（勾选、名字、参数的 `label`；`Param.in_flow` 分开每次调用才定的参数）、问题贴节点；节点可自由摆、坐标进文件的 `layout` 块、「排列」回自动排。能力：七个阶段各一列名字（空的写「暂无」），hover 一行，点了原地切详情页（一行、参数、五栏；产出栏先列本阶段主文件），节点小片与配置板里的名字跳同一页。流程助理是右下角的悬浮对话窗，默认开着。
 - **门禁**：`make ui-check`（tsc + oxlint + vitest + 构建）并入 `make check` 与 CI；依赖只进 `ui/web/node_modules`；`git ls-files ui/` 里没有二进制。浏览器闭环用 playwright 取证。
+- **设置**（P-25，[#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134)）：入口在地方栏的脚（带字「设置」，旁一个点，有自检项没过才亮；窄屏在地方清单底部），页眉不再放主题开关。点开是压在当前地方上的一块悬浮板（底图照旧铺满、四周留边、圆角、投影），左索引右滚动四段：AI（段首「对话用 / 执行用」两个下拉；每家一块：名字 + 版本、机器说的一句话状态、模型 / 深度下拉、「检查」）、算力（一张表 + 贴一行 ssh、密钥从 `~/.ssh` 里挑、「添加」）、存放（数据根与设置目录在哪，只看）、外观（浅 / 深 / 跟随系统）。状态是一句话不是徽章；没有序号、没有全大写小标题、段与段之间不画框。Claude 与 OpenAI 用品牌图标（simple-icons，内联 SVG），其余仍是 Phosphor。开新对话那一屏加第三枚旋钮「哪家」。
 - **`ui/tui/`**：留位置没建。
 
 ## 变更记录
 
 | 日期 | 改了什么 | 为什么 | 认可 |
 |---|---|---|---|
+| 2026-09-22 | §5 加「设置与自检」（`agents.yaml`、三层就近生效、`probe()`、`ai4sci check`、端点、环境变量退役）；命令行加 `agent` `check`；执行层 / 协调层适配的模型配置改读文件、旋钮删「默认」；界面适配加「设置」悬浮板与词表两行（P-25，[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)） | 全面适配 Codex 要先有「用哪家」的家；冷启动自检与设置页一并定 | 主人 + Claude |
 | 2026-09-20 | §1 加「skill」一节：与能力 / 领域包的关系表、agentskills.io 格式与 frontmatter、脚本规矩（PEP 723 + uv 锁 + `--locked --offline`）、不建工作区级 venv、承接与门禁、清单注入、三个子命令、第一个 skill `pdf` 的契约；§5 命令行加 `skill`（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 主人要通用的 skill 系统与解析论文 PDF 的第一个 skill；调研后定不做工作区级 venv、先简单后端再 MinerU 实测 | 主人 + Claude |
 | 2026-09-20 | §1「skill」按落地回写：`run` 加 `--script`、执行层白名单 `ai4sci skill *`、领域 skill 不再全文注入也不随实验快照、两家 pdf 后端的实测与缺省；§5 执行层适配 `run()` 加 `bash_rules`、加「联网只用 CLI 自带的工具」一条（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113) [#114](https://github.com/zephyr4123/TJU-AI4Science/issues/114)） | 落地时的实测与取舍 | 主人 + Claude |
 | 2026-09-20 | §5 命令行加 `job stop`、`env resolve`，记第一轮真任务（PINNs）逼出的三条：停作业、按包名算环境清单 + 建完查完整 + `--continue` 遇环境变了拒、设计草稿先 `ruff --fix-only` 修 import 顺序（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)） | Claude 扮小白研究者跑第一轮闭环，助理与执行层行为都对，坑全在平台 | 主人 + Claude |
