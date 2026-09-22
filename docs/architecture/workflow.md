@@ -345,6 +345,9 @@ ai4sci skill list | show <name> | run <name> [--script <文件>] [--out <dir>] [
 ai4sci skill run download git <url> [--commit <sha>] [--into <名字>] | file <url> [--sha256 <hash>] | hf <repo> [--type dataset|model]
                                       拉材料（P-24）：落工作区 materials/<名字>/，stdout 一行收据（来源、commit / hash、路径）；两层 agent 都能按
 ai4sci job stop <作业号>                     人叫停一个后台作业：杀整棵进程树，作业记 stopped、它的产出记失败（页面同一个动作）
+ai4sci output remove <id> | flow remove <name> | chat remove <对话号> [--studio] | workspace remove <id> | workflow remove <name>
+                                      删人产生的东西（主人 2026-09-22，见下「删除边界」）：产出只删叶子、流程实例挂着产出拒、对话连 CLI 那边的会话、
+                                      工作区连每台机器上的镜像；出厂的流程拒。目录外没清干净的逐条打出、退 1，本机已删照说
 ai4sci env resolve [--python X.Y] [--compute <名字>] <包名>…   隔离新建：按包名算出钉死传递依赖的完整清单进 materials/env/（uv pip compile，会联网；--compute 到那台机器上算）
 ai4sci env use --compute <名字> <解释器绝对路径>   用那台机器上现成的环境：探版本、pip freeze 当清单、写 materials/env/interpreter（P-23 的两问）
 ai4sci env add --compute <名字> [--from <requirements.txt>] <包名>…   往那台机器现成的环境里补几个包：pip 进 env use 登记的解释器、重新 freeze、清单头部记补了什么（P-24：复现时镜像环境缺论文仓库要的包）
@@ -399,6 +402,22 @@ slurm:  put=rsync     submit=sbatch           cancel=scancel     get=rsync
 - **ssh 适配器**（[#118](https://github.com/zephyr4123/TJU-AI4Science/issues/118)）：`put` = rsync 任务目录到 `<root>/<产出 id>/`；`submit` = `ssh … nohup setsid launcher.sh` 拿远端 pid / pgid 写 `Job`（句柄落盘，续跑接得回）；`wait` 轮询；`cancel` = 远端 `kill -- -pgid`；`get` = rsync 产物回来。远端 venv 按 `env/` 用远端 uv 建，建不出就 EnvBuildError。冒烟测试 `AI4SCI_LIVE=1` 连真机器，CI 不跑。
 - 0.2.0 只有 `local`；ssh 是第一轮真任务（PINNs 纯 CPU 一次训练 8.5 分钟、基线 2–3 小时）逼出来的第二个实现，主人租了 AutoDL。
 - 不做：抽象基类加模板方法、装饰器注册表、工厂套工厂。一个后端一个文件，60 到 80 行，与 `backends/` 同一标准。
+
+### 删除边界
+
+**平台出厂的不能删，人在平台上产生的都能删；删就从根级联删干净，没有软删除、没有回收站**（主人 2026-09-22，[#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134)）。规矩一句话：一个东西拥有的全在它目录底下，删它 = 删目录；目录外的（对话在 CLI 那边的会话、工作区在每台机器上的镜像）跟着一起清。
+
+| 东西 | 能不能删 | 级联删掉什么 | 什么时候拒 |
+|---|---|---|---|
+| 能力（步骤 / skill）、出厂流程、需求模板、领域包、底座 | **不能**，平台的底 | — | — |
+| 流程库里人存的流程 | 能 | 那份文件；取到工作区的实例是拷贝，不受影响 | — |
+| 工作区 | 能 | 整个目录（需求、原件、产出、流程实例、对话、作业记录）+ 每段对话在 CLI 那边的会话（`Chat.forget`）+ 每台 ssh 机器上的镜像（`Compute.remove_dir`） | 有作业或对话在跑 |
+| 对话 | 能 | 目录 + CLI 那边的会话 | 这一轮还在跑 |
+| 产出 | 能，**只能删叶子** | 目录；作业记录留着、结论行补「产出已删」；编号不复用 | 被下游 `from` 读过（删了 hash 对账断）、正在跑 |
+| 流程实例 | 能 | 那份文件 | 有产出挂着、正在照它跑 |
+| 算力 | 能（本机不能） | 清单里那一条 | — |
+
+目录外那部分删不掉不吞也不拦：本机照删，没清干净的每条记成一句人话（终端退 1、页面摆在正文顶上）。页面上四处入口都是同一枚「按住一秒才算数」的键；助理只在研究者明确要求时删，删前复述要删什么。
 
 ### 设置与自检
 
@@ -512,6 +531,7 @@ knobs() -> 这家 CLI 有哪些模型、哪几档思考深度、不选时用什�
 | 2026-09-22 | §5 执行层适配加 Codex 适配器实测清单（私有 CODEX_HOME、skills 逐个关、沙箱是门、无逐字事件、订阅无美元、嵌套会话的 CODEX_HOME 坑）；协调层适配加 Codex 续接、`guide_channel` 与 `tool_guide`（[#131](https://github.com/zephyr4123/TJU-AI4Science/issues/131)） | 适配器落地并演练到 `cap design` 后回写 | 主人 + Claude |
 | 2026-09-22 | §5 加「设置与自检」（`agents.yaml`、三层就近生效、`probe()`、`ai4sci check`、端点、环境变量退役）；命令行加 `agent` `check`；执行层 / 协调层适配的模型配置改读文件、旋钮删「默认」；界面适配加「设置」悬浮板与词表两行（P-25，[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)） | 全面适配 Codex 要先有「用哪家」的家；冷启动自检与设置页一并定 | 主人 + Claude |
 | 2026-09-22 | §1 skill 一节改成「skill 是能力的一种：tag 为 skill」，关系表两行改「能力·步骤 / 能力·skill」，流程示例文献格挂 pdf 与 download；词表改「能力」加「步骤」「skill」两行、「阶段」的不这么叫去掉「步骤」（[#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134)） | 主人看到复现看板文献格「能力 无」，定：skill 就是能力，打 tag 收纳；tag 就叫 skill、原来的能力叫步骤 | 主人 + Claude |
+| 2026-09-22 | §5 加「删除边界」一节与五条 remove 命令：出厂的不能删、人产生的都能删、从根级联、没有软删除；产出只删叶子（[#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134)） | 主人：对话与工作区没有删除，边界要明确，能力不能删，删要从根级联 | 主人 + Claude |
 | 2026-09-20 | §1 加「skill」一节：与能力 / 领域包的关系表、agentskills.io 格式与 frontmatter、脚本规矩（PEP 723 + uv 锁 + `--locked --offline`）、不建工作区级 venv、承接与门禁、清单注入、三个子命令、第一个 skill `pdf` 的契约；§5 命令行加 `skill`（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)） | 主人要通用的 skill 系统与解析论文 PDF 的第一个 skill；调研后定不做工作区级 venv、先简单后端再 MinerU 实测 | 主人 + Claude |
 | 2026-09-20 | §1「skill」按落地回写：`run` 加 `--script`、执行层白名单 `ai4sci skill *`、领域 skill 不再全文注入也不随实验快照、两家 pdf 后端的实测与缺省；§5 执行层适配 `run()` 加 `bash_rules`、加「联网只用 CLI 自带的工具」一条（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113) [#114](https://github.com/zephyr4123/TJU-AI4Science/issues/114)） | 落地时的实测与取舍 | 主人 + Claude |
 | 2026-09-20 | §5 命令行加 `job stop`、`env resolve`，记第一轮真任务（PINNs）逼出的三条：停作业、按包名算环境清单 + 建完查完整 + `--continue` 遇环境变了拒、设计草稿先 `ruff --fix-only` 修 import 顺序（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)） | Claude 扮小白研究者跑第一轮闭环，助理与执行层行为都对，坑全在平台 | 主人 + Claude |
