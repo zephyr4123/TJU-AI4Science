@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-23
+
 ### 修复
 - 纲领 P-15 / P-16 与 workflow.md：流程库分出厂的（`workflows/`，只读）与人存的（数据根 `studio/workflows/`）两层，流程助理只写后者；此前人存的流程落进出厂目录（#149）
 
@@ -78,7 +80,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.3.0...v1.0.0
 [0.3.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.1.1...v0.2.0
