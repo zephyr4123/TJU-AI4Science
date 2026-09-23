@@ -1,16 +1,24 @@
 #!/usr/bin/env bash
-# changelog.sh —— CHANGELOG.md 的机器判据。零依赖：bash 3.2+ / grep / sed / awk，本机与 CI runner 都能跑。
+# changelog.sh —— CHANGELOG.md 的机器判据。零依赖：bash 3.2+ / grep / sed / awk / wc，本机与 CI runner 都能跑。
 #
-#   changelog.sh check [--tag vX.Y.Z] [FILE]   校验格式；带 --tag 时还要求最新发布版本 == tag
-#   changelog.sh notes X.Y.Z [FILE]            打印某个版本的条目正文（发 GitHub Release 用）
-#   changelog.sh release X.Y.Z [FILE]          把 Unreleased 轮转成「[X.Y.Z] - 今天」，并维护底部链接
+#   changelog.sh check [--tag vX.Y.Z | vX.Y.Z-rc.N] [FILE]
+#       校验格式；带 --tag：正式版要求最新发布版本 == tag，预发布（-rc.N）要求 X.Y.Z 还没发过且 Unreleased 非空
+#   changelog.sh notes X.Y.Z | X.Y.Z-rc.N [FILE]
+#       打印某个版本的条目正文（发 GitHub Release 用）；预发布打印 Unreleased 的正文
+#   changelog.sh release X.Y.Z [FILE]
+#       把 Unreleased 轮转成「[X.Y.Z] - 今天」，并维护底部链接；预发布不轮转（只打 tag）
 #
 # 格式遵循 Keep a Changelog：`## [Unreleased]` 在最前，其后是 `## [X.Y.Z] - YYYY-MM-DD` 按版本降序，
 # 文件末尾是 `[Unreleased]: <url>` 与 `[X.Y.Z]: <url>` 链接引用。
+# Unreleased 的写法（ADR-0004）：一条一行、≤ 200 字（按 600 字节算）、带 #issue 或链接；分类只用 新增 / 变更 / 修复 / 移除 / 安全。
+# 历史小节不回查：规矩从 1.0.0 起生效。
 set -euo pipefail
 
 SEMVER='[0-9]+\.[0-9]+\.[0-9]+'
+PRERELEASE='-rc\.[0-9]+'
 DATE='[0-9]{4}-[0-9]{2}-[0-9]{2}'
+MAX_ENTRY_BYTES=600
+CATEGORIES='新增|变更|修复|移除|安全'
 
 die() { echo "changelog: $*" >&2; exit 1; }
 
@@ -49,11 +57,37 @@ section_body() {
     }' "$file"
 }
 
+# Unreleased 的写法：只许「### 分类」与「- 一行一条」；每条 ≤ MAX_ENTRY_BYTES 字节、带 #issue 或链接
+check_unreleased_entries() {
+  local file="$1" line n bad=""
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    if printf '%s' "$line" | grep -qE '^### '; then
+      printf '%s' "$line" | grep -qE "^### ($CATEGORIES)\$" || bad="$bad
+    分类只用 新增 / 变更 / 修复 / 移除 / 安全：$line"
+      continue
+    fi
+    if ! printf '%s' "$line" | grep -qE '^- '; then
+      bad="$bad
+    不是「- 」开头的一条（一条一行，不换行续写）：${line:0:60}"
+      continue
+    fi
+    n=$(printf '%s' "$line" | wc -c | tr -d ' ')
+    [ "$n" -le "$MAX_ENTRY_BYTES" ] || bad="$bad
+    超过 200 字（细节写进 issue，这里只留一句）：${line:0:60}…"
+    printf '%s' "$line" | grep -qE '#[0-9]+|https?://' || bad="$bad
+    没带 #issue 或链接：${line:0:60}"
+  done <<EOF
+$(section_body "$file" Unreleased)
+EOF
+  [ -z "$bad" ] || die "Unreleased 的条目不合规矩（一条一行、≤ 200 字、带 #issue；见 CONTRIBUTING「CHANGELOG 怎么写」）：$bad"
+}
+
 cmd_check() {
   local tag="" file="CHANGELOG.md"
   while [ $# -gt 0 ]; do
     case "$1" in
-      --tag) [ $# -ge 2 ] || die "--tag 后面要跟 vX.Y.Z"; tag="$2"; shift 2 ;;
+      --tag) [ $# -ge 2 ] || die "--tag 后面要跟 vX.Y.Z 或 vX.Y.Z-rc.N"; tag="$2"; shift 2 ;;
       *) file="$1"; shift ;;
     esac
   done
@@ -65,7 +99,7 @@ cmd_check() {
 
   local bad
   bad=$(grep -E '^## \[' "$file" | grep -vE '^## \[Unreleased\]$' | grep -vE "^## \[$SEMVER\] - $DATE\$" || true)
-  [ -z "$bad" ] || die "版本标题格式不对，应为「## [X.Y.Z] - YYYY-MM-DD」：
+  [ -z "$bad" ] || die "版本标题格式不对，应为「## [X.Y.Z] - YYYY-MM-DD」（预发布不占小节）：
 $bad"
 
   local prev="" v
@@ -78,10 +112,22 @@ $bad"
     prev="$v"
   done
 
+  check_unreleased_entries "$file"
+
   if [ -n "$tag" ]; then
-    local want="${tag#v}" top
-    printf '%s' "$want" | grep -qE "^$SEMVER\$" || die "tag 必须形如 vX.Y.Z，收到：$tag"
+    local want="${tag#v}" top base
     top=$(released_versions "$file" | head -n1)
+    if printf '%s' "$want" | grep -qE "^$SEMVER$PRERELEASE\$"; then
+      # 预发布：X.Y.Z 还没发过（要严格大于已发的最新版），Unreleased 里有东西可发
+      base=$(printf '%s' "$want" | sed -E 's/-rc\.[0-9]+$//')  # bash 3.2 的 ${x%%-rc.*} 在 UTF-8 下会炸，用 sed
+      if [ -n "$top" ]; then
+        semver_gt "$base" "$top" || die "预发布 $tag 的版本 $base 必须大于已发布的最新版本 $top"
+      fi
+      [ -n "$(section_body "$file" Unreleased)" ] || die "Unreleased 小节是空的，没有可预发布的内容"
+      echo "✓ $file 格式合规，预发布 $tag 对应 Unreleased（尚未发布 ${base}）"
+      return 0
+    fi
+    printf '%s' "$want" | grep -qE "^$SEMVER\$" || die "tag 必须形如 vX.Y.Z 或 vX.Y.Z-rc.N，收到：$tag"
     [ -n "$top" ] || die "$file 里没有任何已发布版本，不能给 $tag 发版"
     [ "$top" = "$want" ] || die "tag $tag 与 $file 最新版本 [$top] 不一致 —— 先 make release VERSION=$want"
   fi
@@ -93,6 +139,12 @@ cmd_notes() {
   [ -n "$ver" ] || die "用法：changelog.sh notes X.Y.Z [FILE]"
   ver="${ver#v}"
   [ -f "$file" ] || die "缺 $file"
+  if printf '%s' "$ver" | grep -qE "^$SEMVER$PRERELEASE\$"; then
+    body=$(section_body "$file" Unreleased)
+    [ -n "$body" ] || die "Unreleased 小节是空的，预发布 $ver 没有条目"
+    printf '预发布 %s：下面是尚未正式发布的条目（正式版发布时轮转进 [%s]）。\n\n%s\n' "$ver" "$(printf '%s' "$ver" | sed -E 's/-rc\.[0-9]+$//')" "$body"
+    return 0
+  fi
   body=$(section_body "$file" "$ver")
   [ -n "$body" ] || die "$file 里没有版本 $ver 的小节，或小节为空"
   printf '%s\n' "$body"
@@ -102,6 +154,9 @@ cmd_release() {
   local ver="${1:-}" file="${2:-CHANGELOG.md}" top base prev today tmp
   [ -n "$ver" ] || die "用法：changelog.sh release X.Y.Z [FILE]"
   ver="${ver#v}"
+  if printf '%s' "$ver" | grep -qE "^$SEMVER$PRERELEASE\$"; then
+    die "预发布 $ver 不轮转 CHANGELOG：直接打 tag（make release 会跳过这一步）"
+  fi
   printf '%s' "$ver" | grep -qE "^$SEMVER\$" || die "版本号必须形如 X.Y.Z，收到：$ver"
   cmd_check "$file" >/dev/null
   top=$(released_versions "$file" | head -n1)
@@ -134,5 +189,5 @@ case "${1:-}" in
   check)   shift; cmd_check "$@" ;;
   notes)   shift; cmd_notes "$@" ;;
   release) shift; cmd_release "$@" ;;
-  *) sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  *) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

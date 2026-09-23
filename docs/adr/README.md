@@ -11,3 +11,4 @@ ADR（Architecture Decision Record，架构决策记录）：一个决定一个�
 | [0001](0001-nested-git-topology.md) | 外层协作仓 + 内仓生产 monorepo（nested-git） | 已采纳 |
 | [0002](0002-versioning-and-release.md) | 版本、变更日志与发布流水线 | 已采纳 |
 | [0003](0003-tracking-scope-and-release-artifacts.md) | 外层追踪范围修订与两仓发版差异 | 已采纳 |
+| [0004](0004-branching-versioning-1.0.md) | 分支模型、1.x 版本策略与 CHANGELOG 规则（取代 0002 的两条） | 已采纳 |

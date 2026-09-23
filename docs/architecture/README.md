@@ -182,7 +182,8 @@ flowchart LR
 
 ```
 外层
-  CLAUDE.md            红线与协作方式（给人也给 agent）
+  CLAUDE.md            红线与协作纪律（给人也给 agent）
+  CONTRIBUTING.md      流程：分支模型、PR、发版、CHANGELOG 写法
   research/            依据（调研得出什么）             ──▶ 纲领引用它
   docs/architecture/   纲领 + 细则 + 未决（系统长什么样）──▶ spec 与内仓文档引用它
   docs/specs/          版本 PRD（这版做到哪一步）
