@@ -126,27 +126,29 @@ experiment/2/                  一个产出目录
 
 唯一有循环的地方。这个循环是机械的，不做科研判断，所以可以留在框架里。核心是**四个角色分开**：
 
-```
-                 ┌──────────────────────────────────────────┐
-                 │  执行层 coding agent                      │   只干一件事：改 code/
-                 │  只能碰 code/ 目录                          │   不跑、不比、不记账、不碰 git
-                 └───────────────┬──────────────────────────┘
-                                 │ 改动（前后快照 diff，框架提交）
-                                 ▼
-   ┌─────────────────────────────────────────────────────────────────────────┐
-   │  内环（框架，确定性代码，零模型）                                           │
-   │   ① 快照到 iters/iter_N/   ② 在所选算力上起独立进程跑 launcher   ③ 读 harness 吐出的产物 │
-   │   ④ 跟 best 比：看 scoring.yaml 的 direction，过统计门                         │
-   │   ⑤ 好 → 分支前进 / 差 → git reset 回 best     ⑥ ledger 记一行             │
-   │   ⑦ 把「分数、好坏、失败分类」压成一小段文本给执行层，回到顶上                 │
-   └─────────────┬────────────────────────┬──────────────────────┬────────────┘
-                 ▼                        ▼                      ▼
-   ┌────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-   │ harness（设计阶段留的）│   │ git（状态载体）        │   │ ledger.tsv（账本）    │
-   │ 框架注入，只读，    │   │ 分支 tip = 当前最好   │   │ 每轮一行，活过 reset  │
-   │ 校验 hash；独立进程 │   │ 失败的尝试留档在      │   │ 每行能跟 git 对账     │
-   │ 只吃产物文件      │   │ refs/attempts/       │   │                      │
-   └────────────────────┘   └──────────────────────┘   └──────────────────────┘
+```mermaid
+sequenceDiagram
+  participant X as 执行层会话（每轮新开）
+  participant L as 内环（框架，零模型）
+  participant C as 算力（本机 / ssh）
+  participant H as harness（设计阶段留的，只读）
+  participant G as work/ 的 git
+  participant B as ledger.tsv
+  L->>X: 账本摘要 + notebook + 上一轮的裁决
+  X-->>L: 只改 code/（前后快照 diff）
+  L->>G: 提交候选
+  L->>C: 快照到 iters/iter_N/，起独立进程跑 launcher
+  C->>H: 校验 SHA256SUMS，跑 evaluate.py
+  H-->>C: results.json（或非零退出，不写）
+  C-->>L: 产物回来
+  L->>L: 跟 best 比，看 direction，过统计门（gate = max(accept_sigma×σ, min_delta)）
+  alt 过门
+    L->>G: 分支前进（tip = best）
+  else 不过门或失败
+    L->>G: reset 回 best，候选留档 refs/attempts/
+  end
+  L->>B: 记一行（commit、metric、status、cost…）
+  L->>X: 下一轮：分数、好坏、失败分类
 ```
 
 一次实验的目录 `experiment/<n>/`（`framework/experiment/layout.py` 是唯一出处）：`scoring.yaml` 与需求的快照、`work/`（设计那包的拷贝，自己的 git 仓）、`checkpoint.json`、`ledger.tsv`、`notebook.md`、`iters/iter_N/`（每轮的快照与 `results.json`）、`executor/iter-N/`（执行层日志）、`inflight.json`、`stop.json`、`.venv/`、`.ai4sci/journal.md`。
