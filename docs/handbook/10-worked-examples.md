@@ -2,7 +2,7 @@
 
 前九章的做法不是先想好再执行的，是这几件真事里踩出来的。每件事按「目的 / 怎么派 / 撞到什么 / 沉淀在哪 / 用了哪几章」写。案例卡里有全部细节（时间线、对话、账本），这里只讲做法。
 
-## 第零轮：Claude 扮小白跑 PINNs（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)）
+## 第零轮：Claude 扮一个不会命令行的研究者跑 PINNs（[#115](https://github.com/zephyr4123/TJU-AI4Science/issues/115) [#116](https://github.com/zephyr4123/TJU-AI4Science/issues/116) [#117](https://github.com/zephyr4123/TJU-AI4Science/issues/117)）
 
 - **目的**：平台第一次让「不是作者的人」用。没有外人，就让 agent 扮一个不会命令行的研究者，在外层 `materials/` 下的工作区里从需求走到设计基线。
 - **怎么派**：派活里写明扮谁（「你是一个只会说『听你的』的研究者」）、走哪条流程、撞到坑先记不绕。
@@ -21,7 +21,7 @@
 ## 第二轮：两层都换成 Codex（[#135](https://github.com/zephyr4123/TJU-AI4Science/issues/135)，2026-09-22）
 
 - **目的**：验证「涉及 agent 的一律可替换」不是口号：研究助理与执行层都换成 Codex，跑参数拟合课题的研究流全链。
-- **怎么派**：Claude 扮水平一般的研究者，9 句话、两次签字；Codex 适配器（[#131](https://github.com/zephyr4123/TJU-AI4Science/issues/131)）flag 按官方文档对账、真 CLI 冒烟测试。
+- **怎么派**：Claude 扮研究者，9 句话、两次签字；Codex 适配器（[#131](https://github.com/zephyr4123/TJU-AI4Science/issues/131)）flag 按官方文档对账、真 CLI 冒烟测试。
 - **撞到什么**：七个坑（案例卡里逐条），都是适配器与提示词在另一家 CLI 上的差异；每个修根因，不在 prompt 里打补丁。
 - **沉淀**：案例卡 [`docs/cases/boehm-codex-drill/`](../cases/boehm-codex-drill/README.md)（含 token 数与花费）；纲领 P-25 底座归人，母 issue [#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)。
 - **用了**：[05](05-search-before-answer.md)（按官方文档对账）、[08](08-refactor-clean.md)（环境变量退役，只从 `agents.yaml` 读）、[01](01-issue-driven.md)（umbrella + sub-issue）。
