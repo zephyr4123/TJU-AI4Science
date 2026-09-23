@@ -47,7 +47,7 @@ stages:
 `reproduce`（论文复现）：文献（挂 skill `pdf`、`download`）→ 设计 `reproduction` → 断点「复现结果核对」→ 分析 `reproducibility` → 验证 → 断点「验收」。skill 挂在格子上的写法是 `- 文献: [pdf, download]`：这一步推荐用的工具，哪个阶段都能挂、不带参数、不是门。
 
 - **子集也是流程、任何顺序都是流程。** 只想根据实验结果写综述就是两行——等写作阶段有了那个能力就能挂。
-- **流程分两层：库、实例**（P-15）。库在 `workflows/`，通用、不依附课题，编辑台的流程助理改它；实例在工作区 `flows/`，几条都行，研究助理 `ai4sci flow take <name>` 从库里取来，按这份需求改阶段、能力参数、断点。选流程在需求确认之后、与需求独立：一份需求会走多条流程。
+- **流程分两层：库、实例**（P-15）。库通用、不依附课题，本身又分出厂的（`workflows/`，随代码走、只读）与人在编辑台存的（数据根 `studio/workflows/`，流程助理只写这里）两层，读库的地方两层一起读、名字全库唯一；实例在工作区 `flows/`，几条都行，研究助理 `ai4sci flow take <name>` 从库里取来，按这份需求改阶段、能力参数、断点。选流程在需求确认之后、与需求独立：一份需求会走多条流程。
 - **进度不另存**：每个产出的 `meta.yaml` 记它是在哪条流程的第几项下产的，「这条流程走到哪」沿 `from` 链算出来；「在等谁」也现算：作业在跑 → 等作业；这一项的产出还没签而流程说要签 → 等人；下一项是阶段 → 轮到助理；走完 → 完成。
 - **编排工作台的意义是立规矩，不是做数据流校验。** 研究者要的是三样：看得见接下来会发生什么、在关键处能拦一手、下次能照做。
 
@@ -57,7 +57,8 @@ stages:
 
 ```
 <出厂件>                      <数据根>
-├── workflows/  流程库          ├── studio/chats/            编辑台的对话
+├── workflows/  出厂的流程，只读 ├── studio/chats/            编辑台的对话
+│                               ├── studio/workflows/        人在编辑台存的流程；与出厂的合起来是库
 ├── templates/  需求模板        └── projects/<p>/            一个项目一位助理（P-15）
 ├── domains/    领域包              ├── project.md           目标一段；一级标题是项目名
 ├── skills/     skill 库            ├── materials/           几个工作区共用的原件
@@ -247,7 +248,7 @@ harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各�
 
 - **续接**：Claude Code `claude -p <message> --resume <session id> --append-system-prompt <指南>`（指南每轮整份送）；Codex `codex exec resume <thread_id> -`（指南只在开线程那次送，中途变了框架把全文塞进那一轮的话里）。
 - **指南注入**：服务会话隔离了所有设置源，两份指南（`coordinator/README.md` 研究助理、`coordinator/studio.md` 流程助理，**都是线上 prompt**）由 `framework/chat/guide.py` 连同一段「你在服务里」的前言按域塞进 system prompt，前言之后接这家 CLI 自己的「工具怎么用」，研究助理再接通用 skill 的清单。指南受 lint：代码块里每条命令以 `ai4sci ` 开头（P-14）；研究助理的指南里没有 `workflows/` 的写法（P-16）。
-- **分权靠三样**（P-16）：可写目录（研究助理整个项目，库 `workflows/` 与 `templates/` 只读；流程助理只写 `workflows/`）、命令前缀（研究助理 `ai4sci`；流程助理只有 `ai4sci show` 与 `ai4sci workflow`）、端点前缀（`/projects/<p>/…` 与 `/studio/…`）；配置一律走起服务的人的环境变量与按人的设置，命令上不带。
+- **分权靠三样**（P-16）：可写目录（研究助理整个项目，库的两层与 `templates/` 只读；流程助理站在数据根 `studio/` 里，只写 `studio/workflows/`，出厂的 `workflows/` 对它也只读）、命令前缀（研究助理 `ai4sci`；流程助理只有 `ai4sci show` 与 `ai4sci workflow`）、端点前缀（`/projects/<p>/…` 与 `/studio/…`）；配置一律走起服务的人的环境变量与按人的设置，命令上不带。
 - **长命令不进后台**：适配器起会话时设 `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` 并把 Bash 超时抬到与本轮超时一致；真长的活走 `--detach` 作业。
 - **逐字流出**：端口的 `delta` 事件，契约要求每家适配器逐字吐（Codex 没有逐字事件，一段一条）；events.jsonl 只留完整事件。
 - **落盘**：会话内容在 CLI 自己的目录里，我们只记 session id；每一轮的原生事件流自己留一份在 `projects/<p>/.ai4sci/chats/<cid>/turn-N/events.jsonl`（编辑台在 `studio/chats/`），`inbox/` 是排队等念的作业结果；meta 记后端、session id、cwd、轮数、累计花费、旋钮；忙锁 `inflight.json`；一轮有 `origin`：人，或框架来念收件箱。
@@ -305,3 +306,4 @@ harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各�
 | 2026-09-20 ～ 09-21 | skill 系统、算力归人、`job stop` / `env resolve / use / add`、复现流程与两个能力、`download`（[#113](https://github.com/zephyr4123/TJU-AI4Science/issues/113)–[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)） | 两轮真任务演练 | 主人 + Claude |
 | 2026-09-22 | Codex 适配器、设置与自检、删除边界、skill 是能力的一种、项目层、页面改项目口径（[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)–[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)） | 全面适配 Codex；一个项目一位助理 | 主人 + Claude |
 | 2026-09-23 | 全文按代码回写：清单类内容改为引用命令输出或代码（能力、命令、端点、端口形状、Compute 协议）；出厂件与数据根分两棵树；meta 字段补全（status、result、agent…）；`run_N` 改 `iters/iter_N`、`loop resume` 改 `--continue … --resume`、`analysis_v{n}` 与 `--run-id` 删；验证写实际四项、引用与图源标未实现、模型评审标未实现；人在环加「助理调确认与签字被拒」；算力适配删「设置页等 PINNs 后做」「0.2.0 只有 local」「60 到 80 行」；设置与自检按现状；界面适配只留词表与形状（细节归内仓 DESIGN.md），词表补执行层、收件箱、算力、退役词；变更记录压缩（[#140](https://github.com/zephyr4123/TJU-AI4Science/issues/140)） | 文档盘点：本文约 45 处与代码对不上 | 主人 + Claude |
+| 2026-09-23 | 库分两层：存放树加 `studio/workflows/`，§1 与 §分权改流程助理只写人存的那层（[#149](https://github.com/zephyr4123/TJU-AI4Science/issues/149)） | 编辑台存的流程落进了出厂目录 | 主人 + Claude |
