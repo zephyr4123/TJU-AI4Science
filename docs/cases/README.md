@@ -12,6 +12,7 @@
 | [rahman-ode-petab](rahman-ode-petab/) | 平台自测 | 连续参数优化 | 流行病学 | 第三方 benchmark | **已成任务包** `platform/tasks/rahman-nll`，只经 `ai4sci task design` 接入（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)），run_0 均值 21.5958、σ 0.056，8 轮出 1 个 keep 21.339，验证 PASS | 实验内环；接任务入口测试 |
 | [gua-pinn-reproduction](gua-pinn-reproduction/) | 平台演练 | 论文复现（一级） | 计算物理 | 第三方论文 arXiv 2609.01558 | **已复现，验收已签**（2026-09-21）：两行都在论文 ±2σ 内，加 GUA 降 62.2%（论文 62.6%），代码一字未改；助理自走全链、研究者 8 句话两次签字（[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)） | 复现流全链 |
 | [boehm-codex-drill](boehm-codex-drill/) | 平台演练 | 连续参数优化 | 系统生物学 | 第三方 benchmark（同 boehm-stat5-petab） | **验收已签**（2026-09-22）：两层都是 Codex 跑通研究流全链，基线 NLL 138.2219、三轮搜索无一过门、交付基线参数；研究者 9 句话两次签字；撞 7 个坑全修根因（5 个是 Codex 适配器的）（[#135](https://github.com/zephyr4123/TJU-AI4Science/issues/135)） | 研究流全链 + Codex 适配器 + 设置 |
+| [gua-codex-drill](gua-codex-drill/) | 平台演练 | 论文复现（一级） | 计算物理 | 第三方论文 arXiv 2609.01558（同 gua-pinn-reproduction） | **没跑到底**（2026-09-23）：两层都是 Codex、在项目层与新页面上；需求已签、壳 4 分钟写好，基线 2 h 38 min 被 sigma.json 的 seeds 拒、重跑到一半机器定时关机；撞 4 个坑全修根因（σ 改由框架算、复现种子照论文）（[#137](https://github.com/zephyr4123/TJU-AI4Science/issues/137)） | 复现流 + 项目层页面 / CLI + Codex 适配器 |
 
 ## 案例卡怎么写
 

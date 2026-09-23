@@ -1,0 +1,32 @@
+format_version: 1
+metrics:
+- name: config_gua_relative_l2
+  direction: minimize
+  primary: true
+  attainable: 0.00065
+- name: config_relative_l2
+  direction: minimize
+  attainable: 0.00174
+- name: post_gua_conflict_rate
+  direction: minimize
+  attainable: 0.0
+budget:
+  wall_clock_s: 7200
+  max_iterations: 1
+  repeat_k: 4
+  accept_sigma: 2.0
+  inner_k: 1
+requirements:
+- id: R1
+  type: numeric
+  must_pass: true
+  description: Burgers ConFIG+GUA 的相对 L2 误差与论文均值的差距在约定容差内。
+- id: R2
+  type: numeric
+  must_pass: true
+  description: Burgers ConFIG 基线的相对 L2 误差与论文均值的差距在约定容差内。
+- id: R3
+  type: numeric
+  must_pass: true
+  description: GUA 后实际更新的累计冲突率为零。
+domain: generic
