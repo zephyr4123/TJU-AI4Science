@@ -25,11 +25,13 @@
 
 ## 协作方式：issue driven、spec coding
 
+流程（分支模型、PR、review、发版、CHANGELOG 写法）只有一份，在 [`CONTRIBUTING.md`](CONTRIBUTING.md)；下面是纪律。
+
 - **每个工作单元一条 issue**，开在本仓。做之前先有 issue；做的过程中发现、证据、决策随做随写进 issue 评论（贴 commit、贴数字、贴 `文件:行`），不攒总结。会话会压缩、聊天记录会丢，issue 和文档才是可靠的上下文；新会话先读 issue 与文档恢复上下文，不靠记忆。
 - **先对齐再动手**：需求、边界、验收标准先写清（issue 正文或 `docs/specs/`），照它干活，做完回来改文档。纲领（`docs/architecture/`）改得慢、要双方认可；spec 与 issue 改得快，spec 是滚动的、不设 aligned 门槛。现实与文档不一致时先改文档再改代码；改了产品说法要回写纲领。
 - **issue 的写法**：标题一句人话；标签三根轴——`kind:*`（什么类型，可多选）、`area:*`（哪一层）、`P0/P1/P2`；milestone 只挂 `kind:umbrella` 母 issue，叶子用 GitHub sub-issue 挂在它下面，不把几十条平铺在 milestone 上；要人拍板的加 `needs-decision`；`kind:decision` 的题定了也要关。
-- **分支与 commit**：做新东西先开 feature 分支，分支内随做随提，一个逻辑单元一个 commit；message 用中文、技术名词保留英文、说改了什么和为什么、末尾 `（#n）` 引 issue。
-- **合并与推送要确认**：合到 `main`、push 远端、改写历史之前要项目负责人确认，每次都问；分支内不用问。
+- **分支与 commit**：从当前的 `release/X.Y` 切 `feat/<issue 号>-<slug>`，分支内随做随提，一个逻辑单元一个 commit；message 用中文、技术名词保留英文、说改了什么和为什么、末尾 `（#n）` 引 issue。
+- **回主干走 PR**：PR 进 `release/X.Y`，门禁绿 + 一人 review 才合；`main` 只接 release 分支与热修，由发版人合并打 tag。agent 不直接 push 受保护分支，改写历史要项目负责人确认。
 - **做完必关**：merge+push 之后把这批 commit 引到的 issue 关掉，评论写做了什么、在哪个 commit（两个仓都写）；关之前核对代码里真有。做完不关的 issue 等于没做完的 issue。
 - **过程即收益**：演练、决策、坑都沉淀成 issue 评论、案例卡（`docs/cases/`）或纲领变更记录；没人专门「补记录」。
 
@@ -50,5 +52,5 @@
 
 ## 版本
 
-- 从 0.1.0 起步，0.x 为开发期不承诺兼容；正式发布才进入 1.0.0。外仓与内仓各自一条版本线；spec 与 milestone 只用产品版本、带 `platform` 前缀。
-- tag 形如 `vX.Y.Z`；推送 tag 即触发 `.github/workflows/release.yml` 建 Release（外层只出 Release Notes，内仓的流水线出 wheel），0.x 自动标 pre-release。
+- 从 1.0.0 起承诺兼容：冻结的契约清单、MAJOR / MINOR / PATCH 的判据、弃用周期在 `CONTRIBUTING.md`「版本与发布」（ADR-0004）。外仓与内仓各自一条版本线，大版本同日对齐；spec 与 milestone 只用产品版本、带 `platform` 前缀。
+- tag 形如 `vX.Y.Z`（预发布 `vX.Y.Z-rc.N`，在 `release/X.Y` 上打）；推送 tag 即触发 `.github/workflows/release.yml` 建 Release（外层只出 Release Notes，内仓的流水线出 wheel），rc 自动标 pre-release。

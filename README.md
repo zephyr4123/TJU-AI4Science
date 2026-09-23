@@ -11,7 +11,7 @@
 
 ## 这是什么
 
-面向天津大学课题组的科研全自动化平台：研究者在页面上跟助理说清课题、确认需求，助理照流程调用平台的能力做设计、实验、分析、验证，人只在断点上确认；数能拿去用，因为每个数都能回溯到产物文件。本仓是**项目之家**：存放纲领、决策、案例、调研、外部脚本，以及指向生产代码仓的坐标。生产代码在独立的内仓 [TJU-AI4Science-Platform](https://github.com/zephyr4123/TJU-AI4Science-Platform)（私有，坐标以 `repos.json` 为准），clone 后落在本仓的 `platform/` 目录下，但对本仓的 git 完全不可见。
+面向天津大学课题组的科研全自动化平台：研究者在页面上跟助理说清课题、确认需求，助理照流程调用平台的能力做设计、实验、分析、验证，人只在断点上确认；数能拿去用，因为每个数都能回溯到产物文件。本仓是**项目之家**：存放纲领、决策、案例、调研、外部脚本，以及指向生产代码仓的坐标。生产代码在独立的内仓 [TJU-AI4Science-Platform](https://github.com/zephyr4123/TJU-AI4Science-Platform)（公开，坐标以 `repos.json` 为准），clone 后落在本仓的 `platform/` 目录下，但对本仓的 git 完全不可见。
 
 ## 产品一眼看
 
@@ -83,7 +83,8 @@ clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all`
 
 | 你要 | 读 | 讲什么 |
 |---|---|---|
-| 知道规矩、怎么协作 | [`CLAUDE.md`](CLAUDE.md) | 拓扑、红线、issue driven 的协作方式、写代码与验收的标准（给人也给 agent） |
+| 知道规矩 | [`CLAUDE.md`](CLAUDE.md) | 拓扑、红线、issue driven 的纪律、写代码与验收的标准（给人也给 agent） |
+| 怎么协作：分支、PR、发版 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | 分支模型、一件事的生命周期、1.x 版本策略与冻结的契约、CHANGELOG 写法 |
 | 知道产品为什么这样 | [`docs/vision.md`](docs/vision.md) | 目标、给谁用、凭什么、定位、不做什么、今天离它多远 |
 | 知道产品的边界与原则 | [`docs/architecture/README.md`](docs/architecture/README.md) | 纲领：四层、项目与工作区、可替换性、P-1 到 P-25 每条规则 + 机器判据 |
 | 知道流程、内环、适配怎么定的 | [`docs/architecture/workflow.md`](docs/architecture/workflow.md) | 细则：三层与流程、磁盘布局、契约、skill、实验内环、判定与验证、人在环、算力 / 删除 / 设置 / 执行层 / 协调层 / 界面适配、词表 |
@@ -94,7 +95,7 @@ clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all`
 | 看调研依据 | [`research/`](research/README.md) | 行业调研、选型深读、演练评测；公开区 |
 | **改代码** | 内仓 [`platform/CLAUDE.md`](https://github.com/zephyr4123/TJU-AI4Science-Platform/blob/main/CLAUDE.md) | 开发红线、编码标准、质量纪律、「改哪层先读哪份」；内仓 README 是代码侧的地图 |
 
-阅读顺序：**只用平台的人**读内仓 README「怎么跑 · 只用」就够；**新加入改代码的人**按 `CLAUDE.md` → `docs/vision.md` → `docs/architecture/README.md` → 最近一张演练卡 → 内仓 `CLAUDE.md` → 要改的那一层的 README；**agent** 开工时自动读到两仓 `CLAUDE.md`，其余按里面的路由。
+阅读顺序：**只用平台的人**读内仓 README「怎么跑 · 只用」就够；**新加入改代码的人**按 `CLAUDE.md` → `CONTRIBUTING.md` → `docs/vision.md` → `docs/architecture/README.md` → 最近一张演练卡 → 内仓 `CLAUDE.md` → 要改的那一层的 README；**agent** 开工时自动读到两仓 `CLAUDE.md`，其余按里面的路由。
 
 ## 目录
 
@@ -105,11 +106,11 @@ tju-ai4science/
 ├── Makefile          check / release / html 入口，本地与 CI 共用
 ├── CHANGELOG.md      变更日志
 ├── CLAUDE.md         规矩；AGENTS.md 是它的符号链接（Codex 的入口）
+├── CONTRIBUTING.md   流程：分支、PR、发版、CHANGELOG
 ├── docs/             vision、architecture/（纲领、细则、未决项）、specs/（每版一份 PRD）、adr/（仓库基础设施决定）、meetings/（纪要）
 │                     cases/（真实科研案例与演练：案例卡 + 学长原文 + 小证据，原件在 materials/）
 ├── research/         调研：landscape/ selection/ literature/ domain/ evals/ —— 公开区，自动发布到 GitHub Pages
 ├── scripts/          外部脚本与一次性工具 —— 生产代码禁止依赖这里
-├── assets/           图、幻灯片；大文件只放索引
 ├── materials/        案例原件（PDF / 数据 / 代码 zip），整目录 gitignore，索引与 sha256 在 docs/cases/
 └── platform/         内仓（独立 git，被 .gitignore 挡住）
 ```
@@ -131,6 +132,6 @@ tju-ai4science/
 
 ## 版本与发布
 
-- 从 0.1.0 起步，0.x 为开发期；正式发布才进入 1.0.0。外仓与内仓各自一条版本线。
-- 改动合并时写进 `CHANGELOG.md` 的 Unreleased；`make release` 把它轮转成版本小节并打 tag。
-- 推送 `vX.Y.Z` tag 即触发 GitHub Release，Release Notes 直接取自 CHANGELOG 对应小节，0.x 自动标 pre-release；外层只出 Release Notes，内仓的流水线出 wheel（[ADR-0003](docs/adr/0003-tracking-scope-and-release-artifacts.md)）。
+- 从 1.0.0 起承诺兼容；两仓各自一条版本线，大版本同日对齐。冻结的契约与发版流程在 [`CONTRIBUTING.md`](CONTRIBUTING.md)，为什么在 [ADR-0004](docs/adr/0004-branching-versioning-1.0.md)。
+- 每个 PR 在 `CHANGELOG.md` 的 Unreleased 加一行；`make release` 把它轮转成版本小节并打 tag；`release/X.Y` 上打 `-rc.N` 出预发布。
+- 推送 tag 即触发 GitHub Release，Release Notes 直接取自 CHANGELOG；外层只出 Release Notes，内仓的流水线出 wheel（[ADR-0003](docs/adr/0003-tracking-scope-and-release-artifacts.md)）。

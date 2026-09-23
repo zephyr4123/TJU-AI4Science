@@ -1,8 +1,9 @@
 name: ci
 
+# 门禁在 main、release/** 与所有 PR 上跑；main 与 release/** 的 ruleset 要求这个 check 通过才能合（ADR-0004）
 on:
   push:
-    branches: [main]
+    branches: [main, 'release/**']
   pull_request:
 
 jobs:
