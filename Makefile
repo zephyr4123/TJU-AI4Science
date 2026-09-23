@@ -28,5 +28,5 @@ html-check: html                   ## html 必须与 md 同步：重建后 resea
 	if [ -n "$$bad" ]; then echo "✗ html 与 md 不同步，跑 make html 后把这些文件一起 git add："; echo "$$bad" | sed 's/^/    /'; exit 1; fi; \
 	echo "✓ html 与 md 同步"
 
-release:                           ## make release VERSION=0.2.0 → 轮转 CHANGELOG、提交、打 tag（不 push）
+release:                           ## make release VERSION=x.y.z → 轮转 CHANGELOG、提交、打 tag（不 push）
 	.github/scripts/release.sh $(VERSION)

@@ -1,7 +1,7 @@
 # platform 0.2.0 初级版 · 诚实的实验内环
 
-- 状态：**滚动**。spec 只对下一步负责：第 n 步的 spec 只驱动第 n+1 步的执行，做完一步回来改；不设 aligned 门槛，变化是常态
-- 目标日期：2026-09-28
+- 状态：**已发布**（内仓 `v0.2.0`，2026-09-17）。这份是当时的 PRD，按日期封存，不再改；之后的功能（项目层、Codex 适配、设置、复现流、skill 系统、算力归人）以纲领与 CHANGELOG 为准，下一版的目标在 milestone 与 issue 里
+- 目标日期：2026-09-28（实际 2026-09-17 发布）
 - 版本：产品版本 = 内仓 `platform/` 的 tag `v0.2.0`（0.1.0 是骨架）；外仓有自己的版本线，CHANGELOG 里只记一句交叉引用。spec 文件按产品版本号命名
 - 纲领：[architecture/](../architecture/README.md)；未决项：[open-questions.md](../architecture/open-questions.md)
 - 目标合约：[#2](https://github.com/zephyr4123/TJU-AI4Science/issues/2)；母 issue [#3](https://github.com/zephyr4123/TJU-AI4Science/issues/3) 到 [#7](https://github.com/zephyr4123/TJU-AI4Science/issues/7)，milestone `platform 0.2.0 · 初级版`；架构调整 [#18](https://github.com/zephyr4123/TJU-AI4Science/issues/18)

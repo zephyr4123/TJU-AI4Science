@@ -3,7 +3,8 @@
 - 任务类型：**连续参数优化**。9 个参数在 log10 尺度上搜索，边界 1e-5 到 1e5，目标函数是负对数似然（NLL），方向 minimize
 - 应用领域：系统生物学。这是第三方 benchmark 的背景
 - 案例类型：调参型（[#1](https://github.com/zephyr4123/TJU-AI4Science/issues/1) 的「案例二 · 日常在跑的参数实验」）
-- 状态：**已成任务包 → `platform/tasks/boehm-nll/`**（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)），run_0 与 σ 已出
+- 状态：**已接入 → `platform/projects/boehm-nll/`**（[#40](https://github.com/zephyr4123/TJU-AI4Science/issues/40)），基线与 σ 已出
+- 现名对照（2026-09-23）：这张卡写于 2026-09-16，正文按当时的记录封存——「任务包 `tasks/<name>`」现在是项目里的工作区 `projects/<p>/workspaces/<p>/`，「run_0」是设计产出的 `baseline/`，「manifest」是 `scoring.yaml`，「`ai4sci task design`」是 `ai4sci cap design`，σ 由框架算
 - 喂给哪一层：实验内环——决定 harness 长什么样、指标能不能压成一个数、噪声多大
 - 原文：[questionnaire.md](questionnaire.md)
 

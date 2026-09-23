@@ -52,7 +52,7 @@ PEtab 包自带的标称参数就在这份数据的最优点旁边：基线从 1
 
 从第一句话到验收 61 分钟，其中 12:27–12:56 约半小时是维护者在修坑（研究者两次被告知「管理员修好了」）；去掉修坑，链路本身约半小时。
 
-## 撞了什么坑、平台怎么修（都在内仓 `codex` 分支，CHANGELOG 有条目）
+## 撞了什么坑、平台怎么修（都已合入内仓 main，CHANGELOG 有条目）
 
 | 坑 | 是谁的 | 修法 | issue |
 |---|---|---|---|
@@ -82,7 +82,7 @@ PEtab 包自带的标称参数就在这份数据的最优点旁边：基线从 1
 
 ## 保留意见
 
-- 基线就是最优点：这道题验的是链路和适配器，不是搜索能力（之前的任务包 `boehm-nll` 从随机起点出发才有 keep）。
+- 基线就是最优点：这道题验的是链路和适配器，不是搜索能力（之前的课题 `boehm-nll` 从随机起点出发才有 keep）。
 - 需求「交付」要的「收敛状态」到验收时仍是「未记录」：平台 `results.json` 的契约只有指标、用时、种子、状态，优化器的停止原因这类领域诊断靠执行层自觉。要不要进契约，下一轮再定。
 - 7 个坑里 5 个是 Codex 适配器第一次接才撞的（认证、沙箱、线程、指南通道），2 个是平台通用的（确认、续跑 meta）加 1 个报错措辞；冷启动自检（`ai4sci check`、设置板）在演练前跑过都过，演练里没撞「没装 / 没登录」。
 - 研究者由 Claude 扮，问题比真人问得准（「收敛了没」）；真人未必会追这一句。
@@ -102,4 +102,4 @@ PEtab 包自带的标称参数就在这份数据的最优点旁边：基线从 1
 | `report.json` | 数字核对报告（PASS，4 项） |
 | `transcript.md` | 整段对话：研究者每句话、助理每轮回话、框架的叫醒；两次塞进来的指南全文略去 |
 
-主机、端口、本机路径按红线抹成 `<autodl-host>`、`<port>`、`<workspace>`、`<repo>`。原件不进 git：PEtab 包九个文件与 sha256 见 [boehm-stat5-petab](../boehm-stat5-petab/README.md) 的原件索引；工作区全貌（七次 design 作业、执行层每次会话的事件流与 stderr）在本机 `materials/home/workspaces/boehm-codex/`。
+主机、端口、本机路径按红线抹成 `<autodl-host>`、`<port>`、`<workspace>`、`<repo>`。原件不进 git：PEtab 包九个文件与 sha256 见 [boehm-stat5-petab](../boehm-stat5-petab/README.md) 的原件索引；工作区全貌（七次 design 作业、执行层每次会话的事件流与 stderr）在本机 `materials/home/projects/boehm-codex/workspaces/boehm-codex/`（2026-09-22 搬成项目）。

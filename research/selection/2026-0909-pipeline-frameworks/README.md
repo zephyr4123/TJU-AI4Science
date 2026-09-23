@@ -4,7 +4,7 @@ subtitle: 逐个深读调研清单上的 workflow / pipeline 框架，决定 dem
 kind: 开源项目选型（代码级，只读不跑）
 date: 2026-09-09
 scope: 候选来自 landscape/2026-0908-auto-research-agents/references.md 的"流水线层"表，外加用户点名的底座层项目 autoresearch；每个项目克隆到 vendor/ 下读源码，一个项目一篇深读；本页只放横向对比与当前结论
-status: 进行中，已评 3 / 11
+status: 已封存（2026-09-23）。评了 3 / 11 后结论落成了平台，剩下的候选不再评；下面「目前能定下来的」里被后来的纲领推翻的条目各标了「已被取代」
 ---
 
 > **当前结论**（2026-09-09，已评 InternAgent、autoresearch、AutoResearchClaw）：流水线层不直接采用现成框架当底座，自己写一个薄的编排层；三个候选各出一半零件：InternAgent 的任务目录形态与执行循环、autoresearch 的棘轮与实验床契约、AutoResearchClaw 的 manifest / rubric / requirements 契约与验证层部件。三个仓共同证实了一件事：编排形态都是"外层 for + 硬编码状态判断"，差别全在循环之外用什么承载状态、用什么规则收敛、用什么机器判据卡住模型造假。这个结论会随着后续深读修正。
@@ -47,16 +47,16 @@ status: 进行中，已评 3 / 11
 
 评完一个就能定的事，先定；后续深读如果推翻，改这里并记 CHANGELOG。
 
-1. **编排层自己写，且不用状态机装饰**。三个仓的编排都是过程式 for，ARC 还多养了一套没接线的状态机误导读者。我们要么真的用状态机驱动，要么老实写 for，阶段用注册式（装饰器或 entry_points）而不是硬编码枚举。产物契约表（ARC `contracts.py` 的形状）+ 磁盘状态 + 原子 checkpoint 三件确定性设施第一批就做。
-2. **任务契约两层**：声明层采用 ARC-Bench 的 manifest 形态（`research_question` / `conditions` / `metrics` 带 `direction` / `datasets` / `requirements` 带 `must_pass`）+ 加权 rubric 树；执行层采用 InternAgent 的目录形态（`code/` + `launcher.sh` + `run_0/` + `run_N/` 快照）。两处必须补：`final_info.json` 强 schema 校验，指标方向在主路径上真正被读。
+1. **编排层自己写，且不用状态机装饰**。三个仓的编排都是过程式 for，ARC 还多养了一套没接线的状态机误导读者。我们要么真的用状态机驱动，要么老实写 for，阶段用注册式（装饰器或 entry_points）而不是硬编码枚举。（已被取代：后来连 for 都不写，串联归协调层，纲领 P-10；能力按目录发现、没有注册表，P-5）产物契约表（ARC `contracts.py` 的形状）+ 磁盘状态 + 原子 checkpoint 三件确定性设施第一批就做。
+2. **任务契约两层**：声明层采用 ARC-Bench 的 manifest 形态（`research_question` / `conditions` / `metrics` 带 `direction` / `datasets` / `requirements` 带 `must_pass`）+ 加权 rubric 树；执行层采用 InternAgent 的目录形态（`code/` + `launcher.sh` + `run_0/` + `run_N/` 快照）。两处必须补：`final_info.json` 强 schema 校验，指标方向在主路径上真正被读。（已被取代：manifest 变成了需求 `requirement.md` + 评分契约 `scoring.yaml`，目录按阶段分、每次产出一个子目录，P-19；`run_0` 是 `baseline/`、`run_N` 是 `iters/iter_N/`）
 3. **实验内环采用 autoresearch 的棘轮，把裁判外置**：git 工作树承载状态、runner 负责跑实验、解析指标、比较、执行 `git reset`，agent 只改代码和提交；失败记忆外化成机器可对账的账本；固定墙钟预算；统计门（重复种子 + 显著性阈值 + holdout）。ARC 的 revert-to-best 和 14 类失败分类器作为补充。
-4. **评测由框架注入、模型改不了**：ARC 的 `harness_template.py` 形态（`report_metric` / `check_value` / `should_stop` / `finalize`），评测跑成独立子进程只吃产物文件；只读文件挂校验和门禁。
-5. **验证层从三条零 LLM 的机器判据起步**：论文里每个数字回溯到实验产物（ARC `VerifiedRegistry` + `paper_verifier`）、每条引用在真实学术 API 里存在（ARC `literature/verify.py`）、每张图的数值来自数据（ARC `visualize.py` 思路）。fail-open 全部改成 fail-closed。
-6. **底座对接层自己写**：一个 `Runner` 协议（`run(prompt, cwd, timeout) → {events, exit_code, cost}`），用各 CLI 的非交互 + 结构化输出模式取证，每个 CLI 一个适配器。ARC 的 `CodeAgentProvider` 是这层该有的形状（在它仓里是死代码，对我们反而省事）。
-7. **人在环用 stage 边界暂停 + 文件通道回传**：ARC 的 `intervention.py` + `file_wait.py` + pre/post hook 签名。实验内环里的打断粒度我们自己往下切。
+4. **评测由框架注入、模型改不了**：ARC 的 `harness_template.py` 形态（`report_metric` / `check_value` / `should_stop` / `finalize`），评测跑成独立子进程只吃产物文件；只读文件挂校验和门禁。（形状已换：没有 harness 模板，执行层照提示词写 `launcher.sh` + `evaluate.py`，框架封 `SHA256SUMS`，P-6）
+5. **验证层从三条零 LLM 的机器判据起步**：论文里每个数字回溯到实验产物（ARC `VerifiedRegistry` + `paper_verifier`）、每条引用在真实学术 API 里存在（ARC `literature/verify.py`）、每张图的数值来自数据（ARC `visualize.py` 思路）。fail-open 全部改成 fail-closed。（部分落地：数字回溯与账本对账做了，引用真伪与图源未做；学术 API 那条被 P-24 否掉，用 agent 自带的联网）
+6. **底座对接层自己写**：一个 `Runner` 协议（`run(prompt, cwd, timeout) → {events, exit_code, cost}`），用各 CLI 的非交互 + 结构化输出模式取证，每个 CLI 一个适配器。（落地，签名已扩：见内仓 `backends/__init__.py`）ARC 的 `CodeAgentProvider` 是这层该有的形状（在它仓里是死代码，对我们反而省事）。
+7. **人在环用 stage 边界暂停 + 文件通道回传**：ARC 的 `intervention.py` + `file_wait.py` + pre/post hook 签名。实验内环里的打断粒度我们自己往下切。（已被取代：人在协调层的对话里，框架不等人；断点 = 签字文件，作业结果进收件箱，纲领 P-19、workflow §4）
 8. **立四条机器可查的规矩**（从 ARC 的反面清单来）：每个抽象合入时必须带真实调用点；每加一个配置项同时加一条断言证明它被读到；集成点必须有测试；不许裸 `except`。
-9. **底座 coding agent 是唯一执行者**（2026-09-10 拍板）：写代码、修 bug、文献检索、假设、分析、写论文，凡是产出文件的活都交给它，一个阶段一次新会话，上下文从磁盘来（`runs/`、账本、git log）。框架不单独调 LLM 写文本，`framework/` 目录里 grep 不到模型 API。联网检索做成框架提供的确定性脚本，换底座能力不变；用户自带的调研直接当阶段输入。
-10. **裁判是上下文隔离的 agent**（2026-09-10 拍板）：accept / reject、验证、评审绝不由干活的那个会话做。确定性能判的用 runner 与零 LLM 判据；需要模型判断的，由框架派一个新会话（subagent / workflow，可指定不同模型），只给产物不给轨迹。执行与决策的分界：产出文件的是执行，改变流程走向的是决策。
+9. **底座 coding agent 是唯一执行者**（2026-09-10 拍板）：写代码、修 bug、文献检索、假设、分析、写论文，凡是产出文件的活都交给它，一个阶段一次新会话，上下文从磁盘来（`runs/`、账本、git log）。框架不单独调 LLM 写文本，`framework/` 目录里 grep 不到模型 API。联网检索做成框架提供的确定性脚本，换底座能力不变；用户自带的调研直接当阶段输入。（部分被取代：文献找材料归助理、用 agent 自带的联网，P-1 收窄与 P-24）
+10. **裁判是上下文隔离的 agent**（2026-09-10 拍板）：accept / reject、验证、评审绝不由干活的那个会话做。确定性能判的用 runner 与零 LLM 判据；需要模型判断的，由框架派一个新会话（subagent / workflow，可指定不同模型），只给产物不给轨迹。执行与决策的分界：产出文件的是执行，改变流程走向的是决策。（确定性那半落地了；派隔离会话的模型评审未实现，P-2）
 
 ## 目录
 

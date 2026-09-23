@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # release.sh X.Y.Z —— 本地发版三步：轮转 CHANGELOG → 提交「发布 vX.Y.Z」→ 打 annotated tag。
-# 不 push：推送是出分支的动作，由人执行；tag 一推上去 GitHub Actions 就会出包并建 Release。
+# 不 push：推送是出分支的动作，由人执行；tag 一推上去 GitHub Actions 就会建 Release（外层只出 Release Notes，内仓的流水线出 wheel）。
 set -euo pipefail
 
 die() { echo "release: $*" >&2; exit 1; }

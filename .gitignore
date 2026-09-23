@@ -7,7 +7,6 @@
 # ── 本机会话产物 / agent 注入（都是本机路径，不进版本库）──
 .claude/
 CLAUDE.local.md
-AGENTS.md
 
 # ── 系统与工具杂物 ──
 .DS_Store

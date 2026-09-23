@@ -186,7 +186,7 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
     pb = sub.add_parser("build")
     pb.add_argument("files", nargs="*")
-    pb.add_argument("--all", action="store_true", help="research/*/*/README.md 全部")
+    pb.add_argument("--all", action="store_true", help="research/ 下全部 .md")
     pr = sub.add_parser("backrefs")
     pr.add_argument("file")
     a = p.parse_args()

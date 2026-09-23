@@ -7,4 +7,4 @@
 | `external/` | 第三方拿来的脚本，每个带 `SOURCE.md` 记来源、版本与许可 |
 | `oneoff/` | 一次性的数据处理、爬取、转换 |
 
-仓库自身的工具脚本（changelog、release、hygiene）在 `.github/scripts/`，不在这里。
+仓库自身的工具脚本（changelog、release、hygiene、md2html）在 `.github/scripts/`，不在这里。

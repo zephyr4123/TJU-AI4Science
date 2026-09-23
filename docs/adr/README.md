@@ -4,9 +4,10 @@ ADR（Architecture Decision Record，架构决策记录）：一个决定一个�
 
 这里只放**仓库基础设施**的决定：拓扑、版本与发布、CI 门禁这类一旦改动会影响所有人工作方式的事。
 
-产品架构不在这里。产品架构是可改的总纲领，在 [`../architecture/`](../architecture/README.md)，每个文件末尾的变更记录承担 ADR 留轨迹的职能。
+产品架构不在这里。产品架构是可改的总纲领，在 [`../architecture/`](../architecture/README.md)，正文只写现状，历次为什么改在每个文件末尾的变更记录与 issue 里。
 
 | 编号 | 决定 | 状态 |
 |---|---|---|
 | [0001](0001-nested-git-topology.md) | 外层协作仓 + 内仓生产 monorepo（nested-git） | 已采纳 |
 | [0002](0002-versioning-and-release.md) | 版本、变更日志与发布流水线 | 已采纳 |
+| [0003](0003-tracking-scope-and-release-artifacts.md) | 外层追踪范围修订与两仓发版差异 | 已采纳 |

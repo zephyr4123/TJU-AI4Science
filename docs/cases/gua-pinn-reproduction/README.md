@@ -67,7 +67,7 @@
 | 坑：README 钉 torch 2.12，镜像是 2.8 | torchjd 只要 ≥2.3，用镜像的 | 用了镜像的，把版本差写进需求、分析归因到它 |
 | 坑：镜像缺 scipy / torchjd | — | 撞上了；平台补了 `env add` 才过 |
 
-## 撞了什么坑、平台怎么修（都进了内仓 `reproduce` 分支）
+## 撞了什么坑、平台怎么修（都已合入内仓 main）
 
 | 坑 | 修法 | issue |
 |---|---|---|
@@ -102,10 +102,10 @@
 | `baseline/` | 五个种子的结果与 σ |
 | `analysis.md` | 复现性分析（第四版，过核对与通读的那份） |
 | `report.json` | 数字核对报告（PASS，14 个值） |
-| `transcript.md` | 整段对话：研究者的每句话、助理的每轮回话（工具调用在工作区的 `trace.jsonl` 里，没抄） |
+| `transcript.md` | 整段对话：研究者的每句话、助理的每轮回话（工具调用在项目的 `.ai4sci/chats/<cid>/turn-N/trace.jsonl` 里，没抄） |
 
 主机名、端口、本机路径按红线抹成 `<autodl-host>`、`<port>`、`<workspace>`。原件不进 git：
 
 - 论文 PDF：`materials/paper/source.pdf`，sha256 `a94ba00cfee6adb284419cf4cd76bc692ec5372ff29a8416b3e1054cab1975e9`，1,015,750 字节；重取 <https://arxiv.org/pdf/2609.01558>
 - 代码：`materials/GUA/`，`git clone https://github.com/JingXiao10/GUA && git checkout 8bbbcd545436493602bb82a91d08afb449b5b750`
-- 工作区全貌（含四版分析、三次失败的作业、执行层日志）在本机 `materials/home/workspaces/gua/`
+- 工作区全貌（含四版分析、三次失败的作业、执行层日志）在本机 `materials/home/projects/gua/workspaces/gua/`（2026-09-22 搬成项目）

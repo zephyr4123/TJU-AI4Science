@@ -3,8 +3,9 @@
 - 任务类型：**连续参数优化**。7 个状态量的 ODE 模型、9 个待估参数（log10 尺度）、1 个观测量、23 个测量点，最小化负对数似然（NLL）；名义参数处 NLL 21.15，谷底约 21.18
 - 应用领域：流行病学。这是第三方 benchmark 的背景，不是我们的研究内容
 - 案例类型：**平台自测**。不是学长的案例：2026-09-16 为验收「接任务的对话入口」（[#41](https://github.com/zephyr4123/TJU-AI4Science/issues/41)）从同一个 benchmark 集里挑的第二道题，研究者由 Claude 扮演，协调层由一个只读 `coordinator/README.md` 的新会话扮演
-- 状态：**已成任务包** `platform/tasks/rahman-nll`，只经 `ai4sci task design` 接入，协调层没手改 `harness/`；run_0 均值 21.5958、σ 0.056；内环 8 轮：第 6 轮 keep（起点上限 5→20，均值 21.339、失手 11→6），第 7 轮分批拉丁超立方 21.281 差值没过门，第 8 轮 Powell 变差；分析 20 条主张、验证 PASS。第 3–5 轮是执行层连不上模型，暴露并修了 `run extend` 对不可修复停止无效的洞
+- 状态：**已接入** `platform/projects/rahman-nll/`，只经设计能力（当时叫 `ai4sci task design`，现在是 `cap design`）接入，协调层没手改 `harness/`；基线均值 21.5958、σ 0.056；内环 8 轮：第 6 轮 keep（起点上限 5→20，均值 21.339、失手 11→6），第 7 轮分批拉丁超立方 21.281 差值没过门，第 8 轮 Powell 变差；分析 20 条主张、验证 PASS。第 3–5 轮是执行层连不上模型，暴露并修了 `run extend` 对不可修复停止无效的洞
 - 喂给哪一层：实验内环；接任务入口的真人测试
+- 现名对照（2026-09-23）：这张卡写于 2026-09-16，正文按当时的记录封存——「任务包 `tasks/<name>`」现在是 `projects/<p>/workspaces/<p>/`，「run_0」是 `baseline/`，「`run extend`」是 `cap auto-research --continue … --patience …`，「README 固定流之二」是流程库里的 `research`
 
 ## 这道题问的是什么
 
@@ -12,11 +13,11 @@
 
 ## 接入过程记了什么
 
-协调 agent 走 README 固定流之二，撞到的 12 个卡点并成五条 issue：[#42](https://github.com/zephyr4123/TJU-AI4Science/issues/42) 预检要问值不值得跑、[#43](https://github.com/zephyr4123/TJU-AI4Science/issues/43) 内部重复次数与预算的契约、[#44](https://github.com/zephyr4123/TJU-AI4Science/issues/44) harness 静默兜底的机器检查、[#45](https://github.com/zephyr4123/TJU-AI4Science/issues/45) delta=0 提示改动没生效、[#46](https://github.com/zephyr4123/TJU-AI4Science/issues/46) 文档缺口。评分脚本第一版的静默默认值（缺参数时按 5 份算）是协调 agent 逐行审出来、用 `--feedback` 打回改掉的，三个设计会话共 1.00 美元。
+协调 agent 走当时 README 里的固定流之二（现在是流程库里的 `research`），撞到的 12 个卡点并成五条 issue：[#42](https://github.com/zephyr4123/TJU-AI4Science/issues/42) 预检要问值不值得跑、[#43](https://github.com/zephyr4123/TJU-AI4Science/issues/43) 内部重复次数与预算的契约、[#44](https://github.com/zephyr4123/TJU-AI4Science/issues/44) harness 静默兜底的机器检查、[#45](https://github.com/zephyr4123/TJU-AI4Science/issues/45) delta=0 提示改动没生效、[#46](https://github.com/zephyr4123/TJU-AI4Science/issues/46) 文档缺口。评分脚本第一版的静默默认值（缺参数时按 5 份算）是协调 agent 逐行审出来、用 `--feedback` 打回改掉的，三个设计会话共 1.00 美元。
 
 ## 原件索引
 
-八个 PEtab 文件由"研究者"提供，原样进了任务包 `platform/tasks/rahman-nll/data/`（内仓 git 跟踪）；来源 [Benchmark-Models-PEtab](https://github.com/Benchmarking-Initiative/Benchmark-Models-PEtab) 的 `Benchmark-Models/Rahman_MBS2016/`（BSD-3-Clause，Zenodo <https://doi.org/10.5281/zenodo.8155057>）。上游引用表给的原论文 DOI：<https://doi.org/10.1016/j.mbs.2016.07.009>（Math Biosci 2016，题名未核）。
+八个 PEtab 文件由"研究者"提供，原样进了 `platform/projects/rahman-nll/workspaces/rahman-nll/materials/`（内仓 git 跟踪）；来源 [Benchmark-Models-PEtab](https://github.com/Benchmarking-Initiative/Benchmark-Models-PEtab) 的 `Benchmark-Models/Rahman_MBS2016/`（BSD-3-Clause，Zenodo <https://doi.org/10.5281/zenodo.8155057>）。上游引用表给的原论文 DOI：<https://doi.org/10.1016/j.mbs.2016.07.009>（Math Biosci 2016，题名未核）。
 
 | 文件 | sha256 |
 |---|---|

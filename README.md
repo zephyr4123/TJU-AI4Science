@@ -17,7 +17,7 @@
 
 两种人两条路（[#138](https://github.com/zephyr4123/TJU-AI4Science/issues/138)）：
 
-**只用平台**：不用 clone 这里。装 uv 和你要用的那家 coding agent CLI（claude 或 codex，登录好），到内仓的 Release 装 wheel，`ai4sci serve` 一行起，浏览器打开；步骤在内仓 README「怎么跑 · 只用」。
+**只用平台**：不用 clone 这里。装 uv 和你要用的那家 coding agent CLI（claude 或 codex，登录好），到内仓的 Release 装 wheel（v0.2.0 的附件还只有源码包，下一版起有 wheel），`ai4sci serve` 一行起，浏览器打开；步骤在内仓 README「怎么跑 · 只用」。
 
 **共同维护**（前提：git、uv、node 22）：
 
@@ -30,7 +30,7 @@ make check             # 本地门禁，与 CI 完全相同
 cd platform && make up # 内仓一行起服务：.venv → 页面 → skill 预热 → 自检 → ai4sci serve
 ```
 
-clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all` 解引用。规矩在 `CLAUDE.md`（给人也给 agent），纲领在 `docs/architecture/`，改代码前先读 `docs/cases/` 里最近一次演练的案例卡——坑都在那。
+clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all` 解引用。规矩在 `CLAUDE.md`（给人也给 agent，含协作方式与写代码的标准），产品纲领在 `docs/architecture/`，代码层面的规矩在 `platform/CLAUDE.md` 与各模块的 README；改代码前先读 `docs/cases/` 里最近一次演练的案例卡——坑都在那。
 
 ## 目录
 
@@ -40,9 +40,9 @@ tju-ai4science/
 ├── repos             跨仓 CLI：doctor · clone · status · sync · fetch · pull · push · remotes
 ├── Makefile          check / release 入口，本地与 CI 共用
 ├── CHANGELOG.md      变更日志
-├── docs/             vision、architecture/（可改的总纲领）、specs/（每版一份 PRD）、adr/（仓库基础设施决定）、meetings/（纪要）
-│                     cases/（真实科研案例：案例卡 + 学长原文，原件在 materials/）
-├── research/         调研：literature/ landscape/ domain/ evals/ —— 公开区，自动发布到 GitHub Pages
+├── docs/             vision、architecture/（纲领、细则、未决项）、specs/（每版一份 PRD）、adr/（仓库基础设施决定）、meetings/（纪要）
+│                     cases/（真实科研案例与演练：案例卡 + 学长原文 + 小证据，原件在 materials/）
+├── research/         调研：landscape/ selection/ literature/ domain/ evals/ —— 公开区，自动发布到 GitHub Pages
 ├── scripts/          外部脚本与一次性工具 —— 生产代码禁止依赖这里
 ├── assets/           图、幻灯片；大文件只放索引
 ├── materials/        案例原件（PDF / 数据 / 代码 zip），整目录 gitignore，索引与 sha256 在 docs/cases/
@@ -57,7 +57,7 @@ tju-ai4science/
 | 拉取全部内仓（只快进） | `./repos pull all` |
 | 推送某个内仓（永不 force） | `./repos push platform` |
 | 提交前门禁 | `make check` |
-| 发版 | `make release VERSION=0.2.0` 然后 `git push origin main --follow-tags` |
+| 发版 | `make release VERSION=x.y.z` 然后 `git push origin main --follow-tags` |
 
 ## 公开阅读版
 
@@ -71,4 +71,4 @@ tju-ai4science/
 
 ## 约定
 
-规矩集中在 [`CLAUDE.md`](CLAUDE.md)，能用命令判定的都进了 `make check`。系统长什么样见 [`docs/architecture/`](docs/architecture/README.md)，这一版做到哪一步见 [`docs/specs/`](docs/specs/)，仓库基础设施的决定见 [`docs/adr/`](docs/adr/)。协作方式是 spec coding + issue driven：先对齐文档再干活，每个工作单元一条 issue。
+规矩集中在 [`CLAUDE.md`](CLAUDE.md)，能用命令判定的都进了 `make check`。系统长什么样见 [`docs/architecture/`](docs/architecture/README.md)，已发的版本做到哪见 [`docs/specs/`](docs/specs/)（下一版的目标在 milestone 与 issue 里），仓库基础设施的决定见 [`docs/adr/`](docs/adr/)。协作方式是 spec coding + issue driven：先对齐文档再干活，每个工作单元一条 issue，做完必关。
