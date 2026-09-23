@@ -13,6 +13,7 @@
 | `literature/` | 文献综述，按主题一目录，附 `refs.bib` |
 | `domain/` | 课题组学科的领域知识 |
 | `evals/` | 方案评测、benchmark 结论 |
+| `reports/` | 阶段汇报页：单文件 HTML 直接放、不经 md 渲染。[2026-09-23 平台现状、方法与分工](reports/2026-0923-platform-status.html) |
 
 ## 一篇调研长什么样
 
