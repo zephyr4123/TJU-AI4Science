@@ -15,15 +15,22 @@
 
 ## 五分钟承接
 
+两种人两条路（[#138](https://github.com/zephyr4123/TJU-AI4Science/issues/138)）：
+
+**只用平台**：不用 clone 这里。装 uv 和你要用的那家 coding agent CLI（claude 或 codex，登录好），到内仓的 Release 装 wheel，`ai4sci serve` 一行起，浏览器打开；步骤在内仓 README「怎么跑 · 只用」。
+
+**共同维护**（前提：git、uv、node 22）：
+
 ```bash
 git clone https://github.com/zephyr4123/TJU-AI4Science.git
 cd tju-ai4science
 ./repos clone all      # 按 repos.json 把内仓 clone 到位（幂等）
 ./repos status         # 各仓分支 / 领先落后 / 脏文件 / 线上分支漂移
 make check             # 本地门禁，与 CI 完全相同
+cd platform && make up # 内仓一行起服务：.venv → 页面 → skill 预热 → 自检 → ai4sci serve
 ```
 
-clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all` 解引用。
+clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all` 解引用。规矩在 `CLAUDE.md`（给人也给 agent），纲领在 `docs/architecture/`，改代码前先读 `docs/cases/` 里最近一次演练的案例卡——坑都在那。
 
 ## 目录
 

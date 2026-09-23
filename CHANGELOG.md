@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### 新增
+- README「五分钟承接」分两种人：只用平台的装 Release 里的 wheel 一行起，共同维护的 clone 后 `cd platform && make up`（[#138](https://github.com/zephyr4123/TJU-AI4Science/issues/138)）
 - 案例库加 `docs/cases/gua-codex-drill/`：第三轮演练——两层都是 Codex、在项目层与新页面上复现 arXiv 2609.01558，没跑到底（基线被 sigma.json 的 seeds 拒、重跑到一半机器定时关机）；案例卡（时间线、与 #120 Claude Code 那轮并排、主人要验的三件事、四个坑与修法、留着的债、复跑怎么接）、需求、材料来源、评分契约与壳、执行层会话、整段对话（主机端口路径已抹）；案例库索引加一行（[#137](https://github.com/zephyr4123/TJU-AI4Science/issues/137)）
 - workflow §5 界面适配「项目」改成已落地（地方栏三键、首页项目墙、门口一句话起项目、项目页正中间的对话入口 + 工作区清单、工作区页页眉「‹ 项目名  工作区 ▾」），词表「主页面 / 编辑台」改「首页 / 项目页 / 工作区页 / 编辑台」；变更记录（[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)）
 - 纲领加「项目」：README §2 改「项目与工作区」、P-15 改「项目即助理的边界，工作区即需求的边界」；workflow §1 磁盘布局加 `projects/<p>/`（对话与共用原件归项目、每段对话一个收件箱）、跨工作区 `from` 只限同项目、§4 叫醒改收件箱、§5 命令行加 `project` / `--ws` / `AI4SCI_PROJECT`、删除边界加项目、端点改 `/projects/<p>/…`、词表加「项目」；Q-9 记「工作区之上」已定；变更记录（[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)）
