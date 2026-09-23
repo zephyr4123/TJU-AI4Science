@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-23
+
 ### 新增
 - 案例库加三轮演练的案例卡：`gua-pinn-reproduction`（复现流全链、验收已签）、`boehm-codex-drill`（两层 Codex 跑通研究流）、`gua-codex-drill`（项目层与新页面，没跑到底）（#120 #135 #137）
 - 纲领 P-22 skill 系统、P-23 算力归人、P-24 论文复现、P-25 底座归人；§2 改「项目与工作区」、P-15 改项目层（#113 #119 #120 #130 #136）
@@ -70,7 +72,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.3.0...v1.0.0
 [0.3.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.1.0...v0.1.1
