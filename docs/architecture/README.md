@@ -184,6 +184,7 @@ flowchart LR
 外层
   CLAUDE.md            红线与协作纪律（给人也给 agent）
   CONTRIBUTING.md      流程：分支模型、PR、发版、CHANGELOG 写法
+  docs/handbook/       协作手册：规矩背后的做法与真实例子（教程，按场景一章）
   research/            依据（调研得出什么）             ──▶ 纲领引用它
   docs/architecture/   纲领 + 细则 + 未决（系统长什么样）──▶ spec 与内仓文档引用它
   docs/specs/          版本 PRD（这版做到哪一步）
@@ -215,3 +216,4 @@ spec 与 milestone 用产品版本命名且带 `platform` 前缀；外仓自己�
 | 2026-09-21 | P-24 论文复现另一条流程（[#120](https://github.com/zephyr4123/TJU-AI4Science/issues/120)） | 复现不是改进 | 主人 + Claude |
 | 2026-09-22 | P-25 底座归人；P-15 改项目层；P-22 改「skill 是能力的一种」（[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130) [#134](https://github.com/zephyr4123/TJU-AI4Science/issues/134) [#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)） | 全面适配 Codex；一个项目一位助理 | 主人 + Claude |
 | 2026-09-23 | 全文按代码回写：正文只留现状，每条 P-n 收成规则 + 判据 + 锚；四层图的「工具」改「skill 脚本」、「裁判」改「确定性判定」；P-1 收窄（助理可手写材料清单）、P-2 标明模型评审未实现、P-11 改「指南与领域 skill 隔离」、P-18 去掉「发布 / 验收是特例」、P-19 加「只有人能确认」的机器判据与 `agent` 字段、P-20 文献主文件已定；§5 改成链接内仓文档；§6 加内仓一侧（[#140](https://github.com/zephyr4123/TJU-AI4Science/issues/140)） | 文档盘点：纲领与代码约 120 处对不上，历史夹在正文里 | 主人 + Claude |
+| 2026-09-23 | §6 文档关系加 `docs/handbook/` 协作手册（[#145](https://github.com/zephyr4123/TJU-AI4Science/issues/145)） | 规矩在 CLAUDE.md，做法与例子在手册，两者分家 | 主人 + Claude |
