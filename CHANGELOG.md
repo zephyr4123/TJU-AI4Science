@@ -17,6 +17,7 @@
 - README 做成整个仓库的地图：产品一眼看（Mermaid 包含关系图）、词的定义、文档地图与阅读顺序；纲领与 workflow 的 ASCII 图换 Mermaid（#141）
 - 会议纪要 `docs/meetings/2026-0923-division-of-labor.md`：分工草案，拍板后再拆 issue（#142）
 - `CONTRIBUTING.md`：分支模型（`main` ← `release/X.Y` ← `feat/`）、一件事的生命周期、1.x 版本策略与冻结的契约、CHANGELOG 写法；ADR-0004；PR / issue 模板、CODEOWNERS；`main` 与 `release/**` 的 GitHub ruleset（#142）
+- 协作手册 `docs/handbook/`：十章教程（issue driven、派活怎么写、门禁、取证、先搜再答、派读者、文档即上下文、重构、gh、三轮演练），README 地图与阅读顺序指到它（#145）
 - `changelog.sh` / `release.sh` 认 `-rc.N` 预发布：`release/X.Y` 上只打 tag，Release Notes 取 Unreleased；Unreleased 条目一行一条、≤ 200 字、带 #issue 的机器判据（#17 #142）
 
 ### 变更

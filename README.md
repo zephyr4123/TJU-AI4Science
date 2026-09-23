@@ -91,11 +91,12 @@ clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all`
 | 知道还没定什么 | [`docs/architecture/open-questions.md`](docs/architecture/open-questions.md) | 真未决的五项 |
 | 看真实课题怎么跑的、坑在哪 | [`docs/cases/`](docs/cases/README.md) | 案例卡与三轮演练记录（按日期封存） |
 | 知道仓库基础设施为什么这么定 | [`docs/adr/`](docs/adr/README.md) | 拓扑、版本与发布、追踪范围 |
+| 学怎么和 agent 一起干活 | [`docs/handbook/`](docs/handbook/README.md) | 协作手册：issue driven、派活怎么写、门禁、取证、先搜再答、派读者、文档即上下文、重构、gh、三轮演练 |
 | 看已发版本当时定了什么 | [`docs/specs/`](docs/specs/) | 每版一份 PRD，发了就封存 |
 | 看调研依据 | [`research/`](research/README.md) | 行业调研、选型深读、演练评测；公开区 |
 | **改代码** | 内仓 [`platform/CLAUDE.md`](https://github.com/zephyr4123/TJU-AI4Science-Platform/blob/main/CLAUDE.md) | 开发红线、编码标准、质量纪律、「改哪层先读哪份」；内仓 README 是代码侧的地图 |
 
-阅读顺序：**只用平台的人**读内仓 README「怎么跑 · 只用」就够；**新加入改代码的人**按 `CLAUDE.md` → `CONTRIBUTING.md` → `docs/vision.md` → `docs/architecture/README.md` → 最近一张演练卡 → 内仓 `CLAUDE.md` → 要改的那一层的 README；**agent** 开工时自动读到两仓 `CLAUDE.md`，其余按里面的路由。
+阅读顺序：**只用平台的人**读内仓 README「怎么跑 · 只用」就够；**新加入改代码的人**按 `CLAUDE.md` → `CONTRIBUTING.md` → `docs/handbook/` → `docs/vision.md` → `docs/architecture/README.md` → 最近一张演练卡 → 内仓 `CLAUDE.md` → 要改的那一层的 README；**agent** 开工时自动读到两仓 `CLAUDE.md`，其余按里面的路由。
 
 ## 目录
 
@@ -107,7 +108,7 @@ tju-ai4science/
 ├── CHANGELOG.md      变更日志
 ├── CLAUDE.md         规矩；AGENTS.md 是它的符号链接（Codex 的入口）
 ├── CONTRIBUTING.md   流程：分支、PR、发版、CHANGELOG
-├── docs/             vision、architecture/（纲领、细则、未决项）、specs/（每版一份 PRD）、adr/（仓库基础设施决定）、meetings/（纪要）
+├── docs/             vision、architecture/（纲领、细则、未决项）、handbook/（协作手册）、specs/（每版一份 PRD）、adr/（仓库基础设施决定）、meetings/（纪要）
 │                     cases/（真实科研案例与演练：案例卡 + 学长原文 + 小证据，原件在 materials/）
 ├── research/         调研：landscape/ selection/ literature/ domain/ evals/ —— 公开区，自动发布到 GitHub Pages
 ├── scripts/          外部脚本与一次性工具 —— 生产代码禁止依赖这里
