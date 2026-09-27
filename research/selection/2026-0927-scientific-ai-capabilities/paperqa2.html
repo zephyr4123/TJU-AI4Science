@@ -1,0 +1,1259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PaperQA2 代码级深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>PaperQA2 代码级深读</h1>
+    <p class="subtitle">科研 AI 能力选型 · 文献阶段候选 · 带引用的文献问答：README、论文与代码逐条对账</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目选型深读（只读代码，不跑、不装依赖）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-27</dd></div><div class="meta-row"><dt>范围</dt><dd>仓库 https://github.com/Future-House/paper-qa，浅克隆到 vendor/paper-qa，提交 57e89f7（即 tag v2026.08.12，2026-08-12，也是 main 当前最新提交）；读了 src/paperqa 全部、packages/ 四个 PDF 读取器的入口与许可证、tests/、CI；依赖 fhlmi 按 uv.lock 锁定的 v0.45.0 读了 llms.py、embeddings.py、rate_limiter.py；论文 arXiv 2409.13740（PDF 存外层 materials/，不进 git）。文中不带前缀的 `文件:行` 相对 paper-qa 仓库根；平台一侧的路径相对外层仓根，以 docs/ 或 platform/ 开头</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-是不是">1. 是不是</a><ul>
+<li><a href="#11-readme-能力逐条对账">1.1 README 能力逐条对账</a></li>
+<li><a href="#12-论文里的系统与仓里的系统">1.2 论文里的系统与仓里的系统</a></li>
+<li><a href="#13-超人表现的评测能否在仓里复现">1.3 超人表现的评测能否在仓里复现</a></li>
+<li><a href="#14-文档与代码不一致的小处">1.4 文档与代码不一致的小处</a></li>
+</ul>
+</li>
+<li><a href="#2-怎么做">2. 怎么做</a><ul>
+<li><a href="#21-入口">2.1 入口</a></li>
+<li><a href="#22-建索引">2.2 建索引</a></li>
+<li><a href="#23-智能体循环与工具">2.3 智能体循环与工具</a></li>
+<li><a href="#24-证据收集">2.4 证据收集</a></li>
+<li><a href="#25-回答与引用绑定">2.5 回答与引用绑定</a></li>
+<li><a href="#26-元数据来源">2.6 元数据来源</a></li>
+<li><a href="#27-怎么调模型">2.7 怎么调模型</a></li>
+<li><a href="#28-数据进出与落盘">2.8 数据进出与落盘</a></li>
+</ul>
+</li>
+<li><a href="#3-为什么">3. 为什么</a><ul>
+<li><a href="#31-设计理由">3.1 设计理由</a></li>
+<li><a href="#32-踩过的坑">3.2 踩过的坑</a></li>
+</ul>
+</li>
+<li><a href="#4-跑起来要什么">4. 跑起来要什么</a></li>
+<li><a href="#5-和平台对照">5. 和平台对照</a><ul>
+<li><a href="#51-平台文献阶段现在有什么">5.1 平台文献阶段现在有什么</a></li>
+<li><a href="#52-多了什么重叠什么">5.2 多了什么、重叠什么</a></li>
+<li><a href="#53-会碰到的平台规则">5.3 会碰到的平台规则</a></li>
+</ul>
+</li>
+<li><a href="#6-成熟度">6. 成熟度</a></li>
+<li><a href="#7-还没弄清的问题">7. 还没弄清的问题</a></li>
+<li><a href="#8-调研方法">8. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：代码里的 PaperQA2 是一个 Python 库加 <code>pqa</code> 命令行：先把<strong>本机一个目录</strong>里的论文建成 tantivy 全文索引（每篇解析、定长切块、算好嵌入后整篇 pickle 存盘），然后一个工具调用循环的智能体在五个默认工具间来回：本地关键词搜论文、对搜进来的论文块做向量召回再逐块让模型「摘要加打分」（RCS）、按分数取前几条生成答案、清空已收证据、结束。答案里的引用是模型抄的 <code>pqac-xxxxxxxx</code> 短键，事后被换成「作者年份 pages 页码」并生成参考列表，本次收集的证据里没有的键直接删掉。<code>src/</code> 约 1.2 万行 Python，Apache-2.0。</p>
+<p><strong>README 与论文说的，代码里真有的</strong>：RCS、引用键绑定、按设置哈希命名的增量索引、Crossref 加 Semantic Scholar 加期刊分级的元数据补全、图表多模态、四个 LLM 槽经 litellm 可换、嵌入槽另可用本地 sentence-transformers 或纯稀疏。<strong>只在 README 或论文里、代码里没有或只接了一半的</strong>：论文里「超人表现」用的是作者机构内部的服务，论文 §8.1 自己写明开源仓不含 Grobid 解析、非本地全文检索和引用遍历工具，仓里也没有可跑的 LitQA2 评测；README 说的「元数据进嵌入」实际是进 RCS 的 prompt；Quickstart 说的撤稿检查不在默认路径上；搜索工具收年份参数但不过滤；post prompt 看不到答案还会把答案覆盖掉；README 示例里的 <code>Settings(paper_directory=...)</code> 被静默忽略；<code>tier*_limits</code> 的限速表对默认模型名不生效，而且这几份文件还顺带改了证据条数、块大小等参数，README 没说。</p>
+<p><strong>怎么调模型</strong>：框架自己调模型接口，LLM 调用全部经 litellm（嵌入另有不经 litellm 的本地选项），要环境变量里的 API key 或本地端点。五个槽位（llm、summary_llm、agent_llm、enrichment_llm、embedding）默认全是 OpenAI（<code>gpt-4o-2024-11-20</code> 与 <code>text-embedding-3-small</code>）。换 Anthropic 要改四个模型槽，嵌入另找一家或用本地；它用不了 Claude Code / Codex 的命令行登录。</p>
+<p><strong>成熟度</strong>：有 CI（CI 里带真 key 调 OpenAI、Anthropic、Gemini 等），237 个测试函数，CalVer 发版；2026-04 以后 main 只有 4 个提交，之后的推送只有依赖机器人在分支上的锁文件更新。与平台的对照只列事实，见<a href="#5-和平台对照">第 5 节</a>；还没弄清的见<a href="#7-还没弄清的问题">第 7 节</a>。横向对比见同目录的 <a href="index.html">README.md</a>。</p>
+</blockquote>
+<h2 id="1-是不是">1. 是不是<a class="permalink" href="#1-是不是" title="本节链接">#</a></h2>
+<h3 id="11-readme-能力逐条对账">1.1 README 能力逐条对账<a class="permalink" href="#11-readme-能力逐条对账" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>README 说</th>
+<th>代码里</th>
+<th>对得上吗</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>回答带文内引用（<code>README.md:110</code>）</td>
+<td>qa prompt 要求句末用 <code>pqac-xxxxxxxx</code> 键并给正反例；后处理把键换成块名、生成参考列表、删掉 <code>session.contexts</code> 里没有的键（对照的是本次收集到的全部证据，不只是进了回答 prompt 的那几条）</td>
+<td>对得上。只校验「键存在」，不校验句子是否被那条证据支持</td>
+<td><code>src/paperqa/prompts.py:38-69</code>、<code>src/paperqa/types.py:474-526</code>、<code>src/paperqa/utils.py:191-194</code></td>
+</tr>
+<tr>
+<td>「嵌入感知文档元数据」（<code>README.md:111</code>）</td>
+<td>嵌入的文本只有块正文加可选的图片描述；引用数、期刊分级、撤稿标记进的是 RCS 的 prompt 和回答上下文里的 citation 字符串</td>
+<td>部分：元数据在 prompt 里，不在嵌入里</td>
+<td><code>src/paperqa/types.py:208-235</code>、<code>src/paperqa/docs.py:371-386</code>、<code>src/paperqa/docs.py:560-563</code>、<code>src/paperqa/types.py:1216-1239</code>、<code>src/paperqa/prompts.py:164-167</code></td>
+</tr>
+<tr>
+<td>LLM 重排与上下文摘要 RCS；算法表第 2 步「用 LLM 重打分并挑选」（<code>README.md:111-112</code>、<code>README.md:234-236</code>）</td>
+<td>每个候选块一次 summary_llm 调用，返回 JSON 摘要和 0–10 分；「重排」就是按这个分排序截断，没有第二次调用</td>
+<td>对得上，打分与摘要是同一次调用</td>
+<td><code>src/paperqa/core.py:178-400</code>、<code>src/paperqa/docs.py:551-585</code>、<code>src/paperqa/settings.py:1214-1224</code></td>
+</tr>
+<tr>
+<td>智能体可反复改写检索（<code>README.md:113</code>）</td>
+<td>aviary <code>ToolSelector</code> 循环，默认工具 paper_search、gather_evidence、gen_answer、reset、complete</td>
+<td>对得上</td>
+<td><code>src/paperqa/agents/main.py:259-323</code>、<code>src/paperqa/agents/tools.py:702-712</code></td>
+</tr>
+<tr>
+<td>多个来源冗余抓元数据，含引用数与期刊质量（<code>README.md:114-115</code>）</td>
+<td>默认客户端 Crossref、Semantic Scholar、期刊分级表；OpenAlex、Unpaywall、撤稿只在 <code>ALL_CLIENTS</code></td>
+<td>对得上（默认三个）</td>
+<td><code>src/paperqa/clients/__init__.py:26-36</code></td>
+</tr>
+<tr>
+<td>Quickstart：拿元数据「含撤稿检查」（<code>README.md:71-74</code>）</td>
+<td>撤稿处理器不在默认客户端里；建索引调 <code>aadd</code> 时没传 <code>clients</code>，走默认</td>
+<td>默认路径不查撤稿</td>
+<td><code>src/paperqa/clients/__init__.py:26-30</code>、<code>src/paperqa/docs.py:267-273</code>、<code>src/paperqa/agents/search.py:522-530</code></td>
+</tr>
+<tr>
+<td>本地论文库的全文检索引擎（<code>README.md:116</code>）</td>
+<td>tantivy 索引，字段 file_location、body、title、year；每篇的解析结果（含嵌入）以 zlib 压缩的 pickle 存盘</td>
+<td>对得上</td>
+<td><code>src/paperqa/agents/search.py:113-434</code>、<code>src/paperqa/agents/search.py:622-718</code></td>
+</tr>
+<tr>
+<td>支持所有 LiteLLM 模型（<code>README.md:117</code>）</td>
+<td>所有调用经 <code>lmi.LiteLLMModel</code> 进 <code>litellm.Router</code></td>
+<td>对得上；但 README 的本地示例漏设槽位（见 <a href="#27-怎么调模型">2.7</a>）</td>
+<td><code>src/paperqa/settings.py:925-960</code></td>
+</tr>
+<tr>
+<td>Paper Search：「用 LLM 生成的关键词找候选论文」（<code>README.md:231-232</code>）</td>
+<td>只查本机索引；工具接收 <code>min_year</code>、<code>max_year</code>，拼成字符串后只用作续查的键，查询时把 year 字段排除，不做年份过滤</td>
+<td>部分：年份过滤没接上（代码里有 TODO）</td>
+<td><code>src/paperqa/agents/tools.py:155-182</code>、<code>src/paperqa/agents/main.py:235</code></td>
+</tr>
+<tr>
+<td><code>k</code> 个「最相关且多样」的段落（<code>README.md:757-758</code>）</td>
+<td>MMR 的 λ 默认 1.0，λ≥1 时直接返回相似度排序</td>
+<td>默认不做多样化</td>
+<td><code>src/paperqa/settings.py:804-806</code>、<code>src/paperqa/llms.py:144-145</code></td>
+</tr>
+<tr>
+<td>post prompt 可用来批评答案；速查表说它能访问 PQASession 字段（<code>README.md:1119-1123</code>、<code>README.md:1030</code>）</td>
+<td>校验时允许任何 PQASession 字段名，执行时只填 <code>question</code>；执行后把原答案丢掉，并把 post 的输出拼了两遍</td>
+<td>没接对。测试只断言输出里有 "up"，覆盖不到这两点</td>
+<td><code>src/paperqa/settings.py:488-498</code>、<code>src/paperqa/docs.py:694-711</code>、<code>tests/test_paperqa.py:2650-2659</code></td>
+</tr>
+<tr>
+<td><code>prompts.select</code> 选论文模板（<code>README.md:1028</code>）</td>
+<td>定义并校验了变量，全仓没有读取点</td>
+<td>死设置</td>
+<td><code>src/paperqa/settings.py:423</code>、<code>src/paperqa/settings.py:476-486</code></td>
+</tr>
+<tr>
+<td>库用法示例 <code>Settings(temperature=0.5, paper_directory="my_papers")</code>（<code>README.md:410-413</code>）</td>
+<td><code>Settings</code> 是 <code>extra="ignore"</code>，这个字段实际在 <code>agent.index.paper_directory</code>；顶层写法被静默丢弃，退回当前目录。出厂的 <code>openreview.json</code> 也是这个写法</td>
+<td>示例不生效</td>
+<td><code>src/paperqa/settings.py:750-751</code>、<code>src/paperqa/settings.py:530-535</code>、<code>src/paperqa/configs/openreview.json:19</code></td>
+</tr>
+<tr>
+<td>出厂设置 high_quality「evidence_k = 15」（<code>README.md:362</code>）</td>
+<td>文件里是 20；<code>pqa</code> 不带 <code>-s</code> 时默认就用 high_quality</td>
+<td>数字不符</td>
+<td><code>src/paperqa/configs/high_quality.json:3</code>、<code>src/paperqa/agents/__init__.py:176-183</code></td>
+</tr>
+<tr>
+<td><code>tier1_limits</code>…<code>tier5_limits</code> 按 OpenAI 档位限速（<code>README.md:367-379</code>）</td>
+<td>限速表的键是 <code>gpt-4o</code>、<code>gpt-4o-2024-08-06</code> 等；默认模型 <code>gpt-4o-2024-11-20</code> 不在表里。lmi 按模型名取限速，取不到时落到每分钟 3 万 token 的兜底值。另外这几份文件不只是限速：tier1 把 <code>evidence_k</code> 改成 5、<code>answer_max_sources</code> 3、关掉元数据补全；tier2–5 把块大小改成 7000、<code>evidence_k</code> 改成 8–15。测试 <code>test_settings_model_config</code> 只断言配置里有 <code>gpt-4o</code> 这个键</td>
+<td>静态推断：对默认模型，这几个档位都等于 3 万 token/分钟，未跑；README 没说这些文件会改检索参数</td>
+<td><code>src/paperqa/configs/tier1_limits.json:1-32</code>、<code>src/paperqa/configs/tier2_limits.json</code>…<code>tier5_limits.json</code>、<code>tests/test_agents.py:819-845</code>；lmi <code>packages/lmi/src/lmi/llms.py:864-870</code>、<code>packages/lmi/src/lmi/rate_limiter.py:38,66</code><sup id="fnref7:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup></td>
+</tr>
+<tr>
+<td>多模态：图表随页解析，生成描述只改嵌入不进引文正文（<code>README.md:801-845</code>）</td>
+<td>解析时每张图调 enrichment_llm 写描述，判为 IRRELEVANT 的图丢掉；描述只拼进嵌入文本；RCS 时图片作为多模态输入</td>
+<td>对得上</td>
+<td><code>src/paperqa/settings.py:1051-1193</code>、<code>src/paperqa/types.py:208-235</code>、<code>src/paperqa/core.py:233-269</code></td>
+</tr>
+<tr>
+<td>可换外部向量库 Qdrant（<code>README.md:698-699</code>）</td>
+<td><code>QdrantVectorStore</code> 存在，默认 <code>NumpyVectorStore</code></td>
+<td>对得上</td>
+<td><code>src/paperqa/llms.py:173-523</code></td>
+</tr>
+<tr>
+<td>「超人表现」（<code>README.md:13-15</code>、<code>README.md:145</code>）</td>
+<td>见 <a href="#12-论文里的系统与仓里的系统">1.2</a> 与 <a href="#13-超人表现的评测能否在仓里复现">1.3</a></td>
+<td>仓里复现不了</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="12-论文里的系统与仓里的系统">1.2 论文里的系统与仓里的系统<a class="permalink" href="#12-论文里的系统与仓里的系统" title="本节链接">#</a></h3>
+<p>论文 §8.1 原话：开源仓「提供基本算法，但不包括 Grobid 解析代码、非本地全文文献检索、引用遍历工具」，论文实验跑在作者机构的 HTTP 服务上（MongoDB、Redis、PostgreSQL、Dagster、Kubernetes）<sup id="fnref:paper"><a class="footnote-ref" href="#fn:paper">1</a></sup>。逐项对照：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>论文里的 PaperQA2</th>
+<th>仓里（57e89f7）</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Paper Search：智能体生成关键词，调 Semantic Scholar 等服务拿候选（默认 12 篇），再去自家库匹配或按开放获取链接现取（§2、§8.1.1）</td>
+<td>只查本地目录建的 tantivy 索引，一次 8 篇；唯一联网检索的工具是可选的 clinicaltrials.gov 检索</td>
+<td><code>src/paperqa/agents/tools.py:109-210</code>、<code>src/paperqa/settings.py:655</code>、<code>src/paperqa/agents/tools.py:443-688</code></td>
+</tr>
+<tr>
+<td>解析：PyMuPDF 为默认，WikiCrow 用 Grobid；可按章节切块（§8.1 参数表）</td>
+<td>没有 Grobid（全仓 grep 不到）；读取器有 pypdf（核心依赖）、PyMuPDF、Docling、nemotron；没有按章节切：PDF 与 Office 是按页拼接的定长字符滑窗，txt、html 是按 cl100k token 的定长滑窗，其余后缀按行；<code>ChunkingOptions</code> 只有 <code>SIMPLE_OVERLAP</code></td>
+<td><code>pyproject.toml:38,89,101,108</code>、<code>src/paperqa/readers.py:105-143,258-358,506-551</code>、<code>src/paperqa/settings.py:176-195</code></td>
+</tr>
+<tr>
+<td>Citation Traversal 工具：从高分证据所在论文沿引用图前后各走一层，Semantic Scholar 加 Crossref，按重叠度过滤，上限 12 篇（§8.1.1，Algorithm 1）；消融显示它提高 DOI 召回（§3，图 2D）</td>
+<td>没有这个工具。<code>AgentSettings.tool_names</code> 的说明和 wikicrow、contracrow 两份设置的 agent prompt 仍在让智能体「收集证据引用的论文」；Semantic Scholar 客户端留着 citations、references、recommendations 的 URL 构造，只有 MATCH 被调用</td>
+<td><code>src/paperqa/agents/tools.py:702-712</code>、<code>src/paperqa/settings.py:671-679</code>、<code>src/paperqa/configs/wikicrow.json:47</code>、<code>src/paperqa/clients/semantic_scholar.py:61-114</code>、<code>src/paperqa/clients/semantic_scholar.py:248</code></td>
+</tr>
+<tr>
+<td>RCS：LitQA 实验 top-k 30、进答案 15 条；改成 5 条时准确率最高、15 条时精度最高；GPT-4-Turbo 做 RCS 的准确率显著最好（§3、§8.1）</td>
+<td>默认 <code>evidence_k</code> 10、<code>answer_max_sources</code> 5；CLI 默认的 high_quality 是 20 与 5</td>
+<td><code>src/paperqa/settings.py:109-111</code>、<code>src/paperqa/settings.py:138-140</code>、<code>src/paperqa/configs/high_quality.json:1-14</code></td>
+</tr>
+<tr>
+<td>嵌入：<code>text-embedding-3-large</code> 拼 256 维 token 取模稀疏向量（§8.1.1）</td>
+<td>默认 <code>text-embedding-3-small</code> 纯稠密；<code>hybrid-</code> 前缀可选；wikicrow 用 hybrid-3-small，contracrow 用 hybrid-3-large</td>
+<td><code>src/paperqa/settings.py:794-797</code>、<code>src/paperqa/configs/wikicrow.json:6</code>、<code>src/paperqa/configs/contracrow.json:6</code></td>
+</tr>
+<tr>
+<td>agent_llm 固定 <code>gpt-4-turbo-2024-04-09</code>（§8.1）</td>
+<td>默认 <code>gpt-4o-2024-11-20</code></td>
+<td><code>src/paperqa/settings.py:619-622</code>；lmi <code>packages/lmi/src/lmi/llms.py:145</code><sup id="fnref8:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup></td>
+</tr>
+<tr>
+<td>论文说开源版用 LangChain 做智能体与状态更新（§8.1）</td>
+<td>已没有 LangChain 依赖；智能体是 aviary 的 <code>ToolSelector</code> 或可选的 ldp 智能体，模型走 lmi 加 litellm</td>
+<td><code>pyproject.toml:30-47</code>、<code>src/paperqa/settings.py:962-1049</code></td>
+</tr>
+<tr>
+<td>WikiCrow：每个基因 4 次 PaperQA2 调用加 1 次 GPT-4-Turbo 总览调用，Python 脚本拼成文章（§4，图 3A，§8.3）</td>
+<td>只有一份 <code>wikicrow.json</code> 单次问答设置，没有拼接脚本</td>
+<td><code>src/paperqa/configs/wikicrow.json</code></td>
+</tr>
+<tr>
+<td>ContraCrow：先用多次 LLM 调用从论文里抽 claim，再逐条问矛盾（§5，图 4A）</td>
+<td>只有 <code>contracrow.json</code>：矛盾判断的 qa prompt 加 11 级标签；没有抽 claim 的代码</td>
+<td><code>src/paperqa/configs/contracrow.json:34</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="13-超人表现的评测能否在仓里复现">1.3 超人表现的评测能否在仓里复现<a class="permalink" href="#13-超人表现的评测能否在仓里复现" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>论文结果</th>
+<th>仓里有什么</th>
+<th>缺什么</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LitQA2：精度 85.2%、准确率 66.0%；9 名博士或在读博士 73.8% 与 67.7%；精度显著高于人，准确率无显著差异（§2，图 2B）</td>
+<td><code>docs/2024-10-16_litqa2-splits.json5</code>：train、eval、test 三份题号与建索引用的 DOI；README 指向外部 LAB-Bench 题目和 aviary 的 litqa 评测包；<code>agent_query</code> 与环境接受 aviary 的 <code>MultipleChoiceQuestion</code> 作输入，评分逻辑在 aviary 里</td>
+<td>题目文本、评分代码、论文全文（版权）、论文用的检索服务、Grobid、引用遍历</td>
+<td><code>README.md:1172-1191</code>、<code>docs/2024-10-16_litqa2-splits.json5:1-4</code>、<code>src/paperqa/agents/main.py:54-60</code>、<code>src/paperqa/agents/env.py:17,213</code></td>
+</tr>
+<tr>
+<td>评分：GPT-4-0613 从输出里抽选项字母，3 次全量取均值（§8.2.2）</td>
+<td><code>prompts.py</code> 里有 <code>QA_PROMPT_TEMPLATE</code>、<code>EVAL_PROMPT_TEMPLATE</code>，全仓没有调用</td>
+<td>评分流程在仓外</td>
+<td><code>src/paperqa/prompts.py:152-162</code></td>
+</tr>
+<tr>
+<td>WikiCrow 与 Wikipedia 对比（§4，图 3C）</td>
+<td>生成的文章在论文给的公开 GCS 桶里（§4 脚注、§7）</td>
+<td>生成流水线、人工评分数据</td>
+<td>—</td>
+</tr>
+<tr>
+<td>ContraCrow 在 ContraDetect 上 AUC 0.842（§5，图 4C）</td>
+<td><code>contracrow.json</code></td>
+<td>claim 抽取、ContraDetect 数据</td>
+<td><code>src/paperqa/configs/contracrow.json</code></td>
+</tr>
+<tr>
+<td>LFRQA 基准（不在该论文里）</td>
+<td>教程 <code>docs/tutorials/running_on_lfrqa.md</code>，评测用外部的 <code>ldp</code> 与 <code>fhaviary[lfrqa]</code> 的 Evaluator，数据要另下</td>
+<td>在仓外</td>
+<td><code>docs/tutorials/running_on_lfrqa.md:226-245</code></td>
+</tr>
+<tr>
+<td>README FAQ 自己的说法</td>
+<td>内部工具不同、有不能公开的论文访问许可，论文实验不是从已知 PDF 出发，所以结果会不同</td>
+<td>—</td>
+<td><code>README.md:1127-1136</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>论文里还有两处与复现相关的事实：LitQA2 前 147 题中放在 GitHub 上的一部分被搜索引擎收录，第三轮人工答题被污染，作者剔除了第三轮里这 147 题的人类答案（§8.2.1）；PaperQA2 单次查询成本 1–3 美元（§6），WikiCrow 每篇 4.48 美元（§4）<sup id="fnref2:paper"><a class="footnote-ref" href="#fn:paper">1</a></sup>。</p>
+<h3 id="14-文档与代码不一致的小处">1.4 文档与代码不一致的小处<a class="permalink" href="#14-文档与代码不一致的小处" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>现象</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/paperqa/agents/__init__.py:61-66</code>、<code>src/paperqa/agents/__init__.py:251-253</code> 对 <code>pyproject.toml:125-126</code></td>
+<td>「是否从命令行启动」的标志只在 <code>agents/__init__.py</code> 自己作为 <code>__main__</code> 执行时置真，而包里没有 <code>agents/__main__.py</code>；<code>pqa</code> 入口直接调 <code>main()</code>，标志一直是 False</td>
+<td>建索引的进度条在 <code>pqa</code> 下默认不显示，只能设 <code>PQA_INDEX_ENABLE_PROGRESS_BAR</code> 打开（<code>src/paperqa/agents/search.py:590-603</code>）</td>
+</tr>
+<tr>
+<td><code>src/paperqa/settings.py:580-591</code> 对 <code>src/paperqa/readers.py:477-480,540-551</code></td>
+<td><code>.md</code> 在允许索引的后缀里，读取时落进「代码」分支</td>
+<td>Markdown 按行切块，块名是 <code>lines x-y</code> 而不是页码</td>
+</tr>
+<tr>
+<td><code>src/paperqa/docs.py:143</code></td>
+<td><code>aadd_url</code> 在 async 函数里用同步 <code>urllib</code></td>
+<td>下载时阻塞事件循环</td>
+</tr>
+<tr>
+<td><code>src/paperqa/llms.py:526-585</code> 对 <code>src/paperqa/settings.py:32,950-951</code></td>
+<td>仓里有一份 <code>embedding_model_factory</code>，实际用的是 lmi 的同名函数</td>
+<td>仓内这份只被自己递归调用</td>
+</tr>
+<tr>
+<td><code>src/paperqa/clients/retractions.py:24-30</code></td>
+<td>撤稿数据整份下载后写进已安装包的 <code>client_data/</code> 目录</td>
+<td>只读安装位置下会失败（未验证）</td>
+</tr>
+<tr>
+<td><code>src/paperqa/agents/search.py:92-93,249-251</code></td>
+<td>索引目录里的文件直接 <code>pickle.loads</code></td>
+<td>能写索引目录的人能让读取方执行任意代码</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="2-怎么做">2. 怎么做<a class="permalink" href="#2-怎么做" title="本节链接">#</a></h2>
+<h3 id="21-入口">2.1 入口<a class="permalink" href="#21-入口" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>入口</th>
+<th>做什么</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pqa ask "&lt;问题&gt;"</code></td>
+<td>默认设置 high_quality；建或同步索引，跑智能体，答案存进 answers 索引</td>
+<td><code>src/paperqa/agents/__init__.py:105-112,173-248</code></td>
+</tr>
+<tr>
+<td><code>pqa index &lt;目录&gt;</code>、<code>pqa -i &lt;名&gt; search &lt;词&gt;</code></td>
+<td>只建索引；在论文索引或历史答案索引里做关键词检索</td>
+<td><code>src/paperqa/agents/__init__.py:115-149</code></td>
+</tr>
+<tr>
+<td><code>pqa view</code>、<code>pqa save &lt;名&gt;</code>、<code>pqa -s &lt;名&gt;</code></td>
+<td>看、存、选设置；设置文件先找 <code>~/.pqa/settings/</code>，再找包内 <code>configs/</code></td>
+<td><code>src/paperqa/settings.py:876-923</code></td>
+</tr>
+<tr>
+<td><code>ask()</code>、<code>agent_query()</code></td>
+<td>Python 入口，同 <code>pqa ask</code></td>
+<td><code>src/paperqa/agents/__init__.py:105-112</code>、<code>src/paperqa/agents/main.py:54-85</code></td>
+</tr>
+<tr>
+<td><code>Docs().aadd()</code> / <code>aget_evidence()</code> / <code>aquery()</code></td>
+<td>不用智能体，手动加文档、收证据、出答案；没有 tantivy 这一级</td>
+<td><code>src/paperqa/docs.py:156-721</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>命令行参数由 pydantic-settings 从 <code>Settings</code> 字段自动生成，如 <code>--parsing.chunk_size</code>、<code>--llm</code>（<code>src/paperqa/agents/__init__.py:219-229</code>）。</p>
+<h3 id="22-建索引">2.2 建索引<a class="permalink" href="#22-建索引" title="本节链接">#</a></h3>
+<ol>
+<li><strong>定索引名与位置</strong>：索引名是 <code>pqa_index_</code> 加哈希，哈希的输入是论文目录、是否用绝对路径、嵌入模型名、PDF 解析函数、块大小、重叠、是否整页截图、多模态开关；默认放在 <code>~/.pqa/indexes/&lt;名&gt;/</code>（<code>src/paperqa/settings.py:853-874</code>、<code>src/paperqa/settings.py:545-551</code>、<code>src/paperqa/utils.py:523-530</code>）。换其中任一项就是一个新索引。</li>
+<li><strong>扫目录</strong>：默认递归，按后缀取 <code>.txt .pdf .html .md .xlsx .docx .pptx</code>；目录里已删掉的文件从索引里删（<code>src/paperqa/agents/search.py:652-686</code>、<code>src/paperqa/settings.py:580-591</code>）。</li>
+<li><strong>逐篇 <code>process_file</code></strong>，并发默认 5（注释说是照顾没有 S2、Crossref key 的人）（<code>src/paperqa/agents/search.py:490-580</code>、<code>src/paperqa/settings.py:563-566</code>）。</li>
+<li><strong><code>Docs.aadd</code> 一篇的流程</strong>（<code>src/paperqa/docs.py:156-338</code>）：文件 md5 当 dockey；没给 citation 就读前 3 页的第一块，让 llm 写 MLA 引文（<code>docs.py:180-213</code>）；没给 title 和 DOI 就再让 llm 把引文抽成 JSON（<code>docs.py:225-261</code>）；有 title 或 DOI 就调元数据客户端升级成 <code>DocDetails</code>（<code>docs.py:266-295</code>）；全文解析，多模态默认开、每张图调一次 enrichment_llm（<code>docs.py:297-311</code>）；PDF 按页拼接后定长切块，库默认 5000 字符、重叠 250，<code>pqa</code> 默认的 high_quality 设置是 7000 字符，块名 <code>&lt;docname&gt; pages a-b</code>（<code>src/paperqa/readers.py:92-143</code>、<code>src/paperqa/settings.py:249-251</code>、<code>src/paperqa/configs/high_quality.json:9-12</code>）；粗查是不是正常文本（<code>docs.py:312-335</code>）；算嵌入（<code>docs.py:360-386</code>）。</li>
+<li><strong>写盘</strong>：tantivy 里存 title、year、file_location、body（全文）；整篇 <code>Docs</code>（含块和嵌入）pickle 压缩存成 <code>docs/&lt;正文哈希&gt;.zip</code>；处理失败的文件一律记 <code>ERROR</code> 并先存索引，之后不再重试；其中 <code>ValueError</code> 与解析失败跳过这一篇继续，其他异常记完后照样抛出、中断这次建索引（<code>src/paperqa/agents/search.py:297-316,531-566,271-273</code>）。</li>
+</ol>
+<p>PDF 解析函数的默认值：装了 <code>paper-qa-pymupdf</code> 就用 PyMuPDF，否则用核心依赖里的 pypdf（<code>src/paperqa/settings.py:180-195</code>）。</p>
+<h3 id="23-智能体循环与工具">2.3 智能体循环与工具<a class="permalink" href="#23-智能体循环与工具" title="本节链接">#</a></h3>
+<p><code>agent_query</code> → <code>run_agent</code>：先建或同步索引（<code>agent.rebuild_index</code> 默认真），再按 <code>agent_type</code> 选三种跑法之一：<code>fake</code>（写死的顺序）、aviary <code>ToolSelector</code>（默认）、ldp 智能体（可选依赖）（<code>src/paperqa/agents/main.py:91-148</code>）。</p>
+<ul>
+<li><strong>环境</strong>：每次 reset 清空 <code>Docs</code>，第一条消息是「用工具回答问题……状态：{status}」（<code>src/paperqa/agents/env.py:243-290</code>、<code>src/paperqa/prompts.py:142-150</code>）。状态行是论文数、相关论文数、证据数、已花美元（<code>src/paperqa/agents/tools.py:27-44</code>）。</li>
+<li><strong>循环</strong>：agent_llm 通过工具调用选工具，格式错了重试 5 次；环境执行工具（允许并发的工具并发跑）；调了 complete 就结束；另有 <code>max_timesteps</code>、<code>max_answer_attempts</code>、500 秒超时（<code>src/paperqa/agents/main.py:274-323</code>、<code>src/paperqa/agents/env.py:295-346</code>、<code>src/paperqa/settings.py:663-669</code>）。</li>
+<li><strong>失败回退</strong>：超时（状态 truncated）与轨迹里的其他异常（状态 fail）都被捕获；truncated（含步数用完）一律再强制调一次 gen_answer，fail 时只在还没调过 gen_answer 时强制调（<code>src/paperqa/agents/main.py:151-179,298-303</code>）。</li>
+<li><strong>fake 跑法</strong>：llm 生成 3 条关键词各搜一次 → gather_evidence → gen_answer → 让 llm 选 complete；<code>fast.json</code> 用它（<code>src/paperqa/agents/main.py:182-256</code>、<code>src/paperqa/configs/fast.json:17</code>）。和论文 §3 的 No Agent 消融是同一种固定顺序，论文那组跑在作者内部服务上。</li>
+<li><strong>默认工具可用环境变量换</strong>：<code>PAPERQA_DEFAULT_TOOL_NAMES</code>（逗号分隔）非空时替代下表的默认五个（<code>src/paperqa/agents/tools.py:702-712</code>）。</li>
+</ul>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>做什么</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>paper_search</code></td>
+<td>在 tantivy 里查 <code>search_count</code>（默认 8）篇，同一查询再调就翻页；把命中论文的块（已带嵌入）加进当前 <code>Docs</code></td>
+<td><code>src/paperqa/agents/tools.py:109-210</code></td>
+</tr>
+<tr>
+<td><code>gather_evidence</code></td>
+<td>对当前 <code>Docs</code> 做 RCS（见 2.4），返回新增证据数、最好的 <code>agent_evidence_n</code> 条摘要、状态行；没论文时报错</td>
+<td><code>src/paperqa/agents/tools.py:217-311</code></td>
+</tr>
+<tr>
+<td><code>gen_answer</code></td>
+<td>调 <code>Docs.aquery</code> 出答案（见 2.5），返回「答案 + 状态行」</td>
+<td><code>src/paperqa/agents/tools.py:314-386</code></td>
+</tr>
+<tr>
+<td><code>reset</code></td>
+<td>清空已收集的证据</td>
+<td><code>src/paperqa/agents/tools.py:389-402</code></td>
+</tr>
+<tr>
+<td><code>complete</code></td>
+<td>结束，参数 <code>has_successful_answer</code> 表示确定或不确定</td>
+<td><code>src/paperqa/agents/tools.py:405-440</code></td>
+</tr>
+<tr>
+<td><code>clinical_trials_search</code>（可选）</td>
+<td>查 clinicaltrials.gov，把试验加进 <code>Docs</code></td>
+<td><code>src/paperqa/agents/tools.py:443-688</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="24-证据收集">2.4 证据收集<a class="permalink" href="#24-证据收集" title="本节链接">#</a></h3>
+<ol>
+<li><strong>召回范围是当前 <code>Docs</code></strong>，即智能体搜进来的那些论文的块，不是整个库（<code>src/paperqa/docs.py:437-490</code>）。</li>
+<li><strong>向量召回</strong>：查询嵌入后与块做余弦相似度取前 <code>evidence_k</code>；MMR 默认关（<code>src/paperqa/llms.py:111-170,241-274</code>）。</li>
+<li><strong>逐块调 summary_llm</strong>，并发数 <code>max_concurrent_requests</code>：system 是 JSON 摘要说明；user 是「Excerpt from {块名}: {带引用数与期刊级别的引文} --- {块正文，表格另附 markdown} --- Question」；块关联的图片作为多模态输入一起发（<code>src/paperqa/core.py:227-269</code>、<code>src/paperqa/prompts.py:3-23,108-119</code>、<code>src/paperqa/docs.py:551-571</code>）。</li>
+<li><strong>解析</strong>：去掉 <code>&lt;think&gt;</code>、取 <code>```json</code> 块、把 <code>8/10</code> 换算成整数、补逗号等容错；坏 JSON 重试一次并把上次的错误告诉模型；超时、请求被拒（含安全拒答）直接丢弃这一块（<code>src/paperqa/core.py:19-124,214-225,289-303,383-400</code>）。</li>
+<li><strong>清洗</strong>：摘要里「作者 年份」式的括号引用被正则剥掉，避免和 pqac 键混淆（<code>src/paperqa/core.py:357-359</code>、<code>src/paperqa/utils.py:127-131</code>）。</li>
+<li><strong>入库</strong>：分数为 0 或失败的丢掉，其余去重后进 <code>session.contexts</code>；每条 Context 的 id 是 <code>pqac-</code> 加「问题 + 摘要前 500 字符」的 8 位哈希（<code>src/paperqa/docs.py:577-585</code>、<code>src/paperqa/types.py:279-316</code>）。</li>
+</ol>
+<h3 id="25-回答与引用绑定">2.5 回答与引用绑定<a class="permalink" href="#25-回答与引用绑定" title="本节链接">#</a></h3>
+<ol>
+<li><strong>拼上下文</strong>：按分数降序取前 <code>answer_max_sources</code>（默认 5），再去掉低于 <code>evidence_relevance_score_cutoff</code>（默认 1）的；每条写成「pqac-xxxx: 摘要 + From {引文}」，末尾列出合法键（<code>src/paperqa/settings.py:1202-1273</code>、<code>src/paperqa/prompts.py:164-167</code>）。</li>
+<li><strong>没有上下文</strong>就不调模型，直接回「I cannot answer…」（<code>src/paperqa/docs.py:649-654</code>）。</li>
+<li><strong>qa prompt</strong> 要求句末用键、列了合法与不合法的写法，可带上一轮答案迭代（<code>src/paperqa/prompts.py:30-69</code>、<code>src/paperqa/docs.py:655-682</code>）。</li>
+<li><strong>后处理</strong>：找出括号里的 pqac 键，换成块名（如 <code>Qian2011Neural pages 1-2</code>）并去重；按首次出现顺序生成「1. (块名): 引文」参考列表；答案里有、但 <code>session.contexts</code>（本次收集到的全部证据，不限于进了 prompt 的那几条）里没有的键直接从文本里删掉（<code>src/paperqa/types.py:474-526</code>）。</li>
+<li><strong>输出字段</strong>：<code>answer</code>（换过键）、<code>raw_answer</code>（原文）、<code>formatted_answer</code>（带问题与参考列表）、<code>references</code>、<code>contexts</code>、<code>cost</code>、<code>token_counts</code>、<code>tool_history</code>、<code>has_successful_answer</code>（<code>src/paperqa/types.py:319-386</code>）。</li>
+</ol>
+<p>绑定粒度是「块」，即页码区间；机器校验只到「键在上下文里存在」，句子和证据是否一致没有检查。</p>
+<h3 id="26-元数据来源">2.6 元数据来源<a class="permalink" href="#26-元数据来源" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>来源</th>
+<th>默认开</th>
+<th>给什么</th>
+<th>环境变量</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Crossref</td>
+<td>是</td>
+<td>标题、DOI、作者、日期、卷期页、期刊、出版方、被引数、bibtex</td>
+<td><code>CROSSREF_API_KEY</code>（可选）、<code>CROSSREF_MAILTO</code>（不设用 example@papercrow.ai）</td>
+<td><code>src/paperqa/clients/crossref.py:40-107</code></td>
+</tr>
+<tr>
+<td>Semantic Scholar</td>
+<td>是</td>
+<td>同上，另有开放获取 PDF 链接、有影响力的被引数；按标题匹配时：给了作者，标题相似度不到 1 就要作者对上且不低于 0.75，没给作者就要求标题完全一致</td>
+<td><code>SEMANTIC_SCHOLAR_API_KEY</code>（可选）</td>
+<td><code>src/paperqa/clients/semantic_scholar.py:40-58,224-294</code></td>
+</tr>
+<tr>
+<td>期刊分级</td>
+<td>是</td>
+<td>包内 4 万行 CSV（芬兰 JUFO 分级 0–3，0 表示差或掠夺性期刊）加手工增删（如 PNAS 定为 3 级、去掉 Scientific Reports 的 0 级记录）</td>
+<td>无</td>
+<td><code>src/paperqa/clients/journal_quality.py:30-32,92-198</code>、<code>src/paperqa/types.py:787-792</code></td>
+</tr>
+<tr>
+<td>OpenAlex</td>
+<td>否</td>
+<td>同类书目数据</td>
+<td><code>OPENALEX_MAILTO</code>、<code>OPENALEX_API_KEY</code></td>
+<td><code>src/paperqa/clients/openalex.py:46-64</code></td>
+</tr>
+<tr>
+<td>Unpaywall</td>
+<td>否</td>
+<td>开放获取状态、PDF 链接</td>
+<td><code>UNPAYWALL_EMAIL</code></td>
+<td><code>src/paperqa/clients/unpaywall.py:18-19,92</code></td>
+</tr>
+<tr>
+<td>撤稿</td>
+<td>否</td>
+<td>下载 Crossref Labs 的 Retraction Watch 数据集，按 DOI 比对</td>
+<td><code>CROSSREF_MAILTO</code></td>
+<td><code>src/paperqa/clients/retractions.py:18-83</code>、<code>src/paperqa/clients/crossref.py:352-380</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>合并规则：多个来源的结果相加，出版日期新的优先、作者取总长更长的、被引数与年份取大、key 冲突就清空重生（<code>src/paperqa/types.py:1267-1371</code>）。某个来源遇到「DOI 未找到、请求错误、重试用尽、超时」四类失败时只打 warning 返回空，其他异常照常抛出（<code>src/paperqa/clients/client_models.py:111-143</code>）。用途：<code>formatted_citation</code> 在引文后加「This article has N citations and is from a domain leading peer-reviewed journal.」，撤稿的标 <code>**RETRACTED ARTICLE**</code>，这串文字进 RCS prompt 和回答上下文（<code>src/paperqa/types.py:1216-1249</code>）。<code>parsing.use_doc_details=False</code> 关掉整个元数据步骤，连同「把引文抽成 JSON」那次 llm 调用（<code>src/paperqa/settings.py:246-248</code>、<code>src/paperqa/docs.py:225,266</code>）。</p>
+<h3 id="27-怎么调模型">2.7 怎么调模型<a class="permalink" href="#27-怎么调模型" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>槽位</th>
+<th>用在哪</th>
+<th>默认</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>llm</code></td>
+<td>建索引时写引文、抽 JSON；pre、post；生成答案；fake 跑法生成关键词、最后选 complete</td>
+<td><code>gpt-4o-2024-11-20</code></td>
+<td><code>src/paperqa/settings.py:753-766</code></td>
+</tr>
+<tr>
+<td><code>summary_llm</code></td>
+<td>RCS，每个候选块一次</td>
+<td>同上</td>
+<td><code>src/paperqa/settings.py:777-783</code></td>
+</tr>
+<tr>
+<td><code>agent.agent_llm</code></td>
+<td>选工具，要支持工具调用</td>
+<td>同上</td>
+<td><code>src/paperqa/settings.py:619-622,962-981</code></td>
+</tr>
+<tr>
+<td><code>parsing.enrichment_llm</code></td>
+<td>建索引时每张图表一次（多模态默认开）</td>
+<td>同上</td>
+<td><code>src/paperqa/settings.py:254-263,349-356</code></td>
+</tr>
+<tr>
+<td><code>embedding</code></td>
+<td>块与查询的嵌入</td>
+<td><code>text-embedding-3-small</code></td>
+<td><code>src/paperqa/settings.py:794-797</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>默认名来自 lmi 的 <code>CommonLLMNames.GPT_4O</code>（lmi <code>packages/lmi/src/lmi/llms.py:145</code>）<sup id="fnref:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup>。</p>
+<p><strong>调用链</strong>：<code>Settings.get_llm()</code> 等返回 <code>lmi.LiteLLMModel</code>，配置用 <code>*_config</code>（litellm Router 的 <code>model_list</code>），不给就生成一份：模型名、温度、系统消息打缓存标记（Anthropic 提示缓存）；调用进 <code>litellm.Router.acompletion</code>（<code>src/paperqa/settings.py:728-747,925-960</code>；lmi <code>packages/lmi/src/lmi/llms.py:818-852,922-951</code><sup id="fnref2:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup>）。给了 <code>*_config</code> 却不带 <code>model_list</code> 时（<code>tier*_limits</code> 就是这样），lmi 自己补一份，温度取 config 里的值、没有就是 1.0，不用 <code>Settings.temperature</code>，也没有缓存标记（lmi <code>packages/lmi/src/lmi/llms.py:729-774</code><sup id="fnref3:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup>）。<code>llm</code> 槽名字以 o1 或 gpt-5 开头时，全局 <code>temperature</code>（五个槽共用）被强制改成 1；只看 <code>llm</code> 这一个槽的名字（<code>src/paperqa/settings.py:823-841</code>）。每次调用的美元成本由 litellm 的 <code>completion_cost</code> 算、累加进 <code>PQASession.cost</code>；算不出来（例如价格表里没有的本地模型）时记 0.0 并打一条 warning（<code>src/paperqa/types.py:414-433</code>；lmi <code>packages/lmi/src/lmi/llms.py:988-992</code><sup id="fnref4:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup>）。</p>
+<p><strong>嵌入的前缀</strong>（lmi <code>embedding_model_factory</code>）：<code>st-</code> 本地 sentence-transformers（要 <code>paper-qa[local]</code>）；<code>hybrid-</code> 稠密拼 256 维 token 取模稀疏；<code>sparse</code> 只用稀疏，不调任何模型接口（tiktoken 编码文件首次加载见 <a href="#7-还没弄清的问题">第 7 节</a>）；<code>litellm-</code> 前缀与不带前缀的都交给 litellm（lmi <code>packages/lmi/src/lmi/embeddings.py:201-219,311-370</code><sup id="fnref5:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup>；仓内同逻辑副本 <code>src/paperqa/llms.py:526-585</code>）。</p>
+<p><strong>换成 Anthropic 要改的</strong>：</p>
+<ul>
+<li>环境里放 <code>ANTHROPIC_API_KEY</code>；<code>llm</code>、<code>summary_llm</code>、<code>agent.agent_llm</code>、<code>parsing.enrichment_llm</code> 四个都改成 <code>claude-*</code>。README 的 Claude 示例只改了前三个（<code>README.md:546-563</code>），多模态默认开时图片描述仍走 gpt-4o。</li>
+<li>嵌入：Anthropic 不提供自己的嵌入模型<sup id="fnref:anthropic-embed"><a class="footnote-ref" href="#fn:anthropic-embed">3</a></sup>。要么另一家的 key（OpenAI、Gemini 或其他 litellm 支持的），要么 <code>st-</code> 本地，要么 <code>sparse</code>。改嵌入就是换一个新索引。</li>
+<li>仓里的测试覆盖：<code>test_model_chain</code> 用 <code>anthropic/claude-sonnet-4-6</code> 做 llm 与 summary_llm，嵌入仍用 OpenAI（<code>tests/test_paperqa.py:488-515</code>）；Claude 3.7 Sonnet 做 ldp MemoryAgent 的 agent_llm（<code>tests/test_agents.py:447</code>）。代码注释写着 claude-haiku-4-5 描述图片「反复失败」（<code>src/paperqa/settings.py:350-353</code>）。</li>
+</ul>
+<p><strong>换成本地模型（Ollama、llama.cpp）要改的</strong>：五个槽都要配（<code>*_config</code> 里写 <code>api_base</code>）；嵌入用 <code>ollama/...</code> 配 <code>embedding_config</code>，或用 <code>st-</code>。README 的两个本地示例都没设 <code>agent_llm</code> 和 <code>enrichment_llm</code>，llama.cpp 那个连嵌入也没设（<code>README.md:594-652</code>）。issue #1321 的报告人设了 llm、summary_llm、agent_llm 和嵌入，建索引仍调到 OpenAI，关掉多模态（不再调 enrichment_llm）后才停；之后又撞上嵌入模型上下文比默认块短<sup id="fnref:i1321"><a class="footnote-ref" href="#fn:i1321">5</a></sup>。agent_llm 必须能做工具调用，选不出工具重试 5 次后抛错（<code>src/paperqa/agents/main.py:305-312</code>）；README 说 7B 模型不行（<code>README.md:586-588</code>）。</p>
+<p><strong>不能用的</strong>：Claude Code、Codex 这类命令行 agent 的登录。PaperQA 只认 litellm 能用的凭据：环境变量里的 key，或 <code>api_base</code> 指向的端点。</p>
+<h3 id="28-数据进出与落盘">2.8 数据进出与落盘<a class="permalink" href="#28-数据进出与落盘" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>路径或对象</th>
+<th>内容</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>论文目录</td>
+<td>输入，只读</td>
+<td><code>src/paperqa/agents/search.py:622-664</code></td>
+</tr>
+<tr>
+<td>manifest CSV（可选）</td>
+<td><code>file_location</code>、<code>doi</code>、<code>title</code> 等，减少建索引时的猜测</td>
+<td><code>src/paperqa/settings.py:536-544</code>、<code>src/paperqa/agents/search.py:437-484</code></td>
+</tr>
+<tr>
+<td><code>~/.pqa/indexes/&lt;索引名&gt;/index/</code></td>
+<td>tantivy 文件</td>
+<td><code>src/paperqa/agents/search.py:155-209</code></td>
+</tr>
+<tr>
+<td><code>~/.pqa/indexes/&lt;索引名&gt;/docs/*.zip</code></td>
+<td>每篇一个 zlib 压缩的 pickle（块与嵌入）</td>
+<td><code>src/paperqa/agents/search.py:307-314,558-566</code></td>
+</tr>
+<tr>
+<td><code>~/.pqa/indexes/&lt;索引名&gt;/files.zip</code></td>
+<td>文件名到正文哈希或 <code>ERROR</code></td>
+<td><code>src/paperqa/agents/search.py:171-174,367-379</code></td>
+</tr>
+<tr>
+<td><code>~/.pqa/indexes/answers/</code></td>
+<td>每次回答的 <code>AnswerResponse</code> JSON；证据的块原文、图片、嵌入在构造 <code>AnswerResponse</code> 时就被清掉（所以 <code>ask()</code>、<code>agent_query()</code> 返回的对象里也没有），摘要与块名保留；只有不经智能体、直接调 <code>Docs.aquery</code> 拿到的 <code>PQASession</code> 还带原文</td>
+<td><code>src/paperqa/agents/main.py:64-84,148</code>、<code>src/paperqa/agents/models.py:59-67</code>、<code>src/paperqa/types.py:442-472</code></td>
+</tr>
+<tr>
+<td><code>~/.pqa/settings/&lt;名&gt;.json</code></td>
+<td><code>pqa save</code> 存的设置</td>
+<td><code>src/paperqa/agents/__init__.py:152-170</code></td>
+</tr>
+<tr>
+<td>返回值</td>
+<td><code>AnswerResponse</code>：<code>session</code> 加状态 success、unsure、truncated、fail</td>
+<td><code>src/paperqa/agents/models.py:29-57</code></td>
+</tr>
+<tr>
+<td>命令行输出</td>
+<td>日志里一行 <code>Answer: ...</code>，只有换过键的答案，不含参考列表</td>
+<td><code>src/paperqa/agents/main.py:74</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><code>PQA_HOME</code> 改的是父目录，实际路径是 <code>$PQA_HOME/.pqa/...</code>（<code>src/paperqa/utils.py:523-530</code>）；索引位置也可以用 <code>agent.index.index_directory</code> 指定。</p>
+<h2 id="3-为什么">3. 为什么<a class="permalink" href="#3-为什么" title="本节链接">#</a></h2>
+<h3 id="31-设计理由">3.1 设计理由<a class="permalink" href="#31-设计理由" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>设计</th>
+<th>解决什么</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RCS：每块先摘要加打分再进答案</td>
+<td>不让无关块进答案上下文；摘要约 200–400 token，原块约 2250 token，同样的上下文窗口能容纳更多论文</td>
+<td>论文 §2、§8.1.1；No RCS Model 消融显著下降，GPT-3.5 与 Llama3 70B 做 RCS 反而比不做差（§3，图 2C）<sup id="fnref3:paper"><a class="footnote-ref" href="#fn:paper">1</a></sup></td>
+</tr>
+<tr>
+<td>智能体而不是固定顺序</td>
+<td>看到相关论文数后可以换关键词再搜，召回更高</td>
+<td>No Agent 消融准确率显著更低（§3，t(3.7)=3.41，p=0.015）<sup id="fnref4:paper"><a class="footnote-ref" href="#fn:paper">1</a></sup>；代码保留 fake 跑法（<code>src/paperqa/agents/main.py:182-256</code>）</td>
+</tr>
+<tr>
+<td>两级检索：tantivy 挑论文，块级向量召回，再 RCS</td>
+<td>每次只需比对不到 1k 个块，所以内存里的 numpy 向量库就够</td>
+<td><code>README.md:694-697</code>、<code>src/paperqa/agents/tools.py:176-199</code></td>
+</tr>
+<tr>
+<td>开源版只搜本地目录</td>
+<td>全文受许可证限制，作者的检索服务与论文库不能公开</td>
+<td>论文 §8.1<sup id="fnref5:paper"><a class="footnote-ref" href="#fn:paper">1</a></sup>、<code>README.md:1129-1136</code></td>
+</tr>
+<tr>
+<td>短哈希键加事后换名</td>
+<td>模型只需照抄短键；不存在的键可以机器删掉；剥掉摘要里原有的「作者 年份」防混淆</td>
+<td><code>src/paperqa/types.py:279-316,474-526</code>、<code>src/paperqa/core.py:357-359</code>；v2025.12.17 发版说明里的 #1089 Context id updates<sup id="fnref:rel-2512"><a class="footnote-ref" href="#fn:rel-2512">4</a></sup></td>
+</tr>
+<tr>
+<td>元数据写进 RCS prompt</td>
+<td>让模型看到被引数、期刊级别来权衡来源</td>
+<td>论文 §2「RCS 步骤也注入来源论文的元数据」<sup id="fnref6:paper"><a class="footnote-ref" href="#fn:paper">1</a></sup>、<code>src/paperqa/types.py:1216-1239</code></td>
+</tr>
+<tr>
+<td>图片描述只进嵌入</td>
+<td>让图表能被检索到，又不让模型写的描述变成可引用的正文</td>
+<td><code>README.md:819-831</code>、<code>src/paperqa/types.py:208-235</code></td>
+</tr>
+<tr>
+<td>JSON 容错加重试一次</td>
+<td>各家模型的 JSON 输出不稳</td>
+<td><code>src/paperqa/core.py:19-124,383-400</code>；发版说明 #1082、#1083<sup id="fnref2:rel-2512"><a class="footnote-ref" href="#fn:rel-2512">4</a></sup></td>
+</tr>
+<tr>
+<td>索引名是设置的哈希</td>
+<td>换嵌入、解析器、块大小自动建新索引，不混用</td>
+<td><code>src/paperqa/settings.py:853-874</code>；#1125 修过「不同解析器同名」<sup id="fnref3:rel-2512"><a class="footnote-ref" href="#fn:rel-2512">4</a></sup></td>
+</tr>
+<tr>
+<td>不依赖 LangChain、LlamaIndex，只用 litellm 与 pydantic</td>
+<td>换模型厂商，集中限流与记账</td>
+<td><code>README.md:180-192</code>、<code>README.md:1138-1153</code></td>
+</tr>
+<tr>
+<td>环境注册进 aviary，每步奖励恒为 0</td>
+<td>同一套工具也用于训练语言智能体，奖励在外面按答案评</td>
+<td><code>src/paperqa/agents/env.py:307,387</code>、<code>src/paperqa/settings.py:983-1049</code>、<code>README.md:1186-1216</code>（由命名与 README 引用推断）</td>
+</tr>
+<tr>
+<td>2025-12 起改 CalVer</td>
+<td>不再承诺版本间兼容，版本号与论文里的 PaperQA2 名字脱钩</td>
+<td><code>README.md:151-178</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="32-踩过的坑">3.2 踩过的坑<a class="permalink" href="#32-踩过的坑" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>来源</th>
+<th>现象</th>
+<th>代码现状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>issue #1321（开，2026-03）<sup id="fnref2:i1321"><a class="footnote-ref" href="#fn:i1321">5</a></sup></td>
+<td>用 Ollama 配了 llm、summary_llm、agent_llm 与嵌入，建索引仍去调 OpenAI，关掉多模态后才停；随后嵌入模型（mxbai-embed-large）上下文比默认 5000 字符的块短而报错，换大上下文嵌入模型后跑通；帖里答疑的是 dosu 机器人，没有维护者回复；报告人最后说只读 README、不借助机器人或不读包代码不容易用起来，issue 留着等他提 README 的 PR</td>
+<td><code>enrichment_llm</code> 默认 gpt-4o、多模态默认开（<code>src/paperqa/settings.py:254-263,349-356</code>）；README 本地示例没设这个槽（<code>README.md:594-652</code>）</td>
+</tr>
+<tr>
+<td>issue #1261（开，2026-01）<sup id="fnref:i1261"><a class="footnote-ref" href="#fn:i1261">6</a></sup></td>
+<td>自定义 <code>rate_limit</code> 后限流器等满 60 秒超时，帖里没定根因；同帖里换了 GPT-5.1，加论文时图片描述仍走 gpt-4o，维护者回复要单独配 <code>parsing.enrichment_llm</code> 或关多模态</td>
+<td>限流器等待上限默认 60 秒（环境变量 <code>RATE_LIMITER_TIMEOUT</code>，lmi <code>packages/lmi/src/lmi/rate_limiter.py:31</code>）；限速表按模型名取，取不到落兜底（lmi <code>packages/lmi/src/lmi/llms.py:864-870</code><sup id="fnref9:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup>）；enrichment 同上</td>
+</tr>
+<tr>
+<td>issue #861（开，2025-02）<sup id="fnref:i861"><a class="footnote-ref" href="#fn:i861">7</a></sup></td>
+<td>用 manifest 建索引仍在调 LLM</td>
+<td>现行代码里 manifest 行经 <code>DocDetails</code> 合成 citation 后传给 <code>aadd</code>，跳过引文调用（<code>src/paperqa/agents/search.py:437-445,516-530</code>、<code>src/paperqa/docs.py:180</code>）；图片描述仍默认调用。未实测</td>
+</tr>
+<tr>
+<td>issue #633（开，2024-10）<sup id="fnref:i633"><a class="footnote-ref" href="#fn:i633">8</a></sup></td>
+<td>命令行与 Python 里给 <code>*_config</code> 只写 <code>rate_limit</code>、不写 <code>model_list</code>，报 <code>KeyError: 'model_list'</code></td>
+<td>现行 lmi 在缺 <code>model_list</code> 时自己补一份（lmi <code>packages/lmi/src/lmi/llms.py:729-774</code><sup id="fnref10:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup>），<code>tests/test_agents.py:819-845</code> 用正是这种写法的 <code>tier1_limits</code> 构造模型；读代码看这个报错已不出现，未实测，issue 没关</td>
+</tr>
+<tr>
+<td>issue #381（开，2024-09）<sup id="fnref:i381"><a class="footnote-ref" href="#fn:i381">9</a></sup></td>
+<td>标题：索引 50 篇撞 Semantic Scholar 限流</td>
+<td>建索引并发默认压到 5（<code>src/paperqa/settings.py:563-566</code>）；README 建议 100 篇以上申请 key（<code>README.md:263-268</code>）</td>
+</tr>
+<tr>
+<td>issue #390（开，2024-09）<sup id="fnref:i390"><a class="footnote-ref" href="#fn:i390">10</a></sup></td>
+<td>标题：v5 怎么配 LiteLLM 加 Ollama</td>
+<td>同 #1321</td>
+</tr>
+<tr>
+<td>发版说明 v2025.12.17<sup id="fnref4:rel-2512"><a class="footnote-ref" href="#fn:rel-2512">4</a></sup></td>
+<td>下调 litellm 版本修挂起的测试（#1192）；CI 里 Python≤3.11 加 LiteLLM≥1.76 不兼容（#1195）；捕获安全拒答（#1114）；404 页面被当成论文解析（#1126）</td>
+<td>CI 的包测试跳过 3.11（<code>.github/workflows/tests.yml:137</code>）；拒答丢弃该块（<code>src/paperqa/core.py:294-303</code>）；文本粗检（<code>src/paperqa/docs.py:312-335</code>）</td>
+</tr>
+<tr>
+<td>代码注释</td>
+<td>claude-haiku-4-5 描述图片不行；Claude Sonnet 4.5 把年份传成字符串 "None"；2024-10 索引 1.9 万篇 PDF 时某个来源返回空作者；JUFO 在 2025-08 到 2026-01 间改用 4 级表示未定级；Semantic Scholar 的引用遍历偶发 403；OpenAlex 连接超时</td>
+<td><code>src/paperqa/settings.py:350-353</code>、<code>src/paperqa/agents/tools.py:151</code>、<code>src/paperqa/types.py:1012-1013</code>、<code>src/paperqa/clients/journal_quality.py:101-103</code>、<code>src/paperqa/clients/semantic_scholar.py:128-130</code>、<code>src/paperqa/clients/openalex.py:110-111</code></td>
+</tr>
+<tr>
+<td>代码注释</td>
+<td>建索引没有文件锁，并发 reset 会有竞争；单篇解析导致崩溃时要先存索引以便续建</td>
+<td><code>src/paperqa/agents/env.py:275-277</code>、<code>src/paperqa/agents/search.py:531-548</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="4-跑起来要什么">4. 跑起来要什么<a class="permalink" href="#4-跑起来要什么" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>要求</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>≥3.11；CI 测 3.11 与 3.13，读取器子包测 3.12 与 3.13</td>
+<td><code>pyproject.toml:59</code>、<code>.github/workflows/tests.yml:103,137</code></td>
+</tr>
+<tr>
+<td>操作系统</td>
+<td>声明与系统无关；CI 只在 ubuntu-latest 上跑</td>
+<td><code>pyproject.toml:22</code>、<code>.github/workflows/tests.yml:99</code></td>
+</tr>
+<tr>
+<td>核心依赖</td>
+<td>fhaviary[llm]、fhlmi（带 litellm、coredis、limits[async-redis]、tiktoken）、tantivy、pybtex、numpy、pydantic-settings、httpx-aiohttp、html2text、paper-qa-pypdf 等；锁定 litellm 1.82.4、fhlmi 0.45.0、fhaviary 0.34.0</td>
+<td><code>pyproject.toml:30-47</code>、<code>uv.lock:1131-1170,2018-2019</code></td>
+</tr>
+<tr>
+<td>可选依赖</td>
+<td><code>pymupdf</code>、<code>pypdf-media</code>、<code>pypdf-enhanced</code>、<code>image</code>、<code>docling</code>、<code>nemotron</code>、<code>office</code>（unstructured）、<code>local</code>（sentence-transformers）、<code>qdrant</code>、<code>ldp</code>、<code>memory</code>、<code>zotero</code>（会连带装上 <code>paper-qa-pymupdf</code>）、<code>openreview</code></td>
+<td><code>pyproject.toml:61-123</code></td>
+</tr>
+<tr>
+<td>模型凭据（默认）</td>
+<td><code>OPENAI_API_KEY</code>：四个 LLM 槽与嵌入默认都是 OpenAI</td>
+<td>见 <a href="#27-怎么调模型">2.7</a></td>
+</tr>
+<tr>
+<td>模型凭据（换厂商）</td>
+<td>对应厂商的 key，或本地端点；Anthropic 只能覆盖四个 LLM 槽</td>
+<td>见 <a href="#27-怎么调模型">2.7</a></td>
+</tr>
+<tr>
+<td>元数据服务</td>
+<td>默认会访问 api.crossref.org 与 api.semanticscholar.org；key 可选，不设会限流；<code>use_doc_details=False</code> 可关</td>
+<td><code>src/paperqa/clients/crossref.py:40-107</code>、<code>src/paperqa/clients/semantic_scholar.py:224-232</code>、<code>src/paperqa/settings.py:246-248</code></td>
+</tr>
+<tr>
+<td>其他外部服务</td>
+<td>OpenAlex、Unpaywall、Crossref Labs（撤稿）只在 <code>ALL_CLIENTS</code>；clinicaltrials.gov 只在对应工具；NVIDIA 接口只在 nemotron 读取器（<code>NVIDIA_API_KEY</code>）</td>
+<td><code>src/paperqa/clients/__init__.py:31-36</code>、<code>packages/paper-qa-nemotron/README.md:49</code></td>
+</tr>
+<tr>
+<td>算力</td>
+<td>默认路径纯 CPU：numpy 余弦、tantivy、pypdf 或 PyMuPDF；Docling 要下版面与表格模型，本地嵌入要 sentence-transformers；没有必须 GPU 的步骤</td>
+<td><code>src/paperqa/llms.py:241-274</code>、<code>.github/workflows/tests.yml:111-122</code></td>
+</tr>
+<tr>
+<td>磁盘状态</td>
+<td><code>~/.pqa/</code> 下的索引、答案库、设置（见 <a href="#28-数据进出与落盘">2.8</a>）</td>
+<td><code>src/paperqa/utils.py:523-530</code></td>
+</tr>
+<tr>
+<td>每次调用量</td>
+<td>建索引：每篇 0–2 次 llm（引文与抽取）加每张图 1 次 enrichment_llm 加嵌入；每次 gather_evidence：<code>evidence_k</code> 次 summary_llm（默认 10，CLI 默认 20；JSON 坏了的块再多 1 次）；每次答案 1 次 llm（设了 pre、post 各加 1 次）；智能体每步 1 次 agent_llm</td>
+<td><code>src/paperqa/docs.py:180-311</code>、<code>src/paperqa/docs.py:521-571,626-710</code>、<code>src/paperqa/core.py:383-400</code>、<code>src/paperqa/configs/high_quality.json:3</code></td>
+</tr>
+<tr>
+<td>费用</td>
+<td>论文报每次查询 1–3 美元（§6），论文配置与仓里默认值不同，仓里默认配置的费用没测</td>
+<td>论文<sup id="fnref7:paper"><a class="footnote-ref" href="#fn:paper">1</a></sup></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="5-和平台对照">5. 和平台对照<a class="permalink" href="#5-和平台对照" title="本节链接">#</a></h2>
+<p>只列事实，不下接不接的结论。</p>
+<h3 id="51-平台文献阶段现在有什么">5.1 平台文献阶段现在有什么<a class="permalink" href="#51-平台文献阶段现在有什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>现状</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>步骤能力</td>
+<td>文献阶段没有；流程里排了这个阶段时助理自己开产出目录写</td>
+<td><code>docs/architecture/workflow.md:28</code></td>
+</tr>
+<tr>
+<td>主文件</td>
+<td><code>sources.md</code>，由助理手写（<code>ai4sci output new literature</code>），框架只认文件名、写法不限</td>
+<td><code>platform/framework/capabilities/__init__.py:45-47</code>、<code>docs/architecture/README.md:170</code>、<code>platform/coordinator/README.md:120</code></td>
+</tr>
+<tr>
+<td>助理怎么找材料</td>
+<td>用它所在命令行自带的搜索与网页读取，找论文、官方代码、数据、别人的复现、要的 key</td>
+<td><code>platform/coordinator/README.md:120-128</code>、<code>docs/architecture/README.md:164</code></td>
+</tr>
+<tr>
+<td>skill</td>
+<td><code>pdf</code>：一篇 PDF 到 <code>paper.md</code>、<code>images/</code>、<code>structured.json</code>（后端 pymupdf4llm）；<code>download</code>：git、单文件、Hugging Face 到 <code>materials/</code> 加收据；两者都不调语言模型接口</td>
+<td><code>platform/skills/pdf/SKILL.md:1-6</code>、<code>platform/skills/download/SKILL.md:1-6</code></td>
+</tr>
+<tr>
+<td>下游谁读文献产出</td>
+<td>复现流程的 <code>reproduction</code>、<code>reproducibility</code> 把 <code>sources.md</code> 当可选输入</td>
+<td><code>platform/framework/capabilities/reproduction/__init__.py:65,282-285</code></td>
+</tr>
+<tr>
+<td>流程</td>
+<td><code>reproduce</code> 的文献格挂 <code>[pdf, download]</code>；<code>research</code> 流程从设计开始，不含文献</td>
+<td><code>docs/architecture/workflow.md:47</code>、<code>platform/workflows/research.yaml:8-14</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="52-多了什么重叠什么">5.2 多了什么、重叠什么<a class="permalink" href="#52-多了什么重叠什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>PaperQA2</th>
+<th>平台现有</th>
+<th>关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PDF 转文本</td>
+<td>四种读取器，输出按页拼接的定长块，给检索用</td>
+<td><code>pdf</code> skill，输出整篇 markdown、图片目录与结构化 JSON（分节、表格、图注、参考文献、题目作者年份 DOI），给人和 agent 读、抄表格里的数</td>
+<td>重叠：都做解析；产物形状与用途不同</td>
+</tr>
+<tr>
+<td>多篇论文检索</td>
+<td>tantivy 挑论文加块级向量召回加 RCS</td>
+<td>没有专门的；助理或执行层自己读</td>
+<td>PaperQA2 多出</td>
+</tr>
+<tr>
+<td>带出处的回答</td>
+<td>句末键换成「作者年份 pages 页码」，自动生成参考列表</td>
+<td><code>sources.md</code> 写法不限，没有页码级引用机制</td>
+<td>PaperQA2 多出</td>
+</tr>
+<tr>
+<td>元数据补全</td>
+<td>Crossref、Semantic Scholar、期刊分级，可选撤稿、OpenAlex、Unpaywall</td>
+<td>助理手查；<code>download</code> 收据记 commit 与 sha256</td>
+<td>PaperQA2 多出一部分</td>
+</tr>
+<tr>
+<td>联网找论文</td>
+<td>智能体主流程不做（只搜本地目录）；contrib 里的 OpenReview 辅助类拉某个会议的全部投稿列表、让 llm 挑相关的再下 PDF，Zotero 辅助类从研究者自己的 Zotero 库取 PDF；两者都不在 <code>pqa</code> 命令里</td>
+<td>助理用命令行自带的搜索</td>
+<td>平台的通用搜索 PaperQA2 没有；PaperQA2 多出限于 OpenReview 单个会议与个人 Zotero 库的两个辅助类</td>
+</tr>
+<tr>
+<td>拉取材料</td>
+<td>智能体主流程没有；OpenReview、Zotero 辅助类能把 PDF 下到论文目录</td>
+<td><code>download</code> skill（git、单文件、Hugging Face，留收据）</td>
+<td>平台有通用的；PaperQA2 只有两个来源专用的</td>
+</tr>
+<tr>
+<td>智能体循环</td>
+<td>自带工具调用循环，自己调模型</td>
+<td>助理与执行层本身就是 Claude Code 或 Codex 会话</td>
+<td>重叠：两边各有一个选工具的循环；由平台的会话去调 <code>pqa ask</code>，就是一个循环里再跑另一个、各用各的模型凭据</td>
+</tr>
+<tr>
+<td>矛盾检测</td>
+<td>只有 <code>contracrow.json</code> 的 prompt 与标签</td>
+<td>没有</td>
+<td>PaperQA2 多出一份设置</td>
+</tr>
+<tr>
+<td>历史问答检索</td>
+<td><code>~/.pqa/indexes/answers</code> 加 <code>pqa -i answers search</code></td>
+<td>产出目录加 <code>meta.yaml</code></td>
+<td>各有一套存放方式</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="53-会碰到的平台规则">5.3 会碰到的平台规则<a class="permalink" href="#53-会碰到的平台规则" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>规则</th>
+<th>平台怎么定</th>
+<th>PaperQA2 的对应事实</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P-1</td>
+<td>执行层是唯一写代码的；框架不调模型写文本；判据是 <code>framework/</code> 下没有模型接口名</td>
+<td>PaperQA2 的引文、RCS 摘要、答案、图片描述、选工具都由它自己调模型接口写出；平台现有的两个 skill 都不调语言模型接口；P-1 的判据只覆盖 <code>framework/</code></td>
+<td><code>docs/architecture/README.md:151</code>；见 <a href="#27-怎么调模型">2.7</a></td>
+</tr>
+<tr>
+<td>P-25</td>
+<td>两层 agent 用研究者自己的命令行登录，按人一份 <code>agents.yaml</code>；订阅账号报不出美元的成本填 NaN</td>
+<td>PaperQA2 要 litellm 能用的 API key 或本地端点，用不了命令行登录；它自己按美元记成本，算不出的记 0.0</td>
+<td><code>docs/architecture/README.md:175</code>、<code>src/paperqa/types.py:414-433</code>；lmi <code>packages/lmi/src/lmi/llms.py:988-992</code><sup id="fnref11:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup></td>
+</tr>
+<tr>
+<td>P-20</td>
+<td>进文献阶段的能力必须留下 <code>sources.md</code>；skill 不开产出目录，写哪由调用者定</td>
+<td>产物是 <code>AnswerResponse</code> JSON 与 <code>formatted_answer</code> 文本，不是 <code>sources.md</code> 的形状</td>
+<td><code>docs/architecture/README.md:170</code>；见 <a href="#28-数据进出与落盘">2.8</a></td>
+</tr>
+<tr>
+<td>P-22</td>
+<td>agentskills.io 格式；脚本 PEP 723 自带依赖并锁定，<code>uv run --locked --offline</code> 起；输出目录由 <code>--out</code> 给，不写别处</td>
+<td>依赖链含 litellm、fhlmi、fhaviary、tantivy 等；默认把索引、答案库、设置写在 <code>~/.pqa</code>，索引位置可配；撤稿数据写进包目录（只在 <code>ALL_CLIENTS</code>）</td>
+<td><code>docs/architecture/README.md:172</code>、<code>platform/docs/add-a-skill.md:56</code>、<code>src/paperqa/utils.py:523-530</code>、<code>src/paperqa/clients/retractions.py:24-30</code></td>
+</tr>
+<tr>
+<td>skill 运行时联网</td>
+<td>skill 运行器注释写「运行时不联网，沙箱断网照跑」，指的是 <code>--offline</code> 不再下依赖；现有的 <code>download</code> skill 运行时本来就要联网（git、Hugging Face）；运行器把服务进程的全部环境变量（去掉 <code>VIRTUAL_ENV</code>）传给脚本</td>
+<td>PaperQA2 运行时要连模型接口与 Crossref、Semantic Scholar（全本地且关元数据除外）</td>
+<td><code>platform/framework/skills/run.py:6-7,37-42,61-66</code>、<code>platform/skills/download/SKILL.md:4</code></td>
+</tr>
+<tr>
+<td>P-14</td>
+<td>助理面前只有 <code>ai4sci</code>；联网只用命令行自带的搜索与网页读取</td>
+<td><code>pqa</code> 是另一个命令行；PaperQA2 自己发 HTTP 请求</td>
+<td><code>docs/architecture/README.md:164</code></td>
+</tr>
+<tr>
+<td>P-11 与会话隔离</td>
+<td>Claude Code 会话带 <code>--strict-mcp-config</code>，执行层命令前缀只有 <code>ai4sci skill</code></td>
+<td>仓里没有 MCP 服务端（<code>src/</code> 与 <code>packages/*/src</code> 里 grep <code>mcp</code> 为 0 处）</td>
+<td><code>docs/architecture/workflow.md:238-239</code></td>
+</tr>
+<tr>
+<td>P-7</td>
+<td>验证不过就停，不静默降级</td>
+<td>多处失败后继续：元数据来源的四类失败只打 warning、证据生成失败丢弃该块、轨迹异常后仍强制出答案、单篇 <code>ValueError</code> 或解析失败标 <code>ERROR</code> 跳过、图片描述被拒跳过、成本算不出记 0.0</td>
+<td><code>docs/architecture/README.md:157</code>、<code>src/paperqa/clients/client_models.py:111-143</code>、<code>src/paperqa/core.py:383-400</code>、<code>src/paperqa/agents/main.py:151-179</code>、<code>src/paperqa/agents/search.py:531-548</code>、<code>src/paperqa/settings.py:1144-1169</code>；lmi <code>packages/lmi/src/lmi/llms.py:988-992</code><sup id="fnref12:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup></td>
+</tr>
+<tr>
+<td>密钥</td>
+<td>密钥名写进需求，值放起服务的环境里</td>
+<td>读 <code>OPENAI_API_KEY</code> 等模型 key 与 <code>CROSSREF_API_KEY</code>、<code>SEMANTIC_SCHOLAR_API_KEY</code>、<code>CROSSREF_MAILTO</code> 等</td>
+<td><code>platform/coordinator/README.md:126</code>；见 <a href="#26-元数据来源">2.6</a></td>
+</tr>
+<tr>
+<td>许可证</td>
+<td>—</td>
+<td>主包 Apache-2.0；可选的 <code>paper-qa-pymupdf</code> 是 AGPL-3.0，装了它就成为默认 PDF 解析器；<code>pymupdf</code> 与 <code>zotero</code> 两个 extra 都会装上它</td>
+<td><code>LICENSE:1-3</code>、<code>packages/paper-qa-pymupdf/LICENSE:1-2</code>、<code>src/paperqa/settings.py:180-195</code>、<code>pyproject.toml:108,120-123</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="6-成熟度">6. 成熟度<a class="permalink" href="#6-成熟度" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>实况</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>仓库</td>
+<td>FutureHouse，9,251 star，922 fork，2023-02 创建</td>
+<td>GitHub API<sup id="fnref:gh"><a class="footnote-ref" href="#fn:gh">11</a></sup></td>
+</tr>
+<tr>
+<td>规模</td>
+<td><code>src/</code> 1.18 万行 Python；四个读取器子包 2,210 行</td>
+<td><code>find src -name '*.py'</code> 与 <code>packages/*/src</code> 计数</td>
+</tr>
+<tr>
+<td>测试</td>
+<td><code>tests/</code> 6,921 行、166 个测试函数、47 份 VCR 录制、28 个用例标了 vcr；子包测试 2,293 行、71 个测试函数、6 份录制、3 个用例标了 vcr；录制在 CI 里只回放不新录，其余要调外部接口的用例在 CI 里用真 key 调 OpenAI、Anthropic、Gemini、Semantic Scholar、Crossref、NVIDIA；两边合计 8 处用例标了失败重跑</td>
+<td><code>tests/conftest.py:108-123</code>、<code>.github/workflows/tests.yml:123-131,157-165</code>、<code>tests/test_paperqa.py:2380</code></td>
+</tr>
+<tr>
+<td>CI</td>
+<td>pylint、refurb、构建检查；PR 上跑 pre-commit（ruff、mypy、codespell 等）；src 测试 3.11 与 3.13，子包测试 3.12 与 3.13；建 release 时发 PyPI</td>
+<td><code>.github/workflows/tests.yml</code>、<code>.github/workflows/build.yml:3-6</code>、<code>.pre-commit-config.yaml:31,96</code></td>
+</tr>
+<tr>
+<td>发版</td>
+<td>2025-12-17 起 CalVer，至今 10 个版本，最近 v2026.08.12；之前 v5.x 到 5.29.1（2025-08）</td>
+<td>GitHub releases<sup id="fnref2:gh"><a class="footnote-ref" href="#fn:gh">11</a></sup></td>
+</tr>
+<tr>
+<td>维护节奏</td>
+<td>main 提交数：2025 年每月 7–51 个，2026-01 14、2026-02 22、2026-03 10，4 月到 9 月合计 4 个（6 月 3 个、8 月 1 个）；GitHub 显示 2026-09-25 有推送，是 renovate 机器人推到 <code>renovate/lock-file-maintenance</code> 分支的锁文件更新</td>
+<td>GitHub API<sup id="fnref3:gh"><a class="footnote-ref" href="#fn:gh">11</a></sup></td>
+</tr>
+<tr>
+<td>贡献者</td>
+<td>James Braza 476 个提交、Andrew White 232、renovate 机器人 78、Michael Skarlinski 54，其余每人不到 20</td>
+<td>GitHub API<sup id="fnref4:gh"><a class="footnote-ref" href="#fn:gh">11</a></sup></td>
+</tr>
+<tr>
+<td>issue</td>
+<td>开 133、关 251，开着的 PR 17</td>
+<td>GitHub 搜索 API<sup id="fnref5:gh"><a class="footnote-ref" href="#fn:gh">11</a></sup></td>
+</tr>
+<tr>
+<td>兼容承诺</td>
+<td>CalVer 明说去掉版本间兼容保证</td>
+<td><code>README.md:165-169</code></td>
+</tr>
+<tr>
+<td>许可证</td>
+<td>主包 Apache-2.0（Copyright 2024 FutureHouse）；docling、nemotron、pypdf 子包 Apache-2.0；pymupdf 子包 AGPL-3.0</td>
+<td><code>LICENSE:1-3,189</code>、<code>packages/*/LICENSE</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="7-还没弄清的问题">7. 还没弄清的问题<a class="permalink" href="#7-还没弄清的问题" title="本节链接">#</a></h2>
+<ol>
+<li>开源版在真实论文集上的效果离论文数字差多少：仓里没有可跑的 LitQA2 评测，论文的检索服务、Grobid、引用遍历都不在，仓里看不出来；外层 #160（实测）还开着。</li>
+<li>中文论文：切块按字符、分词用 cl100k、稀疏嵌入按 token 取模；有一次多语言文本判定的改动（#1179），没看到中文测试，效果未知。</li>
+<li>对默认模型 <code>tier*_limits</code> 落到每分钟 3 万 token，以及给了 <code>llm_config</code> 却不带 <code>model_list</code> 时温度取 1.0、<code>Settings.temperature</code> 不生效（lmi <code>packages/lmi/src/lmi/llms.py:729-774</code>，温度在第 750 行<sup id="fnref6:lmi"><a class="footnote-ref" href="#fn:lmi">2</a></sup>）：都是读代码的推断，没跑。</li>
+<li><code>Settings</code> 继承 pydantic-settings 的 <code>BaseSettings</code>（<code>src/paperqa/settings.py:750-751</code>），同名环境变量（如 <code>LLM</code>、<code>EMBEDDING</code>、<code>VERBOSITY</code>）是否会覆盖字段：这是 pydantic-settings 的默认行为，本仓里没验证。平台的 skill 运行器会把服务进程的全部环境变量传给脚本（<code>platform/framework/skills/run.py:36-42</code>）。</li>
+<li>除模型与元数据接口外，运行时还有哪些联网：tiktoken 首次加载编码文件、litellm 导入时取价格表，是这两个库常见的行为，没在本机验证。</li>
+<li>用 manifest 建索引时还剩哪些模型调用（#861 仍开着）：读代码是只剩图片描述，没实测。</li>
+<li>多个工作区或多个进程共用 <code>~/.pqa</code>：注释说建索引没有文件锁（<code>src/paperqa/agents/env.py:275-277</code>），tantivy 写锁有重试（<code>src/paperqa/agents/search.py:292-329</code>），实际并发会怎样没验证。</li>
+<li>维护走向：2026-04 以后 main 基本停了，仓里看不出是转去别处还是在准备大版本。</li>
+<li>传递依赖的许可证（litellm、tantivy、pybtex、fhlmi、fhaviary 等）没逐个核；装完的体积与冷启动时间没测。</li>
+<li>经智能体拿到的答案（返回值与存盘的 JSON）都清掉了证据的原文（<code>src/paperqa/agents/models.py:59-67</code>、<code>src/paperqa/types.py:442-472</code>），只留摘要与块名；要回到原文得再打开索引里的 pickle，这对「证据可追溯」够不够，要看具体用法。</li>
+<li>只装核心依赖（读取器是 pypdf、不带 <code>pypdf-media</code>，也就没有 Pillow）而多模态默认开时，带图的 PDF 在 pypdf 读取器里走「逐张取图」分支，注释说没装 Pillow 时 pypdf 会报错（<code>packages/paper-qa-pypdf/src/paperqa_pypdf/reader.py:309-313</code>）；这时建索引是跳过这一篇还是整体中断（取决于抛出的异常类型，见 <a href="#22-建索引">2.2</a> 第 5 步），没实测。</li>
+</ol>
+<h2 id="8-调研方法">8. 调研方法<a class="permalink" href="#8-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>浅克隆到外层 <code>vendor/paper-qa</code>（gitignore 挡住），提交 57e89f7。只读代码，没装依赖、没跑项目代码。</li>
+<li>主线程逐文件读了 <code>src/paperqa</code> 全部模块、四个读取器子包的 <code>pyproject.toml</code> 与 LICENSE、<code>tests/</code> 里与结论相关的用例、CI 配置；lmi 的三个文件按 v0.45.0 从 GitHub 取来读；issue、发版说明、提交统计用 <code>gh api</code> 查（2026-09-27）。</li>
+<li>论文 arXiv 2409.13740 下载后用平台的 <code>pdf</code> skill 解析，引用的节号与图表号以该 PDF 为准。</li>
+<li>「对不上」的每一条都回到代码行确认过；标了「推断」或「未验证」的没有运行证据。</li>
+<li>第一版写完后另做了一遍独立复查：逐条打开文中的 <code>文件:行</code> 与论文章节核对，重新从 GitHub 取 lmi v0.45.0 三个文件比对，重查了 issue 帖子与提交统计；行号偏了的、说法过头的已按代码改正。</li>
+</ul>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:paper">
+<p>Skarlinski et al., <em>Language agents achieve superhuman synthesis of scientific knowledge</em>, arXiv 2409.13740，<a href="https://arxiv.org/abs/2409.13740">https://arxiv.org/abs/2409.13740</a>。2026-09-27 下载的 PDF，存外层 <code>materials/research/2026-0927-scientific-ai-capabilities/papers/paperqa2-2409.13740.pdf</code>（不进 git）。&#160;<a class="footnote-backref" href="#fnref:paper" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref2:paper" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref3:paper" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref4:paper" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref5:paper" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref6:paper" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref7:paper" title="回到正文第 1 处">↩</a></p>
+</li>
+<li id="fn:lmi">
+<p>fhlmi（lmi）v0.45.0 源码，<a href="https://github.com/Future-House/ldp/tree/v0.45.0/packages/lmi">https://github.com/Future-House/ldp/tree/v0.45.0/packages/lmi</a>；paper-qa 的 <code>uv.lock:1156-1157</code> 锁定此版本。文中 lmi 的 <code>文件:行</code> 相对 ldp 仓库根。&#160;<a class="footnote-backref" href="#fnref:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref2:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref3:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref4:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref5:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref6:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref7:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref8:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref9:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref10:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref11:lmi" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref12:lmi" title="回到正文第 2 处">↩</a></p>
+</li>
+<li id="fn:anthropic-embed">
+<p>Anthropic 文档 Embeddings 页：「Anthropic does not offer its own embedding model」，<a href="https://platform.claude.com/docs/en/build-with-claude/embeddings">https://platform.claude.com/docs/en/build-with-claude/embeddings</a>，2026-09-27 查。&#160;<a class="footnote-backref" href="#fnref:anthropic-embed" title="回到正文第 3 处">↩</a></p>
+</li>
+<li id="fn:rel-2512">
+<p>paper-qa v2025.12.17 发版说明，<a href="https://github.com/Future-House/paper-qa/releases/tag/v2025.12.17">https://github.com/Future-House/paper-qa/releases/tag/v2025.12.17</a>。&#160;<a class="footnote-backref" href="#fnref:rel-2512" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref2:rel-2512" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref3:rel-2512" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref4:rel-2512" title="回到正文第 4 处">↩</a></p>
+</li>
+<li id="fn:i1321">
+<p><a href="https://github.com/Future-House/paper-qa/issues/1321">https://github.com/Future-House/paper-qa/issues/1321</a>&#160;<a class="footnote-backref" href="#fnref:i1321" title="回到正文第 5 处">↩</a><a class="footnote-backref" href="#fnref2:i1321" title="回到正文第 5 处">↩</a></p>
+</li>
+<li id="fn:i1261">
+<p><a href="https://github.com/Future-House/paper-qa/issues/1261">https://github.com/Future-House/paper-qa/issues/1261</a>&#160;<a class="footnote-backref" href="#fnref:i1261" title="回到正文第 6 处">↩</a></p>
+</li>
+<li id="fn:i861">
+<p><a href="https://github.com/Future-House/paper-qa/issues/861">https://github.com/Future-House/paper-qa/issues/861</a>&#160;<a class="footnote-backref" href="#fnref:i861" title="回到正文第 7 处">↩</a></p>
+</li>
+<li id="fn:i633">
+<p><a href="https://github.com/Future-House/paper-qa/issues/633">https://github.com/Future-House/paper-qa/issues/633</a>&#160;<a class="footnote-backref" href="#fnref:i633" title="回到正文第 8 处">↩</a></p>
+</li>
+<li id="fn:i381">
+<p><a href="https://github.com/Future-House/paper-qa/issues/381">https://github.com/Future-House/paper-qa/issues/381</a>&#160;<a class="footnote-backref" href="#fnref:i381" title="回到正文第 9 处">↩</a></p>
+</li>
+<li id="fn:i390">
+<p><a href="https://github.com/Future-House/paper-qa/issues/390">https://github.com/Future-House/paper-qa/issues/390</a>&#160;<a class="footnote-backref" href="#fnref:i390" title="回到正文第 10 处">↩</a></p>
+</li>
+<li id="fn:gh">
+<p>GitHub API，2026-09-27 查：<code>repos/Future-House/paper-qa</code>（star、fork、创建与推送时间）、<code>releases</code>、<code>commits?sha=main&amp;since=2025-01-01</code>（按月计数）、<code>contributors?anon=1</code>、<code>events</code>（最近一次推送是谁、推到哪个分支）、<code>search/issues</code>（issue 与 PR 计数）。&#160;<a class="footnote-backref" href="#fnref:gh" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref2:gh" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref3:gh" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref4:gh" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref5:gh" title="回到正文第 11 处">↩</a></p>
+</li>
+</ol>
+</div>
+  </main>
+  <footer class="doc">原始稿是同目录的 paperqa2.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>
