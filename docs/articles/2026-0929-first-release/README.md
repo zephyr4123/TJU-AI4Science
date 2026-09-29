@@ -35,7 +35,7 @@
 | 流程调整 | 随时可调，全靠人推进 | 固定，难以调整 | workflow 自由编排 |
 | 结论追溯 | 依赖人工整理 | 视具体实现而定 | 每一步有记录，每个数可回溯 |
 
-&emsp;&emsp;项目启动的第一天，我们完成了第一篇调研[《新工科自动化科研智能体：2026 年工业界现状与架构设计》](https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/)。次日，我们克隆了几个具有代表性的开源项目，逐行阅读其代码。
+&emsp;&emsp;项目启动的第一天，我们完成了第一篇调研《新工科自动化科研智能体：2026 年工业界现状与架构设计》。次日，我们克隆了几个具有代表性的开源项目，逐行阅读其代码。
 
 ![站在前人的肩膀上：所读项目各自的长处，以及它们在本平台中的落点](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/diagrams/borrow.2404c8d6.png)
 
@@ -132,7 +132,7 @@
 
 ![三层架构：模型、agent harness 与科研层](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/diagrams/layers.cdee11d1.png)
 
-&emsp;&emsp;DeepSeek 于 8 月开源的 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 提出了一个出色的思想：一切能力皆为插件，模型适配、工具注册、会话日志乃至 agent 循环本身都可以替换。我们借鉴了这一思想，并将其上移一层：在本平台中，**整个 coding agent 本身就是一个插件**。平台为执行与对话分别定义了端口（`Runner` 与 `Chat`），每接入一家 agent，只需编写一个适配器；助理与执行层可以选用不同的 agent，**切换只需修改一行配置**。
+&emsp;&emsp;DeepSeek 于 8 月开源的 DeepSeek Harness 提出了一个出色的思想：一切能力皆为插件，模型适配、工具注册、会话日志乃至 agent 循环本身都可以替换。我们借鉴了这一思想，并将其上移一层：在本平台中，**整个 coding agent 本身就是一个插件**。平台为执行与对话分别定义了端口（`Runner` 与 `Chat`），每接入一家 agent，只需编写一个适配器；助理与执行层可以选用不同的 agent，**切换只需修改一行配置**。
 
 &emsp;&emsp;在 coding agent 之上，能力、算力与界面同样以插件形式存在。此外还有一条约定：**平台框架本身不调用任何模型**。编写代码、阅读文献、起草分析交由 agent 完成；组织流程、记录过程、判定结果，则由不调用模型的确定性代码完成。
 
@@ -140,7 +140,7 @@
 
 &emsp;&emsp;平台采用三层结构：研究阶段、能力、实现。能力分为“步骤”与“skill”两类。流程运行到某个步骤时，平台为其建立一个编号的产出目录，需要编写代码时启动一个执行层会话，产出可以由人签字确认；skill 则是即取即用的工具，可以挂载在任意阶段。skill 遵循 agentskills.io 开放规范编写，由框架自行将清单注入 agent，因此**同一个 skill 可以在不同的 agent 上直接使用**。
 
-&emsp;&emsp;下面以 Karpathy 的 [autoresearch](https://github.com/karpathy/autoresearch) 为例，说明“积木”的含义。
+&emsp;&emsp;下面以 Karpathy 的 autoresearch 为例，说明“积木”的含义。
 
 &emsp;&emsp;autoresearch 的核心是一个 ratchet（棘轮）循环：agent 修改代码，进行一次固定时长 5 分钟的训练，观察验证集指标 `val_bpb` 是否改善；若改善则保留本次提交，否则通过 `git reset` 回退。由于状态保存在 git 中，agent 的上下文可以随时清空、更换会话，已经取得的进展不会丢失。这一机制之所以成立，**依赖于一个 5 分钟内必然结束、只输出单一标量的固定评测**；运行实验、比较优劣、执行回退与记录账本，均由 agent 自己完成。
 
@@ -200,7 +200,7 @@
 
 &emsp;&emsp;回到开篇的那位科研小白。
 
-&emsp;&emsp;他要复现的论文是 9 月 1 日刚刚发布于 arXiv 的[《Gradient–Update Mismatch: Rethinking Conflict-Free Training of Physics-Informed Neural Networks》](https://arxiv.org/abs/2609.01558)，研究的是用物理信息神经网络（PINN）求解偏微分方程时的训练问题。论文提出的 GUA 方法，在 Burgers 方程上**将 ConFIG 方法的误差进一步降低了六成以上**。
+&emsp;&emsp;他要复现的论文是 9 月 1 日刚刚发布于 arXiv 的《Gradient–Update Mismatch: Rethinking Conflict-Free Training of Physics-Informed Neural Networks》，研究的是用物理信息神经网络（PINN）求解偏微分方程时的训练问题。论文提出的 GUA 方法，在 Burgers 方程上**将 ConFIG 方法的误差进一步降低了六成以上**。
 
 &emsp;&emsp;**他只发送了一句话和一个链接，此后的工作全部由助理自主完成。**
 
@@ -252,7 +252,7 @@
 
 ![验收之后，助理说明了各项交付物的位置，并提醒及时关机](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/screenshots/chat-end.ad66e8f3.png)
 
-&emsp;&emsp;完整的对话记录、每一次产出与签字均已公开，见 [GUA 论文复现的公开记录](https://zephyr4123.github.io/TJU-AI4Science/evals/2026-0921-gua-reproduction/)。
+&emsp;&emsp;完整的对话记录、每一次产出与签字均已公开，地址见文末“相关链接”。
 
 ## 05 十六天，从 0.1 到 1.0
 
@@ -270,12 +270,9 @@
 
 &emsp;&emsp;**这个平台本身，也是人与 AI 协作完成的**。十六天里，**两个仓库共计 320 次提交、146 条 issue**。每一项工作都先建立 issue，先对齐需求与边界，再动手实施，过程中的发现、证据与决策随时记录在 issue 中。设计原则从最初的九条增加到二十五条，每一条都写明了检验其是否被遵守的方法，凡能交由机器检查的，均已纳入自动检查。每次合并之前，同一套检查都会在本地与 CI 上各执行一遍。
 
-&emsp;&emsp;自 1.0.0 起，**平台承诺向后兼容**。**平台完全开源**：
+&emsp;&emsp;自 1.0.0 起，**平台承诺向后兼容**。**平台完全开源**，代码与文档均托管在 GitHub，地址见文末“相关链接”。
 
-- [平台代码仓库：TJU-AI4Science-Platform](https://github.com/zephyr4123/TJU-AI4Science-Platform)
-- [项目文档、调研与案例：TJU-AI4Science](https://github.com/zephyr4123/TJU-AI4Science)
-
-&emsp;&emsp;如仅需使用，准备好 uv 以及一家已登录的 coding agent（Claude Code 或 Codex），执行以下两行命令即可，安装包见 [1.0.1 版本发布页](https://github.com/zephyr4123/TJU-AI4Science-Platform/releases/tag/v1.0.1)：
+&emsp;&emsp;如仅需使用，准备好 uv 以及一家已登录的 coding agent（Claude Code 或 Codex），执行以下两行命令即可：
 
 ```bash
 uv tool install https://github.com/zephyr4123/TJU-AI4Science-Platform/releases/download/v1.0.1/ai4sci-1.0.1-py3-none-any.whl
@@ -299,3 +296,14 @@ ai4sci serve
 &emsp;&emsp;那位科研小白在 15 时 43 分签字之后，平台留下了一条完整、可追溯的记录：他说过的每一句话，助理作出的每一个决定，服务器上计算出的每一个数字。下一次，他可以换一篇论文，也可以调整这条 workflow，开展自己的课题。
 
 &emsp;&emsp;**让自动化的科研依然实事求是，这是 AI4Science 想做的事。**
+
+## 相关链接
+
+- 平台代码仓库：https://github.com/zephyr4123/TJU-AI4Science-Platform
+- 1.0.1 版本发布页与安装包：https://github.com/zephyr4123/TJU-AI4Science-Platform/releases/tag/v1.0.1
+- 项目文档、调研与案例：https://github.com/zephyr4123/TJU-AI4Science
+- GUA 论文复现的公开记录：https://zephyr4123.github.io/TJU-AI4Science/evals/2026-0921-gua-reproduction/
+- 第一篇调研《新工科自动化科研智能体》：https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/
+- GUA 论文（arXiv 2609.01558）：https://arxiv.org/abs/2609.01558
+- karpathy/autoresearch：https://github.com/karpathy/autoresearch
+- DeepSeek Harness：https://github.com/deepseek-ai/deepseek-harness

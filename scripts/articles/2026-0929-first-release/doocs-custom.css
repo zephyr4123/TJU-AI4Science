@@ -15,3 +15,6 @@ th, td { word-break: normal; line-height: 24px; }
 
 /* 表格外层没有 class 的滚动容器（overflow: auto），同样被报「溢出」；表格已能在屏宽内换行，不需要滚动 */
 .container section { line-height: 28px !important; overflow: visible !important; }
+
+/* 文末「相关链接」直接贴网址：长网址在手机上允许任意处断行，不撑出屏幕 */
+li { word-break: break-all; }
