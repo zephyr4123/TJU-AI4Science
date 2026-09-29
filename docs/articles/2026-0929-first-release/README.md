@@ -3,7 +3,7 @@
 **指导老师**：王征\
 **日期**：2026 年 9 月 29 日
 
-![](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/diagrams/logo.fc39622e.png)
+![](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/diagrams/logo.35de8d9d.png)
 
 &emsp;&emsp;2026 年 9 月 21 日 12 时 18 分，**一位刚刚进组、连代码都还不会运行的“科研小白”**，在对话框中输入了一句话：
 
@@ -17,7 +17,7 @@
 
 &emsp;&emsp;**在这三个半小时里，他仅签字两次。**
 
-&emsp;&emsp;这是 AI4Science 的一次演练。AI4Science 是我们在天津大学新工科背景下搭建的 **AI 驱动的自动化科研平台**：一项研究经过哪些步骤、在哪里停下来由人把关，**可以自由编排**；从提出问题到得出结论，**每一步都有据可查**。9 月 23 日，平台发布 1.0 版本。
+&emsp;&emsp;这是 AAAI4S（Automated Alignment AI4S）的一次演练。AAAI4S 是我们在天津大学新工科背景下搭建的 **AI 驱动的自动化科研平台**，名字意在让研究问题、实验、数据与结论自动对齐：一项研究经过哪些步骤、在哪里停下来由人把关，**可以自由编排**；从提出问题到得出结论，**每一步都有据可查**。9 月 23 日，平台发布 1.0 版本。
 
 ## 01 为什么要做这个平台
 
@@ -47,7 +47,7 @@
 
 &emsp;&emsp;**平台将科研划分为七个阶段**：文献、假设、设计、实验、分析、写作、验证。每个阶段包含若干能力，每个能力都必须写明五项内容：职责、边界、输入、产出与终止条件，**缺少任何一项，平台在加载时即报错**。每个阶段只向下游交付一个主文件。
 
-![七个阶段，以及一个能力必须写明的五项内容](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/diagrams/stages.7bc42016.png)
+![七个阶段，以及一个能力必须写明的五项内容](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/diagrams/stages.8caa4133.png)
 
 &emsp;&emsp;边界清晰之后，**AI 在每一个环节面对的都是确定的问题**：输入是什么，应当交付什么，做到何处为止。它不会在模糊的大目标中反复试探，给出的也是确定的解；而在边界之内，**如何完成则由它自主决定**。后文将会看到，那位科研小白的复现之所以能够全自动完成，正是得益于此。
 
@@ -130,7 +130,7 @@
 
 &emsp;&emsp;**理由在于专业分工**。一个成熟的 coding agent 凝聚了大量的工程积累，工具调用、上下文管理、沙箱与权限控制，每一项都颇具难度，而最成熟的团队已经将其做到了很高的水准。**我们专注于其上的那一层。**
 
-![三层架构：模型、agent harness 与科研层](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/diagrams/layers.cdee11d1.png)
+![三层架构：模型、agent harness 与科研层](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/diagrams/layers.64be3d06.png)
 
 &emsp;&emsp;DeepSeek 于 8 月开源的 DeepSeek Harness 提出了一个出色的思想：一切能力皆为插件，模型适配、工具注册、会话日志乃至 agent 循环本身都可以替换。我们借鉴了这一思想，并将其上移一层：在本平台中，**整个 coding agent 本身就是一个插件**。平台为执行与对话分别定义了端口（`Runner` 与 `Chat`），每接入一家 agent，只需编写一个适配器；助理与执行层可以选用不同的 agent，**切换只需修改一行配置**。
 
@@ -295,7 +295,7 @@ ai4sci serve
 
 &emsp;&emsp;那位科研小白在 15 时 43 分签字之后，平台留下了一条完整、可追溯的记录：他说过的每一句话，助理作出的每一个决定，服务器上计算出的每一个数字。下一次，他可以换一篇论文，也可以调整这条 workflow，开展自己的课题。
 
-&emsp;&emsp;**让自动化的科研依然实事求是，这是 AI4Science 想做的事。**
+&emsp;&emsp;**让自动化的科研依然实事求是，这是 AAAI4S 想做的事。**
 
 ## 相关链接
 
