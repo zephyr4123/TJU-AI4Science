@@ -1,13 +1,17 @@
-/* md.doocs.org「样式 → 自定义 CSS」：适配公众号后台的「内容结构检测」（#193，2026-09-29 实测）
+/* md.doocs.org「样式 → 自定义 CSS」：适配公众号后台的「内容结构检测」（#193，2026-09-29 两轮实测）
  * 在 doocs 里粘一次，之后每篇都生效。 */
 
-/* 行高带单位：doocs 默认写不带单位的 1.75 / 1.2 / 1.5，检测器当成像素，报「行高小于字号」 */
-.container { line-height: 1.75em; }
-h3 { line-height: 1.5em; }
-pre.code__pre, .hljs.code__pre { line-height: 1.5em; }
+/* 行高一律写像素：检测器把不带单位的 1.75 / 1.2 / 1.5 乃至 1.75em 都当成像素去比字号，报「行高小于字号」；
+ * 署名（换行符分行）、列表项、代码块这类「多行」的元素最容易被点名，所以 p / li 也显式写上 */
+.container, p, li, blockquote { line-height: 28px; }
+h3 { line-height: 26px; }
+figcaption { line-height: 20px; }
+pre.code__pre, .hljs.code__pre { line-height: 22px; }
 
-/* 表格：默认 word-break: keep-all，中文只在标点处换行，列被撑宽，表格超出手机屏幕 */
-th, td { word-break: normal; }
+/* 表格：默认 word-break: keep-all（中文只在标点处换行）+ min-width: 100%，长单元格把表撑出屏幕，报「溢出」；
+ * 改成固定列宽、正常换行，320 / 343 px 宽下 7 张表都正好等于屏宽 */
+table { width: 100%; min-width: 0; table-layout: fixed; }
+th, td { word-break: normal; line-height: 24px; }
 
-/* 表格外层的滚动容器（没有 class 的 section）被报「溢出」；表格已能在屏宽内换行，不需要滚动 */
-.container section { line-height: 1.75em !important; overflow: visible !important; }
+/* 表格外层没有 class 的滚动容器（overflow: auto），同样被报「溢出」；表格已能在屏宽内换行，不需要滚动 */
+.container section { line-height: 28px !important; overflow: visible !important; }
