@@ -1,9 +1,9 @@
 **作者**：黄素翔、李瑞彬\
-**实验室**：天津大学记忆与推理实验室\
+**课题组**：天津大学记忆与推理课题组\
 **指导老师**：王征\
 **日期**：2026 年 9 月 29 日
 
-![](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/diagrams/logo.35de8d9d.png)
+![](https://media.zephyrxiang.com/ai4science/articles/2026-0929-first-release/diagrams/logo.23094fe5.png)
 
 &emsp;&emsp;2026 年 9 月 21 日 12 时 18 分，**一位刚刚进组、连代码都还不会运行的“科研小白”**，在对话框中输入了一句话：
 
