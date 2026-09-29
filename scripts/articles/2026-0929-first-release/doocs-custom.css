@@ -1,0 +1,13 @@
+/* md.doocs.org「样式 → 自定义 CSS」：适配公众号后台的「内容结构检测」（#193，2026-09-29 实测）
+ * 在 doocs 里粘一次，之后每篇都生效。 */
+
+/* 行高带单位：doocs 默认写不带单位的 1.75 / 1.2 / 1.5，检测器当成像素，报「行高小于字号」 */
+.container { line-height: 1.75em; }
+h3 { line-height: 1.5em; }
+pre.code__pre, .hljs.code__pre { line-height: 1.5em; }
+
+/* 表格：默认 word-break: keep-all，中文只在标点处换行，列被撑宽，表格超出手机屏幕 */
+th, td { word-break: normal; }
+
+/* 表格外层的滚动容器（没有 class 的 section）被报「溢出」；表格已能在屏宽内换行，不需要滚动 */
+.container section { line-height: 1.75em !important; overflow: visible !important; }

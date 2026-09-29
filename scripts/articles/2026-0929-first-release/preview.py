@@ -66,7 +66,7 @@ def main() -> None:
         html,
     )
     # 标题下面一行署名（作者、实验室、指导老师、日期）排成小字
-    html = re.sub(r"(</h1>\s*)<p>(<strong>作者</strong>.*?)</p>", r'\1<div class="byline"><p>\2</p></div>', html, count=1, flags=re.S)
+    html = re.sub(r"^<p>(<strong>作者</strong>.*?)</p>", r'<div class="byline"><p>\1</p></div>', html, count=1, flags=re.S)
     page = f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>公众号稿预览</title>
 <style>{CSS}</style>
