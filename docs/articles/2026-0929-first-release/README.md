@@ -299,11 +299,19 @@ ai4sci serve
 
 ## 相关链接
 
-- 平台代码仓库：https://github.com/zephyr4123/TJU-AI4Science-Platform
-- 1.0.1 版本发布页与安装包：https://github.com/zephyr4123/TJU-AI4Science-Platform/releases/tag/v1.0.1
-- 项目文档、调研与案例：https://github.com/zephyr4123/TJU-AI4Science
-- GUA 论文复现的公开记录：https://zephyr4123.github.io/TJU-AI4Science/evals/2026-0921-gua-reproduction/
-- 第一篇调研《新工科自动化科研智能体》：https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/
-- GUA 论文（arXiv 2609.01558）：https://arxiv.org/abs/2609.01558
-- karpathy/autoresearch：https://github.com/karpathy/autoresearch
-- DeepSeek Harness：https://github.com/deepseek-ai/deepseek-harness
+- **平台代码仓库**\
+  `https://github.com/zephyr4123/TJU-AI4Science-Platform`
+- **1.0.1 版本发布页与安装包**\
+  `https://github.com/zephyr4123/TJU-AI4Science-Platform/releases/tag/v1.0.1`
+- **项目文档、调研与案例**\
+  `https://github.com/zephyr4123/TJU-AI4Science`
+- **GUA 论文复现的公开记录**\
+  `https://zephyr4123.github.io/TJU-AI4Science/evals/2026-0921-gua-reproduction/`
+- **第一篇调研《新工科自动化科研智能体》**\
+  `https://zephyr4123.github.io/TJU-AI4Science/landscape/2026-0908-auto-research-agents/`
+- **GUA 论文（arXiv 2609.01558）**\
+  `https://arxiv.org/abs/2609.01558`
+- **karpathy/autoresearch**\
+  `https://github.com/karpathy/autoresearch`
+- **DeepSeek Harness**\
+  `https://github.com/deepseek-ai/deepseek-harness`
