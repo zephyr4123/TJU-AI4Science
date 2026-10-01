@@ -72,7 +72,7 @@ cd tju-ai4science
 ./repos clone all      # 按 repos.json 把内仓 clone 到位（幂等）
 ./repos status         # 各仓分支 / 领先落后 / 脏文件 / 线上分支漂移
 make check             # 本地门禁，与 CI 完全相同
-cd platform && make up # 内仓一行起服务：.venv → 页面 → skill 预热 → 自检 → ai4sci serve
+cd platform && make up # 内仓一行起服务：.venv → 页面 → skill 门禁与预热 → 自检 → ai4sci serve
 ```
 
 clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all` 解引用。
