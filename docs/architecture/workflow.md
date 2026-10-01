@@ -11,7 +11,7 @@
 
 ```
  阶段            七个固定：文献 假设 设计 实验 分析 写作 验证         不定先后，任意组合
-   └ 能力        一个阶段里的一件活；两个 tag：步骤（ai4sci cap）、skill（ai4sci skill run）
+   └ 能力        一个阶段里的一件活；两个 tag：步骤（ai4sci cap）、skill（ai4sci skill run）；skill 再按子 tag 分组
        └ 实现    这件活怎么干：一段代码、一个 skill、领域包里的东西     一个能力可以有几种实现，也可以暂时零实现
 
  一条流程 = 经过几个阶段、按什么顺序、每个阶段挂哪些能力（可以不挂：助理看着办）、哪几个阶段完了要人签
@@ -116,16 +116,16 @@ experiment/2/                  一个产出目录
 | | 是什么 | 谁调 | 写到哪 | 在哪儿定义 |
 |---|---|---|---|---|
 | 能力·步骤 | 流程里的一格，`ai4sci cap <name>` | 研究助理（照流程） | 自己的 `<stage>/<n>/` | `framework/capabilities/<name>/` |
-| 能力·skill | agent 的工具包，`ai4sci skill run <name>`；挂在格子上才装载（平台自带的常驻） | 研究助理或执行层，本项目装载的 | 调用方给的 `--out` | `skills/<name>/`、`skills-curated/<阶段>/<name>/` 或 `domains/<包>/skills/<name>/` |
+| 能力·skill | agent 的工具包，`ai4sci skill run <name>`；挂在格子上才装载（平台自带的常驻） | 研究助理或执行层，本项目装载的 | 调用方给的 `--out` | `skills/`、`skills-curated/` 或 `domains/<包>/skills/` 下的 `<架>/<tag>/<name>/` |
 | 领域包 | 打包单位：`profile.yaml` + 实验族的领域约定 + 领域 skill | `scoring.yaml` 的 `domain`（`cap design --domain`） | — | `domains/<包>/`（内仓 `docs/add-a-domain.md`） |
 
 **格式照 agentskills.io 开放规范**，不自造：`skills/<name>/SKILL.md`（frontmatter 认 `name` `description` `license` `compatibility` `metadata`，规范外的字段忽略——平台自带的 `skills/` 例外，要干净，门禁里算问题——自定义键放 `metadata` 里加 `ai4sci-` 前缀）+ `scripts/`（每个脚本 PEP 723 头 + `uv lock --script` 的锁文件进仓）+ `references/` + `assets/`；name 等于目录名，三处库合起来全局唯一；正文建议五百行以内，按 progressive disclosure 写。脚本：非交互、有 `--help`、结果 JSON 到 stdout、诊断到 stderr、幂等、退出码说成败、输出目录由调用方 `--out` 给；运行一律 `uv run --locked`，环境在 uv 全机缓存，**不建工作区级 venv**；平台自带的在 `make skills` 承接时预热并探测系统包，收录与领域包的第一次运行按锁建环境（联网一次）。三套环境互不 import：平台 venv、课题 venv（`materials/env/` → 每次实验一份）、skill 环境；只用文件与 JSON 交接。
 
-**三处库，按项目装载。** 平台自带的 `skills/`（`pdf`、`download`，常驻）；收录的 `skills-curated/<阶段>/<name>/`（社区整合包按七个阶段加 `general`「通用」分拣进来，台账 `skills-curated/provenance.yaml` 一个 skill 一行：来源、原路径、提交、许可证、阶段、改了什么；收录要过许可证、零 key、重名、夹带指令、能在平台里用几道筛，内仓 `docs/add-a-skill.md`「收录社区 skill」）；领域包的 `domains/<包>/skills/`。名字三处合起来全局唯一。规范外的 frontmatter 字段忽略不报错；不合格的（name 与目录对不上、缺 description、脚本没有 PEP 723 与锁）隔离出去带原因，不拖垮整库，门禁对出厂的三处库仍要求全部合格。
+**三处库，一种摆法，按项目装载。** 平台自带的 `skills/`（`pdf`、`download`，常驻）；收录的 `skills-curated/`（社区整合包分拣进来，台账 `skills-curated/provenance.yaml` 一个 skill 一行：来源、原路径、提交、许可证、改了什么；收录要过许可证、零 key、重名、夹带指令、能在平台里用几道筛，内仓 `docs/add-a-skill.md`「收录社区 skill」）；领域包的 `domains/<包>/skills/`。三处都摆成 `<架>/<tag>/<name>/`（[#205](https://github.com/zephyr4123/TJU-AI4Science/issues/205)）：架是七个阶段加 `general`「通用」（下载、读文档、画图这类哪个阶段都用的；只是能力镜头里的一行，不是流程里的阶段），架下再按子 tag 分组（实验分生物、化学与药物、模型训练……），分类表只在内仓 `framework/skills/shelves.py`，目录就是 skill 在编辑台能力镜头里的位置，台账不另记。名字三处合起来全局唯一。规范外的 frontmatter 字段忽略不报错；不合格的（name 与目录对不上、缺 description、脚本没有 PEP 723 与锁、不在分类表的某个 `<架>/<tag>/` 下面）隔离出去带原因，不拖垮整库，门禁对出厂的三处库仍要求全部合格。
 
-**加载：框架自己注入，不靠任何 agent 的原生机制，只装本项目的那套（P-26）。** 项目里的会话装载的 skill = 平台自带的 + 本项目各工作区流程实例上挂的；读取点只在内仓 `framework/workspace/loadout.py`，每次现算。研究助理拼进 system prompt（每轮按项目现算；续接的会话里流程实例上新挂了，变了的「工具包」一节由框架塞进下一句话的前面），执行层拼进能力组的 prompt 的通用段（领域约定 → 工具包 → 联网）；挂着却不可用的单列一行原因。agent 匹配到就 `ai4sci skill show <name>` 读全文、`ai4sci skill show <name> <文件>` 读目录里的其它文件（`references/`、模板、`manifest.yaml` 这些），`ai4sci skill run <name> …` 起脚本；在项目里装载之外的 show / run 拒。找库里还有什么用 `ai4sci show skills [词…] [--stage <阶段>]`（名字、阶段、一句话，标出本项目装了没有），要用先挂到流程实例上。不在项目里（人在终端、门禁、编辑台）看整个库。skill 不快照、不注入正文：执行层读的是库里的现版本，读了什么在那一轮的事件流里；领域包的 `prompts/experiment.md` 仍在开实验时快照、仍以「领域约定」注入（选哪个领域包与装哪些 skill 无关）。执行层会话的命令前缀只有 `ai4sci skill`。
+**加载：框架自己注入，不靠任何 agent 的原生机制，只装本项目的那套（P-26）。** 项目里的会话装载的 skill = 平台自带的 + 本项目各工作区流程实例上挂的；读取点只在内仓 `framework/workspace/loadout.py`，每次现算。研究助理拼进 system prompt（每轮按项目现算；续接的会话里流程实例上新挂了，变了的「工具包」一节由框架塞进下一句话的前面），执行层拼进能力组的 prompt 的通用段（领域约定 → 工具包 → 联网）；挂着却不可用的单列一行原因。agent 匹配到就 `ai4sci skill show <name>` 读全文、`ai4sci skill show <name> <文件>` 读目录里的其它文件（`references/`、模板、`manifest.yaml` 这些），`ai4sci skill run <name> …` 起脚本；在项目里装载之外的 show / run 拒。找库里还有什么用 `ai4sci show skills [词…] [--stage <阶段>]`（名字、位置「实验·生物」、一句话，标出本项目装了没有；中文词认阶段名与子 tag 名），要用先挂到流程实例上。不在项目里（人在终端、门禁、编辑台）看整个库。skill 不快照、不注入正文：执行层读的是库里的现版本，读了什么在那一轮的事件流里；领域包的 `prompts/experiment.md` 仍在开实验时快照、仍以「领域约定」注入（选哪个领域包与装哪些 skill 无关）。执行层会话的命令前缀只有 `ai4sci skill`。
 
-**`pdf`**：一篇论文（本地或链接）→ `paper.md` + `images/` + `structured.json`；缺省后端 pymupdf4llm 版面模式，MinerU 实测不当缺省（内仓 `skills/pdf/references/backends.md`）。**`download`**：git 仓库（可指定 commit）/ 单个文件（可校验 sha256）/ Hugging Face 上公开的仓库（不读凭据，P-27；私有与门控的请研究者自己下好放进 `materials/`）→ `materials/<名字>/` 加一张收据。
+**`pdf`**：一篇论文（本地或链接）→ `paper.md` + `images/` + `structured.json`；缺省后端 pymupdf4llm 版面模式，MinerU 实测不当缺省（内仓 `skills/general/materials/pdf/references/backends.md`）。**`download`**：git 仓库（可指定 commit）/ 单个文件（可校验 sha256）/ Hugging Face 上公开的仓库（不读凭据，P-27；私有与门控的请研究者自己下好放进 `materials/`）→ `materials/<名字>/` 加一张收据。
 
 ## 2. 实验内环（`auto-research`）
 
@@ -276,6 +276,7 @@ harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各�
   | 能力 | 平台会干的一件事，两个 tag：步骤、skill；页面与流程文件里只叫能力 | 按钮、键、能力单元、工具 |
   | 步骤 | 能力的 tag：走到流程那一格框架起执行层、开产出、能签，`ai4sci cap <name>` | 能力单元、动作、任务 |
   | skill | 能力的 tag：教 agent 做一件事的指南 + 脚本，随手用、不开产出，`ai4sci skill run <name>` | 技能、插件 |
+  | 通用 | 能力镜头的最后一行：哪个阶段都用的 skill（下载、读文档、画图）；不是阶段，画布上拖不出来 | 公共、工具箱、杂项 |
   | 流程 | 一份流程文件（库里出厂的 `workflows/`、人存的 `studio/workflows/`，工作区里的实例在 `flows/`）：经过哪些阶段、挂哪些能力、哪儿有断点 | 流、库、工作流、套餐 |
   | 流程库 | 全部流程文件 | 库 |
   | 断点 | 流程里停下来等人确认的一项 | 门、关卡、闸、停点 |
@@ -312,3 +313,4 @@ harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各�
 | 2026-09-23 | 全文按代码回写：清单类内容改为引用命令输出或代码（能力、命令、端点、端口形状、Compute 协议）；出厂件与数据根分两棵树；meta 字段补全（status、result、agent…）；`run_N` 改 `iters/iter_N`、`loop resume` 改 `--continue … --resume`、`analysis_v{n}` 与 `--run-id` 删；验证写实际四项、引用与图源标未实现、模型评审标未实现；人在环加「助理调确认与签字被拒」；算力适配删「设置页等 PINNs 后做」「0.2.0 只有 local」「60 到 80 行」；设置与自检按现状；界面适配只留词表与形状（细节归内仓 DESIGN.md），词表补执行层、收件箱、算力、退役词；变更记录压缩（[#140](https://github.com/zephyr4123/TJU-AI4Science/issues/140)） | 文档盘点：本文约 45 处与代码对不上 | 主人 + Claude |
 | 2026-09-23 | 库分两层：存放树加 `studio/workflows/`，§1 与 §分权改流程助理只写人存的那层（[#149](https://github.com/zephyr4123/TJU-AI4Science/issues/149)） | 编辑台存的流程落进了出厂目录 | 主人 + Claude |
 | 2026-10-01 | 流程命名与血缘（`workflow new`、`from`、差异、查重）；skill 三处库（加收录 `skills-curated/`）、不合格隔离、按项目装载、`show <name> <文件>`、`show skills`、收录与领域包首次运行建环境（[#195](https://github.com/zephyr4123/TJU-AI4Science/issues/195)） | 吸纳社区 skill 库不能全量注入；流程越拼越多名字会撞 | 主人 + Claude |
+| 2026-10-01 | skill 三处库一种摆法 `<架>/<tag>/<name>/`、加子 tag 与「通用」一行、台账去掉阶段；词表加「通用」（[#205](https://github.com/zephyr4123/TJU-AI4Science/issues/205)） | 实验一架 132 个看不出是干什么的；skill 与步骤要挂在同一个阶段下 | 主人 + Claude |
