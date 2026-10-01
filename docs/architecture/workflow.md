@@ -48,7 +48,7 @@ stages:
 
 - **子集也是流程、任何顺序都是流程。** 只想根据实验结果写综述就是两行——等写作阶段有了那个能力就能挂。
 - **流程分两层：库、实例**（P-15）。库通用、不依附课题，本身又分出厂的（`workflows/`，随代码走、只读）与人在编辑台存的（数据根 `studio/workflows/`，流程助理只写这里）两层，读库的地方两层一起读、名字全库唯一；实例在工作区 `flows/`，几条都行，研究助理 `ai4sci flow take <name>` 从库里取来，按这份需求改阶段、能力参数、断点。选流程在需求确认之后、与需求独立：一份需求会走多条流程。
-- **名字是机器名，平台起；血缘记在 `from`。** 人只写 `title`。流程助理 `ai4sci workflow new --from <name>` 从一条派生：平台复制它、记 `from: {name, hash}`（直接父流程与它当时的内容 hash），名字起成 `<家族名>-<序号>`（家族名是顺着 `from` 走到底的那条，`reproduce` → `reproduce-2`、`reproduce-3`）；`ai4sci workflow new <name>` 从零起一条，名字由助理起、平台查重。页面保存载入的出厂流程就是派生，名字后端起。`flow take` 取到工作区的实例也记 `from`。差异不进名字：阶段、挂的能力、参数、断点的增删由平台现算（`show workflows` 与编辑台的流程库都显示），父流程在派生之后改过要提示。库里与已有某条结构完全一样的拒：比的是阶段、点名的能力与参数、断点位置；标题、说明、断点那句话、画布坐标不算。
+- **名字是机器名，平台起；血缘记在 `from`。** 人只写 `title`。流程助理 `ai4sci workflow new --from <name>` 从一条派生：平台复制它、记 `from: {name, hash}`（直接父流程与它当时的内容 hash），名字起成 `<家族名>-<序号>`（家族名是顺着 `from` 走到底的那条，`reproduce` → `reproduce-2`、`reproduce-3`；序号取最大加一，删掉过的名字不再发——工作区实例的 `from` 还指着它）；`ai4sci workflow new <name>` 从零起一条，名字由助理起、平台查重，`<库里已有的名字>-<数字>` 留给派生不许用。页面保存载入的出厂流程就是派生，名字后端起。`flow take` 取到工作区的实例也记 `from`。差异不进名字：阶段、挂的能力、参数、断点的增删由平台现算（`show workflows` 与编辑台的流程库都显示），父流程在派生之后改过要提示。库里与已有某条结构完全一样的拒：比的是阶段、点名的能力与参数、断点位置；标题、说明、断点那句话、画布坐标不算。
 - **进度不另存**：每个产出的 `meta.yaml` 记它是在哪条流程的第几项下产的，「这条流程走到哪」沿 `from` 链算出来；「在等谁」也现算：作业在跑 → 等作业；这一项的产出还没签而流程说要签 → 等人；下一项是阶段 → 轮到助理；走完 → 完成。
 - **编排工作台的意义是立规矩，不是做数据流校验。** 研究者要的是三样：看得见接下来会发生什么、在关键处能拦一手、下次能照做。
 
@@ -62,7 +62,8 @@ stages:
 │                               ├── studio/workflows/        人在编辑台存的流程；与出厂的合起来是库
 ├── templates/  需求模板        └── projects/<p>/            一个项目一位助理（P-15）
 ├── domains/    领域包              ├── project.md           目标一段；一级标题是项目名
-├── skills/     skill 库            ├── materials/           几个工作区共用的原件
+├── skills/     平台自带的 skill    ├── materials/           几个工作区共用的原件
+├── skills-curated/ 收录的 skill    │
 ├── coordinator/ 两份指南           ├── .ai4sci/chats/<cid>/ 助理的对话；每段一个收件箱 inbox/
 └── ui/         页面构建            └── workspaces/<id>/
                                         ├── requirement.md       需求：形式开放，按模板起草
@@ -122,7 +123,7 @@ experiment/2/                  一个产出目录
 
 **三处库，按项目装载。** 平台自带的 `skills/`（`pdf`、`download`，常驻）；收录的 `skills-curated/<阶段>/<name>/`（社区整合包按七个阶段加 `general`「通用」分拣进来，台账 `skills-curated/provenance.yaml` 一个 skill 一行：来源、原路径、提交、许可证、阶段、改了什么；收录要过许可证、零 key、重名、夹带指令、能在平台里用几道筛，内仓 `docs/add-a-skill.md`「收录社区 skill」）；领域包的 `domains/<包>/skills/`。名字三处合起来全局唯一。规范外的 frontmatter 字段忽略不报错；不合格的（name 与目录对不上、缺 description、脚本没有 PEP 723 与锁）隔离出去带原因，不拖垮整库，门禁对出厂的三处库仍要求全部合格。
 
-**加载：框架自己注入，不靠任何 agent 的原生机制，只装本项目的那套（P-26）。** 项目里的会话装载的 skill = 平台自带的 + 本项目各工作区流程实例上挂的；读取点只在内仓 `framework/workspace/loadout.py`，每次现算。研究助理拼进 system prompt（每轮按项目现算，流程实例上新挂的下一句话就在），执行层拼进能力组的 prompt 的通用段（领域约定 → 工具包 → 联网）；挂着却不可用的单列一行原因。agent 匹配到就 `ai4sci skill show <name>` 读全文、`ai4sci skill show <name> <文件>` 读目录里的其它文件（`references/`、模板、`manifest.yaml` 这些），`ai4sci skill run <name> …` 起脚本；在项目里装载之外的 show / run 拒。找库里还有什么用 `ai4sci show skills [词…] [--stage <阶段>]`（名字、阶段、一句话，标出本项目装了没有），要用先挂到流程实例上。不在项目里（人在终端、门禁、编辑台）看整个库。skill 不快照、不注入正文：执行层读的是库里的现版本，读了什么在那一轮的事件流里；领域包的 `prompts/experiment.md` 仍在开实验时快照、仍以「领域约定」注入（选哪个领域包与装哪些 skill 无关）。执行层会话的命令前缀只有 `ai4sci skill`。
+**加载：框架自己注入，不靠任何 agent 的原生机制，只装本项目的那套（P-26）。** 项目里的会话装载的 skill = 平台自带的 + 本项目各工作区流程实例上挂的；读取点只在内仓 `framework/workspace/loadout.py`，每次现算。研究助理拼进 system prompt（每轮按项目现算；续接的会话里流程实例上新挂了，变了的「工具包」一节由框架塞进下一句话的前面），执行层拼进能力组的 prompt 的通用段（领域约定 → 工具包 → 联网）；挂着却不可用的单列一行原因。agent 匹配到就 `ai4sci skill show <name>` 读全文、`ai4sci skill show <name> <文件>` 读目录里的其它文件（`references/`、模板、`manifest.yaml` 这些），`ai4sci skill run <name> …` 起脚本；在项目里装载之外的 show / run 拒。找库里还有什么用 `ai4sci show skills [词…] [--stage <阶段>]`（名字、阶段、一句话，标出本项目装了没有），要用先挂到流程实例上。不在项目里（人在终端、门禁、编辑台）看整个库。skill 不快照、不注入正文：执行层读的是库里的现版本，读了什么在那一轮的事件流里；领域包的 `prompts/experiment.md` 仍在开实验时快照、仍以「领域约定」注入（选哪个领域包与装哪些 skill 无关）。执行层会话的命令前缀只有 `ai4sci skill`。
 
 **`pdf`**：一篇论文（本地或链接）→ `paper.md` + `images/` + `structured.json`；缺省后端 pymupdf4llm 版面模式，MinerU 实测不当缺省（内仓 `skills/pdf/references/backends.md`）。**`download`**：git 仓库（可指定 commit）/ 单个文件（可校验 sha256）/ Hugging Face 仓库 → `materials/<名字>/` 加一张收据。
 
@@ -247,7 +248,7 @@ harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各�
 
 ### 协调层适配
 
-同一批 CLI 的第二种用法：多轮、按 session id 续接、事件边跑边出。端口 `Chat` 与 `Runner` 放同一个 `backends/__init__.py`，适配器放同一个文件；换一家 CLI 就是加一个文件，自研 agent 就是第三个适配器（主人红线：涉及 agent 的一律可替换）。形状以端口文件为准（`turn(...) -> Iterator[ChatEvent]`、`knobs()` 报这家有哪些模型与深度档位及起点、`tool_guide()`、`guide_channel`、`cost_reporting`、`forget()`）。
+同一批 CLI 的第二种用法：多轮、按 session id 续接、事件边跑边出。端口 `Chat` 与 `Runner` 放同一个 `backends/__init__.py`，适配器放同一个文件；换一家 CLI 就是加一个文件，自研 agent 就是第三个适配器（主人红线：涉及 agent 的一律可替换）。形状以端口文件为准（`turn(...) -> Iterator[ChatEvent]`、`knobs()` 报这家有哪些模型与深度档位及起点、`tool_guide()`、`cost_reporting`、`forget()`）。两家 CLI 都只在开会话那轮收指南，续接时再给不生效；指南中途变了由框架把变了的几节塞进那一轮的话前面（人的原话照原样存，塞进去的另存在那一轮的 `guide-update.md`），适配器不用管。
 
 - **续接**：Claude Code `claude -p <message> --resume <session id>`，Codex `codex exec resume <thread_id> -`。两家的指南都只在开会话那次生效（Claude Code 的 `--append-system-prompt` 续接时再送也不生效，2026-10-01 实测），中途变了（平台加了命令、流程实例上新挂了 skill）框架把新指南全文塞进那一轮的话里。
 - **指南注入**：服务会话隔离了所有设置源，两份指南（`coordinator/README.md` 研究助理、`coordinator/studio.md` 流程助理，**都是线上 prompt**）由 `framework/chat/guide.py` 连同一段「你在服务里」的前言按域塞进 system prompt，前言之后接这家 CLI 自己的「工具怎么用」，研究助理再接本项目装载的 skill 清单（每轮现算，P-26）。指南受 lint：代码块里每条命令以 `ai4sci ` 开头（P-14）；研究助理的指南里没有 `workflows/` 的写法（P-16）。
