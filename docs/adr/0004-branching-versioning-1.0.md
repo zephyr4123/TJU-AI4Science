@@ -1,6 +1,6 @@
 # ADR-0004：分支模型、1.x 版本策略与 CHANGELOG 规则
 
-- 状态：已采纳
+- 状态：已采纳；2026-10-01 补「内测期例外」：只有课题组内部在用期间，冻结的契约不兼容地变了也走 MINOR、不走弃用周期、不留兼容层，迁移办法写进 CHANGELOG、受影响的数据带一次性迁移脚本（`CONTRIBUTING.md`「版本与发布」，1.1.0 起；主人定）
 - 日期：2026-09-23
 - 取代 [ADR-0002](0002-versioning-and-release.md) 的「版本号从 0.1.0 起步、0.x 不承诺兼容」与「变更日志」两条；补充 [ADR-0003](0003-tracking-scope-and-release-artifacts.md)
 
