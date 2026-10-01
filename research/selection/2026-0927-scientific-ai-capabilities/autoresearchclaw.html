@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoResearchClaw 假设阶段深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>AutoResearchClaw 假设阶段深读</h1>
+    <p class="subtitle">研究创意 · Idea Workshop、多角色生成、查新、方向收敛逐条对账</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目方法借鉴（只读论文与代码，不跑、不装依赖，不评估整体接入）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-27</dd></div><div class="meta-row"><dt>范围</dt><dd>仓库 https://github.com/aiming-lab/AutoResearchClaw，克隆到 vendor/AutoResearchClaw（浅克隆），提交 be4ba47（2026-08-19）；论文 arXiv 2605.20025 v2（2026-05-23）。只看与假设相关的部分：Stage 1/2/7/8/15、HITL 在这几个阶段的通路、Idea Workshop、查新、分支、想法池、ARC-Bench 里测假设的那部分。流水线、沙盒、验证层已在 research/selection/2026-0909-pipeline-frameworks/autoresearchclaw.md 读过，本篇不重复。文中 文件:行 相对该仓库根；平台一侧的路径以 platform/ 开头</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-方法是什么">1. 方法是什么</a><ul>
+<li><a href="#11-假设这一段的链路">1.1 假设这一段的链路</a></li>
+<li><a href="#12-人怎么参与假设共创">1.2 人怎么参与：假设共创</a></li>
+<li><a href="#13-假设评估与细化的判据">1.3 假设评估与细化的判据</a></li>
+<li><a href="#14-并行方向怎么探索怎么收敛">1.4 并行方向：怎么探索、怎么收敛</a></li>
+<li><a href="#15-查新怎么做">1.5 查新怎么做</a></li>
+</ul>
+</li>
+<li><a href="#2-为什么有效论文证据与代码对账">2. 为什么有效：论文证据与代码对账</a><ul>
+<li><a href="#21-论文给了哪些证据">2.1 论文给了哪些证据</a></li>
+<li><a href="#22-这些证据测没测到假设这一段">2.2 这些证据测没测到假设这一段</a></li>
+<li><a href="#23-代码是否按论文做">2.3 代码是否按论文做</a></li>
+</ul>
+</li>
+<li><a href="#3-平台哪里能用">3. 平台哪里能用</a><ul>
+<li><a href="#31-可摘出的方法与落点">3.1 可摘出的方法与落点</a></li>
+<li><a href="#32-反面arc-在这一段踩过的坑">3.2 反面：ARC 在这一段踩过的坑</a></li>
+</ul>
+</li>
+<li><a href="#4-局限与前提">4. 局限与前提</a></li>
+<li><a href="#5-还没弄清的问题">5. 还没弄清的问题</a></li>
+<li><a href="#6-调研方法">6. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：AutoResearchClaw（下称 ARC）在假设这一段真正接上线的有四样：Stage 8 的「三个角色各写一份、再合成一份」（默认路径是同一个模型客户端分别调三次）；co-pilot 模式下 Stage 7 / 8 跑完后的通用协作对话（在终端里和模型一起改 <code>synthesis.md</code> / <code>hypotheses.md</code>）；人用 <code>researchclaw guide --stage 8</code> 在 Stage 8 执行前写好的意见文件（Stage 8 末尾多调一次模型按它改写）；以及通用的 <code>--to-stage</code> / <code>--from-stage</code>：停在 Stage 8 之后手改 <code>hypotheses.md</code> 再续跑，ARC-Bench 自己就是这样把假设放进去的。查新也真的去 OpenAlex / Semantic Scholar / arXiv 搜，但结果只写进一个没有下游读取的 JSON。</p>
+<p>README 与论文里其余说法多数只接了一半或零调用：Idea Workshop 的出想法、打分、细化三个方法从不被调用，Stage 8 只往它的存档里塞一个占位对象（真调的话返回类型也对不上）；「并行探索多个方向」的 <code>BranchManager</code> 只拷目录、不执行、生产零调用；想法池、ideation 记忆零调用；终端里暂停时可选的动作只有批准、拒绝、编辑、协作、跳过、中止，「注入意见」和「回滚」两个键输入后被拒。论文说的「角色互相质疑」「跨 run 的教训进入辩论」「Pivot 把失败当新证据带回假设生成」「SmartPause 学习阈值」，在假设这一段的代码里都不成立；有反驳轮的多模型 debate 与 best-of-N tournament 是 2026-08-18 才加的、默认关、晚于论文，打分与合成拆成两次调用还要另配 <code>reviewer_model</code>。「角色之间互相看不见」只对 API 类 provider 成立：provider 选 acp（把 Claude Code、Codex 这类命令行 agent 当后端）时，三个角色与合成发进同一个具名会话（按代码推断，未实跑）。</p>
+<p>论文里能归到假设生成的证据只有三处：组件消融的「w/o Debate」（同时去掉 Stage 8 与 Stage 14 的多角色，−1.37 分）、附录 F 的角色数消融、T10 一个案例。主表 Table 2 的实验阶段评测从 Stage 10 开跑、假设直接取自 manifest，不测假设生成；HITL 消融与组件消融的脚本和数据在 <code>.gitignore</code> 里。能摘出来的形状：按领域替换的角色提示词（生成 / 可行性 / 反驳三分）、一条假设的字段、打分与合成分开的两次调用、查新产出的近邻论文清单。反面事实两条：co-pilot 下人的意见在 Stage 8 跑完之后才到，改不到这一次的 <code>hypotheses.md</code>；PIVOT 后按主指标跨版本挑实验结果，挑中的结果与当前 <code>hypotheses.md</code> 可能不是同一版假设。</p>
+</blockquote>
+<h2 id="1-方法是什么">1. 方法是什么<a class="permalink" href="#1-方法是什么" title="本节链接">#</a></h2>
+<h3 id="11-假设这一段的链路">1.1 假设这一段的链路<a class="permalink" href="#11-假设这一段的链路" title="本节链接">#</a></h3>
+<p>代码里实际的数据流（默认配置，ML 领域）：</p>
+<pre><code>Stage 6  cards/*.md（知识卡片，最多取 24 张）
+   │
+Stage 7  一次模型调用 → synthesis.md（聚类、Gap 1..N、优先机会）
+   │        Stage 8 提示词里的变量只有 {topic, synthesis}
+   │        （goal.md、problem_tree.md、hardware_profile.json、进化教训、skill 都不进提示词；
+   │          provider=acp 时会话本身可能带着之前的往来，见下表第一行）
+Stage 8  默认：innovator / pragmatist / contrarian 各调一次（同一个客户端）
+   │           → hypothesis_synthesize 再调一次，合成 2–4 条
+   │     debate_enabled=true：面板开场 → 反驳轮 → 配了 reviewer_model 时 judge 先打分、主模型再合成；
+   │                          没配时主模型一次调用里打分加合成
+   │     tournament_enabled=true：N 份候选 → judge 挑一份，原样胜出（不合成）
+   │     若 stage-08/hitl_guidance.md 已存在：再调一次「按人的意见改写」
+   │     → hypotheses.md（自由格式 markdown；执行器只查文件非空，内容不解析）
+   │     → check_novelty() → novelty_report.json（无下游读取）
+Stage 9  读 hypotheses.md 写实验计划
+   ⋮
+Stage 15 模型判 PROCEED / REFINE / PIVOT；PIVOT 把 stage-08..15 改名为 _vN，从 Stage 8 重跑
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>论文怎么讲</th>
+<th>代码里</th>
+<th>接线</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>多角色生成 + 合成</td>
+<td>§3.2：K=3 个认知角色 Innovator / Pragmatist / Contrarian，§1 说它们互相质疑，再由 synthesizer 合成 2–4 条可证伪假设，附可检验标准与所需基线</td>
+<td>默认走 <code>_multi_perspective_generate</code>：三个角色各自一次 <code>llm.chat</code>，提示词只含 <code>topic</code> 与 <code>synthesis</code>；再用 <code>hypothesis_synthesize</code> 合成一次。API 类 provider 每次调用无状态，角色彼此看不见。provider=acp 时四次调用用同一个 <code>ACPClient</code>、发进同一个具名会话（默认名 <code>researchclaw</code>），该文件的 docstring 写明会话在各次调用之间保留上下文，因此后发的角色发出时会话里已有先发角色的往来（按代码推断，acpx 在仓库外，未实跑）</td>
+<td>真接线，默认开</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:103-113,177-193</code>、<code>researchclaw/pipeline/_helpers.py:1689-1749</code>、<code>researchclaw/pipeline/executor.py:639-649</code>、<code>researchclaw/llm/acp_client.py:1-7,43,102-135,474-480</code></td>
+</tr>
+<tr>
+<td>角色提示词</td>
+<td>附录 B.1：ML 用 Innovator / Pragmatist / Contrarian，HEP 用 Theorist / Phenomenologist / Experimentalist</td>
+<td>按 prompt bank 取。<code>PromptManager</code> 支持 <code>ml</code>、<code>hep_ph</code>、<code>biology_metabolic</code> 三套，但执行器选 bank 的函数只返回 <code>ml</code> 或 <code>hep_ph</code>，<code>biology_metabolic</code> 那套在流水线里不可达</td>
+<td>真接线</td>
+<td><code>researchclaw/prompts/ml.py:21-81</code>、<code>researchclaw/prompts/hep.py:34-118</code>、<code>researchclaw/prompts/manager.py:31,85-94,285-287</code>、<code>researchclaw/pipeline/_domain.py:140-190</code>、<code>researchclaw/pipeline/executor.py:654-661</code></td>
+</tr>
+<tr>
+<td>多模型辩论</td>
+<td>未单独描述（论文只有 §3.2 的多角色）</td>
+<td><code>run_debate</code>：角色按轮转绑到面板里的模型（只配了 <code>primary_model</code> 时面板只有一个模型），开场一轮、反驳 <code>debate_rounds</code> 轮（默认 1）。配了 <code>reviewer_model</code> 时 judge 单独打分排序、主模型照排序合成；没配时 judge 就是主模型客户端，打分与合成在一次调用里</td>
+<td>可选，<code>debate_enabled</code> 默认 False；2026-08-18 加入</td>
+<td><code>researchclaw/pipeline/debate.py:80-292</code>、<code>researchclaw/llm/__init__.py:105-145</code>、<code>researchclaw/config.py:218-222</code>、<code>researchclaw/pipeline/stage_impls/_synthesis.py:151-176</code></td>
+</tr>
+<tr>
+<td>best-of-N</td>
+<td>未描述</td>
+<td><code>run_tournament</code>：按角色提示词轮转生成 N 份（默认 3），judge 以 JSON 选一份，选不出就取分最高的、再不行取第 0 份。开了 debate 时候选由面板模型轮流生成。全部候选失败时抛异常，这段调用没有 <code>try</code>，Stage 8 记 FAILED</td>
+<td>可选，<code>tournament_enabled</code> 默认 False；与 debate 互斥（if / else）</td>
+<td><code>researchclaw/pipeline/tournament.py:53-88,91-238</code>、<code>researchclaw/pipeline/stage_impls/_synthesis.py:114-150</code>、<code>researchclaw/config.py:223-229</code></td>
+</tr>
+<tr>
+<td>人的意见改写</td>
+<td>§3.5 CoPilot 的「Idea Workshop 假设共创」</td>
+<td>Stage 8 生成完，若本阶段目录下已有 <code>hitl_guidance.md</code> 且有模型，多调一次模型「按人的意见改写」，失败只记 debug</td>
+<td>真接线，但要求意见在 Stage 8 执行前就写好（见 <a href="#12-人怎么参与假设共创">1.2</a>）</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:196-214</code></td>
+</tr>
+<tr>
+<td>Idea Workshop</td>
+<td>§3.5；README 称「协作式出想法、评估、细化假设（Stage 7-8）」</td>
+<td><code>IdeaWorkshop</code> 有 <code>brainstorm</code> / <code>evaluate</code> / <code>refine</code> / <code>select</code>，生产代码只 <code>save()</code> 一个用 <code>type(...)</code> 临时造的占位对象（标题恒为 "Generated Hypothesis"，描述是假设文本前 500 字），外面裹 <code>except: pass</code></td>
+<td>只接了存档；三个方法零调用</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:216-230</code>、<code>researchclaw/hitl/workshops/idea.py:104-256</code>、<code>README.md:416</code></td>
+</tr>
+<tr>
+<td>查新</td>
+<td>论文没有描述查新</td>
+<td><code>check_novelty</code>：搜三个库、关键词 Jaccard、给 novelty_score 与 proceed / differentiate / abort 建议，写 <code>novelty_report.json</code></td>
+<td>调用是真的，结果无人读（见 <a href="#15-查新怎么做">1.5</a>）</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:234-259</code>、<code>researchclaw/literature/novelty.py:185-335</code></td>
+</tr>
+<tr>
+<td>失败兜底</td>
+<td>未描述</td>
+<td>没有模型（非 acp 时 <code>base_url</code> 或 <code>api_key</code> 为空就视为没有）、全部角色失败、debate 抛异常时，写死三条模板假设（"Increasing protocol control for {topic} improves metric stability…"），Stage 8 仍记 DONE；tournament 失败不在此列。<code>researchclaw run</code> 默认先做一次模型预检、不过就退出，所以「没有模型」这一支只在带 <code>--skip-preflight</code>（ARC-Bench 的跑法就带）时走到；预检过了、之后调用失败则走「全部角色失败」那一支</td>
+<td>真接线</td>
+<td><code>researchclaw/cli.py:228-239</code>、<code>experiments/arc_bench/scripts/run_bench.py:198-206</code>、<code>researchclaw/pipeline/executor.py:639-649</code>、<code>researchclaw/pipeline/_helpers.py:1591-1605</code>、<code>researchclaw/pipeline/stage_impls/_synthesis.py:171-176,184-188,194-195</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>在论文发表时的代码（v0.5.0，提交 12d3fd8，2026-05-20）里，Stage 8 只有上表第一行那条路径：<code>run_debate</code> 与 <code>run_tournament</code> 都是 2026-08-18 的提交 1d7e46f 加进来的<sup id="fnref:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup>，用 GitHub 取回 v0.5.0 的 <code>_synthesis.py</code> 与 HEAD 对比，差异正好是这两段分支及其 import<sup id="fnref:v050-diff"><a class="footnote-ref" href="#fn:v050-diff">3</a></sup>。</p>
+<h3 id="12-人怎么参与假设共创">1.2 人怎么参与：假设共创<a class="permalink" href="#12-人怎么参与假设共创" title="本节链接">#</a></h3>
+<p>ARC 里人能碰到假设的通道，按「改没改到 <code>hypotheses.md</code>」排。先说一个贯穿全表的事实：暂停时的可选动作由 <code>WaitingState.available_actions</code> 决定，默认值是 approve / reject / edit / collaborate / skip / abort 六个，<code>session.pause()</code> 从不改它；终端适配器只接受这张表里的动作（<code>researchclaw/hitl/intervention.py:194-201</code>、<code>researchclaw/hitl/session.py:140-167</code>、<code>researchclaw/hitl/adapters/cli_adapter.py:136-141</code>）。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>通道</th>
+<th>什么时候</th>
+<th>改到什么</th>
+<th>状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>researchclaw guide &lt;run&gt; --stage 8 --message …</code></td>
+<td>任意时刻写文件；要在 Stage 8 执行之前写才有效。PIVOT 会把 <code>stage-08/</code> 连同这个文件改名成 <code>stage-08_vN/</code>，重跑的 Stage 8 读不到</td>
+<td>Stage 8 末尾多一次改写调用，改到 <code>hypotheses.md</code></td>
+<td>真接线；前提是人知道要提前写</td>
+<td><code>researchclaw/cli.py:2304-2321</code>、<code>researchclaw/pipeline/stage_impls/_synthesis.py:196-214</code>、<code>researchclaw/pipeline/runner.py:1302-1320</code>、<code>docs/HITL_GUIDE.md:204-212</code></td>
+</tr>
+<tr>
+<td><code>--to-stage HYPOTHESIS_GEN</code> 停下，手改 <code>stage-08/hypotheses.md</code>（或写意见后 <code>--from-stage HYPOTHESIS_GEN</code> 重跑 Stage 8），再 <code>--from-stage EXPERIMENT_DESIGN</code> 续跑</td>
+<td>流水线停下之后</td>
+<td>直接改文件，或让重跑的 Stage 8 读到意见</td>
+<td><code>--from-stage</code> 只是从指定阶段开始循环，不清理已有目录；ARC-Bench 正是先写好 <code>stage-07/08/09</code> 的文件再 <code>--from-stage CODE_GENERATION</code>。这条通路按代码推断可行，未实跑</td>
+<td><code>researchclaw/cli.py:1208-1213,248-282,330-341</code>、<code>researchclaw/pipeline/runner.py:35-38,482-486,663-664</code>、<code>experiments/arc_bench/scripts/prepare_run.py:62-70</code>、<code>experiments/arc_bench/scripts/run_bench.py:198-206</code></td>
+</tr>
+<tr>
+<td>Stage 8 执行前暂停收意见</td>
+<td>六个模式与 <code>--mode</code> 的 express / thorough / learning 三个预设都没有设 <code>pause_before</code>；任何模式下在配置里给 8 号写 <code>stage_policies</code> 都能开（逐阶段配置优先于模式默认）。暂停时终端里选不了「注入意见」，只能在另一个终端先 <code>researchclaw guide --stage 8</code> 再批准；脚本化适配器可以直接送 inject</td>
+<td>意见写进 <code>stage-08/hitl_guidance.md</code>，Stage 8 末尾的改写调用读到</td>
+<td>预设下不发生</td>
+<td><code>researchclaw/hitl/config.py:112-116,200-243</code>、<code>researchclaw/hitl/presets.py:12-127</code>、<code>researchclaw/pipeline/executor.py:200-254</code></td>
+</tr>
+<tr>
+<td>co-pilot 下 Stage 8 跑完后的协作对话（<code>c</code>）</td>
+<td>Stage 8 在 co-pilot 的「要批准」与「可协作」两组里</td>
+<td>流水线进程的 stdin 里和模型对话；模型用 <code>&lt;&lt;&lt;FILE: hypotheses.md&gt;&gt;&gt; … &lt;&lt;&lt;END_FILE&gt;&gt;&gt;</code> 包住全文即覆盖文件，人也可以 <code>edit hypotheses.md</code> 粘贴；两种改写都立即写盘，<code>done</code> 时再存对话记录与修订记录</td>
+<td>真接线；要求流水线在前台终端：暂停时读到 EOF，终端适配器返回中止，这一阶段记 FAILED</td>
+<td><code>researchclaw/hitl/config.py:193-197</code>、<code>researchclaw/pipeline/executor.py:409-428,440-564</code>、<code>researchclaw/hitl/collaboration.py:83-190</code>、<code>researchclaw/hitl/chat.py:178-235</code>、<code>researchclaw/hitl/adapters/cli_adapter.py:111-118</code></td>
+</tr>
+<tr>
+<td>co-pilot 下 Stage 8 跑完后的「注入意见」（INJECT）</td>
+<td>同上</td>
+<td>终端适配器有 <code>i</code> 键，但 inject 不在可选动作里，输入后被拒；能送来 INJECT 的只有脚本化适配器（它对没写动作的条目默认就是 inject）和读 <code>hitl/response.json</code> 的文件轮询。送到后写 <code>stage-08/hitl_guidance.md</code>，Stage 8 已经跑完，<code>hypotheses.md</code> 不变；这段文字进入之后所有用 <code>_build_context_preamble</code> 的阶段（每份截前 1000 字），Stage 9 起才看得到</td>
+<td>终端里用不了；脚本化干预能送到，但改不到本阶段产物</td>
+<td><code>researchclaw/hitl/adapters/cli_adapter.py:77-96,136-141</code>、<code>researchclaw/hitl/adapters/scripted_adapter.py:138-139</code>、<code>researchclaw/pipeline/executor.py:430-435</code>、<code>researchclaw/pipeline/_helpers.py:1112-1122</code></td>
+</tr>
+<tr>
+<td>编辑（EDIT）</td>
+<td>同上</td>
+<td>终端适配器用 <code>$EDITOR</code> 打开 <code>hypotheses.md</code>，存盘后执行器原样返回 StageResult；脚本化 JSON 里的 <code>edited_files</code> 全仓没有代码写盘</td>
+<td>终端里真接线；脚本化编辑不落盘</td>
+<td><code>researchclaw/hitl/adapters/cli_adapter.py:290-369</code>、<code>researchclaw/pipeline/executor.py:396-398</code>、<code>researchclaw/hitl/adapters/scripted_adapter.py:147</code></td>
+</tr>
+<tr>
+<td>拒绝（REJECT）</td>
+<td>同上</td>
+<td>返回 REJECTED，runner 直接停掉整条流水线，不会重新生成。<code>stages.py</code> 里有一张「Stage 9 被拒 → 回 Stage 8」的 <code>GATE_ROLLBACK</code> 表，但只有 <code>advance()</code> 用它，生产代码只以 START 事件调一次 <code>advance()</code></td>
+<td>真接线，拒绝即停</td>
+<td><code>researchclaw/pipeline/executor.py:386-394,652</code>、<code>researchclaw/pipeline/runner.py:837-843</code>、<code>researchclaw/pipeline/stages.py:117-123,247-312</code></td>
+</tr>
+<tr>
+<td>回滚（ROLLBACK）</td>
+<td>同上</td>
+<td>终端适配器的 <code>b</code> 键同样不在可选动作里；脚本化适配器能送来 ROLLBACK，执行器的暂停处理没有这一分支，等于放行</td>
+<td>终端按不出，处理也不在</td>
+<td><code>researchclaw/hitl/adapters/cli_adapter.py:84,136-141</code>、<code>researchclaw/hitl/adapters/scripted_adapter.py:44</code>、<code>researchclaw/pipeline/executor.py:383-437</code>（无 ROLLBACK 分支）、全仓只有 <code>researchclaw/hitl/session.py:480</code> 把它映射成日志类型</td>
+</tr>
+<tr>
+<td>Stage 7 跑完后协作改 <code>synthesis.md</code></td>
+<td>co-pilot 下 Stage 7 也在「可协作」组</td>
+<td>Stage 8 的唯一文献输入就是 <code>synthesis.md</code>，改它等于改假设的来源</td>
+<td>真接线</td>
+<td><code>researchclaw/hitl/config.py:194</code>、<code>researchclaw/pipeline/stage_impls/_synthesis.py:103,113</code></td>
+</tr>
+<tr>
+<td>Stage 7 跑完后注入意见</td>
+<td>同上（终端选不了，脚本化可以）</td>
+<td>写 <code>stage-07/hitl_guidance.md</code>，进 preamble；Stage 8 不用 preamble，只用 <code>{topic, synthesis}</code>，所以影响不到假设</td>
+<td>改不到假设</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:113</code></td>
+</tr>
+<tr>
+<td>Stage 15 上人要求换方向（PIVOT）</td>
+<td>HITL 指南写「Choose PROCEED, PIVOT, or REFINE」</td>
+<td>决定在暂停前已由模型文本解析出来；EDIT 改 <code>decision.md</code> 不改已解析的 <code>decision</code>；SKIP 把 decision 改成 proceed，所以人能把 PIVOT / REFINE 压成 PROCEED，反过来不行；REJECT 停流水线。HITL 里人没有让流水线回到 Stage 8 的通路；HITL 之外只能停下后 <code>--from-stage HYPOTHESIS_GEN</code> 手动重跑（按代码推断，未实跑）</td>
+<td>文档有、通路无</td>
+<td><code>docs/HITL_GUIDE.md:197</code>、<code>researchclaw/pipeline/stage_impls/_analysis.py:1269-1335</code>、<code>researchclaw/pipeline/executor.py:400-407,818-821</code></td>
+</tr>
+<tr>
+<td>SmartPause 在 Stage 8 自动叫人</td>
+<td>§3.5：不确定性高于「学习到的阈值」就暂停，阈值按历史批准率自适应</td>
+<td>阈值写死 0.7；置信度 = 5 项固定权重，Stage 8 的关键度 0.9。PRM 默认只评 5 / 9 / 15 / 20，Stage 8 通常没有 PRM 分数，这时 quality 与 confidence 取 1.0，novelty_risk 从不赋值取 0，总分 = 0.72 + 0.10 ×（1 − 本 run 的拒绝率），最低 0.72，高于 0.7</td>
+<td>默认配置下 Stage 8 上不触发；co-pilot 下 Stage 8 本来就暂停</td>
+<td><code>researchclaw/pipeline/executor.py:299-323,716-717</code>、<code>researchclaw/hitl/smart_pause.py:34-51,66-91,110-180</code></td>
+</tr>
+<tr>
+<td>实验用的脚本化干预</td>
+<td>附录 E、J：HITL 实验用预先写好的干预，不是真人</td>
+<td><code>ScriptedHITLAdapter</code> 在流水线暂停时按阶段号返回 JSON 里写好的动作，没有的阶段自动批准；环境变量 <code>HITL_INTERVENTIONS_FILE</code> 或 <code>--interventions</code> 挂上（环境变量优先）</td>
+<td>真接线</td>
+<td><code>researchclaw/hitl/adapters/scripted_adapter.py:122-168</code>、<code>researchclaw/cli.py:377-388</code></td>
+</tr>
+<tr>
+<td><code>researchclaw attach</code> / <code>approve</code> / <code>reject</code></td>
+<td>另开一个终端</td>
+<td>只写 <code>hitl/response.json</code>。读它的文件轮询只在会话没有输入回调、或回调抛异常时走；<code>researchclaw run</code> 开了 HITL 时总会挂上终端或脚本化适配器，终端适配器读到 EOF 返回中止而不是抛异常</td>
+<td><code>researchclaw run</code> 路径下读不到（按代码推断，未实跑）</td>
+<td><code>researchclaw/cli.py:377-394,2186-2301</code>、<code>researchclaw/hitl/session.py:181-237</code>、<code>researchclaw/hitl/file_wait.py:53-80</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><code>docs/HITL_GUIDE.md:220-253</code> 演示的 Idea Workshop 对话（「我生成了 3 个候选，Novelty 8/10、Feasibility 6/10……」）在代码里没有对应：co-pilot 在 Stage 8 进的是上表的通用协作对话，系统提示只有主题、当前 <code>hypotheses.md</code>（截 3000 字）与意见文件，不带合成稿、各角色稿与查新报告（<code>researchclaw/hitl/chat.py:190-233</code>），也不产生分项分数。</p>
+<p><code>IdeaWorkshop.brainstorm</code> 与 <code>evaluate</code> 把 <code>self.llm.chat(...)</code> 的返回值当字符串直接 <code>json.loads</code>（<code>researchclaw/hitl/workshops/idea.py:136-143,286,336</code>），而 <code>LLMClient.chat</code> 返回的是 <code>LLMResponse</code> 数据类（<code>researchclaw/llm/client.py:55-66,239-249</code>）。按代码推断，真接上时 <code>json.loads</code> 抛 <code>TypeError</code>，解析函数只接 <code>JSONDecodeError</code> / <code>ValueError</code>，于是 <code>brainstorm</code> 走到外层 <code>except</code> 返回空列表，<code>evaluate</code> 保留默认的 5.0 分；它的单测把 <code>chat</code> mock 成返回 JSON 字符串，所以是绿的（<code>tests/test_hitl_collaboration.py:383-392</code>）。这与 2026-09-09 那篇记的 memory 构造签名问题同一类：测试用的契约与生产不同。</p>
+<h3 id="13-假设评估与细化的判据">1.3 假设评估与细化的判据<a class="permalink" href="#13-假设评估与细化的判据" title="本节链接">#</a></h3>
+<p>代码里出现过的「好假设」判据，以及它们有没有改变任何东西：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>判据</th>
+<th>谁判</th>
+<th>结果去哪</th>
+<th>是否影响流程</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>innovator 提示词</td>
+<td>NOVELTY 超出已有方法的增量组合；FEASIBILITY 单卡 30 分钟内可测；FALSIFIABILITY 给出拒绝它的指标阈值；每条带风险等级</td>
+<td>模型自述</td>
+<td>角色稿</td>
+<td>只作为生成要求</td>
+<td><code>researchclaw/prompts/ml.py:28-42</code></td>
+</tr>
+<tr>
+<td>pragmatist 提示词</td>
+<td>可测的具体主张、为何有限算力可行、资源估计、可测预测与失败条件</td>
+<td>模型自述</td>
+<td>角色稿</td>
+<td>同上</td>
+<td><code>researchclaw/prompts/ml.py:50-60</code></td>
+</tr>
+<tr>
+<td>contrarian 提示词</td>
+<td>挑战一个主流假定、主流看法为何可能错、替代假设、会有信息量的负结果</td>
+<td>模型自述</td>
+<td>角色稿</td>
+<td>同上</td>
+<td><code>researchclaw/prompts/ml.py:69-79</code></td>
+</tr>
+<tr>
+<td><code>hypothesis_synthesize</code></td>
+<td>取最强、最新颖的想法；回应 contrarian 的顾虑；保证可行性；标出未解决的分歧；每条写依据、可测预测、失败条件；2–4 条</td>
+<td>同一模型</td>
+<td><code>hypotheses.md</code></td>
+<td>是（它就是产物）</td>
+<td><code>researchclaw/prompts/shared.py:750-768</code></td>
+</tr>
+<tr>
+<td>debate judge</td>
+<td>对每个角色稿按严谨、证据、可证伪性打 1–10 分并排序。配了 <code>reviewer_model</code> 时是单独一次打分调用，写 <code>debate_scores.md</code>，排序原文交给合成；没配时 judge 与合成是同一个主模型客户端，一次调用里先打分再合成，分数不单独落盘</td>
+<td><code>reviewer_model</code>；没配就是主模型</td>
+<td>见左</td>
+<td>是，但只在 <code>debate_enabled</code> 下</td>
+<td><code>researchclaw/pipeline/debate.py:202-276</code></td>
+</tr>
+<tr>
+<td><code>tournament_rank</code></td>
+<td>要求按新颖、可行、严谨打 1–10 分并挑唯一胜者；输出的 JSON 里每份候选只有一个 <code>score</code></td>
+<td>同上</td>
+<td><code>tournament_record.json</code>，胜者原文成为 <code>hypotheses.md</code></td>
+<td>是，但只在 <code>tournament_enabled</code> 下；解析失败先取分最高、再默认第 0 份</td>
+<td><code>researchclaw/prompts/shared.py:793-808</code>、<code>researchclaw/pipeline/tournament.py:53-88,195-219</code></td>
+</tr>
+<tr>
+<td><code>hypothesis_gen</code> 阶段提示词</td>
+<td>NOVEL、GAP-FILLING、FEASIBLE、FALSIFIABLE、SURPRISING；每条写新颖性论证、依据、可测预测、失败条件、所需基线（论文 Table 8 列的就是这些）</td>
+<td>—</td>
+<td>—</td>
+<td>从不被渲染：Stage 8 不调 <code>for_stage("hypothesis_gen")</code></td>
+<td><code>researchclaw/prompts/ml.py:330-362</code>；<code>for_stage</code> 全部调用点里没有它</td>
+</tr>
+<tr>
+<td>契约 <code>dod</code></td>
+<td>「≥2 条可证伪假设」，错误码 <code>E08_HYP_INVALID</code></td>
+<td>—</td>
+<td>—</td>
+<td>字符串，全仓无读取点；契约里被执行的只有「输入文件存在」「输出文件非空」两项</td>
+<td><code>researchclaw/pipeline/contracts.py:85-91</code>、<code>researchclaw/pipeline/executor.py:615-627,680-705</code></td>
+</tr>
+<tr>
+<td>Stage 2 选题自评</td>
+<td>按顶会标准给新颖、具体、可行 1–10 分，总分 &lt; 5 时给改题建议</td>
+<td>同一模型</td>
+<td><code>topic_evaluation.json</code> + 一行 warning 日志</td>
+<td>否，文件无读取点</td>
+<td><code>researchclaw/pipeline/stage_impls/_topic.py:178-216</code></td>
+</tr>
+<tr>
+<td>查新报告</td>
+<td>相似度 → novelty_score → high / moderate / low / critical → proceed / differentiate / abort</td>
+<td>确定性代码</td>
+<td><code>novelty_report.json</code></td>
+<td>否（见 <a href="#15-查新怎么做">1.5</a>）</td>
+<td><code>researchclaw/literature/novelty.py:292-314,359-398</code></td>
+</tr>
+<tr>
+<td><code>IdeaWorkshop.evaluate</code></td>
+<td>新颖、可行、影响、总分 0–10，优缺点与建议</td>
+<td>—</td>
+<td>—</td>
+<td>零调用</td>
+<td><code>researchclaw/hitl/workshops/idea.py:150-199</code></td>
+</tr>
+<tr>
+<td><code>IdeaPool.score</code></td>
+<td>0.4 × 可行 + 0.6 × 新颖</td>
+<td>人手填</td>
+<td>—</td>
+<td>零调用</td>
+<td><code>researchclaw/project/models.py:70-72</code>、<code>researchclaw/project/idea_pool.py:75-91</code></td>
+</tr>
+<tr>
+<td>Stage 15 研究决策</td>
+<td>PIVOT = 假设根本上有缺陷；REFINE = 假设成立但实验要重调；PROCEED 需同时满足 5 条（≥2 基线、主指标有定义、每条件 ≥3 种子、条件间无逐种子相同值、分析质量 ≥4/10）</td>
+<td>模型；提示词后面追加确定性提示（退化循环、诊断、消融无效比例）</td>
+<td><code>decision.md</code> → runner 回退</td>
+<td>是</td>
+<td><code>researchclaw/prompts/ml.py:923-948</code>、<code>researchclaw/pipeline/stage_impls/_analysis.py:1188-1253</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>细化（从一版假设到下一版）实际发生在六处：合成调用、debate 的反驳轮（可选）、意见改写调用、协作对话里的文件覆盖、人停下后手改文件或 <code>--from-stage</code> 重跑、PIVOT 后的整段重跑。上表里所有打分类判据（选题自评、查新、Workshop 打分）都没有回流到任何一处细化。</p>
+<p>还有两处论文说有、提示词里没有：论文 §3.2 说合成结果「附可检验标准与所需基线」，<code>hypothesis_synthesize</code> 没要求基线；Table 8 说 Stage 14 要「逐条假设给结论」，Stage 14 的提示词前段带着假设原文（preamble 截 2200 字），但三个分析角色与 <code>analysis_synthesize</code> 提示词都没有逐条给结论的要求（<code>researchclaw/pipeline/stage_impls/_analysis.py:561-562,598-616</code>、<code>researchclaw/prompts/ml.py:83-136</code>、<code>researchclaw/prompts/shared.py:769-791</code>），写着 sanity check 清单的 <code>result_analysis</code> 阶段提示词同样不被渲染（<code>researchclaw/prompts/ml.py:863</code> 起）。</p>
+<h3 id="14-并行方向怎么探索怎么收敛">1.4 并行方向：怎么探索、怎么收敛<a class="permalink" href="#14-并行方向怎么探索怎么收敛" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>机制</th>
+<th>并行在哪</th>
+<th>收敛规则</th>
+<th>状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>三角色</td>
+<td>每个角色至少 2 条，共 ≥6 条候选</td>
+<td>一次合成调用挑成 2–4 条，要求「保留真实分歧、不折中」</td>
+<td>默认开</td>
+<td><code>researchclaw/prompts/ml.py:29,51,70</code>、<code>researchclaw/prompts/shared.py:750-768</code></td>
+</tr>
+<tr>
+<td>多模型 debate</td>
+<td>角色按轮转绑到面板模型：<code>primary_model</code> + <code>reviewer_model</code> + <code>fallback_models</code> 去重，全部共用主配置的 endpoint 与 key，只换模型名</td>
+<td>反驳轮里每个角色看其余角色上一轮的稿；配了 <code>reviewer_model</code> 时 judge 排序、主模型照排序合成，没配时主模型一次调用里打分加合成；记 <code>debate_record.json</code>（含 judge 是否独立于作者模型）</td>
+<td>可选，默认关；provider=acp 时面板为空</td>
+<td><code>researchclaw/pipeline/debate.py:136-196,202-291</code>、<code>researchclaw/llm/__init__.py:105-145</code></td>
+</tr>
+<tr>
+<td>tournament</td>
+<td>N 份候选按角色提示词轮转（候选 0 是 innovator 的稿，1 是 pragmatist，2 是 contrarian）；开了 debate 时由面板模型轮流生成</td>
+<td>judge 挑一份，胜者原文就是最终假设，不再合成</td>
+<td>可选，默认关；开了就不走 debate 那条分支</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:114-150</code>、<code>researchclaw/pipeline/tournament.py:144-238</code></td>
+</tr>
+<tr>
+<td>PIVOT</td>
+<td>串行，不并行：Stage 15 判 PIVOT 就把 <code>stage-08..15</code> 改名为 <code>_vN</code>，从 Stage 8 递归重跑</td>
+<td>PIVOT 与 REFINE 共用一个计数，合计最多 2 次（论文算法 1 写的是 pivot ≤2、refine ≤10 两层嵌套）；用完后强制 PROCEED</td>
+<td>真接线</td>
+<td><code>researchclaw/pipeline/stages.py:129-134</code>、<code>researchclaw/pipeline/runner.py:699-778,1278-1320,1557-1568</code></td>
+</tr>
+<tr>
+<td>PIVOT 后的结果选择</td>
+<td>全部 <code>stage-14*</code> 版本</td>
+<td><code>_promote_best_stage14</code> 按主指标在所有版本里挑最好的一份实验摘要与分析稿，拷回 <code>stage-14/</code> 与 <code>experiment_summary_best.json</code>；按代码推断，挑中的可能是 PIVOT 之前、针对旧假设的那一版，而 <code>hypotheses.md</code> 已是新的一版（未实跑）</td>
+<td>真接线</td>
+<td><code>researchclaw/pipeline/runner.py:777,1357-1460</code></td>
+</tr>
+<tr>
+<td><code>BranchManager</code></td>
+<td>README 称「流水线分支，并行探索假设」</td>
+<td><code>create_branch</code> 拷贝前 N 个阶段目录；<code>compare_branches</code> 列每个分支的文件名、前 200 字与 PRM 分；<code>merge_branch</code> 把分支目录拷回主目录。没有执行分支的代码</td>
+<td>生产零调用；另有一个 <code>copilot/branching.py</code> 同名类，整个 <code>copilot/</code> 包也零调用</td>
+<td><code>researchclaw/hitl/branching.py:84-268</code>、<code>README.md:72</code></td>
+</tr>
+<tr>
+<td><code>IdeaPool</code></td>
+<td>想法的增删查、打分、排序、转项目</td>
+<td>按 0.4 / 0.6 加权分排序</td>
+<td>生产零调用（只在 <code>project/__init__.py</code> 导出）</td>
+<td><code>researchclaw/project/idea_pool.py:16-112</code></td>
+</tr>
+<tr>
+<td><code>IdeationMemory</code></td>
+<td>记选题结果、假设可行性、反模式</td>
+<td>失败的置信度更高（0.7 对 0.6）</td>
+<td>生产零调用</td>
+<td><code>researchclaw/memory/ideation_memory.py:16-158</code></td>
+</tr>
+<tr>
+<td><code>trends --suggest-topics</code></td>
+<td>CLI 旁路命令，从近期论文的关键词趋势出候选选题</td>
+<td>新颖度 = max(0.3, 1 − 0.15 × 与上升关键词重叠数)，总分 0.4 新颖 + 0.3 可行 + 0.3 影响；CLI 里不传模型，走启发式</td>
+<td>真接线，但不在流水线里</td>
+<td><code>researchclaw/trends/auto_topic.py:76-110</code>、<code>researchclaw/cli.py:1050-1059</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>PIVOT 重跑 Stage 8 时，提示词的变量仍然只有 <code>topic</code> 与 <code>stage-07/synthesis.md</code>：上一版假设在 <code>stage-08_v1/</code>，决策理由在 <code>stage-15_v1/decision.md</code>，都不进 Stage 8 的提示词；人事先写在 <code>stage-08/</code> 的意见文件也随目录改名，重跑读不到（<code>researchclaw/pipeline/stage_impls/_synthesis.py:103,113,197</code>、<code>researchclaw/pipeline/runner.py:1302-1320</code>）。论文 §3.3 说的「带着失败作为新证据回到假设生成」，对 API 类 provider 在代码里是同样输入的一次重新采样。provider=acp 时每个阶段新建一个客户端，旧客户端回收时会关闭会话（<code>researchclaw/llm/acp_client.py:155-179</code>），重跑的 Stage 8 会话里还剩不剩之前的往来，取决于仓库外 acpx 的 <code>sessions ensure</code> 语义，仓库内看不出。</p>
+<h3 id="15-查新怎么做">1.5 查新怎么做<a class="permalink" href="#15-查新怎么做" title="本节链接">#</a></h3>
+<p>ARC 里叫得上「查新」的有三处，只有第三处真去搜论文：</p>
+<ol>
+<li>Stage 1 提示词要求「Novel Angle，带趋势验证，不许编论文标题」，没有检索；产物前面自动加一段「未验证草稿」声明（<code>researchclaw/prompts/ml.py:167-182</code>、<code>researchclaw/pipeline/stage_impls/_topic.py:44-65</code>）。</li>
+<li>Stage 2 的选题自评（上一节表中），纯模型打分，结果不被读取。</li>
+<li>Stage 8 末尾的 <code>check_novelty</code>，步骤如下：</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>做法</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>抽关键词</td>
+<td>主题 + 全部假设文本，正则 <code>[a-zA-Z][a-zA-Z0-9_-]+</code>，小写，去英文停用词，≥3 字符，去重</td>
+<td><code>researchclaw/literature/novelty.py:133-142,217-219</code></td>
+</tr>
+<tr>
+<td>组检索式</td>
+<td>主题一条；<code>## H1</code> 这类标题行（&gt;10 字符）各一条；前 5 个关键词拼一条；最多 5 条</td>
+<td><code>researchclaw/literature/novelty.py:338-356</code></td>
+</tr>
+<tr>
+<td>检索</td>
+<td><code>search_papers_multi_query</code>，默认 OpenAlex、Semantic Scholar、arXiv 三源，每条检索式每个源最多 15 篇，检索式之间隔 1.5 秒；某个源失败时退到本地检索缓存（同一检索式以前查过才有）；全局去重后按引用数降序；取前 30 篇比较</td>
+<td><code>researchclaw/literature/novelty.py:229-262</code>、<code>researchclaw/literature/search.py:36,104-124,201-223,246-281</code></td>
+</tr>
+<tr>
+<td>也比已收集的论文</td>
+<td>Stage 4 的 <code>candidates.jsonl</code> 全部参与比较</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:239-240</code>、<code>researchclaw/literature/novelty.py:264-287</code></td>
+</tr>
+<tr>
+<td>相似度</td>
+<td>假设关键词集合与论文「标题 + 摘要」关键词集合的 Jaccard；标题序列相似度那一支要传 <code>hypothesis_title</code> 才启用，两处调用都没传</td>
+<td><code>researchclaw/literature/novelty.py:164-177,239,271</code></td>
+</tr>
+<tr>
+<td>判定</td>
+<td>≥0.25 记为相似；novelty_score = 1 − 相似论文里的最大相似度；相似度最高的前 5 篇里有 ≥2 篇相似度 ≥0.4 且引用 ≥50，再乘 0.7；≥0.7 high、≥0.45 moderate、≥0.25 low、其余 critical；对应 proceed / proceed / differentiate / abort；API 一篇没返回且没有已收集论文时记 <code>insufficient_data</code> / <code>proceed_with_caution</code></td>
+<td><code>researchclaw/literature/novelty.py:292-314,359-398</code></td>
+</tr>
+<tr>
+<td>结果去向</td>
+<td>写 <code>novelty_report.json</code>、打一行 info 日志；外面裹 <code>except</code> 只记 warning。唯一读它的是 <code>hitl/summarizer.py</code>，该模块在生产代码里没有被 import</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:234-259</code>、<code>researchclaw/hitl/summarizer.py:142-147</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Jaccard 的分母是两边关键词的并集，假设文本越长，分母越大。量级估计（没有真实的 <code>hypotheses.md</code> 产物，用论文自己的文本代替，照同一正则与停用词自己写几行 Python 算，没跑 ARC 代码）：论文摘要 179 词抽出 109 个关键词，同一篇论文 §3.2–3.3 正文 518 词抽出 271 个，两者 Jaccard 为 0.092；要到 0.25，摘要里约 70% 的关键词（76 / 109）都得出现在正文里。一份 2–4 条、带依据与预测的 <code>hypotheses.md</code> 与这段正文长度相当，所以同题论文多半也到不了 0.25，这个检查在多数情况下会给 <code>high</code>（按公式推算，未用真实产物验证）。假设用中文写时，正则只能抽到主题与夹带的英文词。论文正文与附录都没有描述这一步。</p>
+<h2 id="2-为什么有效论文证据与代码对账">2. 为什么有效：论文证据与代码对账<a class="permalink" href="#2-为什么有效论文证据与代码对账" title="本节链接">#</a></h2>
+<h3 id="21-论文给了哪些证据">2.1 论文给了哪些证据<a class="permalink" href="#21-论文给了哪些证据" title="本节链接">#</a></h3>
+<p>论文<sup id="fnref:arc-paper"><a class="footnote-ref" href="#fn:arc-paper">1</a></sup>里和假设有关的证据：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>证据</th>
+<th>内容</th>
+<th>设置</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>组件消融</td>
+<td>去掉 Debate：质量 5.62 → 4.25（−1.37，p=0.003），接受 3/10 → 1/10；同时去掉 Debate 与自愈：完成 4/10、质量 3.47、接受 0</td>
+<td>Full-Auto，10 个 topic，每组合跑 3 次取最好；p 值未写检验方法</td>
+<td>§4.5、Table 5</td>
+</tr>
+<tr>
+<td>角色数</td>
+<td>K=2 使「假设多样性」−23%；K=5 多花 67% token 只多 8% 多样性</td>
+<td>每档 10 个 run；「多样性」怎么量没有写</td>
+<td>附录 F</td>
+</tr>
+<tr>
+<td>案例 T10</td>
+<td>Full-Auto 的 8 种交叉验证策略全部输出相同的零偏差；CoPilot 里 Pragmatist 指出 LOOCV 可能超时、Contrarian 质疑消融能否分辨差异，synthesizer 收窄假设集</td>
+<td>单个 topic；CoPilot 一侧同时有文献、假设、设计、写作、质量 5 个阶段的人工意见</td>
+<td>§4.6、图 2、Table 11</td>
+</tr>
+<tr>
+<td>HITL 消融</td>
+<td>CoPilot 平均 7.27、接受 87.5%；只在 5 / 8 / 9 介入的 Pre-Experiment 为 4.28、37.5%；Full-Auto 4.03、25%</td>
+<td>10 个 topic × 7 种模式，单次运行（§4.5 称其为 single-run）；干预是预先写好的脚本，不是真人；接受率的分母是有效 run 数（例如 CoPilot 7/8）</td>
+<td>§4.4、Table 3、附录 E、附录 J</td>
+</tr>
+<tr>
+<td>失败分析</td>
+<td>13 个无效 run 里 11 个死在 Stage 17，四类原因之一是「设计对预算太大」</td>
+<td>HITL 消融的 run</td>
+<td>附录 H</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="22-这些证据测没测到假设这一段">2.2 这些证据测没测到假设这一段<a class="permalink" href="#22-这些证据测没测到假设这一段" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>证据</th>
+<th>测到了什么</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Table 2 主表（0.648 对 AI Scientist v2 的 0.419）</td>
+<td>没测假设生成。ARC-Bench 的实验阶段评测从 Stage 10 开跑、到 Stage 14 停，<code>stage-08/hypotheses.md</code> 由 <code>prepare_run.py</code> 直接从 manifest 的 <code>hypotheses</code> 写出；设计文档也写明 ARC 额外拿到注入的合成稿、假设与实验计划</td>
+<td><code>experiments/arc_bench/scripts/prepare_run.py:62-70</code>、<code>experiments/arc_bench/scripts/run_bench.py:198-206</code>、<code>experiments/arc_bench/EXPERIMENT_DESIGN.md:42-48,79-83</code></td>
+</tr>
+<tr>
+<td>Table 2 的 CoPilot 一行</td>
+<td>仓库里唯一一批 rc_copilot 干预（25 个 JSON）只有 Stage 10 与 13 两个键、动作全是 inject，由 <code>hitl_suggestor.py</code> 把 Full-Auto 那次的本地判分结果（哪些评分叶子没拿分）、manifest、提交物喂给一次模型调用生成，默认模型 gpt-5.3-codex；脚本的提示词写明 bench 的 co-pilot 只在 Stage 10 与 13 之后暂停，而 <code>EXPERIMENT_DESIGN.md</code> 仍写键是 5 / 8 / 9 / 14。论文没写 Table 2 的 CoPilot 用的是不是这批，仓库里没有别的</td>
+<td><code>experiments/arc_bench/scripts/hitl_suggestor.py:1-16,40-73,151-167,203-219</code>、<code>experiments/arc_bench/EXPERIMENT_DESIGN.md:66-71</code>、<code>experiments/arc_bench/baseline/README.md:15-17</code></td>
+</tr>
+<tr>
+<td>Table 5 的 w/o Debate</td>
+<td>同时去掉 Stage 8 与 Stage 14 两处多角色，分不开假设端与分析端各占多少。仓库里的消融开关 <code>ARC_ABL_DISABLE_DEBATE=1</code> 会把角色表截成第一个角色：Stage 8 只剩 innovator，Stage 14 只剩 optimist，合成调用照跑；如果消融用的是这个开关，对照组是「只留最激进与最乐观的角色」，不是「单个中性生成器」。开关注释写「只给 experiments/component_ablation 用」，该目录在 <code>.gitignore</code> 里</td>
+<td><code>researchclaw/pipeline/_helpers.py:1703-1709</code>、<code>researchclaw/pipeline/debate.py:130-134</code>、<code>researchclaw/prompts/ml.py:21-22,83-84</code>、<code>.gitignore:128</code></td>
+</tr>
+<tr>
+<td>附录 F 的 K 消融</td>
+<td>代码里没有角色数参数：每个 bank 的角色表写死 3 个，只有「截成 1 个」的开关</td>
+<td><code>researchclaw/prompts/ml.py:21-81</code>；全仓 <code>ARC_*</code> 环境变量只有 5 个（<code>ARC_ABL_DISABLE_DEBATE</code>、<code>ARC_ABL_DISABLE_REGISTRY</code>、<code>ARC_ABL_DISABLE_TOURNAMENT</code>、<code>ARC_DEBATE_ROUNDS</code>、<code>ARC_TOURNAMENT_CANDIDATES</code>）</td>
+</tr>
+<tr>
+<td>Table 3 的 Pre-Experiment（5 / 8 / 9）</td>
+<td>按代码推断，如果用的是 co-pilot 那种跑后暂停，Stage 8 的脚本化 inject 改不到 <code>hypotheses.md</code>，只进入 Stage 9 以后的 preamble（见 <a href="#12-人怎么参与假设共创">1.2</a>），这一格测到的「假设共创」更接近「给设计阶段递一段意见」；如果作者用 <code>stage_policies</code> 给 8 号配了 <code>pause_before</code>，inject 会在 Stage 8 执行前落盘并被改写调用读到。代码里没有 Pre-Experiment 这个模式或预设。HITL 消融的脚本与数据在 <code>experiments/hitl_ablation/</code>，同样被 <code>.gitignore</code> 挡住，Stage 8 的干预内容与投递方式无从核对</td>
+<td><code>researchclaw/pipeline/executor.py:200-254,430-435</code>、<code>researchclaw/hitl/presets.py:117-127</code>、<code>.gitignore:130</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="23-代码是否按论文做">2.3 代码是否按论文做<a class="permalink" href="#23-代码是否按论文做" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>论文说</th>
+<th>代码里</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>角色在生成假设时互相质疑（§1、§3.2）</td>
+<td>默认路径三个角色各自一次调用，提示词里没有别的角色的稿，唯一「看到全部」的是合成调用；有反驳轮的 <code>run_debate</code> 在 2026-08-18 加入、默认关，论文 v2 发于 2026-05-23。provider=acp 时各角色进同一个会话，彼此能看到，但那是会话上下文，不是提示词里设计的质疑轮</td>
+<td><code>researchclaw/pipeline/_helpers.py:1713-1725</code>、<code>researchclaw/pipeline/debate.py:167-196</code>、<code>researchclaw/llm/acp_client.py:1-7</code><sup id="fnref3:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup></td>
+</tr>
+<tr>
+<td>单个模型既提又评，难以证伪自己的假设（§3.2 动机）</td>
+<td>默认路径里三个角色与合成用的是同一个模型客户端；独立 judge 只在 debate / tournament 下、且配了 <code>reviewer_model</code> 才有。<code>reviewer_model</code> 可以只换模型名，也可以配独立的 <code>reviewer_provider</code> / <code>reviewer_base_url</code> / <code>reviewer_api_key</code></td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:179-193</code>、<code>researchclaw/llm/__init__.py:88-103</code>、<code>researchclaw/llm/client.py:180-229</code>、<code>researchclaw/config.py:206-217</code></td>
+</tr>
+<tr>
+<td>Pragmatist 按硬件与时间预算评估可行性（§3.2）</td>
+<td>Stage 8 的变量只有 <code>topic</code> 与 <code>synthesis</code>；Stage 1 探测的 <code>hardware_profile.json</code> 不进来；pragmatist 提示词只写「有限算力」，单卡 30 分钟的约束写死在 innovator 提示词里</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:113</code>、<code>researchclaw/pipeline/stage_impls/_topic.py:96-102</code>、<code>researchclaw/prompts/ml.py:32,54</code></td>
+</tr>
+<tr>
+<td>合成出的每条假设带可检验标准与所需基线（§3.2）；Stage 8 要求新颖性论证与所需基线（Table 8）</td>
+<td>合成提示词要依据、可测预测、失败条件，不要基线；Table 8 那套要求所在的 <code>hypothesis_gen</code> 提示词从不被渲染；输出只查非空，不解析</td>
+<td><code>researchclaw/prompts/shared.py:758-766</code>、<code>researchclaw/prompts/ml.py:330-362</code>、<code>researchclaw/pipeline/executor.py:680-705</code></td>
+</tr>
+<tr>
+<td>跨 run 教训注入所有阶段、教训影响辩论（图 1、§1、§3.6）</td>
+<td>Stage 8 不调 <code>_get_evolution_overlay</code>，所以进化教训、MetaClaw 技能与 SkillRegistry 匹配到的 skill 都进不来；也不走 <code>for_stage</code>，配置里的 <code>extra_prompts.hypothesis_gen</code> 同样到不了 Stage 8；Stage 7 调了 overlay</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:50,94-195</code>、<code>researchclaw/pipeline/_helpers.py:816-860</code>、<code>researchclaw/prompts/manager.py:214-244</code></td>
+</tr>
+<tr>
+<td>Pivot 带着失败回到假设生成（§3.3）</td>
+<td>重跑 Stage 8 的提示词输入不变（见 <a href="#14-并行方向怎么探索怎么收敛">1.4</a>）</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:103,113</code></td>
+</tr>
+<tr>
+<td>pivot ≤2、refine ≤10，两层循环（算法 1）</td>
+<td>两者共用一个计数，合计 ≤2</td>
+<td><code>researchclaw/pipeline/stages.py:134</code>、<code>researchclaw/pipeline/runner.py:1557-1568</code></td>
+</tr>
+<tr>
+<td>每个阶段有 JSON schema 契约与验收条件，如「至少 2 条假设标为可证伪」、错误码 <code>E-HYPO-*</code>（附录 A）</td>
+<td>契约是 dataclass，不是 JSON schema；执行器只查输入文件存在、输出文件非空；<code>dod</code> 与 <code>error_code</code> 是字符串，全仓无读取点，错误码实际写作 <code>E08_HYP_INVALID</code></td>
+<td><code>researchclaw/pipeline/contracts.py:85-91</code>、<code>researchclaw/pipeline/executor.py:615-627,680-705</code></td>
+</tr>
+<tr>
+<td>CoPilot 的 Idea Workshop 做假设共创（§3.5）</td>
+<td>通用协作对话；<code>IdeaWorkshop</code> 只存占位对象</td>
+<td>见 <a href="#12-人怎么参与假设共创">1.2</a></td>
+</tr>
+<tr>
+<td>SmartPause 阈值随历史批准率自适应（§3.5）</td>
+<td>阈值写死 0.7；历史项权重 0.10，只读本 run 的干预记录；Stage 8 没有 PRM 分数时算不出低于 0.72 的分</td>
+<td><code>researchclaw/pipeline/executor.py:305</code>、<code>researchclaw/hitl/smart_pause.py:154-180</code></td>
+</tr>
+<tr>
+<td>七种干预模式，CoPilot 在 5 / 8 / 9 / 14 / 17 / 20 接收干预，Thorough 在 8 个阶段边界（§3.5、Table 10）</td>
+<td>模式枚举 6 个；<code>--mode</code> 另有 express / thorough / learning 三个预设，thorough 就是 checkpoint 模式，阶段边界 2 / 6 / 8 / 11 / 13 / 15 / 19 / 23 共 8 个，与 Table 10 一致。co-pilot 预设在 Stage 14 不暂停（不在批准、协作、跑后暂停任一组，SmartPause 在 14 上最低 0.80 也不触发），脚本化干预投递不到 14；Pre-Experiment / Post-Experiment 在代码里没有，只能用 <code>stage_policies</code> 拼</td>
+<td><code>researchclaw/hitl/config.py:10-18,180-243</code>、<code>researchclaw/hitl/presets.py:37-86,117-127</code>、<code>researchclaw/cli.py:1229-1234</code></td>
+</tr>
+<tr>
+<td>HEP 用 Theorist / Phenomenologist / Experimentalist（附录 B.1）</td>
+<td>属实</td>
+<td><code>researchclaw/prompts/hep.py:34-118</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="3-平台哪里能用">3. 平台哪里能用<a class="permalink" href="#3-平台哪里能用" title="本节链接">#</a></h2>
+<p>平台现状（以文件为准）：假设阶段没有步骤能力，主文件未定名（<code>platform/framework/capabilities/__init__.py:42-52</code>）；助理可以 <code>ai4sci output new</code> 手写（<code>platform/framework/cli/output.py:1-6</code>）；设计阶段的 <code>design</code> 会把 <code>--from hypothesis/N</code> 目录里的全部文本文件拼进执行层提示词（<code>platform/framework/capabilities/design/__init__.py:102-108</code>）；分析阶段的提示词已有「证伪与未决」一节（<code>platform/framework/capabilities/analysis/prompt.md:22</code>）。框架不调模型（P-1），模型评审要派隔离的新会话、尚未实现（P-2），决策在协调层（P-10），每次产出一个 <code>&lt;stage&gt;/&lt;n&gt;/</code>、<code>meta.yaml</code> 的 <code>from</code> 带 hash（P-19）。</p>
+<h3 id="31-可摘出的方法与落点">3.1 可摘出的方法与落点<a class="permalink" href="#31-可摘出的方法与落点" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>可摘出的方法</th>
+<th>ARC 出处</th>
+<th>落在平台哪里</th>
+<th>需要的输入</th>
+<th>产出</th>
+<th>与平台现状的关系（事实）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>生成 / 可行性 / 反驳三个角色分开写，再合成，合成时保留分歧</td>
+<td><code>researchclaw/prompts/ml.py:21-81</code>、<code>researchclaw/prompts/shared.py:750-768</code></td>
+<td>假设阶段的一个步骤（要起执行层）</td>
+<td>已确认的 <code>requirement.md</code>；文献阶段的 <code>sources.md</code> 与解析过的论文（<code>pdf</code> skill 的 <code>paper.md</code>）；可选的上一轮分析产出</td>
+<td>假设阶段主文件（名字由第一个能力定）；三份角色稿作私有文件</td>
+<td>平台的执行层是 Claude Code / Codex 会话，三个角色可以是三次隔离的会话，也可以是一次会话写三节，两种做法角色之间可见性不同；ARC 默认是同一个客户端调三次，API 类 provider 下彼此不可见，acp（同样把 CLI agent 当后端）下进同一个会话（按代码推断）</td>
+</tr>
+<tr>
+<td>角色提示词按领域换一套（ML 与 HEP 两套，职责对位：提出 / 落地 / 挑刺）</td>
+<td><code>researchclaw/prompts/hep.py:34-118</code>、<code>researchclaw/prompts/manager.py:85-94</code></td>
+<td>领域包</td>
+<td>领域包给这一族的提示词补充</td>
+<td>同上</td>
+<td>平台已有「领域包给一族能力补提示词」的机制（<code>platform/docs/add-a-capability.md</code>「写代码」一节，<code>domains/&lt;包&gt;/prompts/&lt;族&gt;.md</code>）</td>
+</tr>
+<tr>
+<td>一条假设的字段：陈述、依据、可测预测（带阈值）、证伪条件、所需基线、风险等级；机器可读部分对照 ARC-Bench manifest 的 <code>hypotheses[{id, statement, measurable}]</code></td>
+<td><code>researchclaw/prompts/ml.py:344-354</code>、2026-09-09 那篇 §7.2</td>
+<td>假设阶段主文件的格式</td>
+<td>—</td>
+<td>带编号的假设条目</td>
+<td><code>design</code> 已把假设产出拼进提示词；分析阶段的「证伪与未决」目前按自由文本写，没有假设编号可对</td>
+</tr>
+<tr>
+<td>打分与合成分成两次调用：打分的一方只看各份稿件、不改写，合成的一方照排序写（anti self-preference）</td>
+<td><code>researchclaw/pipeline/debate.py:231-276</code></td>
+<td>P-2 所说的「隔离的新会话、只给产物不给轨迹」</td>
+<td>各份候选假设</td>
+<td>排序与理由</td>
+<td>P-2 这一段未实现。ARC 里只有配了 <code>reviewer_model</code> 才拆成两次调用；judge 可以只换模型名，也可以配独立的 provider / base_url / key（<code>researchclaw/llm/client.py:180-229</code>）；provider 是 acp 时面板与独立 judge 都为空（<code>researchclaw/llm/__init__.py:95-96,116-117</code>）</td>
+</tr>
+<tr>
+<td>N 份候选、挑一份</td>
+<td><code>researchclaw/pipeline/tournament.py:91-238</code></td>
+<td>协调层多次跑同一个假设能力，得到 <code>hypothesis/1</code>、<code>hypothesis/2</code>…</td>
+<td>同上</td>
+<td>多个并列产出</td>
+<td>平台里同一阶段的多次产出本来就并列存放，下游读哪一份由 <code>--from</code> 点名、由人在断点签字（P-19），选哪一份是协调层的决定（P-10）；ARC 的做法是框架内一次 judge 调用选定</td>
+</tr>
+<tr>
+<td>查新：用假设文本检索三库、列出最相近的论文与相似度</td>
+<td><code>researchclaw/literature/novelty.py:185-356</code></td>
+<td>一个 skill 脚本（零模型、联网），结果写进调用方给的目录，给人和助理看</td>
+<td>假设文本、主题</td>
+<td>近邻论文清单（标题、年份、链接、相似度、检索式）</td>
+<td>ARC 的结果没有下游读取；平台已有联网的 skill 先例（<code>download</code>）；算法本身的问题见 <a href="#32-反面arc-在这一段踩过的坑">3.2</a></td>
+</tr>
+<tr>
+<td>上一轮分析结论作为重新出假设的输入</td>
+<td>ARC 没做（<a href="#14-并行方向怎么探索怎么收敛">1.4</a>）</td>
+<td>假设步骤的可选输入</td>
+<td><code>--from analysis/N</code> 的 <code>analysis.md</code></td>
+<td>新一版假设</td>
+<td>平台分析阶段的 <code>analysis.md</code> 固定有「证伪与未决」一节，写被证伪的假设与没试的方向（<code>platform/framework/capabilities/analysis/prompt.md:22</code>）</td>
+</tr>
+<tr>
+<td>在 Gap 列表上改，而不是在假设上改</td>
+<td>co-pilot 下 Stage 7 可协作、Stage 8 只吃 <code>synthesis.md</code></td>
+<td>文献阶段或假设步骤的输入</td>
+<td>人确认过的 Gap / 机会列表</td>
+<td>—</td>
+<td>平台里人的意见走对话与 <code>requirement.md</code>，由助理在开跑前带进输入</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="32-反面arc-在这一段踩过的坑">3.2 反面：ARC 在这一段踩过的坑<a class="permalink" href="#32-反面arc-在这一段踩过的坑" title="本节链接">#</a></h3>
+<p>每条都有代码出处，也都能对应到平台已有或待写的规矩：</p>
+<ol>
+<li><strong>人的意见在阶段跑完之后才到，改不到这个阶段的产物。</strong> co-pilot 在 Stage 8 只在跑完后暂停，INJECT 写的意见文件要等下一次重跑才被读（<code>researchclaw/pipeline/executor.py:430-435</code>），而且终端里这个动作选不了（<code>researchclaw/hitl/intervention.py:194-201</code>）。平台里能力是纯函数（P-19），输入只有需求、材料与 <code>--from</code> 点名的产出，开跑之后给的意见进不了这一次产出。</li>
+<li><strong>拒绝等于停机。</strong> REJECT 让整条流水线停下，不会带着拒绝理由重新生成（<code>researchclaw/pipeline/runner.py:837-843</code>）；「Stage 9 被拒回 Stage 8」的回退表写了但没接（<code>researchclaw/pipeline/stages.py:117-123</code>）；ROLLBACK 选项没有处理分支。</li>
+<li><strong>重跑拿到的是同样的输入。</strong> PIVOT 后 Stage 8 的提示词里没有上一版假设和失败理由，人事先写的意见文件也随目录改名丢掉。</li>
+<li><strong>假设版本和实验结果没绑在一起。</strong> <code>_promote_best_stage14</code> 跨 PIVOT 版本按主指标挑结果（<code>researchclaw/pipeline/runner.py:1357-1460</code>）。平台的 <code>meta.yaml</code> <code>from</code> 带 hash（P-19），记录每份产出读的是哪一版输入。</li>
+<li><strong>写了判据、没人读。</strong> 查新报告、选题自评、契约 <code>dod</code>、<code>IdeaWorkshop.evaluate</code> 都算了或写了，都不改变任何走向。对应纲领 P-8「每个配置项必须有读取点与断言」。</li>
+<li><strong>失败时写模板假设继续跑。</strong> 角色调用全部失败、debate 抛异常，或带 <code>--skip-preflight</code> 跑而没有模型时，写死三条通用假设，Stage 8 记 DONE（<code>researchclaw/pipeline/executor.py:639-649</code>、<code>researchclaw/pipeline/_helpers.py:1591-1605</code>）。对应 P-7 fail-closed。</li>
+<li><strong>查新算法本身。</strong> 整段文本的关键词集合对单篇摘要做 Jaccard，分母被假设文本撑大（同一篇论文的摘要对它自己的方法节也只有 0.09，见 <a href="#15-查新怎么做">1.5</a>）；只认 ASCII；先按引用数排序再截前 30 篇，新而低引的相近工作可能被截掉（<code>researchclaw/literature/search.py:279-280</code>、<code>researchclaw/literature/novelty.py:238</code>）。</li>
+<li><strong>测试契约与生产不一致。</strong> <code>IdeaWorkshop</code> 的单测把 <code>chat</code> mock 成返回字符串，生产返回数据类（<a href="#12-人怎么参与假设共创">1.2</a>）。对应 P-8「集成点必须有测试」。</li>
+<li><strong>论文与 README 超前于代码。</strong> Idea Workshop、分支并行、SmartPause 自适应、pivot 带证据回流、README 列的 WebSocket / MCP 两个 HITL 适配器（<code>researchclaw/hitl/adapters/ws_adapter.py</code> 与 <code>mcp_adapter.py</code> 在 <code>researchclaw/</code> 其余代码里没有 import）都是这一类；2026-09-09 那篇 §10.2 第 6 条已记过同一现象。</li>
+</ol>
+<h2 id="4-局限与前提">4. 局限与前提<a class="permalink" href="#4-局限与前提" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>类别</th>
+<th>事实</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据</td>
+<td>假设的全部文献依据是 Stage 6 抽出的知识卡片（最多 24 张）经 Stage 7 一次合成；卡片由模型一次调用从 <code>shortlist.jsonl</code>（检索返回的题录与摘要）加 Stage 4 的网页检索摘录（截 10000 字）抽取，没有全文</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:40-46</code>、<code>researchclaw/pipeline/stage_impls/_literature.py:919-940</code></td>
+</tr>
+<tr>
+<td>数据</td>
+<td>查新要在线访问 OpenAlex、Semantic Scholar、arXiv；S2 key 可选，读的是 <code>llm.s2_api_key</code> 而不是文献检索段的同名字段（Stage 4 两处都读、还读环境变量 <code>S2_API_KEY</code>）；某个源失败时先退到本地检索缓存，再不行只剩与已收集论文的比较</td>
+<td><code>researchclaw/pipeline/stage_impls/_synthesis.py:245</code>、<code>researchclaw/pipeline/stage_impls/_literature.py:414-418</code>、<code>researchclaw/config.py:203,243-244</code>、<code>researchclaw/literature/search.py:201-223</code>、<code>researchclaw/literature/novelty.py:259-262</code></td>
+</tr>
+<tr>
+<td>数据</td>
+<td>关键词正则只认 ASCII，停用词表是英文 ML 语境；中文假设只能抽到主题与夹带的英文词</td>
+<td><code>researchclaw/literature/novelty.py:35-142</code></td>
+</tr>
+<tr>
+<td>模型</td>
+<td>非 acp provider 走 HTTP 接口（OpenAI 兼容、Anthropic 等），要 <code>base_url</code> 与 key；<code>researchclaw run</code> 默认先预检，缺了就退出，带 <code>--skip-preflight</code> 时 Stage 8 退回模板假设。debate 面板里的每个模型共用主配置的 endpoint 与 key，只换模型名，要跨厂商得靠 OpenRouter 这类聚合 endpoint；judge 可以单独配 provider / base_url / key</td>
+<td><code>researchclaw/cli.py:228-239</code>、<code>researchclaw/pipeline/executor.py:639-649</code>、<code>researchclaw/llm/__init__.py:60-85,122-144</code>、<code>researchclaw/llm/client.py:180-229</code></td>
+</tr>
+<tr>
+<td>模型</td>
+<td>provider 选 acp（把 Claude Code、Codex 等 CLI agent 当后端，经仓库外的 <code>acpx</code>）时，debate 面板与独立 judge 都不构建，退回单模型；Stage 8 的各次调用进同一个具名会话</td>
+<td><code>researchclaw/llm/__init__.py:78-80,95-96,116-117</code>、<code>researchclaw/llm/acp_client.py:1-7,474-480</code></td>
+</tr>
+<tr>
+<td>模型</td>
+<td>论文所有对比实验用同一骨干 GPT-5.3-codex；提示词英文、ML 口吻；领域角色只有 ml 与 hep_ph 两套可达</td>
+<td>论文 §4.1；<code>researchclaw/pipeline/_domain.py:140-190</code></td>
+</tr>
+<tr>
+<td>算力与成本</td>
+<td>Stage 8 默认 4 次调用（3 角色 + 1 合成），有意见文件再加 1 次；debate 一轮反驳：开场 3 + 反驳 3 + 打分 1 + 合成 1 = 8 次，没配 <code>reviewer_model</code> 时打分与合成是一次，共 7 次，每次失败或空输出再试一次；tournament 是 N + 1 次；PIVOT 与 REFINE 合计最多 2 次回退。论文报一次完整 run 花 3–15 美元</td>
+<td><code>researchclaw/pipeline/debate.py:37-66,143-276</code>、<code>researchclaw/pipeline/tournament.py:144-219</code>；论文附录 J</td>
+</tr>
+<tr>
+<td>算力</td>
+<td>「单卡 30 分钟」写死在 innovator 提示词里，不随 Stage 1 探测的硬件变</td>
+<td><code>researchclaw/prompts/ml.py:32</code></td>
+</tr>
+<tr>
+<td>人</td>
+<td>暂停与协作对话都读流水线进程的 stdin：后台运行时暂停读到 EOF，终端适配器返回中止，该阶段记 FAILED；<code>attach</code> / <code>approve</code> / <code>reject</code> 只写 <code>hitl/response.json</code>，<code>researchclaw run</code> 开了 HITL 时总挂着输入回调，文件轮询只在回调抛异常时才走</td>
+<td><code>researchclaw/hitl/adapters/cli_adapter.py:111-118</code>、<code>researchclaw/pipeline/executor.py:409-417,486-491</code>、<code>researchclaw/cli.py:377-394,2186-2301</code>、<code>researchclaw/hitl/session.py:181-237</code></td>
+</tr>
+<tr>
+<td>许可证</td>
+<td>代码 MIT，提示词文本在代码里，同样 MIT；论文是 arXiv 非独占分发许可<sup id="fnref2:arxiv-license"><a class="footnote-ref" href="#fn:arxiv-license">4</a></sup></td>
+<td><code>LICENSE</code></td>
+</tr>
+<tr>
+<td>测试与 CI</td>
+<td>debate、tournament、查新、分支各有单测（12、14、37、16 条），都用假客户端或 mock 检索；有测试直接调 Stage 8，但没有测试走 Stage 8 的 debate / tournament 分支；仓库无 CI（2026-09-09 那篇 §2）</td>
+<td><code>tests/test_debate_engine.py</code>、<code>tests/test_tournament_engine.py</code>、<code>tests/test_rc_novelty.py:365-460</code>、<code>tests/test_hitl_branching.py</code>、<code>tests/test_rc_executor.py:1490-1515</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="5-还没弄清的问题">5. 还没弄清的问题<a class="permalink" href="#5-还没弄清的问题" title="本节链接">#</a></h2>
+<ol>
+<li><strong>HITL 消融里 Stage 8 的干预写了什么、怎么投递。</strong> <code>experiments/hitl_ablation/</code> 在 <code>.gitignore:130</code>；<code>EXPERIMENT_DESIGN.md:66-71</code> 说那批干预文件按阶段 5 / 8 / 9 / 14 分键。按仓库里的 co-pilot 预设，Stage 8 的 inject 在跑完后才到、Stage 14 根本不暂停，与 Table 10 对不上。作者是否另配了 <code>stage_policies</code>，看不到；脚本化干预里如果用了 edit，<code>edited_files</code> 不会被写盘，这类干预是否出现过也看不到。</li>
+<li><strong>Table 3 的数字口径。</strong> 表里 CoPilot 干预 6 次、Step-by-Step 23 次，正文写 19 次与 29 次；1–10 的论文质量分由谁打没有写（Table 11 的案例用的是流水线自己的 Stage 20 分）。Table 3 的 Thorough 是否就是 <code>--mode thorough</code> 预设（checkpoint 模式），论文没写。</li>
+<li><strong>Table 5 的 w/o Debate 用的是不是 <code>ARC_ABL_DISABLE_DEBATE</code>。</strong> 如果是，对照组只剩 innovator 与 optimist；p=0.003 用的什么检验没有写。</li>
+<li><strong>附录 F 的「假设多样性」怎么量，K=2 / K=5 怎么配出来的。</strong> 代码里没有角色数参数。</li>
+<li><strong>debate 的反驳轮与 tournament 对假设质量有没有用。</strong> 两者晚于论文加入，仓库里没有对应实验。</li>
+<li><strong>查新在真实产物上是否几乎总报 high。</strong> 本文用论文自己的文本估了量级（Jaccard 0.09），没有拿真实的 <code>hypotheses.md</code> 与检索结果算。</li>
+<li><strong>provider=acp 时角色之间到底能不能看到彼此。</strong> 同一个 <code>ACPClient</code> 在 Stage 8 内复用、会话名固定，按 <code>acp_client.py</code> 的 docstring 会话保留上下文；但会话怎么存历史、<code>sessions close</code> 之后 <code>sessions ensure</code> 是否恢复历史，都在仓库外的 acpx 里，本次没查也没跑。</li>
+<li><strong><code>IdeaWorkshop.brainstorm</code> 接真客户端是否必然返回空列表、<code>_promote_best_stage14</code> 是否真会取到 PIVOT 前的结果、人在 Stage 15 是否确实无法经 HITL 触发 PIVOT、<code>--to-stage</code> / <code>--from-stage</code> 手改假设再续跑是否顺畅。</strong> 都是读代码的推断，未执行。</li>
+<li><strong>平台一侧要定的事</strong>（本文不下结论，归 #155 比较）：假设阶段主文件叫什么、字段要不要机器可读；查新做 skill 还是步骤、联网走 skill 脚本还是 agent 自带的搜索；三个角色用三次隔离会话还是一次会话写三节；P-2 的「隔离新会话」用同一家 CLI、同一模型时算不算独立评审，要不要为打分单独配模型。</li>
+</ol>
+<h2 id="6-调研方法">6. 调研方法<a class="permalink" href="#6-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>读 2026-09-09 那篇，确定本篇只看假设相关部分；从 <code>_synthesis.py</code> 的 Stage 8 入口出发，顺着调用读到提示词、debate、tournament、HITL 执行器与适配器、查新、runner 的 PIVOT 处理、ACP 客户端，再反查 README、<code>docs/HITL_GUIDE.md</code> 与 <code>experiments/arc_bench/</code> 里的说法。</li>
+<li>「零调用」的判断都用 grep 查过生产代码（<code>researchclaw/</code> 下除自身与 <code>__init__</code> 导出外无引用），测试里的引用单列。</li>
+<li>本地是浅克隆，文件提交历史用 GitHub API 查<sup id="fnref2:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup>；论文发表时的 Stage 8 用 v0.5.0 提交的文件对比<sup id="fnref2:v050-diff"><a class="footnote-ref" href="#fn:v050-diff">3</a></sup>。</li>
+<li>论文 PDF 下到外层 <code>materials/research/2026-0927-scientific-ai-capabilities/papers/</code>（gitignore），用平台的 <code>pdf</code> skill 解析；引用按章节与表号。版本与许可证在 arXiv 页面上核过<sup id="fnref2:arc-paper"><a class="footnote-ref" href="#fn:arc-paper">1</a></sup><sup id="fnref:arxiv-license"><a class="footnote-ref" href="#fn:arxiv-license">4</a></sup>。</li>
+<li>查新 Jaccard 的量级用论文自己的摘要与 §3.2–3.3 正文，按 <code>novelty.py</code> 同样的正则与停用词自己写几行 Python 算，没有 import 或运行 ARC 的代码。</li>
+<li>第一版写完后另一个会话照出处逐条复查过一遍：行号偏的改了，终端可选动作、<code>--mode thorough</code> 预设、<code>stage_policies</code> 的适用范围、debate 在没配 <code>reviewer_model</code> 时的形态、acp 会话复用、<code>--from-stage</code> 通路、查新的量级估计这几处按代码改了说法。</li>
+<li>没有安装依赖、没有运行 ARC 的任何代码；标「按代码推断」「按公式推算」的条目未经执行验证。</li>
+</ul>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:arc-paper">
+<p>Jiaqi Liu、Shi Qiu 等，AutoResearchClaw: Self-Reinforcing Autonomous Research with Human-AI Collaboration，arXiv 2605.20025；v1 2026-05-19，v2 2026-05-23，<a href="https://arxiv.org/abs/2605.20025">https://arxiv.org/abs/2605.20025</a>。&#160;<a class="footnote-backref" href="#fnref:arc-paper" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref2:arc-paper" title="回到正文第 1 处">↩</a></p>
+</li>
+<li id="fn:gh-commits">
+<p>GitHub commits API 按文件查提交记录，2026-09-27 查：<code>debate.py</code> 与 <code>tournament.py</code> 只有 1d7e46f（2026-08-18，feat(review): independent reviewer, multi-model debate, best-of-N tournament）；<code>hitl/workshops/idea.py</code>、<code>hitl/branching.py</code>、<code>hitl/smart_pause.py</code> 只有 40836b2（2026-04-01，v0.4.0）；<code>literature/novelty.py</code> 最后一次改在 2026-03-16（5e308d6）。<a href="https://api.github.com/repos/aiming-lab/AutoResearchClaw/commits">https://api.github.com/repos/aiming-lab/AutoResearchClaw/commits</a>。&#160;<a class="footnote-backref" href="#fnref:gh-commits" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref2:gh-commits" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref3:gh-commits" title="回到正文第 2 处">↩</a></p>
+</li>
+<li id="fn:v050-diff">
+<p>v0.5.0 发布提交 12d3fd8（2026-05-20）的 <code>researchclaw/pipeline/stage_impls/_synthesis.py</code>，<a href="https://github.com/aiming-lab/AutoResearchClaw/blob/12d3fd8/researchclaw/pipeline/stage_impls/_synthesis.py">https://github.com/aiming-lab/AutoResearchClaw/blob/12d3fd8/researchclaw/pipeline/stage_impls/_synthesis.py</a>；与 be4ba47 对比，差异只有 tournament 与 debate 两段分支及其 import。&#160;<a class="footnote-backref" href="#fnref:v050-diff" title="回到正文第 3 处">↩</a><a class="footnote-backref" href="#fnref2:v050-diff" title="回到正文第 3 处">↩</a></p>
+</li>
+<li id="fn:arxiv-license">
+<p>arXiv 页面标注的许可为 arXiv.org perpetual, non-exclusive license 1.0，<a href="http://arxiv.org/licenses/nonexclusive-distrib/1.0/">http://arxiv.org/licenses/nonexclusive-distrib/1.0/</a>，2026-09-27 查。&#160;<a class="footnote-backref" href="#fnref:arxiv-license" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref2:arxiv-license" title="回到正文第 4 处">↩</a></p>
+</li>
+</ol>
+</div>
+  </main>
+  <footer class="doc">原始稿是同目录的 autoresearchclaw.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>

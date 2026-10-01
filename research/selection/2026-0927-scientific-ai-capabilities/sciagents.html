@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SciAgents 方法深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>SciAgents 方法深读</h1>
+    <p class="subtitle">科研 AI 能力选型 · 概念图上取路径、多角色写结构化假设、Semantic Scholar 查新，论文与代码逐条对账</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目方法借鉴深读（只读论文、代码与公开数据，不跑项目代码、不装依赖；不评估整体接入）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-27</dd></div><div class="meta-row"><dt>范围</dt><dd>仓库 https://github.com/lamm-mit/SciAgentsDiscovery 浅克隆到 vendor/SciAgentsDiscovery，提交 c5c3045（2025-05-10 UTC）；它依赖的 https://github.com/lamm-mit/GraphReasoning 浅克隆只读，提交 f1d6d44（2024-07-19）；图谱数据 Hugging Face lamm-mit/bio-graph-1K 修订 888b9c7，只下了 graphml 做统计，没下 138 MB 的 embedding pickle；论文 arXiv 2409.05556v1、期刊版 Adv. Mater. 2413523（Europe PMC 全文）、GraphReasoning 论文 arXiv 2403.11996。文中以 ScienceDiscovery/、Notebooks/、setup.py、README.md 开头的 文件:行 在 SciAgentsDiscovery 仓，以 GraphReasoning/ 开头的在 GraphReasoning 仓；notebook 的格号从 1 数，含 markdown 格</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-方法是什么">1. 方法是什么</a><ul>
+<li><a href="#11-仓库画像">1.1 仓库画像</a></li>
+<li><a href="#12-知识图谱怎么建">1.2 知识图谱怎么建</a></li>
+<li><a href="#13-图上怎么取路径">1.3 图上怎么取路径</a></li>
+<li><a href="#14-各个-agent-的分工与提示词">1.4 各个 agent 的分工与提示词</a></li>
+<li><a href="#15-输出的结构化假设字段">1.5 输出的结构化假设字段</a></li>
+<li><a href="#16-用-semantic-scholar-查新">1.6 用 Semantic Scholar 查新</a></li>
+<li><a href="#17-两种编排的差别">1.7 两种编排的差别</a></li>
+<li><a href="#18-换一个领域要重建什么">1.8 换一个领域要重建什么</a></li>
+</ul>
+</li>
+<li><a href="#2-为什么有效论文证据与代码对账">2. 为什么有效：论文证据与代码对账</a><ul>
+<li><a href="#21-论文拿什么证明">2.1 论文拿什么证明</a></li>
+<li><a href="#22-代码是否按论文做">2.2 代码是否按论文做</a></li>
+<li><a href="#23-案例自身的一致性">2.3 案例自身的一致性</a></li>
+</ul>
+</li>
+<li><a href="#3-平台哪里能用">3. 平台哪里能用</a></li>
+<li><a href="#4-局限与前提">4. 局限与前提</a><ul>
+<li><a href="#41-数据">4.1 数据</a></li>
+<li><a href="#42-模型">4.2 模型</a></li>
+<li><a href="#43-算力">4.3 算力</a></li>
+<li><a href="#44-许可证与数据使用">4.4 许可证与数据使用</a></li>
+<li><a href="#45-工程形态">4.5 工程形态</a></li>
+</ul>
+</li>
+<li><a href="#5-还没弄清的问题">5. 还没弄清的问题</a></li>
+<li><a href="#6-调研方法">6. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：SciAgents 的方法是四段串起来的。一，用 LLM 从约一千篇生物材料论文里抽三元组，拼成一张无向概念图（这一步在 GraphReasoning 包和它的论文里，SciAgents 仓不建图，只下载现成的图）。二，在图上取两个概念之间的一条路径，写成「节点 -- 关系 -- 节点」的一行字。三，几个角色依次写：本体学家解释路径上的词和关系，科学家写七个字段的 JSON 假设，七个字段各扩写一遍，批评者给总结、优缺点和两个「最值得用分子建模 / 合成生物学去做的问题」。四，自动版里再让一个查新 agent 用 Semantic Scholar 搜几次、读摘要，给 1 到 10 分的新颖性与可行性。</p>
+<p>各角色的系统提示词和七个字段，论文与代码几乎逐字对得上。对不上的有五处：论文 §4.2 说路径代价里有 embedding 启发式，按论文参数（随机因子 0.2、4 个路标）走到的那个函数里 <code>heuristic</code> 定义了没被调用，实际是「边权 + 随机噪声」的 Dijkstra 再绕四个随机路标（embedding 启发式只用在两个参数都为 0 时走到的另一个函数里）；论文说取完路径带二跳邻居，SciAgents 调用处把 <code>second_hop</code> 写死成 False，交给模型的只有路径那一行字；论文 Figure 1 的 Scientist 2 在代码里是七个按字段分开的 agent；论文说用的图来自前作 [6]，但尺寸是前作报告的约 2.7 倍，怎么建的没写（论文印出的三条路径倒是逐边都能在公开图里找到）；论文称第二种编排是「全自动」，附录六份自动对话（S2–S7）里有三份是人打字催了才调查新工具，六份对话开场打出的 agent 简介与 <code>agents.py</code> 三个公开版本都对不上，其中两份还有一个公开代码里没有的 <code>caller</code> agent。</p>
+<p>证据上没有消融、没有基线、没有人工评审：7 个案例，新颖性分数由 LLM 读 Semantic Scholar 摘要后自己给；「随机路径比最短路径好」只有一张示意图（Figure 4）。期刊版结论自己写了缺人类专家评估与指标。附录里能看到查新环节的两个具体毛病：一条 16 个词的长查询返回 0 篇，被当成「文献里没有直接匹配」打了 8 分；两份对话里 agent 未检索时自评 9 分，检索后分别降到 7 分和 6 分。</p>
+<p>按本轮分组只摘方法。能摘的方法落在文献（建图）与假设（取路径、多角色写、查新）两个阶段；写作阶段能对上的只有它成稿的章节结构，那是一份开题式长文，没有引用。怎么读：<a href="#1-方法是什么">第 1 节</a>逐段讲方法和代码位置，<a href="#2-为什么有效论文证据与代码对账">第 2 节</a>是论文证据与代码对账，<a href="#3-平台哪里能用">第 3 节</a>是平台上落在哪、要什么输入、出什么，<a href="#4-局限与前提">第 4 节</a>是限制，<a href="#5-还没弄清的问题">第 5 节</a>是没弄清的问题。横向对比见同目录的 <a href="index.html">README.md</a>。</p>
+</blockquote>
+<h2 id="1-方法是什么">1. 方法是什么<a class="permalink" href="#1-方法是什么" title="本节链接">#</a></h2>
+<h3 id="11-仓库画像">1.1 仓库画像<a class="permalink" href="#11-仓库画像" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>实况</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>仓库</td>
+<td>MIT LAMM（Buehler 组），638 star、108 fork；60 个提交，2024-08-21 建仓（空的初始提交），2024-09-09 起改 README、09-10 起上传代码，最后一个提交 2025-05-10；零 release；11 个未关 issue 与 PR</td>
+<td>GitHub API（2026-09-27 查）<sup id="fnref3:gh"><a class="footnote-ref" href="#fn:gh">1</a></sup></td>
+</tr>
+<tr>
+<td>代码量</td>
+<td><code>ScienceDiscovery/</code> 5 个 .py 共 977 行（<code>agents.py</code> 406、<code>utils.py</code> 517，其余三个合计几十行），另提交了两个 <code>__pycache__/*.pyc</code>；两个 notebook，没有保存输出</td>
+<td><code>wc -l</code>、<code>git ls-files</code>；<code>Notebooks/*.ipynb</code></td>
+</tr>
+<tr>
+<td>依赖</td>
+<td><code>setup.py</code> 列 35 个包，只有 <code>transformers&gt;=4.39</code>、<code>pyautogen&gt;=0.2.28</code> 带下限，无上限、无锁文件；含 torch 三件套、bitsandbytes、peft、llama-index、langchain、guidance、weasyprint、pdfkit（要系统装 wkhtmltopdf，README 让 <code>apt-get install</code>）。GraphReasoning 不在 <code>install_requires</code> 里，README 要求另装；notebook 第 2 格只跑 <code>pip install -e .</code>，issue #4 就是这个 <code>ModuleNotFoundError</code></td>
+<td><code>setup.py:13-49</code>；<code>README.md:44-59</code>；<sup id="fnref4:gh"><a class="footnote-ref" href="#fn:gh">1</a></sup></td>
+</tr>
+<tr>
+<td>核心依赖</td>
+<td>GraphReasoning 包：7 个文件 4954 行，最后提交 2024-07-19；SciAgents 调到它的读图（graphml 加载、取最大连通分量）、embedding、取路径、OpenAI 调用四块，不调它的建图函数</td>
+<td>GraphReasoning 仓 <code>wc -l</code> <sup id="fnref:gr-repo"><a class="footnote-ref" href="#fn:gr-repo">2</a></sup>；<code>ScienceDiscovery/graph.py:13-20</code>、<code>ScienceDiscovery/utils.py:61</code></td>
+</tr>
+<tr>
+<td>编排框架</td>
+<td>自动版用 AutoGen 0.2 的 API（<code>pyautogen</code>：<code>config_list_from_models</code>、<code>register_for_llm</code>、<code>GroupChat</code>）。README 写「用 AG2（原 AutoGen）实现」，那是 PR #13、#14 只改 README 的结果；把代码迁到 autogen 0.4 与 ag2 的两个外部 PR（#12、#18）没合。PyPI 上 <code>pyautogen</code> 现在的最新版 0.10.0 是 <code>autogen-agentchat&gt;=0.6.4</code> 的代理包，<code>setup.py</code> 没有上限，今天新装拿到的不是 0.2 的 API（按 PyPI 元数据推断，未安装验证）</td>
+<td><code>ScienceDiscovery/agents.py:1-14</code>、<code>ScienceDiscovery/llm_config.py:3</code>；<code>README.md:31</code>；<sup id="fnref5:gh"><a class="footnote-ref" href="#fn:gh">1</a></sup>；<sup id="fnref2:pypi"><a class="footnote-ref" href="#fn:pypi">9</a></sup></td>
+</tr>
+<tr>
+<td>模型</td>
+<td>自动版写死 <code>gpt-4o</code>，两个配置名叫 <code>4turbo</code> 的也是 <code>gpt-4o</code>（外部 PR #9 指出这点，没合）；非自动版的模型在 notebook 里用 <code>partial(generate_OpenAIGPT, gpt_model='gpt-4o')</code> 指定</td>
+<td><code>ScienceDiscovery/llm_config.py:3-5</code>；<code>Notebooks/SciAgents_ScienceDiscovery_GraphReasoning_non-automated.ipynb</code> 第 6 格；<sup id="fnref6:gh"><a class="footnote-ref" href="#fn:gh">1</a></sup></td>
+</tr>
+<tr>
+<td>测试与 CI</td>
+<td>没有</td>
+<td>仓库根</td>
+</tr>
+<tr>
+<td>许可证</td>
+<td><code>LICENSE.txt</code> 是 Apache-2.0；两个仓的 <code>setup.py</code> classifier 都写 MIT；图谱数据 apache-2.0；期刊论文 CC BY-NC 4.0</td>
+<td><code>setup.py:55</code>、GraphReasoning <code>setup.py:51</code>；<sup id="fnref2:hf"><a class="footnote-ref" href="#fn:hf">5</a></sup>；<sup id="fnref4:advmat"><a class="footnote-ref" href="#fn:advmat">4</a></sup></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="12-知识图谱怎么建">1.2 知识图谱怎么建<a class="permalink" href="#12-知识图谱怎么建" title="本节链接">#</a></h3>
+<p>SciAgents 论文只有两句：用前作 [6] 生成的大图，33,159 个节点、48,753 条边，是约 1,000 篇论文生成图的最大连通分量，92 个社区，embedding 用 <code>BAAI/bge-large-en-v1.5</code>（§4.1）。建图的方法在前作 GraphReasoning 论文 §4.2 与 GraphReasoning 仓里。</p>
+<p><strong>GraphReasoning 论文里的流程</strong>（arXiv 2403.11996 §4.2）<sup id="fnref:gr-paper"><a class="footnote-ref" href="#fn:gr-paper">3</a></sup>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>步</th>
+<th>做法</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>语料</td>
+<td>沿用 BioinspiredLLM 的论文集，1,000 多篇生物启发材料与力学论文</td>
+<td>§4.2.1，引 <sup id="fnref2:luu"><a class="footnote-ref" href="#fn:luu">6</a></sup></td>
+</tr>
+<tr>
+<td>转文本</td>
+<td>Nougat 把 PDF 转成标记文本，切块，平均 772 词</td>
+<td>§4.2.1</td>
+</tr>
+<tr>
+<td>提炼</td>
+<td>Mistral-7B-OpenOrca 对每块写摘要、要点列表、一句标题（要求去掉人名与引用），得 8,663 份「原始上下文」</td>
+<td>§4.2.1</td>
+</tr>
+<tr>
+<td>抽三元组</td>
+<td>Zephyr-7B-β：提示词「用范畴论抽术语和关系的网络本体构图者」，每块约 10 个 <code>{node_1, node_2, edge}</code>；再喂原文和初稿，要求「按材料科学通用叫法重命名节点」；再修 JSON 格式；失败的块第二遍重试</td>
+<td>§4.2.2</td>
+</tr>
+<tr>
+<td>合图</td>
+<td>随机取约 1,600 份上下文的小图，<code>networkx.compose</code> 拼起来；bge-large-en-v1.5 算节点 embedding，余弦相似度 &gt; 0.95 的节点合并，保留度数最高的名字</td>
+<td>§4.2.3</td>
+</tr>
+<tr>
+<td>规模</td>
+<td>全图 12,319 节点 / 15,752 边；最大连通分量 11,878 / 15,396，80 个社区；最大度数 171</td>
+<td>§2.1、Table 1</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>GraphReasoning 代码里的对应</strong>（提交 f1d6d44）：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>环节</th>
+<th>代码</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>抽三元组</td>
+<td><code>graphPrompt</code> 每块至少 4 次模型调用：初抽、按材料科学重命名、修格式、再修格式；<code>repeat_refine&gt;0</code> 时每轮再加 3 次</td>
+<td><code>GraphReasoning/graph_generation.py:220,235,241,274</code>、<code>:246-270</code></td>
+</tr>
+<tr>
+<td>领域写死</td>
+<td>重命名提示词写的是「widely used in the field of materials science」；few-shot 两个例子，一个家庭关系（Alice / Marc），一个蜘蛛丝</td>
+<td><code>GraphReasoning/graph_generation.py:231-234</code>、<code>:186-213</code></td>
+</tr>
+<tr>
+<td>解析</td>
+<td>取第一个 <code>[</code> 到最后一个 <code>]</code> 之间的串 <code>json.loads</code>，失败打印后返回 <code>None</code>，这块就丢了</td>
+<td><code>GraphReasoning/graph_generation.py:105-109,277-290</code></td>
+</tr>
+<tr>
+<td>切块</td>
+<td>直接对原文 <code>RecursiveCharacterTextSplitter</code>，默认 2,500 字符；论文里的 Nougat 转换与「摘要 / 要点 / 标题」提炼这一步，仓里没有代码（全仓与两个 notebook grep 不到 Nougat 与那几条提示词；<code>GraphReasoning/agents.py</code> 里的 summary / bullet 是总结对话用的，不是切块提炼）</td>
+<td><code>GraphReasoning/graph_generation.py:337,351-359</code></td>
+</tr>
+<tr>
+<td>成图</td>
+<td><code>nx.Graph()</code>，<strong>无向</strong>；每条三元组先记 <code>count=4</code>，按 (node_1, node_2) 分组后把关系用逗号拼成一个标签、count 求和，边权 = 求和 ÷ 4，也就是这对节点在三元组里出现的次数（公开图里边权恰好等于每条边的 <code>chunk_id</code> 个数，见下表）</td>
+<td><code>GraphReasoning/graph_generation.py:386,400-404,410,428-433</code></td>
+</tr>
+<tr>
+<td>反向重复的节点对</td>
+<td>分组键是有序的 (node_1, node_2)，(A, B) 与 (B, A) 是两行；无向图上第二次 <code>add_edge</code> 落在同一条边上，按 networkx 的语义会覆盖前一次的标签与边权，不拼接（按代码与库的行为推断，未执行）</td>
+<td><code>GraphReasoning/graph_generation.py:400-404,426-433</code></td>
+</tr>
+<tr>
+<td>加进大图</td>
+<td><code>add_new_subgraph_from_text</code>：compose、补 embedding、按 0.95 合并相近节点、删小于 10 个节点的碎片、Louvain 分社区</td>
+<td><code>GraphReasoning/graph_generation.py:515-650</code></td>
+</tr>
+<tr>
+<td>加进大图的缺陷</td>
+<td>第 538 行引用未定义的 <code>G_newlymade</code>（全仓只出现这一次），只给文本时 <code>NameError</code> 被第 561 行的裸 <code>except</code> 吞成「Graph generation failed」，随后读 <code>None</code> 路径再被第 646 行吞掉。按代码读，「从文本新建再并入」这条路在这个提交上走不通；调用方直接给 <code>G_to_add</code> 或 <code>graph_GraphML_to_add</code> 时这一段能绕过去（未执行验证）</td>
+<td><code>GraphReasoning/graph_generation.py:538,557-577,561,646</code></td>
+</tr>
+<tr>
+<td>合并相近节点</td>
+<td>对全部节点算完整的 N×N 余弦相似度矩阵；33,159 个节点时约 11 亿个元素，embedding 是 float32 时约 4.4 GB（sklearn 对两个 float32 输入保留 float32），是 float64 时约 8.8 GB，另有一个同尺寸的布尔矩阵约 1.1 GB；公开 pickle 的 dtype 本次没核对</td>
+<td><code>GraphReasoning/graph_tools.py:811-815</code></td>
+</tr>
+<tr>
+<td>节点 embedding</td>
+<td>取 <code>last_hidden_state</code> 的均值、不归一化；bge-large-en-v1.5 模型卡用的是 [CLS] 向量并做 L2 归一化。后面都用余弦比较，归一化与否不影响结果，真正不同的是均值池化与 CLS 池化</td>
+<td><code>GraphReasoning/graph_tools.py:116-122,152-155</code>；<sup id="fnref:bge"><a class="footnote-ref" href="#fn:bge">7</a></sup></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>公开的图长什么样</strong>（本次用 Python 标准库解析 <code>large_graph_simple_giant.graphml</code>，sha256 <code>78b7c24e…</code>）：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>节点 / 边</td>
+<td>33,159 / 48,753</td>
+<td>与 SciAgents §4.1 一致；是 GraphReasoning Table 1 全图的约 2.7 倍</td>
+</tr>
+<tr>
+<td>方向</td>
+<td><code>edgedefault="undirected"</code></td>
+<td>关系标签带方向（「A is B」），图不记方向</td>
+</tr>
+<tr>
+<td>社区</td>
+<td>节点属性 <code>group</code> 有 85 个不同值</td>
+<td>论文写 92</td>
+</tr>
+<tr>
+<td>边权</td>
+<td>47,876 条（98.2%）是 1.0，其余 2 到 6</td>
+<td>取路径时的随机噪声与这个量级比较，见 1.3</td>
+</tr>
+<tr>
+<td>合并过的边标签</td>
+<td>边权 &gt; 1 的 877 条，标签是几条关系用逗号拼起来的；另有 697 条边权为 1 的边，标签本身是带逗号的长句</td>
+<td>1,574 条标签含逗号，只有 877 条是合并出来的</td>
+</tr>
+<tr>
+<td>标签质量</td>
+<td>有的标签是整句（「Elastic Spheres can exhibit Adhesion, which is …」），个别是列表的字符串（<code>[{'source': 'geometry', …}]</code>），6 条边的 <code>title</code> 被存成了布尔值；自环 190 条</td>
+<td>抽取与修格式没把住的输出进了图</td>
+</tr>
+<tr>
+<td>度数</td>
+<td>中位数 1；59% 的节点度数为 1；最大 461</td>
+<td>中位数与 GraphReasoning Table 1 一致；最大度数是它的 171 的 2.7 倍</td>
+</tr>
+<tr>
+<td>枢纽</td>
+<td>mechanical properties 461、biological materials 363、collagen 345、hydrogels 308</td>
+<td>路径常经过这些点，见 1.3</td>
+</tr>
+<tr>
+<td>出处</td>
+<td>每条边带一个或几个 uuid 形式的 <code>chunk_id</code>（逗号拼接，个数等于边权；98.2% 的边只有一个）；节点没有原文，HF 仓里只有 graphml 与 embedding pickle，没有「块 → 论文」的对照表</td>
+<td>从一条边追不回是哪篇论文</td>
+</tr>
+<tr>
+<td>近义残留</td>
+<td>含「self-cleaning」的节点有 9 个，其中 self-cleaning、self-cleaning properties、self-cleaning effects、self-cleaning behavior 是同一概念的不同说法</td>
+<td>0.95 阈值之下没合并的近义词</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="13-图上怎么取路径">1.3 图上怎么取路径<a class="permalink" href="#13-图上怎么取路径" title="本节链接">#</a></h3>
+<p>论文的说法：路径是 SciAgents 的核心输入；前作用最短路径，这里改成随机路径，因为能带进更多概念（§2.1 第 1 点、Figure 4）。算法（§4.2）：用 embedding 把两个关键词对到最近的节点；在 Dijkstra 的优先队列里加随机项，代价 = h(v, target) + α·random()，h 是 embedding 距离，α 取 0.2；再从路径节点的邻居里随机选路标，逐段求最短路；正文说最后取路径节点加二跳邻居的子图作为上下文，同一节的算法第 7 步写的却只是「路径上的全部节点与边」。</p>
+<p>代码里的实际做法：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>步</th>
+<th>代码</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>选端点</td>
+<td>用户给两个关键词；不给就从全部节点里均匀随机取两个；全程没有设随机种子</td>
+<td><code>ScienceDiscovery/utils.py:163-173</code>、<code>:247-257</code>；两个仓 grep 不到 <code>random.seed</code></td>
+</tr>
+<tr>
+<td>关键词对到节点</td>
+<td>对 embedding 字典里的每个节点逐个算余弦，取前 5 再用第一名（公开图 33,159 个节点；pickle 没下，字典实际大小没核对）。用户在 issue #5 里问「怎么不让它改我的关键词」，就是这一步</td>
+<td><code>GraphReasoning/graph_analysis.py:1694-1702</code>、<code>GraphReasoning/graph_tools.py:152-179</code>；<sup id="fnref7:gh"><a class="footnote-ref" href="#fn:gh">1</a></sup></td>
+</tr>
+<tr>
+<td>两种编排用的参数</td>
+<td><code>randomness_factor=0.2</code>、<code>num_random_waypoints=4</code>、<code>shortest_path=False</code>、<code>second_hop=False</code>；非自动版 notebook 同样的参数，关键词写的是 energy-intensive 与 protein</td>
+<td><code>ScienceDiscovery/agents.py:365-369</code>；<code>Notebooks/SciAgents_ScienceDiscovery_GraphReasoning_non-automated.ipynb</code> 第 8 格</td>
+</tr>
+<tr>
+<td>走哪个函数</td>
+<td>这组参数走 <code>heuristic_path_with_embeddings_with_randomization_waypoints</code>。embedding 启发式只用在另一个函数 <code>heuristic_path_with_embeddings</code> 里（每步在按 embedding 欧氏距离排序的前 <code>top_k</code> 个邻居里随机挑一个），SciAgents 只在随机因子与路标数都为 0 时才走到它</td>
+<td><code>ScienceDiscovery/utils.py:195-219</code>；<code>GraphReasoning/graph_analysis.py:129-172</code></td>
+</tr>
+<tr>
+<td>随机 Dijkstra</td>
+<td>优先级 = 累计边权 + 0.2 × random()；弹出的优先级带着噪声作为下一步的累计值，所以每跳各加一个 [0, 0.2) 的噪声。这个函数里的 <code>heuristic</code>（embedding 欧氏距离）在第 1707 行定义，函数体里零调用。98% 的边权是 1：边权都为 1 时，k 跳路径的优先级落在 [k, 1.2k)，k ≤ 5 时它一定小于任何 k+1 跳路径，所以挑出的是最短跳数的一条（多条等长时随机），更长时也只是接近最短</td>
+<td><code>GraphReasoning/graph_analysis.py:1707-1728</code></td>
+</tr>
+<tr>
+<td>随机路标</td>
+<td>把路径上各节点不在路径里的邻居全部收进一个池子（挨着路径上几个节点就重复出现几次），打乱取 4 个；新路径<strong>只保留起点</strong>，然后按边权最短路走 起点 → 路标 1 → … → 路标 4 → 终点。随机 Dijkstra 那条路径只用来提供邻居池；路径经过枢纽时，池子里大部分候选是枢纽的邻居</td>
+<td><code>GraphReasoning/graph_analysis.py:1730-1744</code></td>
+</tr>
+<tr>
+<td>子图</td>
+<td>建了一个 <code>DiGraph</code> 子图，<code>second_hop=True</code> 时加二跳邻居；SciAgents 的两处调用把 <code>second_hop=False</code> 写死在调用参数里，调用方传什么都不生效，返回的子图也被丢掉</td>
+<td><code>GraphReasoning/graph_analysis.py:1770-1786</code>；<code>ScienceDiscovery/utils.py:196-211,205,280-295,289</code></td>
+</tr>
+<tr>
+<td>交给模型的</td>
+<td>只有 <code>print_path_with_edges_as_list(G, path)</code> 拼出的一行「节点 -- 关系 -- 节点 -- …」</td>
+<td><code>ScienceDiscovery/utils.py:226,310</code>；<code>GraphReasoning/graph_analysis.py:677-702</code></td>
+</tr>
+<tr>
+<td>没用上的参数</td>
+<td><code>create_path</code> 与 <code>develop_qa_over_path</code> 给随机路标函数传了 <code>top_k=5</code>，函数里不读</td>
+<td><code>ScienceDiscovery/utils.py:203,287</code>；<code>GraphReasoning/graph_analysis.py:1597-1813</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>这个机制在论文自己的案例里留下了可见的形状。附录 S1（silk 到 energy-intensive）那条路径里「biological materials」出现 5 次：四个路标 novel functionalities、low-temperature processing、multi-scale organization、dandelion 都是这个枢纽（度数 363）的邻居，其中 multi-scale organization 与 dandelion 在公开图里度数是 1、只连着这个枢纽，每段最短路都从枢纽进出，路径实际是以枢纽为中心的星形。同一条边正反两个方向都出现（「biological materials -- provide functionalities -- dandelion -- provide functionalities -- biological materials」），因为图是无向的；§2.1 里本体学家把「membranes – can be spun into – silk」解释成「这表示反过来的过程」，是模型在给一条被反着读的边找说法。</p>
+<p>随机端点也有偏向：59% 的节点度数是 1，均匀随机抽两个节点，约 83%（1 − 0.41²）的对里至少有一个度数为 1 的节点，本次在公开图上抽 1 万对得到 82.9%。论文 Figure 8 a–d 的 8 个随机端点里，rhamphotheca、heat transfer performance、theoretically reversible or partially reversible、tunable processability 四个在公开图里度数是 1；S1 由人指定的端点 energy-intensive 度数也是 1。Figure 8 标题说五组端点都是随机选的，但 S7（Figure 8e）的任务是人写的「using graphene and proteins」。</p>
+<h3 id="14-各个-agent-的分工与提示词">1.4 各个 agent 的分工与提示词<a class="permalink" href="#14-各个-agent-的分工与提示词" title="本节链接">#</a></h3>
+<p>两种编排用的是同一套角色。非自动版是 <code>research_generation</code> 里一串顺序调用；自动版是 AutoGen 的 GroupChat，由一个 LLM 挑下一个发言者。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>角色</th>
+<th>做什么（提示词原意）</th>
+<th>非自动版</th>
+<th>自动版</th>
+<th>模型参数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本体学家</td>
+<td>给路径上每个词下定义，再逐条讨论每条关系；「每个概念都要用上」；先定义、后关系</td>
+<td><code>ScienceDiscovery/utils.py:315-333</code></td>
+<td><code>ScienceDiscovery/agents.py:52-78</code></td>
+<td>非自动 temperature 0.1、1024 token；自动 temperature 0</td>
+</tr>
+<tr>
+<td>科学家（Scientist 1）</td>
+<td>据路径与定义写一份新研究假设，七个字段的 JSON；「尽量定量，给数字、序列、化学式」；「每个概念都要用上」；鼓励不寻常的组合</td>
+<td><code>ScienceDiscovery/utils.py:340-393</code></td>
+<td><code>ScienceDiscovery/agents.py:81-134</code>（字段名带序号「1- hypothesis」）</td>
+<td>非自动 temperature 0.2、2048 token；自动 temperature 0.2</td>
+</tr>
+<tr>
+<td>扩写（Scientist 2）</td>
+<td>以同行评审的视角批判地扩写某一个字段，补化学式、数字、序列、工艺条件、微结构，给逐步推理，点名建模与实验方法；开头写「### Expanded …」</td>
+<td>对前 7 个字段各调一次，<code>ScienceDiscovery/utils.py:443-471</code></td>
+<td>七个 agent：<code>hypothesis_agent</code> 到 <code>novelty_agent</code>，<code>ScienceDiscovery/agents.py:137-269</code></td>
+<td>非自动 temperature 0.2、2048 token；自动 temperature 0.1、2048 token</td>
+</tr>
+<tr>
+<td>批评者</td>
+<td>一段总结；优点、缺点、改进建议；再从文中挑出「最值得用分子建模解决的一个问题」和「最值得用合成生物学解决的一个问题」，各写步骤；自动版不许打新颖性与可行性分</td>
+<td>拆成三次调用：总结与评审、建模优先、合成生物学优先，<code>ScienceDiscovery/utils.py:479-500</code></td>
+<td><code>ScienceDiscovery/agents.py:271-295</code>（不打分那句在 <code>:290-291</code>）</td>
+<td>temperature 0.1</td>
+</tr>
+<tr>
+<td>规划者</td>
+<td>给分步计划，写明哪一步由哪个 agent 调哪个工具，自己不调工具</td>
+<td>无</td>
+<td><code>ScienceDiscovery/agents.py:25-37</code>；但两个工具都用 <code>@planner.register_for_llm()</code> 注册给了它（<code>:357,374</code>）</td>
+<td>temperature 0</td>
+</tr>
+<tr>
+<td>助手</td>
+<td>按计划调 <code>generate_path</code> 与 <code>rate_novelty_feasibility</code>，结束时说 TERMINATE</td>
+<td>无</td>
+<td><code>ScienceDiscovery/agents.py:39-49,356-388</code></td>
+<td>temperature 0</td>
+</tr>
+<tr>
+<td>查新</td>
+<td>见 1.6</td>
+<td>无</td>
+<td><code>ScienceDiscovery/agents.py:298-322,373-388</code></td>
+<td>temperature 0</td>
+</tr>
+<tr>
+<td>发言调度</td>
+<td>LLM 按上下文和各 agent 的 description 选下一个发言者，最多 50 轮，允许同一人连说；<code>send_introductions=True</code>，开场把各 agent 的 description 念一遍</td>
+<td>无</td>
+<td><code>ScienceDiscovery/agents.py:398-407</code></td>
+<td>temperature 0</td>
+</tr>
+<tr>
+<td>人</td>
+<td><code>human_input_mode="ALWAYS"</code>：每次轮到 <code>user</code> 都等人输入；两个工具的执行也注册在 <code>user</code> 上，按 AutoGen 0.2 的行为，人直接回车才让它自动执行工具（按 AutoGen 文档推断，未执行）</td>
+<td>无</td>
+<td><code>ScienceDiscovery/agents.py:16-23,356,373</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>几个细节：</p>
+<ul>
+<li><strong>上下文怎么传。</strong> 非自动版每次调用都是单轮、只拿需要的部分：科学家拿路径与本体学家的输出（<code>ScienceDiscovery/utils.py:351</code>）；七次扩写各拿七字段全文、路径和本字段（<code>:444-460</code>），看不到本体学家的输出；批评者只拿拼好的成稿（<code>:474-483</code>，成稿里有路径、本体学家输出、七字段与七段扩写），不拿前面的提示词与过程；两个优先问题拿成稿加批评（<code>:493-500</code>）。自动版所有 agent 共享整段群聊历史（论文 §2.2；<code>ScienceDiscovery/agents.py:398-403</code>）。</li>
+<li><strong>七个扩写 agent 的系统提示词里写的是字面的 <code>{hypothesis}</code>、<code>{outcome}</code>……</strong> 这些字符串不是 f-string，占位符不会被替换，扩写 agent 拿到的内容全靠共享的对话历史（<code>ScienceDiscovery/agents.py:139,159,178</code>）。</li>
+<li><strong>批评没有回流。</strong> 非自动版把批评追加到文档末尾就结束，假设本身不改（<code>ScienceDiscovery/utils.py:485-508</code>）。自动版要不要回到科学家改稿取决于发言调度；附录 S3 到 S7 的节标题顺序都是「批评 → 优先问题 → 新颖性评分」，没有改稿。论文 §2.1 结尾称之为「假设生成与批判评估之间的迭代反馈循环」，期刊版结论也写「agent 通过迭代反馈循环改进提案」。</li>
+<li><strong>非自动版一次要 12 次串行调用</strong>：本体学家 1、科学家 1、扩写 7、批评 1、优先问题 2（<code>ScienceDiscovery/utils.py:332,392,464,482,495,499</code>）。自动版的次数不固定：每轮先有一次发言调度的模型调用，选中的是 agent 再加一次发言调用，选中 <code>user</code> 时是人输入、不调模型；另加查新里最多 10 轮的嵌套对话和一次总结。</li>
+<li><strong>磁盘缓存只在自动版。</strong> 自动版的四份模型配置都带 <code>cache_seed: 42</code>，AutoGen 会把同样的请求缓存在本地，同一输入重跑得到同一输出；文件里的注释写「换 trial 就改 cache_seed」（<code>ScienceDiscovery/llm_config.py:8</code>）。非自动版走 notebook 里包好的 <code>generate_OpenAIGPT</code>，直接用 <code>openai</code> 客户端调接口、不经 AutoGen，没有这层缓存（<code>GraphReasoning/openai_tools.py:12-42</code>；非自动版 notebook 第 6 格）。</li>
+</ul>
+<h3 id="15-输出的结构化假设字段">1.5 输出的结构化假设字段<a class="permalink" href="#15-输出的结构化假设字段" title="本节链接">#</a></h3>
+<p>七个字段来自科学家的提示词（<code>ScienceDiscovery/utils.py:353-367</code>，自动版 <code>ScienceDiscovery/agents.py:95-109</code> 措辞相同）：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>提示词里的定义</th>
+<th>措辞绑定的领域</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hypothesis</code></td>
+<td>研究问题背后的假设；自动版加「明确、新颖、可行、目的清楚、组成清楚，越详细越好」</td>
+<td>通用</td>
+</tr>
+<tr>
+<td><code>outcome</code></td>
+<td>预期发现或影响，「要定量，给数字、材料性能、序列或化学式」</td>
+<td>材料</td>
+</tr>
+<tr>
+<td><code>mechanisms</code></td>
+<td>预期的化学、生物或物理行为，「从分子到宏观各尺度」</td>
+<td>材料 / 多尺度力学</td>
+</tr>
+<tr>
+<td><code>design_principles</code></td>
+<td>详细的设计原则，列表，侧重新概念</td>
+<td>材料设计</td>
+</tr>
+<tr>
+<td><code>unexpected_properties</code></td>
+<td>「新材料或新体系」的意外性质，给具体预测与理由</td>
+<td>材料</td>
+</tr>
+<tr>
+<td><code>comparison</code></td>
+<td>与其他材料、技术或概念的详细定量比较</td>
+<td>材料</td>
+</tr>
+<tr>
+<td><code>novelty</code></td>
+<td>相对现有知识与技术的新意</td>
+<td>通用</td>
+</tr>
+</tbody>
+</table></div>
+<p>非自动版最后落一个 CSV，在七个字段外再加 <code>path_string</code>、<code>expanded</code>（本体学家输出）、<code>res_data_expanded</code>（七段扩写）、<code>critiques</code>、<code>modeling_priority</code>、<code>synbio_priority</code>（<code>ScienceDiscovery/utils.py:403-404,485-486,507-508,513-516</code>），同时出 markdown 与 PDF（<code>:70-104,510-511</code>）。自动版不落字段，notebook 把整段对话历史拼成 markdown 再转 PDF（<code>Notebooks/SciAgents_ScienceDiscovery_GraphReasoning_automated.ipynb</code> 第 8 格）。</p>
+<p>字段本身的几个事实：</p>
+<ul>
+<li><strong>解析是正则加 <code>json.loads</code>，没有 schema。</strong> 取第一个 <code>{</code> 到最后一个 <code>}</code>（<code>ScienceDiscovery/utils.py:107-122</code>）；提示词里给的 JSON 示例在 <code>"novelty": "...",</code> 后面多一个逗号（<code>:380</code>），模型照抄就是非法 JSON。非法 JSON 在 <code>convert_response_to_JSON</code> 里的 <code>json.loads</code>（<code>:113</code>）就抛 <code>JSONDecodeError</code>，那里没有 <code>try</code>，直接从 <code>:395</code> 抛出去；只有回复里完全没有花括号时才走到 <code>:401-407</code> 的裸 <code>except</code>，打印「Dict generation failed...」，下一行 <code>json_to_formatted_text(None)</code> 必抛 <code>TypeError</code>（<code>:409</code>）。少任何一个键在 <code>json_to_formatted_text</code> 里抛 <code>KeyError</code>（<code>:128-146</code>）。三种情况都让整次生成中断。自动版的「JSON」只是对话里的一段文字，从不解析。</li>
+<li><strong>扩写只取前 7 个键。</strong> 靠字典插入顺序，默认模型严格按七个键、按顺序返回（<code>ScienceDiscovery/utils.py:443</code>）；模型少给一个键时，第 7 个会取到代码追加的 <code>path_string</code>（<code>:403</code>）。</li>
+<li><strong>字段里没有出处与检验。</strong> 七个字段都没有「这条依据来自哪篇文献 / 图上哪条边」，也没有「用什么实验或指标判定假设不成立」。提示词要求给数字，但不要求数字的来源：论文 Table 1 的「抗拉强度 1.5 GPa」「能耗降约 30%」是模型预测，论文自己标了「as predicted by our model」。</li>
+<li><strong>「每个概念都要用上」会把不相干的节点写进假设。</strong> 附录 S5 的假设把胶原支架的力学性能与「蜘蛛丝和 vanadium(V)」相比；vanadium(V) 是五价钒这个氧化态，在公开图里度数 4，它与 mechanical properties 之间的边标签只有一个词「similar」。查新环节反而把这个比较记为「独特的角度」（S5 Novelty 一段）。</li>
+</ul>
+<h3 id="16-用-semantic-scholar-查新">1.6 用 Semantic Scholar 查新<a class="permalink" href="#16-用-semantic-scholar-查新" title="本节链接">#</a></h3>
+<p>论文 §4.6 与 Figure 12：一个「novelty assistant」按假设挑关键词组合，调 Semantic Scholar 三次，每次拿最相关的 10 篇的标题和摘要，读完给 1 到 10 分的新颖性与可行性，要求「严格，尤其是新颖性，只有够发一篇新论文的想法才能过」。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>环节</th>
+<th>代码</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>调用形态</td>
+<td>工具 <code>rate_novelty_feasibility</code> 里再开一段嵌套对话：<code>novelty_admin</code> 与 <code>novelty_assistant</code>，清空历史，最多 10 轮，消息里写「最多调三次、不要并行」；结果用 <code>reflection_with_llm</code> 再让模型总结一次</td>
+<td><code>ScienceDiscovery/agents.py:373-388</code></td>
+</tr>
+<tr>
+<td>检索</td>
+<td><code>GET https://api.semanticscholar.org/graph/v1/paper/search</code>，字段 <code>title,abstract,openAccessPdf,url</code>，不传 <code>limit</code>。本次实测不传 <code>limit</code> 时接口返回 10 条（响应里 <code>next: 10</code>），与论文的「10 篇」一致</td>
+<td><code>ScienceDiscovery/agents.py:324-345</code>；<sup id="fnref2:s2"><a class="footnote-ref" href="#fn:s2">8</a></sup></td>
+</tr>
+<tr>
+<td>查询参数</td>
+<td><code>'query': {query}</code> 写成了 Python 集合；按 requests 对可迭代参数值逐个展开的处理，结果仍是一个 <code>query</code> 参数（按库行为推断，未执行）</td>
+<td><code>ScienceDiscovery/agents.py:333</code></td>
+</tr>
+<tr>
+<td>key</td>
+<td>读环境变量 <code>SEMANTIC_SCHOLAR_API_KEY</code>。环境变量没设时 header 值是 <code>None</code>，requests 会丢掉这个 header，请求走无 key 的公共额度；两个 notebook 的第 3 格把它设成空串，这时发出去的是一个值为空的 <code>x-api-key</code> 头。README 写 Semantic Scholar API 是「运行代码所必需」。本次无 key 连发 8 次（4 次带空 key 头、4 次不带），7 次 429，只有 1 次不带头的返回 200；空 key 头会不会被区别对待没能确认</td>
+<td><code>ScienceDiscovery/agents.py:341-342</code>；两个 notebook 第 3 格；<code>README.md:44</code>；<sup id="fnref3:s2"><a class="footnote-ref" href="#fn:s2">8</a></sup></td>
+</tr>
+<tr>
+<td>失败处理</td>
+<td>非 200 不抛错，把「Request failed with status code …」字符串交给模型；系统提示词要求「调用不成功就一直重调」，而嵌套对话最多 10 轮</td>
+<td><code>ScienceDiscovery/agents.py:348-354,308,382</code></td>
+</tr>
+<tr>
+<td>结果</td>
+<td>原始 JSON 整段进模型上下文；分数是模型写的自由文本，代码不解析、不落字段</td>
+<td><code>ScienceDiscovery/agents.py:349,388</code></td>
+</tr>
+<tr>
+<td>非自动版</td>
+<td>没有查新</td>
+<td><code>ScienceDiscovery/utils.py:411-518</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>附录对话里查新的实际表现：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>案例</th>
+<th>发生了什么</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S3（微流控芯片）</td>
+<td>调工具之前对话里先有一段「新颖性高、可行性中」的定性自评，随后一行「call the rate_novelty_feasibility tool」才触发工具。工具只查了两次：查询 1 有 36 篇结果；查询 2 是 16 个词的长串，0 篇结果。评分 8/10，理由是「文献里没有找到直接匹配」</td>
+<td>附录 S3 查新段；正文 Figure 10</td>
+</tr>
+<tr>
+<td>S2（silk 与 energy-intensive，路径由人给定）</td>
+<td>调工具之前对话里已有一段 9/10 的新颖性自评；工具查完给 7/10</td>
+<td>附录 S2</td>
+</tr>
+<tr>
+<td>S5（胶原支架）</td>
+<td>调工具之前有 9/10 的自评；人打字「assistant, call the tool」，助手回「请说清要调哪个工具」，人再打「rate the novelty using the tool」；工具查完给 6/10，理由是电纺胶原纤维增强「已被大量研究」</td>
+<td>附录 S5</td>
+</tr>
+<tr>
+<td>S4（胶原多孔结构）</td>
+<td>人打字要求调工具，agent 回「我没有叫 rate_novelty_feasibility 的工具」，先给了一段定性评估；人再打「Assistant, please call the tool」才出 8/10，这段评分里没有列检索结果</td>
+<td>附录 S4（第 59 页）</td>
+</tr>
+</tbody>
+</table></div>
+<p>附录对话没有标发言者，上表里「人打字」的几行（S3、S4、S5 各一到两行短指令）是按上下文判断的：它们紧跟在 agent 的完整回复之后、是祈使句、并且引出了 agent「请说清要调哪个工具」这类回应。</p>
+<p>同一轮调研里的 AI-Scientist 也有一条 Semantic Scholar 查新（AI-Scientist 仓 <code>ai_scientist/generate_ideas.py:405</code> 的 <code>check_idea_novelty</code>），见 <a href="ai-scientist.html">ai-scientist.md</a>。</p>
+<h3 id="17-两种编排的差别">1.7 两种编排的差别<a class="permalink" href="#17-两种编排的差别" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>非自动（论文 Figure 1b）</th>
+<th>自动（论文 Figure 1c）</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>谁定顺序</td>
+<td>Python 函数里写死的顺序</td>
+<td>LLM 发言调度，按 agent 的 description 挑人</td>
+<td><code>ScienceDiscovery/utils.py:411-518</code>；<code>ScienceDiscovery/agents.py:398-407</code></td>
+</tr>
+<tr>
+<td>上下文</td>
+<td>每次只给筛过的部分</td>
+<td>全员共享整段历史</td>
+<td>论文 §2.2；1.4 节</td>
+</tr>
+<tr>
+<td>查新</td>
+<td>无</td>
+<td>有</td>
+<td>1.6 节</td>
+</tr>
+<tr>
+<td>人</td>
+<td>在 notebook 里写好参数后不参与</td>
+<td><code>user</code> 每次被选中都等人输入，工具执行挂在 <code>user</code> 上</td>
+<td><code>ScienceDiscovery/agents.py:16-23,356,373</code></td>
+</tr>
+<tr>
+<td>模型调用</td>
+<td>固定 12 次，直连 OpenAI</td>
+<td>不固定，最多 50 轮，每轮至少一次发言调度调用，经 AutoGen、带本地缓存</td>
+<td>1.4 节</td>
+</tr>
+<tr>
+<td>产出</td>
+<td>md + PDF + CSV</td>
+<td>notebook 把对话历史拼成 md + PDF；拼接时每个工具调用的参数都取自下标为 1 的那条消息（<code>res.chat_history[1]</code>，应为 <code>[i]</code>）</td>
+<td><code>Notebooks/SciAgents_ScienceDiscovery_GraphReasoning_automated.ipynb</code> 第 8 格</td>
+</tr>
+</tbody>
+</table></div>
+<p>论文对两者的比较（§2.2）：同一条路径下，两种编排的假设「概念与方法大体相同，细节不同」，差别来自上下文传递方式；自动版多了查新工具。</p>
+<h3 id="18-换一个领域要重建什么">1.8 换一个领域要重建什么<a class="permalink" href="#18-换一个领域要重建什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>部件</th>
+<th>现在写死的是什么</th>
+<th>位置</th>
+<th>换领域要做的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>图谱数据</td>
+<td>bio-graph-1K 的 graphml 与 embedding pickle，路径写死 <code>./graph_giant_component/</code>（相对当前目录），import 包时就加载（<code>__init__</code> → <code>agents</code> → <code>graph</code>）</td>
+<td><code>ScienceDiscovery/graph.py:4-20</code>、<code>ScienceDiscovery/agents.py:3</code>、<code>ScienceDiscovery/__init__.py:1-2</code></td>
+<td>整张图重建：选论文集、转文本、切块、抽三元组、合并、取最大连通分量</td>
+</tr>
+<tr>
+<td>建图提示词</td>
+<td>「材料科学通用叫法」、蜘蛛丝 few-shot</td>
+<td><code>GraphReasoning/graph_generation.py:186-213,231-234</code></td>
+<td>改领域词与例子</td>
+</tr>
+<tr>
+<td>建图前处理</td>
+<td>Nougat 转换与「摘要 / 要点 / 标题」提炼</td>
+<td>只在 GraphReasoning 论文 §4.2.1，仓里没有</td>
+<td>自己实现</td>
+</tr>
+<tr>
+<td>embedding</td>
+<td>bge-large-en-v1.5，英文模型；关键词和节点都靠它对齐</td>
+<td><code>ScienceDiscovery/graph.py:8-11</code>；<code>GraphReasoning/graph_tools.py:116-122</code></td>
+<td>中文或别的语言要换模型并重算全部节点 embedding</td>
+</tr>
+<tr>
+<td>假设字段措辞</td>
+<td>化学式、序列、材料性能、「新材料或新体系」</td>
+<td><code>ScienceDiscovery/utils.py:353-367</code>；<code>ScienceDiscovery/agents.py:93-109</code></td>
+<td>改字段定义</td>
+</tr>
+<tr>
+<td>扩写措辞</td>
+<td>化学式、蛋白序列、工艺条件、微结构</td>
+<td><code>ScienceDiscovery/utils.py:455-456</code>；<code>ScienceDiscovery/agents.py:141-143</code> 等七处</td>
+<td>改</td>
+</tr>
+<tr>
+<td>批评者的两个方向</td>
+<td>分子建模、合成生物学</td>
+<td><code>ScienceDiscovery/utils.py:493-499</code>；<code>ScienceDiscovery/agents.py:284-288</code></td>
+<td>换成该领域的计算与实验手段</td>
+</tr>
+<tr>
+<td>模型</td>
+<td><code>gpt-4o</code></td>
+<td><code>ScienceDiscovery/llm_config.py:3-5</code>；非自动版 notebook 第 6 格</td>
+<td>改配置</td>
+</tr>
+<tr>
+<td>查新</td>
+<td>领域无关；覆盖面取决于 Semantic Scholar 在该领域的收录</td>
+<td><code>ScienceDiscovery/agents.py:324-354</code></td>
+<td>不用改</td>
+</tr>
+</tbody>
+</table></div>
+<p>外部用户的反馈：issue #15「怎么用自己的数据」、#10「怎么评估、怎么和你们的方法比」都没有回复；#6 医学领域两个关键词「找不到路径」，另一位用户答「图里没有这两个词」<sup id="fnref:gh"><a class="footnote-ref" href="#fn:gh">1</a></sup>。这个回答与代码对不上：关键词总会被映射到 embedding 最近的节点（1.3），而图已经取了最大连通分量（<code>ScienceDiscovery/graph.py:14</code>），任意两个节点都连通，报错的真正原因见<a href="#5-还没弄清的问题">第 5 节</a>。期刊版结论写「接入相应的领域图谱后有可能用到化学、合金、半导体、物理」，没有给出实际迁移的例子 <sup id="fnref:advmat"><a class="footnote-ref" href="#fn:advmat">4</a></sup>。</p>
+<h2 id="2-为什么有效论文证据与代码对账">2. 为什么有效：论文证据与代码对账<a class="permalink" href="#2-为什么有效论文证据与代码对账" title="本节链接">#</a></h2>
+<h3 id="21-论文拿什么证明">2.1 论文拿什么证明<a class="permalink" href="#21-论文拿什么证明" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>论文的主张</th>
+<th>证据形式</th>
+<th>出处</th>
+<th>性质</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>随机路径比最短路径带进更多概念，产出更有新意的假设</td>
+<td>一对关键词的两张子图对比</td>
+<td>§2.1、Figure 4</td>
+<td>示意，没有度量</td>
+</tr>
+<tr>
+<td>多 agent 比零样本回答推理更细</td>
+<td>一张概念图</td>
+<td>§3、Figure 11</td>
+<td>没有零样本基线</td>
+</tr>
+<tr>
+<td>生成的假设新颖且可行</td>
+<td>5 个自动版案例，新颖性 6–8 分、可行性 7–8 分</td>
+<td>Table 4、附录 S3–S7</td>
+<td>分数由 LLM 读检索摘要后给出；没有人工评审</td>
+</tr>
+<tr>
+<td>两种编排各有长处</td>
+<td>同一路径的两份产出并列</td>
+<td>§2.2、附录 S1 与 S2</td>
+<td>定性描述</td>
+</tr>
+<tr>
+<td>可扩展到几天产出成千上万个结果</td>
+<td>一句话</td>
+<td>§3</td>
+<td>没有给耗时与花费</td>
+</tr>
+<tr>
+<td>换更强的模型效果更好（期刊版）</td>
+<td>o1-preview 生成的一个案例</td>
+<td>期刊版结论、附录 S8</td>
+<td>定性，本次未读 S8</td>
+</tr>
+</tbody>
+</table></div>
+<p>期刊版结论自己写了：部分提案的可行性存疑；要「建立效率、准确率这类明确指标，配合人类专家参与的评估框架」才能更全面评估 SciAgents，并把这些列为未来工作 <sup id="fnref2:advmat"><a class="footnote-ref" href="#fn:advmat">4</a></sup>。一稿与本次复查各做了两次网页搜索，都没有找到把 SciAgents 当基线做量化对比的第三方评测（未穷尽）。</p>
+<h3 id="22-代码是否按论文做">2.2 代码是否按论文做<a class="permalink" href="#22-代码是否按论文做" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>论文说</th>
+<th>代码里</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>路径代价 = embedding 启发式距离 + α·random（§4.2 伪代码里代价不累加）</td>
+<td>论文参数走到的函数里启发式零调用，代价是累计边权 + 每跳 0.2·random；启发式只在随机因子与路标数都为 0 时走到的另一个函数里用</td>
+<td><code>GraphReasoning/graph_analysis.py:1707-1728</code>、<code>:141-148</code>；<code>ScienceDiscovery/utils.py:195-219</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>取完路径再带上二跳邻居作为上下文（§4.2 正文；同节算法第 7 步没写二跳）</td>
+<td><code>second_hop=False</code> 写死在两处调用参数里；子图建了不用，模型只看到路径一行字</td>
+<td><code>ScienceDiscovery/utils.py:205,226,289,310</code>；<code>ScienceDiscovery/agents.py:368</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>图来自前作 [6]，33,159 节点，92 个社区</td>
+<td>前作 Table 1 是 12,319 节点、80 个社区、最大度数 171；公开的图 33,159 节点，<code>group</code> 85 个值，最大度数 461；多出来的节点从哪来没有文档</td>
+<td>GraphReasoning 论文 §2.1、Table 1；本次解析</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Scientist 2 是一个 agent（Figure 1、§4.4、Figure S6）</td>
+<td>七个按字段分开的 agent；论文 Figure 9 的计划里倒是列了这七个名字</td>
+<td><code>ScienceDiscovery/agents.py:137-269</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>查新调三次 API</td>
+<td>消息写「最多三次」；S3 实际两次</td>
+<td><code>ScienceDiscovery/agents.py:383</code>；附录 S3</td>
+</tr>
+<tr>
+<td>6</td>
+<td>第二种编排「全自动」，人可以在各阶段介入</td>
+<td><code>user</code> 是 <code>ALWAYS</code>；S3、S4、S5 三份对话里人打字催调查新工具</td>
+<td><code>ScienceDiscovery/agents.py:19</code>；附录 S3–S5</td>
+</tr>
+<tr>
+<td>7</td>
+<td>附录 S2–S7 的对话</td>
+<td>开场介绍（<code>send_introductions</code> 念出的各 agent description）与 <code>agents.py</code> 三个公开版本（1bf657d、ee2ee17、e821ee5）都对不上：S2–S5 是一套措辞（「planner: A planner who can suggest a plan…」「assistant: An assistant who calls the appropriate tools and functions and returns the results.」），代码里是「Who can suggest a step-by-step plan…」「…Tools include "rate_novelty_feasibility" and "generate_path".」；S6、S7 的开场都多一个 <code>caller</code>（S6「I am responsible to pick the next agent to speak」，S7「I am responsible for selecting the next role to speak」），对话里反复出现「Agent caller, please proceed…」「Caller, please select …」，三个公开版本都没有这个 agent；S7 的 planner、ontologist 简介与公开代码一致，assistant 简介不一致。产生这六份对话的代码都没有公开</td>
+<td>附录 S2–S7 开场（S3、S7 的开场在 PDF 第 45、74 页的图片里）；GitHub 历史 <sup id="fnref8:gh"><a class="footnote-ref" href="#fn:gh">1</a></sup></td>
+</tr>
+<tr>
+<td>8</td>
+<td>假设与批评之间有迭代反馈</td>
+<td>非自动版批评不回流；自动版的附录对话里没有改稿</td>
+<td><code>ScienceDiscovery/utils.py:485-508</code>；1.4 节</td>
+</tr>
+<tr>
+<td>9</td>
+<td>GraphReasoning 论文：建图用 Zephyr-7B（llama.cpp、多卡）并先做摘要提炼</td>
+<td>代码接受任意 <code>generate</code> 函数；提炼步骤不在仓里</td>
+<td><code>GraphReasoning/graph_generation.py:167-290</code>；1.2 节</td>
+</tr>
+<tr>
+<td>10</td>
+<td>各 agent 的提示词（Figure 5、Figure S2–S7、Figure 12）</td>
+<td>Figure 5（非自动版科学家）、Figure S2（planner）、Figure S4（ontologist）、Figure 12（查新）与代码几乎逐字一致；Figure S3（assistant）措辞不同，代码多了「结束时说 TERMINATE」；Figure S5 名字写 scientist1、Figure S7 不打分那句措辞不同；Figure S6 的单个 scientist2 提示词在代码里没有对应，代码是七个按字段分开、带字面占位符的提示词</td>
+<td><code>ScienceDiscovery/agents.py:25-134,271-322</code>；<code>ScienceDiscovery/utils.py:315-386</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>§4.3.2 各步的提示词</td>
+<td>论文给的是缩写版，意思与代码一致</td>
+<td><code>ScienceDiscovery/utils.py:444-499</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="23-案例自身的一致性">2.3 案例自身的一致性<a class="permalink" href="#23-案例自身的一致性" title="本节链接">#</a></h3>
+<ul>
+<li><strong>同一个例子用了不同的路径。</strong> §2.1 印出的 silk 到 energy-intensive 路径（经 biocompatibility、self-cleaning、structural coloration）与附录 S1 的路径（经 biological materials、dandelion、pigments）不是同一条；Figure 3 的假设（蒲公英色素加蚕丝）对应的是 S1 那条。§2.1 的本体学家摘录里有 silk–membranes、high adhesion–multifunctionality 两条边，这两条都在公开图里，但不在 §2.1 印出的路径上。</li>
+<li><strong>印出的路径与公开图对得上。</strong> §2.1、S1、S3 三条路径的每一条边（连同关系标签）本次都在公开图里逐边找到了，这说明论文用的就是（或包含）这张公开图，尽管它的尺寸与前作 Table 1 对不上（2.2 第 3 行）。Figure 8d 的端点「self-cleaning coating」在公开图里没有这个节点（有 self-cleaning coatings）。</li>
+<li><strong>「随机端点」与任务原文不一致。</strong> §2.2 与 Figure 8 标题说五个案例的端点都是随机选的；S7 的任务原文是「Develop a research proposal using graphene and proteins」，端点是人给的。</li>
+<li><strong>Table 4 的五个想法有两对共用枢纽概念</strong>：想法 2 与 3 都是胶原基材料，想法 4 与 5 都用 amyloid fibrils。公开图里 collagen 度数 345、排第 3，amyloid fibrils 度数 97、排第 33，这与 1.3 节「路径常经过度数高的枢纽」一致，但论文没有统计多样性。</li>
+<li><strong>未检索的自评高于检索后的评分</strong>：S2 是 9 → 7，S5 是 9 → 6（1.6 节）。样本只有两份。</li>
+</ul>
+<h2 id="3-平台哪里能用">3. 平台哪里能用<a class="permalink" href="#3-平台哪里能用" title="本节链接">#</a></h2>
+<p>先把平台这边的事实摆出来：七个阶段里文献、假设、写作还没有「步骤」；文献阶段的主文件是助理手写的 <code>sources.md</code>，假设与写作的主文件「待第一个能力定名」（纲领 P-20，内仓 <code>docs/add-a-capability.md</code>）。框架不调模型，写文本的只有执行层（P-1）；执行层会话放行的命令前缀只有 <code>ai4sci skill</code>（内仓 <code>framework/skills/__init__.py:37</code> 的 <code>EXECUTOR_BASH_RULES</code>、<code>framework/executor/session.py:42</code>），联网用 agent 自带的搜索与网页读取（P-14，内仓 <code>framework/executor/prompting.py:21-25</code>）。skill 是 <code>SKILL.md</code> 加 PEP 723 脚本，<code>uv run --locked --offline</code> 起，写哪里由调用方定（P-22）；<code>--offline</code> 管的是 uv 装依赖，现有 <code>download</code> skill 的脚本本身就联网拉 git 仓库与 Hugging Face 文件（内仓 <code>skills/download/SKILL.md</code>）。现有 skill 还有 <code>pdf</code>（论文转 <code>paper.md</code> 与 <code>structured.json</code>）。需要模型判断的评审要由隔离的新会话、只给产物不给轨迹，这一段尚未实现（P-2）。</p>
+<p>SciAgents 这边的模型调用方式：每次调用都是 Python 代码直连 OpenAI API（非自动版 <code>generate_OpenAIGPT</code>，自动版 AutoGen），要 <code>OPENAI_API_KEY</code>，每个角色的 temperature（0 到 0.2）、token 上限、缓存都写在代码里（1.4 节）。平台里写文本的是执行层的 CLI 会话，走研究者自己的 agent 登录。</p>
+<p>SciAgents 的方法按片段拆开，和上面这些事实的对应如下。表里只列事实与接触点，不下接不接的结论。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方法片段</th>
+<th>阶段</th>
+<th>需要的输入</th>
+<th>产出</th>
+<th>要不要模型</th>
+<th>与平台规矩的接触点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>建概念图：论文 → 文本块 → 三元组 → 合并 → 最大连通分量</td>
+<td>文献</td>
+<td>一批论文（<code>sources.md</code> 列的 PDF，经 <code>pdf</code> skill 出 <code>paper.md</code>）；embedding 模型</td>
+<td>graphml（节点、带标签的边、边的来源块）+ 节点 embedding</td>
+<td>抽三元组要模型，每块至少 4 次调用；合并与连通分量零模型</td>
+<td>P-1 下抽三元组只能在执行层会话里做；前作用了约 1,600 块、公开图更大，用 CLI 会话逐块抽的耗时与花费本次没有数据；公开图只有块 id、没有「块 → 论文」对照，要能引用就得在建图时留来源</td>
+</tr>
+<tr>
+<td>取路径：关键词对到节点、随机 Dijkstra、随机路标、拼成一行字</td>
+<td>假设</td>
+<td>图文件、节点 embedding、两个关键词或「随机」、随机种子</td>
+<td>一行路径字符串（可另存子图）</td>
+<td>零模型（embedding 前向除外）</td>
+<td>形状是确定性脚本，与 skill 的写法相近；依赖 torch 与 transformers；原实现没有种子参数、也不设种子，同样输入每次路径不同</td>
+</tr>
+<tr>
+<td>本体学家 → 科学家 → 按字段扩写</td>
+<td>假设</td>
+<td>路径字符串（或任何一串概念与关系）</td>
+<td>七字段假设 + 七段扩写</td>
+<td>要模型</td>
+<td>写文本归执行层；七字段是材料领域措辞，字段里没有出处与检验判据；提示词要求的数字没有来源，平台纲领 §1 要求论文里每个数字都能被机器核对</td>
+</tr>
+<tr>
+<td>批评者：总结、优缺点、两个优先问题</td>
+<td>假设（其输出可作为设计阶段的输入）</td>
+<td>成稿</td>
+<td>评审文字 + 两个「最值得做的建模 / 实验问题」</td>
+<td>要模型</td>
+<td>非自动版的批评调用只吃成稿、不吃过程（<code>ScienceDiscovery/utils.py:479-483</code>），形状接近 P-2 的「只给产物」，但与写稿是同一模型、同一脚本里的下一次调用；两个方向写死为分子建模与合成生物学</td>
+</tr>
+<tr>
+<td>查新打分：挑关键词、检索、读摘要、打分</td>
+<td>假设（也可以放在文献阶段）</td>
+<td>假设全文</td>
+<td>检索结果 + 1–10 分与理由</td>
+<td>检索零模型，挑词与打分要模型</td>
+<td>平台两层 agent 联网用自带工具；走 Semantic Scholar API 是另一条通道，skill 脚本联网在平台上有 <code>download</code> 这个先例，这里不下结论；无 key 公共额度本次 8 次请求 7 次 429；已暴露的毛病见 1.6</td>
+</tr>
+<tr>
+<td>成稿：图 → 扩展图 → 提案 → 扩写 → 评审 → 优先项</td>
+<td>写作</td>
+<td>上面各段的输出</td>
+<td>markdown / PDF 长文（S1 约 8,100 词）</td>
+<td>拼接零模型</td>
+<td>这是开题式长文，不是论文，没有引用；workflow.md 提到「假设完直接写作是开题报告」这种组合</td>
+</tr>
+</tbody>
+</table></div>
+<p>几条输入前提：研究者要给两个概念，或者接受随机；要有一张覆盖他那个领域的图，平台现在没有任何领域图，公开的 bio-graph-1K 只覆盖生物启发材料；查新用 Semantic Scholar 在代码上可以不带 key、走公共额度，README 写的是必需。</p>
+<h2 id="4-局限与前提">4. 局限与前提<a class="permalink" href="#4-局限与前提" title="本节链接">#</a></h2>
+<h3 id="41-数据">4.1 数据<a class="permalink" href="#41-数据" title="本节链接">#</a></h3>
+<ul>
+<li><strong>只有一张生物启发材料的图。</strong> 论文集来自 BioinspiredLLM 的语料 <sup id="fnref:luu"><a class="footnote-ref" href="#fn:luu">6</a></sup>；其他领域要从零建（1.8 节）。</li>
+<li><strong>图上的边追不回论文。</strong> 公开图每条边只有一个或几个不透明的 <code>chunk_id</code>，没有块原文、没有论文标识（1.2 节）。基于这张图写出的假设无法给出「这条关系出自哪篇文献」。</li>
+<li><strong>图是无向的</strong>，关系标签的方向在取路径时可能被反着读（1.3 节）；建图时同一对节点反方向的关系按代码会互相覆盖（1.2 节）。</li>
+<li><strong>稀疏且有枢纽</strong>：59% 的节点度数为 1，少数枢纽度数几百；路径常绕回枢纽。</li>
+<li><strong>标签质量不齐</strong>：有整句、列表字符串、布尔值，190 条自环（1.2 节）。</li>
+<li><strong>近义节点残留</strong>：0.95 的合并阈值下，同一概念有多个节点（「self-cleaning」一词就有 4 个同义节点）。</li>
+<li><strong>英文</strong>：embedding 用英文模型；数据卡写的是用 <code>BAAI/bge-large-en</code> 生成的 embedding，文件名与论文写的是 v1.5，两者是否一致本次没法核对（没下 pickle）<sup id="fnref:hf"><a class="footnote-ref" href="#fn:hf">5</a></sup>。</li>
+<li><strong>建图过程没有完整文档</strong>：公开图的节点数是前作报告的约 2.7 倍，用了哪些块、哪个模型、什么阈值都没写。</li>
+</ul>
+<h3 id="42-模型">4.2 模型<a class="permalink" href="#42-模型" title="本节链接">#</a></h3>
+<ul>
+<li>自动版写死 OpenAI <code>gpt-4o</code>，key 走环境变量 <code>OPENAI_API_KEY</code>，由 AutoGen 0.2 的 <code>config_list_from_models</code> 去读（按 AutoGen 文档的行为推断，未执行）；两个 notebook 第 3 格把 <code>'sk-'</code> 写进这个环境变量。非自动版在 notebook 第 6 格把 key 与模型名显式传给 <code>generate_OpenAIGPT</code>。换模型要改 <code>ScienceDiscovery/llm_config.py</code> 与 notebook。</li>
+<li>自动版的 <code>cache_seed: 42</code> 让同样的请求直接读本地缓存（1.4 节）；各角色温度只有 0 到 0.2，论文 §2.2 自己把假设的多样性归因于随机端点与端点间的路径。</li>
+<li>建图在前作里用的是本地 7B 模型；前作 §3.2 自己写「受吞吐所限没用 GPT-4 这类更强的模型抽三元组」<sup id="fnref2:gr-paper"><a class="footnote-ref" href="#fn:gr-paper">3</a></sup>。</li>
+</ul>
+<h3 id="43-算力">4.3 算力<a class="permalink" href="#43-算力" title="本节链接">#</a></h3>
+<ul>
+<li>运行时：import 包就加载 bge-large（约 3.35 亿参数）和整张图；每个关键词对全部节点做一次线性扫描；非自动版 12 次串行调用。论文没给单次耗时与花费。</li>
+<li>建图时：每块至少 4 次模型调用；合并近义节点要算完整相似度矩阵，33k 节点在 float32 下约 4.4 GB、float64 下约 8.8 GB（1.2 节）；embedding 加载失败会退回对 33k 节点逐个重算（<code>ScienceDiscovery/graph.py:16-20</code>）。</li>
+</ul>
+<h3 id="44-许可证与数据使用">4.4 许可证与数据使用<a class="permalink" href="#44-许可证与数据使用" title="本节链接">#</a></h3>
+<ul>
+<li>代码 Apache-2.0（<code>LICENSE.txt</code>），但两个 <code>setup.py</code> 的 classifier 写 MIT，打包元数据与许可证文件不一致。</li>
+<li>图谱数据 apache-2.0；期刊论文 CC BY-NC 4.0（含论文里印出的提示词图）<sup id="fnref3:advmat"><a class="footnote-ref" href="#fn:advmat">4</a></sup>；代码里的同一批提示词随代码是 Apache-2.0。</li>
+<li>源论文本身的版权：公开图只含三元组与块 id，不含原文。</li>
+<li>Semantic Scholar 数据的使用受它的 API License Agreement 约束；无 key 的请求共享每秒 1,000 次的公共额度，申请到的 key 起步是每秒 1 次 <sup id="fnref:s2"><a class="footnote-ref" href="#fn:s2">8</a></sup>。</li>
+<li>embedding 以 pickle 分发，<code>pickle.load</code> 读取（<code>GraphReasoning/graph_tools.py:129-132</code>）：读一个 pickle 会执行里面携带的代码，来源要可信。</li>
+</ul>
+<h3 id="45-工程形态">4.5 工程形态<a class="permalink" href="#45-工程形态" title="本节链接">#</a></h3>
+<ul>
+<li><strong>import 即副作用</strong>：<code>from ScienceDiscovery import *</code> 经 <code>agents.py</code> 第 3 行导入 <code>graph.py</code>，会加载图、下 embedding 模型、建全部 agent（<code>ScienceDiscovery/__init__.py:1-2</code>、<code>ScienceDiscovery/agents.py:3</code>、<code>ScienceDiscovery/graph.py:10-20</code>、<code>ScienceDiscovery/agents.py:16-407</code>）；缺图文件就 import 失败。<code>utils.py</code> 还在 import 时拉起 GraphReasoning 的全部模块（含 guidance、llama-index）。</li>
+<li><strong>按 notebook 写的</strong>：<code>display(Markdown(...))</code>、<code>tqdm.notebook</code> 散在函数里（<code>ScienceDiscovery/utils.py:21-26,37,467,501-502</code>）。</li>
+<li><strong>裸 <code>except</code> 吞错</strong>：<code>ScienceDiscovery/graph.py:18</code>、<code>ScienceDiscovery/utils.py:406</code>、<code>GraphReasoning/graph_generation.py:280,287,452,561,594,646</code>。</li>
+<li><strong>依赖不锁</strong>：见 1.1，<code>pyautogen</code> 无上限而 PyPI 上的新版已换成另一套 API <sup id="fnref:pypi"><a class="footnote-ref" href="#fn:pypi">9</a></sup>；<code>weasyprint</code> 在 <code>utils.py</code> 顶部被 import 但没用到（<code>ScienceDiscovery/utils.py:7</code>），系统缺它要的库时整个包 import 失败，issue #8 报的「cannot load library 'gobject-2.0-0'」就是 weasyprint 找不到系统库时的报错（按报错文本推断）。</li>
+<li><strong>维护</strong>：最后一次提交 2025-05-10，只改 README；评估与自定义数据两个 issue 无人回复 <sup id="fnref2:gh"><a class="footnote-ref" href="#fn:gh">1</a></sup>。</li>
+</ul>
+<h2 id="5-还没弄清的问题">5. 还没弄清的问题<a class="permalink" href="#5-还没弄清的问题" title="本节链接">#</a></h2>
+<ol>
+<li><strong>附录 S2–S7 是哪份代码跑出来的。</strong> 六份自动对话开场念出的 agent 简介与公开的三个版本都对不上；S6、S7 还有 <code>caller</code> agent。论文 Table 4 的 5 个案例全部来自这些没公开的配置，其中 2 个（S6、S7）连 agent 组成都不同。</li>
+<li><strong>公开图怎么建的。</strong> 33,159 个节点比前作报告的全图大 2.7 倍，用了哪些块、哪个模型、什么合并阈值、为什么是 85 个社区值而论文写 92，都没有文档。论文印出的路径都在公开图里（2.3 节），Figure 8d 的端点「self-cleaning coating」却不在，是图注笔误还是图不同，没法判断。</li>
+<li><strong>随机路标到底有没有带来更好的假设。</strong> 论文只有 Figure 4 一张图；按论文参数走的函数里 embedding 启发式没被用上，路径实际由边权最短路与随机路标决定。要回答，得在同一批端点上对比最短路径、有无路标、有无二跳邻居，并有人或别的判据来评。</li>
+<li><strong>查新分数有多可信。</strong> 长查询 0 结果被当成新颖、未检索自评比检索后高，这两个现象在两三份对话里出现；缺更多样本，也缺与人工判断的对照。</li>
+<li><strong>embedding 是否错配。</strong> 数据卡说 embedding 用 bge-large-en 生成，代码用 bge-large-en-v1.5 算关键词向量；两者若不同，关键词对节点的匹配会偏。要下 138 MB 的 pickle 并抽样比对才能确认，同时能核对字典大小与 dtype。</li>
+<li><strong>在平台上建一张领域图要多少时间和花费。</strong> 平台里模型调用只能经执行层的 CLI 会话，逐块抽三元组在上千块的规模上走不走得通，本次没有数据。</li>
+<li><strong>平台研究者的领域有没有现成语料或图。</strong> 这决定取路径这一段有没有输入；中文材料还涉及换 embedding 模型。</li>
+<li><strong>SciAgents 写在 API 参数里的东西在 CLI 会话里怎么对应。</strong> 各角色 0 到 0.2 的 temperature、token 上限、自动版的本地缓存都是直连 API 时的参数；平台执行层是 CLI 会话，这些参数能不能设、不设对产出有什么影响，本次没有查。</li>
+<li><strong>Semantic Scholar 无 key 能不能撑住。</strong> 本次 8 次无 key 请求 7 次 429；代码把失败字符串交给模型、提示词让它一直重调、嵌套对话最多 10 轮。notebook 默认发出的空 <code>x-api-key</code> 头会不会被当成无效 key 拒掉，也没能确认。</li>
+<li><strong>issue #6「No path found」的真实原因。</strong> 图是连通的最大分量、关键词总会映射到某个节点，按代码只有「映射到的节点不在图里」（embedding 字典的键多于图的节点）这类情况才会找不到路径；这要下 pickle 比对键集合才能确认。</li>
+<li><strong>今天按 <code>setup.py</code> 装得起来吗。</strong> <code>pyautogen&gt;=0.2.28</code> 无上限，PyPI 最新版是 autogen-agentchat 的代理包；GraphReasoning 要另装。本次不装依赖，没有验证。</li>
+<li><strong>期刊版附录 S8（o1-preview 案例）</strong> 本次没有取到，没读。</li>
+<li><strong>第三方评测。</strong> 前后四次网页搜索没找到把 SciAgents 当基线的量化对比，没有穷尽。</li>
+<li><strong><code>add_new_subgraph_from_text</code> 的 <code>G_newlymade</code> 问题</strong> 是按代码读出来的，没有执行确认；作者自己建公开图时走的是不是这条路径也不清楚。</li>
+</ol>
+<h2 id="6-调研方法">6. 调研方法<a class="permalink" href="#6-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>读 SciAgentsDiscovery 全部 Python、README 与两个 notebook（提交 c5c3045）；GraphReasoning 浅克隆到本会话的临时目录，读了被 SciAgents 调到的读图、embedding、取路径、OpenAI 调用四块，以及没被 SciAgents 调用的建图代码 <code>graph_generation.py</code>（提交 f1d6d44）；用 GitHub API 查了 <code>agents.py</code> 的三个历史版本、提交记录、issue 与 PR；查了 PyPI 上 <code>pyautogen</code> 的元数据。</li>
+<li>论文 PDF 下到外层 <code>materials/research/2026-0927-scientific-ai-capabilities/papers/</code>，用平台的 <code>pdf</code> skill 解析：SciAgents arXiv v1（79 页，含附录 S1–S7 全部对话）、GraphReasoning arXiv 2403.11996（85 页）；期刊版从 Europe PMC 取全文 XML（PMC12138853），与 arXiv 版对照了节目录、表格、图注与 §4.1、§4.2、§4.6 的正文：新增的是「Audio Representation」一节与结论里的局限段，五张表与对照过的方法节文字没有变。</li>
+<li>下载公开图 <code>large_graph_simple_giant.graphml</code>（14.5 MB）到临时目录，用 Python 标准库解析做统计：节点、边、方向、社区值、边权分布、<code>chunk_id</code> 个数、标签含逗号的分布、自环、度数、枢纽、端点度数、随机抽 1 万对端点的度数分布，以及 §2.1、S1、S3 三条路径的逐边核对。没有下 embedding pickle，没有 import 或执行 SciAgents 与 GraphReasoning 的任何代码。</li>
+<li>对 Semantic Scholar 检索接口发了无 key 请求：一稿一次，确认不传 <code>limit</code> 时的默认条数；复查 8 次，确认空 key 头与不带头两种情形，结果见 1.6。</li>
+<li>附录对话里的人工干预、自评与工具评分，是在解析出的正文里按关键词定位后逐段读原文确认的；S3 开场、S4 的评分段、S7 开场在 PDF 第 45、59、74 页的图片里，看图确认。</li>
+<li>复查（同日，另一人）：逐条打开文中的 <code>文件:行</code> 核对，重算公开图统计，独立搜了「启发式零调用」「二跳写死」「非自动版无查新」「提炼步骤不在仓里」「caller 不在公开版本」「key 非必需」几条否定说法；改动集中在边权公式、<code>chunk_id</code>、逗号标签、相似度矩阵内存、JSON 失败路径、空 key 头、附录开场与公开代码的对照、notebook 格号。</li>
+</ul>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:gh">
+<p>GitHub 仓库 <a href="https://github.com/lamm-mit/SciAgentsDiscovery">https://github.com/lamm-mit/SciAgentsDiscovery</a>，2026-09-27 经 GitHub API 查：star、fork、提交列表（60 个，最早 77fee49 2024-08-21，最晚 c5c3045 2025-05-10）、<code>ScienceDiscovery/agents.py</code> 的三个历史版本（1bf657d、ee2ee17、e821ee5，e821ee5 与 c5c3045 上的文件相同）、issue #4 #5 #6 #8 #10 #15 与 PR #9 #12 #13 #14 #18（#13、#14 已合，只改 README；#9、#12、#18 未合）。&#160;<a class="footnote-backref" href="#fnref:gh" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref2:gh" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref3:gh" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref4:gh" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref5:gh" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref6:gh" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref7:gh" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref8:gh" title="回到正文第 1 处">↩</a></p>
+</li>
+<li id="fn:gr-repo">
+<p>GraphReasoning 仓库 <a href="https://github.com/lamm-mit/GraphReasoning">https://github.com/lamm-mit/GraphReasoning</a>，提交 f1d6d44（2024-07-19），Apache-2.0，301 star。&#160;<a class="footnote-backref" href="#fnref:gr-repo" title="回到正文第 2 处">↩</a></p>
+</li>
+<li id="fn:gr-paper">
+<p>M. J. Buehler, Accelerating Scientific Discovery with Generative Knowledge Extraction, Graph-Based Representation, and Multimodal Intelligent Graph Reasoning, arXiv:2403.11996（v3，2024-06-10）；期刊版 Machine Learning: Science and Technology (2024)，<a href="https://doi.org/10.1088/2632-2153/ad7228">https://doi.org/10.1088/2632-2153/ad7228</a>。引用的是 §2.1 Table 1、§3.2、§4.2.1–4.2.3。&#160;<a class="footnote-backref" href="#fnref:gr-paper" title="回到正文第 3 处">↩</a><a class="footnote-backref" href="#fnref2:gr-paper" title="回到正文第 3 处">↩</a></p>
+</li>
+<li id="fn:advmat">
+<p>A. Ghafarollahi, M. J. Buehler, SciAgents: Automating Scientific Discovery Through Bioinspired Multi-Agent Intelligent Graph Reasoning, Advanced Materials 37(22), 2413523，<a href="https://doi.org/10.1002/adma.202413523">https://doi.org/10.1002/adma.202413523</a>，CC BY-NC 4.0；全文取自 Europe PMC <a href="https://europepmc.org/article/PMC/PMC12138853">https://europepmc.org/article/PMC/PMC12138853</a>。arXiv 版 <a href="https://arxiv.org/abs/2409.05556">https://arxiv.org/abs/2409.05556</a>（v1，2024-09-09）。&#160;<a class="footnote-backref" href="#fnref:advmat" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref2:advmat" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref3:advmat" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref4:advmat" title="回到正文第 4 处">↩</a></p>
+</li>
+<li id="fn:hf">
+<p>Hugging Face 仓库 <a href="https://huggingface.co/lamm-mit/bio-graph-1K">https://huggingface.co/lamm-mit/bio-graph-1K</a>（model 类型仓库），修订 888b9c7（2024-09-10），apache-2.0；文件 <code>large_graph_simple_giant.graphml</code> 14,513,359 字节，<code>embeddings_simple_giant_ge-large-en-v1.5.pkl</code> 137,838,158 字节；数据卡写「embeddings generated using BAAI/bge-large-en」。&#160;<a class="footnote-backref" href="#fnref:hf" title="回到正文第 5 处">↩</a><a class="footnote-backref" href="#fnref2:hf" title="回到正文第 5 处">↩</a></p>
+</li>
+<li id="fn:luu">
+<p>R. K. Luu, M. J. Buehler, BioinspiredLLM, Advanced Science (2023)，<a href="https://doi.org/10.1002/advs.202306724">https://doi.org/10.1002/advs.202306724</a>。GraphReasoning 论文 §4.2.1 称沿用这批 1,000 多篇论文。&#160;<a class="footnote-backref" href="#fnref:luu" title="回到正文第 6 处">↩</a><a class="footnote-backref" href="#fnref2:luu" title="回到正文第 6 处">↩</a></p>
+</li>
+<li id="fn:bge">
+<p>BAAI/bge-large-en-v1.5 模型卡 <a href="https://huggingface.co/BAAI/bge-large-en-v1.5">https://huggingface.co/BAAI/bge-large-en-v1.5</a>：用 transformers 时取第一个 token（[CLS]）的最后一层隐状态并做 L2 归一化；仓里 <code>1_Pooling/config.json</code> 为 <code>pooling_mode_cls_token: true</code>；参数量 335,142,400。&#160;<a class="footnote-backref" href="#fnref:bge" title="回到正文第 7 处">↩</a></p>
+</li>
+<li id="fn:s2">
+<p>Semantic Scholar API 页面 <a href="https://www.semanticscholar.org/product/api">https://www.semanticscholar.org/product/api</a>（2026-09-27 读）：多数接口无需认证，无 key 请求共享每秒 1,000 次的额度；key 的起步额度是每秒 1 次；使用受 API License Agreement 约束。本次对 <code>/graph/v1/paper/search</code> 发不带 <code>limit</code> 的请求，成功的一次返回 10 条、<code>next</code> 为 10；复查时连发 8 次（4 次带空 <code>x-api-key</code> 头、4 次不带），7 次返回 429「Too Many Requests」。&#160;<a class="footnote-backref" href="#fnref:s2" title="回到正文第 8 处">↩</a><a class="footnote-backref" href="#fnref2:s2" title="回到正文第 8 处">↩</a><a class="footnote-backref" href="#fnref3:s2" title="回到正文第 8 处">↩</a></p>
+</li>
+<li id="fn:pypi">
+<p>PyPI <code>pyautogen</code> <a href="https://pypi.org/project/pyautogen/">https://pypi.org/project/pyautogen/</a>（2026-09-27 经 JSON API 查）：最新版 0.10.0，摘要「Proxy package for autogen-agentchat」，依赖 <code>autogen-agentchat&gt;=0.6.4</code>；0.2 系列最后一版是 0.2.35。&#160;<a class="footnote-backref" href="#fnref:pypi" title="回到正文第 9 处">↩</a><a class="footnote-backref" href="#fnref2:pypi" title="回到正文第 9 处">↩</a></p>
+</li>
+</ol>
+</div>
+  </main>
+  <footer class="doc">原始稿是同目录的 sciagents.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>

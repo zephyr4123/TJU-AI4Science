@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPT Researcher 代码级深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>GPT Researcher 代码级深读</h1>
+    <p class="subtitle">文献阶段选型 · 拆子查询、并行检索抓取、BM25 挑段落、一次写成；三种外壳都自己调模型</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目选型深读（只读代码，不跑、不装依赖）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-27</dd></div><div class="meta-row"><dt>范围</dt><dd>仓库 https://github.com/assafelovic/gpt-researcher，浅克隆到外层 vendor/gpt-researcher，提交 0957c30（2026-09-26）；PyPI 0.16.1 的 gpt_researcher/ 与该提交逐文件一致。另读 assafelovic/gptr-mcp 提交 6388477 的 server.py、utils.py（文中写作 gptr-mcp/…）与 vercel-labs/skills 提交 f00c1a1 的 src/skills.ts（写作 vercel-labs/skills:…）。不读 frontend、docs 站点源码、terraform、各语言 README。文中不带前缀的 文件:行 相对 gpt-researcher 仓库根（其中 docs/docs/…、docs/blog/… 是 gpt-researcher 自己的文档）；平台一侧写作 platform/… 或 docs/architecture/…，相对外层仓根</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-是不是">1. 是不是</a></li>
+<li><a href="#2-怎么做">2. 怎么做</a><ul>
+<li><a href="#21-入口与数据进出">2.1 入口与数据进出</a></li>
+<li><a href="#22-标准研究的一次运行">2.2 标准研究的一次运行</a></li>
+<li><a href="#23-deep-research">2.3 deep research</a></li>
+<li><a href="#24-检索器与学术源">2.4 检索器与学术源</a></li>
+<li><a href="#25-引用怎么进报告">2.5 引用怎么进报告</a></li>
+<li><a href="#26-怎么调模型">2.6 怎么调模型</a></li>
+<li><a href="#27-三种外壳">2.7 三种外壳</a></li>
+</ul>
+</li>
+<li><a href="#3-为什么">3. 为什么</a><ul>
+<li><a href="#31-设计理由">3.1 设计理由</a></li>
+<li><a href="#32-踩过的坑">3.2 踩过的坑</a></li>
+</ul>
+</li>
+<li><a href="#4-跑起来要什么">4. 跑起来要什么</a></li>
+<li><a href="#5-和平台对照">5. 和平台对照</a><ul>
+<li><a href="#51-平台文献阶段现在有什么">5.1 平台文献阶段现在有什么</a></li>
+<li><a href="#52-多了什么重叠什么">5.2 多了什么重叠什么</a></li>
+<li><a href="#53-会碰到的现有规则">5.3 会碰到的现有规则</a></li>
+</ul>
+</li>
+<li><a href="#6-成熟度">6. 成熟度</a></li>
+<li><a href="#7-还没弄清的问题">7. 还没弄清的问题</a></li>
+<li><a href="#8-调研方法">8. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：核心包 <code>gpt_researcher/</code>（约 1.6 万行）是一条形状固定的流水线：一次模型调用给任务挑一个「角色提示词」，一次模型调用把问题拆成 3 条子查询，加上原问题共 4 条并行去搜、去抓页面、用 BM25 从页面里挑段落，最后一次模型调用写成一篇带 URL 超链接引用的 markdown 报告。README 里的 planner / execution agents / publisher 在代码里就是这两次提示词调用加一组 asyncio 协程，没有独立的 agent；README 写的「逐个来源做摘要」在现行代码里不存在（<code>summarize_url</code> 零调用），换成了不调模型的段落筛选。deep research 是递归树，默认宽 3 深 2，一次跑下来约 9 个嵌套研究、33 次模型调用，它自己的成本计数器漏算了这部分。</p>
+<p>学术源四个检索器都有（arXiv、Semantic Scholar、OpenAlex、PubMed Central），都薄：只回标题、链接、摘要，作者、年份、DOI 全部丢掉；arXiv 的 PDF 链接被路由到只取摘要的抓取器，拿不到正文；Semantic Scholar 只留开放获取的论文，代码不带 API key，本机三次无 key 请求全部 429；OpenAlex 的 API 摘要在进上下文之前被丢掉，只抓链接，付费墙论文的链接是出版社落地页。引用只靠提示词要求模型写 <code>([in-text citation](url))</code>，运行路径上没有代码核对引用的 URL 抓没抓过、原文支不支持；作者自己在 DeepResearch Bench 10 道题上测得引用精确率 56%。能追到的是 URL 级，段落级要拿 <code>get_research_sources()</code> 里存的原文自己去对（检索器直接给全文的来源在那里只存了 URL）。</p>
+<p>README 说的 Claude skill 装下去的是一份「教你开发、集成 GPT Researcher」的说明书（<code>.claude/SKILL.md</code>，没有脚本）；Codex 插件的 <code>.mcp.json</code> 起 <code>uvx gpt-researcher</code>，而发布的 wheel 里没有这个可执行入口；独立仓库 gptr-mcp 启动时没有 <code>OPENAI_API_KEY</code> 就退出，它的 <code>deep_research</code> 工具跑的是标准研究而不是 deep 模式，修这几处的 PR 开着没合，仓库最后一次提交在 2025-11-07。三种外壳里的研究都由 GPT Researcher 自己经 LangChain 调模型、用自己的 key，没有一种把推理交给宿主 agent。能绕开模型的是它的检索器、抓取器、BM25 筛选这几块，以及 <code>quick_search()</code>（首个检索器不是 MCP 时零次模型调用）。维护活跃（近 12 个月 468 个提交、93 位作者），但测试 2026-08 才进 CI，PyPI 0.16.0 在 Python 3.12/3.13 上一 import 就报错、挂了 70 天，默认的 BM25 段落筛选 2026-09-26 才进代码，2026-07-14 一天按「积压清理」关掉 110 个 issue；LICENSE 是 Apache-2.0，包元数据与维护者在 issue 里的说法是 MIT，硬依赖里有 AGPL 的 PyMuPDF。</p>
+<p>怎么读：第 1 节逐条对账 README 与代码；第 2 节是主流程，2.4 检索器、2.5 引用、2.6 模型、2.7 三种外壳是这次重点；第 5 节列与平台文献阶段的对照和会碰到的规则，只写事实。横向对比见同目录 <a href="index.html">README.md</a>。</p>
+</blockquote>
+<h2 id="1-是不是">1. 是不是<a class="permalink" href="#1-是不是" title="本节链接">#</a></h2>
+<p>README 的每条能力说法回到代码里对账。「判断」一栏只描述代码现状。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>README 的说法</th>
+<th>代码里</th>
+<th>判断</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>planner 生成问题、execution agents 并行收集、publisher 汇总成报告（<code>README.md:56,62-67</code>）</td>
+<td>一次 STRATEGIC 模型调用出 3 条子查询（<code>MAX_ITERATIONS</code>），加原问题共 4 条，<code>asyncio.gather</code> 并行处理；一次 SMART 模型调用流式写报告。没有独立 agent 进程，也没有循环</td>
+<td>有；实质是两次提示词调用加一组协程</td>
+<td><code>gpt_researcher/actions/query_processing.py:109-156</code>、<code>gpt_researcher/skills/researcher.py:365-405</code>、<code>gpt_researcher/actions/report_generation.py:291-306</code></td>
+</tr>
+<tr>
+<td>按任务创建专门 agent（<code>README.md:63</code>）</td>
+<td><code>choose_agent</code> 一次 SMART 调用，返回 emoji 名字与一段角色提示词，作为写报告时的 system prompt；解析不出退到固定的 "Default Agent"</td>
+<td>有</td>
+<td><code>gpt_researcher/actions/agent_creator.py:41-71,115-119</code></td>
+</tr>
+<tr>
+<td>逐个来源摘要并追踪来源（<code>README.md:66</code>）</td>
+<td>默认路径不逐来源调模型：页面切块后按 BM25（或 Jev、embeddings）挑块，原文块前挂 <code>Source: &lt;url&gt;</code> 进上下文。<code>summarize_url</code> 在 <code>actions/__init__.py</code> 导出但全仓零调用，<code>generate_summary_prompt</code> 零调用（grep 全仓，含 tests）</td>
+<td>摘要这一步不存在；来源追踪是每块前面的字符串。2023 年的设计博客写的是「用模型对事实做摘要」（<code>docs/blog/2023-09-22-gpt-researcher/index.md:35-37</code>），现行代码已换掉</td>
+<td><code>gpt_researcher/context/select.py:53-101</code>、<code>gpt_researcher/prompts.py:518,555-561</code>、<code>gpt_researcher/actions/report_generation.py:115-157</code>、<code>gpt_researcher/actions/__init__.py:5,17</code></td>
+</tr>
+<tr>
+<td>聚合 20 个以上来源（<code>README.md:80</code>）</td>
+<td>每条查询默认 5 条结果，初搜 1 次加子查询 4 次，按 URL 去重，单检索器时最多约 25 页</td>
+<td>数量级对得上</td>
+<td><code>gpt_researcher/config/variables/default.py:22,26</code>、<code>gpt_researcher/skills/researcher.py:851-934</code></td>
+</tr>
+<tr>
+<td>Deep Research：树状、并发、约 5 分钟、约 $0.4（o3-mini high）（<code>README.md:214-224</code>）</td>
+<td>树与并发都在（<a href="#23-deep-research">2.3 节</a>）。成本数字无法用它自己的计数器得出：deep 模式三处模型调用不传 <code>cost_callback</code>，嵌套研究器的花费留在各自对象里、不回加父对象；默认 STRATEGIC 模型已是 gpt-5.4</td>
+<td>结构有；成本口径没有代码支撑</td>
+<td><code>gpt_researcher/skills/deep_research.py:287-294,341-348,373-382,442-457,610</code></td>
+</tr>
+<tr>
+<td>Deep Research 先生成追问澄清方向</td>
+<td>追问生成了，答案写死成 "Automatically proceeding with research"</td>
+<td>只有形式</td>
+<td><code>gpt_researcher/skills/deep_research.py:594-600</code></td>
+</tr>
+<tr>
+<td>Jev 段落筛选，默认（<code>README.md:226-248</code>）</td>
+<td><code>CONTEXT_FILTER=auto</code>：有 <code>TYPESAFE_API_KEY</code> 用 Jev，否则 BM25；两者都不需要 embeddings。这两个文件 2026-09-26 才进代码，此前默认是 embeddings（要 OpenAI 的 embedding key）<sup id="fnref:jevcommit"><a class="footnote-ref" href="#fn:jevcommit">31</a></sup></td>
+<td>有，README 自己也写了回落；代码只有一天历史</td>
+<td><code>gpt_researcher/context/select.py:38-46</code>、<code>gpt_researcher/context/jev_filter.py:1-15</code></td>
+</tr>
+<tr>
+<td>学术检索</td>
+<td>arXiv、Semantic Scholar、OpenAlex、PubMed Central 四个实现在，都只回 title / href / body，见 <a href="#24-检索器与学术源">2.4 节</a></td>
+<td>有，薄</td>
+<td><code>gpt_researcher/retrievers/</code></td>
+</tr>
+<tr>
+<td>本地文档研究（<code>README.md:274-286</code>）</td>
+<td><code>DOC_PATH</code> 下 pdf、docx、pptx、csv、xlsx、md、txt 等由 LangChain loader 读入；但本地模式仍先用第一个检索器联网搜一次原问题来拆子查询</td>
+<td>有；「只用本地」不成立</td>
+<td><code>gpt_researcher/document/document.py:69-82</code>、<code>gpt_researcher/skills/researcher.py:166-173,365-366</code></td>
+</tr>
+<tr>
+<td>研究过程保持记忆（<code>README.md:84</code>）</td>
+<td><code>Memory</code> 只是 embedding 模型工厂；同一次运行内靠 <code>visited_urls</code> 与 <code>context</code> 串起来，跨运行不存任何东西</td>
+<td>仅限单次运行</td>
+<td><code>gpt_researcher/memory/embeddings.py:57-74</code>、<code>gpt_researcher/skills/researcher.py:108-111</code></td>
+</tr>
+<tr>
+<td>行内配图 <code>IMAGE_GENERATION_ENABLED=true</code>（<code>README.md:194-212</code>）</td>
+<td><code>ImageGenerator</code> 用大写名 <code>getattr(self.cfg, 'IMAGE_GENERATION_ENABLED', False)</code> 读配置，而 <code>Config</code> 只设小写属性、没有 <code>__getattr__</code>；全仓只有 <code>llm_provider/image/image_generator.py</code> 用小写名读</td>
+<td>读代码看恒为 False，走不通（未实测）</td>
+<td><code>gpt_researcher/skills/image_generator.py:53</code>、<code>gpt_researcher/config/config.py:72-76</code>、<code>gpt_researcher/llm_provider/image/image_generator.py:435</code></td>
+</tr>
+<tr>
+<td>MCP client：接 GitHub 等 MCP 数据源（<code>README.md:159-190</code>）</td>
+<td><code>MCPRetriever</code>：一次 STRATEGIC 模型调用从全部工具里选 ≤3 个，再让 STRATEGIC 模型 <code>bind_tools</code> 去调；依赖 <code>langchain-mcp-adapters</code> 只在 requirements.txt，不在 PyPI 硬依赖。缺这个包时 <code>retrievers/mcp/__init__.py</code> 把 <code>MCPRetriever</code> 设成 <code>None</code>、打一行 warning，<code>get_retrievers</code> 再把 <code>mcp</code> 这个名字换成默认的 Tavily 检索器</td>
+<td>有；pip 安装后缺包，传了 <code>mcp_configs</code> 也不走 MCP，静默多出一个 Tavily 检索器（读代码推断，未实测）</td>
+<td><code>gpt_researcher/retrievers/mcp/retriever.py:116-199</code>、<code>gpt_researcher/mcp/tool_selector.py:145-155</code>、<code>gpt_researcher/mcp/research.py:50-80</code>、<code>gpt_researcher/retrievers/mcp/__init__.py:11-27</code>、<code>gpt_researcher/actions/retriever.py:191</code>、<code>requirements.txt:62</code></td>
+</tr>
+<tr>
+<td>配置项 <code>MCP_SERVERS</code>、<code>MCP_ALLOWED_ROOT_PATHS</code></td>
+<td><code>Config.__init__</code> 读完配置后把两者重置成 <code>[]</code></td>
+<td>配了不生效</td>
+<td><code>gpt_researcher/config/config.py:53-61</code></td>
+</tr>
+<tr>
+<td>作为 Claude Skill 安装扩展深度研究能力（<code>README.md:44-52</code>）</td>
+<td>装下去的是开发说明书，见 <a href="#27-三种外壳">2.7 节</a></td>
+<td>与说法不符</td>
+<td><code>.claude/SKILL.md:1-4</code></td>
+</tr>
+<tr>
+<td>MCP Server 已迁到 gptr-mcp（<code>README.md:289-301</code>）</td>
+<td>在另一仓库；主仓 <code>.mcp.json</code> 另写了一个起不来的入口，见 2.7 节</td>
+<td>两处不一致</td>
+<td><code>.mcp.json:1-10</code>、<code>mcp-server/README.md:1-3</code></td>
+</tr>
+<tr>
+<td>导出 PDF、Word（<code>README.md:85</code>）</td>
+<td>在 <code>backend/utils.py</code>，不在 PyPI 包内</td>
+<td>核心包没有</td>
+<td><code>backend/utils.py:97-98</code>、PyPI wheel 目录<sup id="fnref:wheel"><a class="footnote-ref" href="#fn:wheel">1</a></sup></td>
+</tr>
+<tr>
+<td>可执行 JavaScript 的抓取（<code>README.md:83</code>）</td>
+<td>默认抓取器 <code>bs</code> 不执行 JS；<code>SCRAPER=browser</code>（selenium，只在 extra <code>requirements-txt</code>）或 <code>SCRAPER=nodriver</code>（要 <code>zendriver</code>，哪份依赖清单里都没有）才执行</td>
+<td>有，默认关，依赖要自己装</td>
+<td><code>gpt_researcher/config/variables/default.py:28</code>、<code>gpt_researcher/scraper/scraper.py:324-333</code>、<code>gpt_researcher/scraper/browser/nodriver_scraper.py:140-145</code>、<code>pyproject.toml:203</code></td>
+</tr>
+<tr>
+<td>多智能体助手（LangGraph / AG2，参考 STORM，<code>README.md:304-311</code>）</td>
+<td><code>multi_agents/</code> 在仓库、不在 wheel；其中 fact checker 是一次模型调用审稿，不去抓引用页</td>
+<td>有，属示例</td>
+<td><code>multi_agents/agents/fact_checker.py:10-32</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>代码里有、README 没说清的几样：检索器用 <code>requires_scraping</code> 声明「返回的是要抓的链接还是已取好的全文」（<code>gpt_researcher/retrievers/base.py:1-61</code>）；第三方包可以用 entry point <code>gpt_researcher.retrievers</code> 注册检索器（<code>gpt_researcher/actions/retriever.py:139-147</code>）；<code>source_urls</code> 加 <code>complement_source_urls</code> 可以只研究给定链接或给定链接加网搜（<code>gpt_researcher/skills/researcher.py:145-162</code>）；<code>write_report(custom_prompt=…)</code> 整段替换报告提示词（<code>gpt_researcher/actions/report_generation.py:255-256</code>）。</p>
+<h2 id="2-怎么做">2. 怎么做<a class="permalink" href="#2-怎么做" title="本节链接">#</a></h2>
+<h3 id="21-入口与数据进出">2.1 入口与数据进出<a class="permalink" href="#21-入口与数据进出" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>入口</th>
+<th>做什么</th>
+<th>模型调用次数（默认配置）</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GPTResearcher(query, report_type, report_source, source_urls, …)</code></td>
+<td>读配置、按名字选检索器类，不发请求</td>
+<td>0</td>
+<td><code>gpt_researcher/agent.py:53-201</code></td>
+</tr>
+<tr>
+<td><code>quick_search(query)</code></td>
+<td>用第一个检索器搜一次，原样返回 <code>[{title, href, body}]</code>；<code>aggregated_summary=True</code> 才多一次 SMART 调用；<code>all_retrievers=True</code> 并发搜全部检索器按 URL 去重。第一个检索器是 MCP 时，MCP 检索器自己会调模型选工具、调工具</td>
+<td>0（或 1；MCP 另计）</td>
+<td><code>gpt_researcher/agent.py:531-618</code></td>
+</tr>
+<tr>
+<td><code>conduct_research()</code>，标准</td>
+<td>选角色 1 次 SMART、拆子查询 1 次 STRATEGIC；检索、抓取、挑段落不调模型</td>
+<td>2</td>
+<td><code>gpt_researcher/agent.py:367-392</code>、<code>gpt_researcher/actions/query_processing.py:117-127</code></td>
+</tr>
+<tr>
+<td><code>conduct_research()</code>，传了 <code>agent</code>、<code>role</code> 与 <code>source_urls</code></td>
+<td>跳过选角色与拆子查询，只抓给定 URL、BM25 挑段落</td>
+<td>0</td>
+<td><code>gpt_researcher/agent.py:367</code>、<code>gpt_researcher/skills/researcher.py:145-147,245-261</code></td>
+</tr>
+<tr>
+<td><code>conduct_research()</code>，<code>report_type="deep"</code></td>
+<td>递归树，见 2.3</td>
+<td>约 32</td>
+<td><code>gpt_researcher/agent.py:363-365</code></td>
+</tr>
+<tr>
+<td><code>write_report()</code></td>
+<td>一次 SMART 流式调用</td>
+<td>1</td>
+<td><code>gpt_researcher/actions/report_generation.py:291-306</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>数据进：一句问题；配置来自环境变量或 JSON 文件（<code>CONFIG_PATH</code>），环境变量优先（<code>gpt_researcher/config/config.py:72-76,157-178</code>）；可选 <code>source_urls</code>、<code>document_urls</code>、<code>DOC_PATH</code>、LangChain 文档或向量库、<code>mcp_configs</code>。</p>
+<p>数据出：<code>write_report()</code> 返回 markdown 字符串；<code>get_research_context()</code> 返回进提示词的上下文；<code>get_source_urls()</code> 返回 <code>visited_urls</code>，即准备去抓的全部 URL（抓之前就加进去，抓失败的也在，<code>gpt_researcher/skills/researcher.py:813-834</code>），不是被引用的那些；<code>get_research_sources()</code> 返回抓取成功的页面 <code>{url, raw_content, image_urls, title}</code>（抓取失败的在 <code>Scraper.run</code> 里被滤掉，<code>gpt_researcher/skills/browser.py:55-58</code>、<code>gpt_researcher/scraper/scraper.py:153-158</code>），但 PubMed Central 这类「检索器已给全文」的来源在这里只记 <code>{url}</code>、不带正文（<code>gpt_researcher/skills/researcher.py:910,922</code>），本地文档不进这个列表；<code>get_costs()</code> / <code>get_step_costs()</code> 是美元（<code>gpt_researcher/agent.py:761-775</code>）。默认路径（web 来源、<code>bs</code> 抓取器、不配图）不留文件：落盘日志的 <code>setup_research_logging</code> 全仓零调用（<code>gpt_researcher/utils/logging_config.py:38-76</code>），PyMuPDF 的临时文件用完即删（<code>gpt_researcher/scraper/pymupdf/pymupdf.py:56-70</code>）；配置文件里 <code>REPORT_SOURCE</code> 不是 web 时会 <code>os.makedirs(DOC_PATH)</code>（<code>gpt_researcher/config/config.py:50-51,253-255</code>，读的是配置字典，不是环境变量）。非默认路径会写：<code>document_urls</code> 下载的临时文件不删（<code>gpt_researcher/document/online_document.py:57-59</code>）、selenium 抓取器存 cookie（<code>gpt_researcher/scraper/browser/browser.py:198</code>）、nodriver 调试截图写 <code>logs/screenshots</code>（<code>gpt_researcher/scraper/browser/nodriver_scraper.py:234-240</code>）、配图写图片文件（<code>gpt_researcher/llm_provider/image/image_generator.py:321-322</code>）。stdout 上不干净：核心包 32 个文件里有 89 处 <code>print(</code>；写报告的流式正文在没有 websocket 时逐段 print 到 stdout，这由 <code>GenericLLMProvider.verbose</code> 决定，它默认 True 且 <code>create_chat_completion</code> 从不传这个参数，所以 <code>GPTResearcher(verbose=False)</code> 也关不掉（<code>gpt_researcher/llm_provider/generic/base.py:118-121,400-404</code>、<code>gpt_researcher/utils/llm.py:117</code>）。</p>
+<h3 id="22-标准研究的一次运行">2.2 标准研究的一次运行<a class="permalink" href="#22-标准研究的一次运行" title="本节链接">#</a></h3>
+<p><code>report_type="research_report"</code>、<code>report_source="web"</code>、默认配置下，一次 <code>conduct_research()</code> + <code>write_report()</code>：</p>
+<ol>
+<li><strong>选角色</strong>：SMART，temperature 0.15，返回 <code>{server, agent_role_prompt}</code>，先 <code>json_repair</code> 再正则兜底，都不行用默认角色（<code>gpt_researcher/actions/agent_creator.py:41-130</code>）。</li>
+<li><strong>初搜</strong>：第一个检索器搜原问题，取 5 条（<code>gpt_researcher/skills/researcher.py:50-66</code>）。</li>
+<li><strong>拆子查询</strong>：初搜结果（含片段或摘要）整段塞进提示词，要 3 条纯自然语言查询、禁止 <code>site:</code> 这类操作符（<code>gpt_researcher/prompts.py:212-259</code>）。STRATEGIC、<code>reasoning_effort=medium</code>；失败先带 <code>max_tokens</code> 重试，再退到 SMART；<code>json_repair</code> 解析，解析不出就用原问题（<code>gpt_researcher/actions/query_processing.py:117-156</code>）。自定义 <code>PromptFamily</code> 不进这一步：调用链上没传 <code>prompt_family</code>（<code>gpt_researcher/skills/researcher.py:83-93</code>）。</li>
+<li><strong>加原问题</strong>，共 4 条（<code>gpt_researcher/skills/researcher.py:370-371</code>）；初搜结果的页面先抓一遍，作为单独一段上下文（<code>gpt_researcher/skills/researcher.py:387-391,836-849</code>）。</li>
+<li><strong>4 条并行</strong>：每条对每个非 MCP 检索器搜 5 条（<code>asyncio.to_thread</code>）；按 <code>requires_scraping</code> 分成「要抓的 URL」与「检索器已给全文」；新 URL 进 <code>visited_urls</code> 去重后打乱顺序（<code>gpt_researcher/skills/researcher.py:851-934</code>）。</li>
+<li><strong>抓取</strong>：默认 BeautifulSoup，15 个 worker；路径以 <code>.pdf</code> 结尾走 PyMuPDF，链接含 <code>arxiv.org</code> 走 ArxivScraper；先过 SSRF 校验；丢弃不足 100 字符、反爬挑战页、无标点的大词表页；HTML 抓取器拿到 PDF 原始字节时改用 PyMuPDF 重试（<code>gpt_researcher/scraper/scraper.py:194-274,307-352</code>）。</li>
+<li><strong>挑段落</strong>：每页先截到前 5 万字符（<code>gpt_researcher/context/retriever.py:9-13,29</code>），切 1000 字符的块。<code>keyword</code>：BM25，保留得分不低于最高分一半的块，最多 25 块（<code>gpt_researcher/context/select.py:34-35,99-101</code>、<code>gpt_researcher/context/lexical.py:95-104</code>）；<code>jev</code>：每块调一次 TypeSafe API 打 0 到 3 分，取 ≥1.5 的（<code>gpt_researcher/context/jev_filter.py:84-119,167-184</code>）；<code>embeddings</code>：余弦相似度 &gt;0.42（<code>gpt_researcher/config/variables/default.py:6</code>）。总量不到 8000 字符且不超过 10 页时不筛，整页进（<code>gpt_researcher/context/select.py:74-77</code>、<code>gpt_researcher/skills/context_manager.py:56-64</code>）。BM25 与 embeddings 都在本机算，Jev 每块一次 HTTP 请求。</li>
+<li><strong>拼上下文</strong>：每块以 <code>Source: url / Title: / Content:</code> 开头，各段用空格拼成一个字符串；整段出异常返回 <code>[]</code>（<code>gpt_researcher/skills/researcher.py:399-408</code>、<code>gpt_researcher/prompts.py:555-561</code>）。</li>
+<li><strong>可选策展</strong>：<code>CURATE_SOURCES</code> 默认关，开了多一次 SMART 调用挑来源（<code>gpt_researcher/config/variables/default.py:18</code>、<code>gpt_researcher/skills/researcher.py:211-229</code>）。</li>
+<li><strong>写报告</strong>：上下文为空直接返回一段「没找到材料」的固定文本，不调模型（<code>gpt_researcher/skills/writer.py:79-88</code>）。否则 system 是角色提示词，user 是报告提示词：至少 <code>TOTAL_WORDS</code>（1200）词、APA 格式、每个实质性结论带内联超链接引用、末尾参考列表（<code>gpt_researcher/prompts.py:262-316</code>）。SMART 流式；失败改成单条 user 消息再试一次，再失败 print 一行错误、返回空字符串（<code>gpt_researcher/actions/report_generation.py:291-326</code>）。写报告这一步同样不用自定义 <code>PromptFamily</code>：<code>ReportGenerator</code> 传参里没有它（<code>gpt_researcher/skills/writer.py:38-47,107-124</code>）。</li>
+</ol>
+<p><code>detailed_report</code> 模式的编排在 <code>backend/</code>（不在 PyPI 包内）：先做一次标准研究，一次 SMART 调用拆子主题，每个子主题新建一个研究器写一节，再写导言、结论，末尾把 <code>visited_urls</code> 全部列成 References（<code>backend/report_type/detailed_report/detailed_report.py:84-205</code>）。</p>
+<h3 id="23-deep-research">2.3 deep research<a class="permalink" href="#23-deep-research" title="本节链接">#</a></h3>
+<p>入口：<code>report_type="deep"</code>（<code>gpt_researcher/agent.py:192-193,363-365</code>）。默认宽 <code>DEEP_RESEARCH_BREADTH=3</code>、深 <code>DEEP_RESEARCH_DEPTH=2</code>、并发 4（<code>gpt_researcher/config/variables/default.py:40-42</code>；文档写的默认宽度是 4，<code>docs/docs/gpt-researcher/gptr/deep_research.md:52</code>）。</p>
+<ol>
+<li><strong>研究计划</strong>：每个检索器搜一次原问题；STRATEGIC、high，生成 3 条追问；答案写死，拼成一段「原问题 + 追问与答案」（<code>gpt_researcher/skills/deep_research.py:298-350,594-600</code>）。</li>
+<li><strong>一层</strong>：STRATEGIC 生成 <code>breadth</code> 条 <code>{query, researchGoal}</code>（<code>gpt_researcher/skills/deep_research.py:265-296</code>）；每条在信号量内新建一个 <code>GPTResearcher(report_type="research_report", report_source="web")</code>，共享父对象的 <code>visited_urls</code>，只跑 <code>conduct_research()</code>（即 2.2 的 1 到 8 步）（<code>gpt_researcher/skills/deep_research.py:432-457</code>）；再用 STRATEGIC、high 从这段上下文里抽 <code>learnings</code>（每条带 <code>sourceUrl</code>）与后续问题（<code>gpt_researcher/skills/deep_research.py:352-384</code>）。</li>
+<li><strong>往下</strong>：对本层每个结果，按顺序递归一次，宽度 <code>max(2, breadth // 2)</code>、深度减 1，查询是「上一层的 researchGoal + 后续问题」（<code>gpt_researcher/skills/deep_research.py:523-560</code>）。</li>
+<li><strong>收尾</strong>：<code>learnings</code>（有 URL 的后面挂 <code>[Source: url]</code>）加各层原始上下文，从尾部往前保留到 2.5 万词（<code>gpt_researcher/skills/deep_research.py:18,219-237,619-641</code>）；<code>write_report()</code> 用 deep 专用提示词（<code>gpt_researcher/prompts.py:418-487</code>）。</li>
+</ol>
+<p>按默认参数数调用（读代码推算，未实跑）：研究计划 1 + 第一层（1 + 3 个研究 × 3 次）+ 第二层 3 个分支 ×（1 + 2 个研究 × 3 次）= 32 次研究期模型调用，加写报告 1 次共 33 次；嵌套研究器 9 个，单检索器时约 46 次检索。deep 自己的三处模型调用都不传 <code>cost_callback</code>（<code>gpt_researcher/skills/deep_research.py:287-294,341-348,373-382</code>），嵌套研究器的花费不回加，所以一次 deep 运行结束后 <code>get_costs()</code> 只剩写报告那一次（推断，未实测）。</p>
+<p>两条停止保护：生成 0 条查询就停（#2110<sup id="fnref:i2110"><a class="footnote-ref" href="#fn:i2110">21</a></sup>），一层全部失败就停（#1579<sup id="fnref:i1579"><a class="footnote-ref" href="#fn:i1579">22</a></sup>）（<code>gpt_researcher/skills/deep_research.py:421-429,505-520</code>）。</p>
+<h3 id="24-检索器与学术源">2.4 检索器与学术源<a class="permalink" href="#24-检索器与学术源" title="本节链接">#</a></h3>
+<p>内置 21 个名字（<code>gpt_researcher/actions/retriever.py:49-136</code>），<code>RETRIEVER=arxiv,openalex</code> 逗号分隔可多选：初搜只用第一个，子查询打全部非 MCP 检索器（<code>gpt_researcher/skills/researcher.py:58-64,861-865</code>）。名字写错时 <code>Config</code> 打一行警告后整体回落 Tavily（<code>gpt_researcher/config/config.py:78-84,189-202</code>）。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>检索器</th>
+<th>要 key 吗</th>
+<th>返回什么</th>
+<th>之后怎么处理</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tavily</code>（默认）</td>
+<td><code>TAVILY_API_KEY</code>；没有时 print 一行，请求失败被吞，返回空列表</td>
+<td>href + 片段</td>
+<td>声明要抓，抓页面</td>
+<td><code>gpt_researcher/retrievers/tavily/tavily_search.py:25,52-61,108-156</code>、<code>gpt_researcher/actions/retriever.py:196-204</code></td>
+</tr>
+<tr>
+<td><code>arxiv</code></td>
+<td>不要</td>
+<td>title、href = <code>pdf_url</code>、body = 摘要；作者、日期、arXiv 号不带</td>
+<td>arXiv 的 <code>pdf_url</code> 形如 <code>https://arxiv.org/pdf/&lt;id&gt;v1</code>，没有 <code>.pdf</code> 后缀<sup id="fnref:arxivapi"><a class="footnote-ref" href="#fn:arxivapi">3</a></sup>，被路由到 ArxivScraper，它按 ID 再查一次 API，只拼「发表日期 + 作者 + 摘要」，不下载 PDF；body 里的摘要本身被丢掉（未声明 <code>requires_scraping</code>、没有 <code>raw_content</code>）</td>
+<td><code>gpt_researcher/retrievers/arxiv/arxiv.py:15-50</code>、<code>gpt_researcher/scraper/scraper.py:340-346</code>、<code>gpt_researcher/scraper/arxiv/arxiv.py:35-68</code>、<code>gpt_researcher/skills/researcher.py:887-926</code></td>
+</tr>
+<tr>
+<td><code>semantic_scholar</code></td>
+<td>代码不带 key 头；本机无 key 连调三次都是 429<sup id="fnref:s2"><a class="footnote-ref" href="#fn:s2">4</a></sup>，此时检索器 print 后返回空</td>
+<td>只保留 <code>isOpenAccess</code> 且有 <code>openAccessPdf</code> 的；请求了 authors、year、venue 但不用；代码给 <code>/paper/search</code> 传 <code>sort</code>，而官方 API 规范里这个端点没有 <code>sort</code> 参数（只有 <code>/paper/search/bulk</code> 有）<sup id="fnref:s2spec"><a class="footnote-ref" href="#fn:s2spec">32</a></sup></td>
+<td>抓 PDF；PDF 在 arxiv.org 上时同上只得摘要</td>
+<td><code>gpt_researcher/retrievers/semantic_scholar/semantic_scholar.py:11,36-73</code></td>
+</tr>
+<tr>
+<td><code>openalex</code></td>
+<td>可选 <code>OPENALEX_EMAIL</code>、<code>OPENALEX_API_KEY</code></td>
+<td>href 依次取开放 PDF、落地页、OpenAlex ID；body 是由倒排索引拼回的摘要</td>
+<td>摘要同样被丢，只抓 href。实看一个 PINN 查询前 5 条，3 条没有开放 PDF，href 是 doi.org 落地页<sup id="fnref:openalex"><a class="footnote-ref" href="#fn:openalex">5</a></sup></td>
+<td><code>gpt_researcher/retrievers/openalex/openalex.py:44-114</code></td>
+</tr>
+<tr>
+<td><code>pubmed_central</code></td>
+<td>可选 <code>NCBI_API_KEY</code>，没有时限流</td>
+<td>从 XML 抽标题、摘要、正文拼成全文</td>
+<td>声明 <code>requires_scraping = False</code>，直接进上下文</td>
+<td><code>gpt_researcher/retrievers/pubmed_central/pubmed_central.py:12-23,86-172</code></td>
+</tr>
+<tr>
+<td><code>duckduckgo</code></td>
+<td>不要 key，要 <code>ddgs</code> 包；PyPI 硬依赖里写的是 <code>duckduckgo-search</code></td>
+<td>href + 片段（截到 100 字符）</td>
+<td>抓页面；缺 <code>ddgs</code> 时构造即 <code>ImportError</code></td>
+<td><code>gpt_researcher/retrievers/duckduckgo/duckduckgo.py:19,29-35</code>、<code>pyproject.toml:55</code>、<code>requirements.txt:28</code></td>
+</tr>
+<tr>
+<td><code>mcp</code></td>
+<td>看所接的 MCP server</td>
+<td>模型调工具得到的文本</td>
+<td>走 MCP 专用分支；同步 <code>search()</code> 在异步流程里起新线程新事件循环，最长等 5 分钟</td>
+<td><code>gpt_researcher/retrievers/mcp/retriever.py:201-298</code>、<code>gpt_researcher/skills/researcher.py:665-737</code></td>
+</tr>
+<tr>
+<td>其余</td>
+<td>google、bing、brave、serper、serpapi、searchapi、searx、exa、crw、bocha（博查中文网页搜索，要 <code>BOCHA_API_KEY</code>）、groundroute、xquik、getxapi、custom</td>
+<td></td>
+<td></td>
+<td><code>gpt_researcher/actions/retriever.py:49-136</code>、<code>gpt_researcher/retrievers/bocha/bocha.py:23,31</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>学术相关的共同事实：</p>
+<ul>
+<li>检索器接口只有 <code>{title, href, body}</code>（外加可选 <code>raw_content</code>），书目元数据没有字段可放，报告里的「引用」最多是标题加 URL；只有 arXiv 条目因为 ArxivScraper 把作者和日期写进正文，模型才可能写出作者-年份格式（<code>gpt_researcher/scraper/arxiv/arxiv.py:59-66</code>）。</li>
+<li>抓到的 PDF 由 PyMuPDFLoader 逐页取纯文本拼接（<code>gpt_researcher/scraper/pymupdf/pymupdf.py:64-80</code>），再截到前 5 万字符；下载时 SSL 校验失败会以 <code>verify=False</code> 重试（<code>gpt_researcher/scraper/pymupdf/pymupdf.py:44-53</code>）。</li>
+<li>没有 GitHub、Hugging Face、Zenodo、Papers with Code 这类找代码与数据的检索器，也没有知网、万方等中文学术源；中文只有 bocha 这一个通用网页搜索。README 的 MCP 例子用的是 GitHub MCP server（<code>README.md:175-184</code>）。</li>
+<li>BM25 分词用 <code>\w+</code>，不切中文：两个标点或空格之间的一串汉字是一个 token；和查询一个词都交不上时回落到 <code>chunks[:25]</code>，即按页面顺序排在最前的 25 块，页面长时这 25 块全来自第一页（<code>gpt_researcher/context/lexical.py:19,44-45,95-101</code>）。中文题目下段落筛选大概率退化成取第一页开头（推断，未实测）。</li>
+</ul>
+<h3 id="25-引用怎么进报告">2.5 引用怎么进报告<a class="permalink" href="#25-引用怎么进报告" title="本节链接">#</a></h3>
+<ol>
+<li>每个段落块前挂 <code>Source: &lt;url&gt;</code> 与 <code>Title:</code>（<code>gpt_researcher/prompts.py:555-561</code>、<code>gpt_researcher/context/retriever.py:24-36</code>）。</li>
+<li>写报告提示词要求：每个实质性结论、数字、引语带 <code>([in-text citation](url))</code>；不许引用上下文里没有的来源；末尾写 APA 参考列表（<code>gpt_researcher/prompts.py:277-289,309-312</code>）。</li>
+<li>运行路径上不核对。<code>gpt_researcher/</code> 里搜 citation，命中的只有提示词、deep 模式的解析、MCP 结果的格式化；没有任何代码检查报告里的 URL 是否在 <code>visited_urls</code> 里，更没有检查原文是否支持那句话。#1572 的讨论里有人提议「生成后把不在上下文里的 URL 删掉」，维护者关 issue 时只加了空上下文判空，没做这一步<sup id="fnref:i1572"><a class="footnote-ref" href="#fn:i1572">13</a></sup>。</li>
+<li>deep 模式里 <code>learnings</code> 的 <code>sourceUrl</code> 由模型填，原样挂进上下文，不校验（<code>gpt_researcher/skills/deep_research.py:361-371,158-170,621-626</code>）。#1572 的讨论里有人报告 deep 模式的 learnings 会编来源<sup id="fnref2:i1572"><a class="footnote-ref" href="#fn:i1572">13</a></sup>。</li>
+<li>参考列表：<code>research_report</code> 靠模型自己写；<code>detailed_report</code> 把 <code>visited_urls</code> 排序全列，里面有没被引用的、也有抓取失败的（<code>gpt_researcher/actions/markdown_processing.py:101-126</code>、<code>gpt_researcher/skills/researcher.py:821-823</code>）。</li>
+<li>粒度：URL 级。PDF 引到 PDF 链接；本地文档引到文件名（<code>gpt_researcher/document/document.py:54-61</code>）；没有页码、段落号、DOI、BibTeX。</li>
+<li>能事后核：<code>get_research_sources()</code> 留着抓取成功的页面全文（检索器直接给全文的来源只留 URL，见 2.1），<code>get_research_context()</code> 留着真正进提示词的块（<code>gpt_researcher/agent.py:684-698,753-759</code>），调用方可以拿报告里的 URL 回去对原文。</li>
+<li>作者的量化：<code>deep_agents/</code> 例子里，用 LangChain deepagents 作宿主、gpt-5.4 作模型，在 DeepResearch Bench 抽的 10 道英文题上，GPT Researcher 工具组的引用精确率 56.0%（原生 Tavily 搜索组 53.9%），每篇被评测模型核实为支持的引用 35.2 条（<code>deep_agents/BENCHMARK.md:8,17,27-28,35-38</code>）。仓库里另有两个离线评测，都不在运行路径上：<code>evals/quality_eval</code> 的 <code>citation_faithfulness</code> 只比对域名（<code>evals/quality_eval/metrics.py:68-131</code>）；同文件的 <code>unsupported_claim</code> 让评测模型逐条判断结论是否被上下文支持，但每条只给上下文的前 4000 字符（<code>evals/quality_eval/metrics.py:451-467</code>）。</li>
+</ol>
+<h3 id="26-怎么调模型">2.6 怎么调模型<a class="permalink" href="#26-怎么调模型" title="本节链接">#</a></h3>
+<ul>
+<li><strong>三档模型</strong>：FAST 只在配图里用；SMART 管选角色、写报告、导言与结论、拆子主题、策展；STRATEGIC 管拆子查询、deep research、MCP 选工具与调用（按 <code>grep</code> 调用点：<code>gpt_researcher/skills/image_generator.py:236</code>、<code>gpt_researcher/actions/report_generation.py:39-310</code>、<code>gpt_researcher/actions/query_processing.py:119</code>、<code>gpt_researcher/skills/deep_research.py:290</code>、<code>gpt_researcher/mcp/tool_selector.py:149</code>、<code>gpt_researcher/mcp/research.py:56</code>）。</li>
+<li><strong>默认值</strong>：<code>FAST_LLM=openai:gpt-5.4-mini</code>、<code>SMART_LLM</code> 与 <code>STRATEGIC_LLM=openai:gpt-5.4</code>、<code>EMBEDDING=openai:text-embedding-3-small</code>、<code>RETRIEVER=tavily</code>（<code>gpt_researcher/config/variables/default.py:4-10</code>）。默认 BM25 筛选下 embedding 模型不会被构造（<code>gpt_researcher/agent.py:177-179</code>、<code>gpt_researcher/context/select.py:63-66</code>）。</li>
+<li><strong>接法</strong>：<code>provider:model</code> 字符串，27 个 provider 全走 LangChain 的 chat 类（<code>gpt_researcher/llm_provider/generic/base.py:13-41,146-358</code>、<code>gpt_researcher/config/config.py:204-222</code>）。<code>create_chat_completion</code> 按模型名单决定传不传 temperature 与 <code>reasoning_effort</code>，<code>LLM_KWARGS</code> 可覆盖；失败最多重试 10 次、指数退避封顶 8 秒（流式且有 websocket 时只试 1 次）；每次成功按返回的 usage 算美元（<code>gpt_researcher/utils/llm.py:41-162</code>）。拆子查询那一步自己还有三级回落（STRATEGIC、带 <code>max_tokens</code> 的 STRATEGIC、SMART），每级各自重试，最坏 30 次请求（<code>gpt_researcher/actions/query_processing.py:117-154</code>）。</li>
+<li><strong>成本口径</strong>：价格表只有 OpenAI 与 Anthropic 的型号；不在表里的模型（DeepSeek、Ollama 本地模型等）按固定的每百万 token 输入 $5、输出 $15 算，没有返回 usage 时用 tiktoken 的 <code>o200k_base</code> 估 token 数（<code>gpt_researcher/utils/costs.py:13-14,31-62,71-98,306-314</code>）。所以本地模型也会报出一个非零美元数，不会是空值；tiktoken 第一次用要联网下载编码表，CI 为此专门在断网测试前预热（<code>.github/workflows/tests.yml:110-123</code>）。</li>
+<li><strong>换 Anthropic</strong>：设 <code>ANTHROPIC_API_KEY</code>，把三档改成 <code>anthropic:&lt;model&gt;</code>。<code>langchain-anthropic</code> 不在 PyPI 硬依赖（只在 extra <code>requirements-txt</code>，<code>pyproject.toml:182-204</code>），仓库的 <code>requirements.txt</code> 也没有；第一次构造时 <code>_check_pkg</code> 用 <code>sys.executable -m pip install -U langchain-anthropic</code> 当场安装（<code>gpt_researcher/llm_provider/generic/base.py:160-164,407-425</code>）。名单里的 Claude 4.x 型号不传 temperature（<code>gpt_researcher/llm_provider/generic/base.py:66-74</code>、<code>gpt_researcher/utils/llm.py:89-96</code>）。官方文档的 Anthropic 例子还是 claude-2.1 / claude-3-opus（<code>docs/docs/gpt-researcher/llms/llms.md:170-178</code>）；<code>.env.example</code> 写的 token 上限默认值（3000/6000/4000）与代码（6000/12000/8000）不一致（<code>.env.example:71</code>、<code>gpt_researcher/config/variables/default.py:14-16</code>）。Claude Haiku 4.5 下 deep 模式曾解析出 0 条查询（#1772<sup id="fnref:i1772"><a class="footnote-ref" href="#fn:i1772">18</a></sup>），现在先要 JSON、<code>json_repair</code> 解析，解析不出再按行正则回落（<code>gpt_researcher/skills/deep_research.py:62-122</code>）。</li>
+<li><strong>只认各家 API 的凭据</strong>：全部经 LangChain / SDK 走 HTTP API（API key，Bedrock、Vertex 走各自云账号的凭据链）；<code>gpt_researcher/</code>、<code>backend/</code>、<code>multi_agents/</code>、<code>deep_agents/</code> 里搜不到 Claude Code、Codex、claude_agent_sdk 的任何引用，没有对接命令行登录；本地模型可以用 <code>ollama</code>、<code>vllm_openai</code> 或 <code>OPENAI_BASE_URL</code> 指向兼容接口（<code>gpt_researcher/llm_provider/generic/base.py:151-153,194-204,299-306</code>）。</li>
+</ul>
+<h3 id="27-三种外壳">2.7 三种外壳<a class="permalink" href="#27-三种外壳" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>形态</th>
+<th>在哪</th>
+<th>实际执行什么</th>
+<th>谁调模型、要谁的 key</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claude skill（skills.sh）</td>
+<td><code>.claude/SKILL.md</code> 226 行 + <code>references/</code> 12 份，共 2276 行，没有 scripts</td>
+<td>一份开发说明：Python 快速上手、文件地图、加检索器与加功能的步骤、配置、易错点。description 原话是「帮开发者理解、扩展、调试、集成 GPT Researcher 时用」</td>
+<td>宿主只按说明写、跑 Python；研究本身由 <code>GPTResearcher</code> 调它配置的模型（默认 OpenAI）与 Tavily，key 从环境变量读</td>
+<td><code>.claude/SKILL.md:1-4,10-29</code>、skills.sh 条目页<sup id="fnref:skillssh"><a class="footnote-ref" href="#fn:skillssh">6</a></sup></td>
+</tr>
+<tr>
+<td>为什么装的是上面这份</td>
+<td></td>
+<td>skills CLI 先在仓库根下走一层子目录，<code>.claude/</code> 目录里的 <code>SKILL.md</code> 先命中；<code>skills/gpt-researcher/SKILL.md</code> 与它同名，按名字去重被跳过</td>
+<td></td>
+<td><code>vercel-labs/skills:src/skills.ts:253-308</code><sup id="fnref:skillsts"><a class="footnote-ref" href="#fn:skillsts">7</a></sup>（读代码推断，没跑 <code>npx</code>）</td>
+</tr>
+<tr>
+<td>Codex 插件</td>
+<td><code>.codex-plugin/plugin.json</code> + <code>skills/gpt-researcher/SKILL.md</code>（12 行）+ <code>.mcp.json</code></td>
+<td>SKILL.md 只有一句「Use GPT Researcher from Codex via MCP」；<code>.mcp.json</code> 起 <code>uvx gpt-researcher</code></td>
+<td>PyPI 0.16.1 的 wheel 没有 <code>entry_points.txt</code>，<code>pyproject.toml</code> 也没有 <code>[project.scripts]</code>，不存在名为 <code>gpt-researcher</code> 的可执行文件，uvx 起不来（读 wheel 推断，未跑）。这组文件是外部贡献者 2026-04-05 提交的<sup id="fnref:plugincommit"><a class="footnote-ref" href="#fn:plugincommit">8</a></sup></td>
+<td><code>.codex-plugin/plugin.json:15,23</code>、<code>.mcp.json:1-10</code>、<code>skills/gpt-researcher/SKILL.md:1-12</code>、wheel<sup id="fnref2:wheel"><a class="footnote-ref" href="#fn:wheel">1</a></sup></td>
+</tr>
+<tr>
+<td>gptr-mcp（独立仓库）</td>
+<td>assafelovic/gptr-mcp，MIT，最后提交 2025-11-07</td>
+<td>FastMCP：工具 <code>deep_research</code>、<code>quick_search</code>、<code>write_report</code>、<code>get_research_sources</code>、<code>get_research_context</code>，资源 <code>research://{topic}</code>，prompt <code>research_query</code>；stdio / SSE / streamable-http；会话对象存在进程内存里</td>
+<td><code>deep_research</code> 工具就是 <code>GPTResearcher(query)</code> 默认 <code>research_report</code> 加 <code>conduct_research()</code>，不是 deep 模式，返回上下文与来源，报告另调 <code>write_report</code>；启动时没有 <code>OPENAI_API_KEY</code> 直接退出（配了别家模型也一样）；来源列表里的 <code>content_length</code> 读的键名是 <code>content</code>，而来源字典用的是 <code>raw_content</code>，恒为 0；<code>mcp.run()</code> 返回后落进 <code>while True: pass</code> 空转。这几处都有人提了 issue 或 PR（#25、#30、#31、#33），都开着没合<sup id="fnref:gptrmcpissues"><a class="footnote-ref" href="#fn:gptrmcpissues">10</a></sup>。stdio 模式下 stdout 就是协议通道，而核心包会往 stdout print（见 2.1），<code>write_report</code> 的流式正文也会 print 出来；这对 stdio 客户端有什么影响没实测</td>
+<td><code>gptr-mcp/server.py:45-46,93-137,177-209,277-312</code>、<code>gptr-mcp/utils.py:61-67</code><sup id="fnref:gptrmcp"><a class="footnote-ref" href="#fn:gptrmcp">9</a></sup></td>
+</tr>
+<tr>
+<td>核心包（PyPI）</td>
+<td>wheel 只有 <code>gpt_researcher/</code></td>
+<td><code>backend/</code>、<code>multi_agents/</code>、<code>deep_agents/</code>、<code>cli.py</code>、PDF / Word 导出都不在包内</td>
+<td>见 2.1 表：<code>quick_search</code> 0 次；给 URL 并预设角色 0 次；标准研究 2 + 1 次</td>
+<td>wheel<sup id="fnref3:wheel"><a class="footnote-ref" href="#fn:wheel">1</a></sup></td>
+</tr>
+<tr>
+<td>deep_agents 例子（仓库内）</td>
+<td>LangChain deepagents 作宿主，把 <code>quick_search</code> 与「<code>conduct_research</code> + <code>write_report</code>」包成两个工具</td>
+<td>宿主负责规划、分派子 agent、审稿、拼终稿；GPT Researcher 在工具里跑自己的完整流水线，工具返回的报告末尾附全部 <code>visited_urls</code></td>
+<td>两层都调模型：宿主的模型写在 <code>task.json</code>，GPT Researcher 用自己的环境变量</td>
+<td><code>deep_agents/tools.py:9-78</code>、<code>deep_agents/task.json:3</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>三种外壳里，「选角色」「拆子查询」「写报告」这几次模型调用都在 GPT Researcher 进程里、用它自己的配置和 key；宿主 agent 最多拿到上下文后自己再写一遍（gptr-mcp 的 <code>deep_research</code> 只返回上下文就是这种用法，但选角色与拆子查询仍由它的模型完成）。完全不碰模型的用法：直接调它的检索器类、抓取器、<code>select_context</code> 的 keyword 模式；<code>quick_search()</code>（首个检索器不是 MCP）；或者 <code>GPTResearcher(agent=…, role=…, source_urls=[…])</code> 再 <code>conduct_research()</code>，只抓给定链接、BM25 挑段落（见 2.1 表）。</p>
+<h2 id="3-为什么">3. 为什么<a class="permalink" href="#3-为什么" title="本节链接">#</a></h2>
+<h3 id="31-设计理由">3.1 设计理由<a class="permalink" href="#31-设计理由" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>设计</th>
+<th>解决什么</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>先列出一组子问题、再逐条确定执行，不用 AutoGPT 式的自主循环</td>
+<td>保证在固定时间内结束，作者称任务完成率由此到 100%</td>
+<td><code>docs/blog/2023-09-22-gpt-researcher/index.md:18-27</code></td>
+</tr>
+<tr>
+<td>多抓站点，让模型只改写给定内容</td>
+<td>作者的假设：来源越多偏差越小；模型只做改写可以少编造</td>
+<td><code>docs/blog/2023-09-22-gpt-researcher/index.md:29-39</code>、<code>README.md:357</code></td>
+</tr>
+<tr>
+<td>asyncio 并行抓取</td>
+<td>速度，博客称约 3 分钟一篇、比 AutoGPT 快 85%</td>
+<td><code>docs/blog/2023-09-22-gpt-researcher/index.md:43-56</code></td>
+</tr>
+<tr>
+<td>参照 Plan-and-Solve 与 RAG；详细报告与多智能体参照 STORM</td>
+<td>先规划再检索增强生成；长报告按子主题分节写。STORM 另见同目录 <a href="storm.html">storm.md</a></td>
+<td><code>README.md:27,307</code>、<code>backend/report_type/detailed_report/README.md:3</code></td>
+</tr>
+<tr>
+<td>段落筛选从 embeddings 改成 Jev，没有 key 时用 BM25（2026-09-26 进代码<sup id="fnref2:jevcommit"><a class="footnote-ref" href="#fn:jevcommit">31</a></sup>）</td>
+<td>不再需要 embedding 的 key；作者在 28 题回放上测得相关段落占比 Jev 73%、BM25（放出的 <code>keyword</code> 配置）51%、embeddings 46%，每篇成本 $0.115 / $0.116 / $0.117。「相关」由 gpt-5.4-mini 评判，写报告的是 gpt-5.4</td>
+<td><code>README.md:226-248</code>、<code>evals/context_filter/README.md:17-23,45-47,58-59,76-77,104-110</code>、<code>gpt_researcher/context/select.py:1-14</code></td>
+</tr>
+<tr>
+<td>检索器显式声明 <code>requires_scraping</code></td>
+<td>取代「内容超过 100 字符就当全文」的猜测，那个猜测让页面不被抓、引用无从核</td>
+<td><code>gpt_researcher/retrievers/base.py:1-30</code>、#1846<sup id="fnref:i1846"><a class="footnote-ref" href="#fn:i1846">14</a></sup></td>
+</tr>
+<tr>
+<td>deep 宽度逐层减半、并发信号量、上下文截到 2.5 万词</td>
+<td>控制调用次数与上下文长度</td>
+<td><code>gpt_researcher/skills/deep_research.py:18,432,540-543</code></td>
+</tr>
+<tr>
+<td>MCP 的 fast / deep / disabled 三档与 Tavily MCP 去重</td>
+<td>每条子查询都跑一次 MCP 太贵；直连 Tavily 与 Tavily MCP 同时开等于付两次钱（#1875<sup id="fnref:i1875"><a class="footnote-ref" href="#fn:i1875">24</a></sup>）</td>
+<td><code>gpt_researcher/agent.py:133-136</code>、<code>gpt_researcher/skills/researcher.py:311-362,492-517</code></td>
+</tr>
+<tr>
+<td>MCP 配置只改本次的 <code>cfg</code>，不写 <code>os.environ</code></td>
+<td>后端并发请求之间互相污染（#1676<sup id="fnref:i1676"><a class="footnote-ref" href="#fn:i1676">23</a></sup>）</td>
+<td><code>gpt_researcher/agent.py:295-321</code></td>
+</tr>
+<tr>
+<td><code>visited_urls</code> 在父子研究器间共享</td>
+<td>子主题、deep 分支不重复抓同一页</td>
+<td><code>gpt_researcher/skills/researcher.py:108-111</code>、<code>gpt_researcher/skills/deep_research.py:450</code></td>
+</tr>
+<tr>
+<td>各处模型输出一律 <code>json_repair</code> 解析，失败有回落</td>
+<td>各家模型 JSON 格式不稳（#1772<sup id="fnref2:i1772"><a class="footnote-ref" href="#fn:i1772">18</a></sup>）</td>
+<td><code>gpt_researcher/actions/query_processing.py:12-40,156</code>、<code>gpt_researcher/skills/deep_research.py:48-122</code></td>
+</tr>
+<tr>
+<td>后端不带鉴权</td>
+<td>定位为运营者部署在自己可信网络里的软件，鉴权由运营者在外层做</td>
+<td><code>SECURITY.md:20-41</code>、#1694<sup id="fnref:i1694"><a class="footnote-ref" href="#fn:i1694">19</a></sup></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="32-踩过的坑">3.2 踩过的坑<a class="permalink" href="#32-踩过的坑" title="本节链接">#</a></h3>
+<p>仓库没有 CHANGELOG 文件，下面来自 issue、发布说明与 CI 注释。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>issue</th>
+<th>现象</th>
+<th>处理</th>
+<th>时间</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>#1893<sup id="fnref:i1893"><a class="footnote-ref" href="#fn:i1893">15</a></sup></td>
+<td>小结果集的快速路径把 URL 丢成 <code>Source: None</code>，模型被要求引用，于是报告里几十次引 <code>https://example.com</code></td>
+<td>修了元数据映射；现行 Jev 与 keyword 路径都显式取 <code>url</code></td>
+<td>2026-07-13 报，次日关</td>
+</tr>
+<tr>
+<td>#1572<sup id="fnref3:i1572"><a class="footnote-ref" href="#fn:i1572">13</a></sup></td>
+<td>检索什么都没拿到时，报告照样写得像模像样、来源是编的；报告人还指出 <code>writer.py</code> 不用自定义 <code>PromptFamily</code>、deep 模式抽 learnings 时也会编来源</td>
+<td>写报告前判空，空就返回固定的弃权文本（<code>gpt_researcher/skills/writer.py:79-88</code>）；<code>PromptFamily</code> 没传进写报告这一步至今未改（<code>gpt_researcher/skills/writer.py:38-47</code>）</td>
+<td>2025-12 报，2026-08 关</td>
+</tr>
+<tr>
+<td>#1892、#1846<sup id="fnref2:i1846"><a class="footnote-ref" href="#fn:i1846">14</a></sup></td>
+<td>检索片段超过 100 字符就被当成全文，页面一个都不抓，报告只靠片段写</td>
+<td>先在检索器里截短片段，再引入 <code>requires_scraping</code></td>
+<td>2026-07 报，2026-08 关</td>
+</tr>
+<tr>
+<td>#2100<sup id="fnref:i2100"><a class="footnote-ref" href="#fn:i2100">20</a></sup></td>
+<td>检索器直接给全文的来源不进 <code>visited_urls</code>，从 References 里消失</td>
+<td>补记 <code>visited_urls</code></td>
+<td>2026-09</td>
+</tr>
+<tr>
+<td>#1894<sup id="fnref:i1894"><a class="footnote-ref" href="#fn:i1894">16</a></sup></td>
+<td>arxiv 库 2.2 起删了 <code>Search.results()</code>，ArxivScraper 100% 失败，而检索器照样返回标题摘要，外表看不出</td>
+<td>改用 <code>arxiv.Client</code>；抓取器仍只取摘要</td>
+<td>2026-07</td>
+</tr>
+<tr>
+<td>#1772<sup id="fnref3:i1772"><a class="footnote-ref" href="#fn:i1772">18</a></sup></td>
+<td>deep 模式按 <code>Query:</code> 前缀解析，Claude Haiku 4.5 等模型下解析出 0 条，报告在空上下文上照写</td>
+<td>改成要 JSON 并 <code>json_repair</code>，按行正则留作回落</td>
+<td>2026-05</td>
+</tr>
+<tr>
+<td>#1945、PR #1943<sup id="fnref:i1945"><a class="footnote-ref" href="#fn:i1945">17</a></sup></td>
+<td>没有任何 CI 跑 pytest；0.16.0 把 typing 导入放在使用之后，3.14 以下一 import 就 <code>NameError</code>，而这个版本已经发到 PyPI</td>
+<td>加 <code>tests.yml</code>（import 矩阵、收集检查、断网单测）；PyPI 到 0.16.1 才换掉<sup id="fnref:wheel0160"><a class="footnote-ref" href="#fn:wheel0160">2</a></sup></td>
+<td>2026-07-18 报，main 上 08-23 修</td>
+</tr>
+<tr>
+<td>CI 注释</td>
+<td>测试之间泄漏全局状态，单独跑过、合起来跑失败</td>
+<td>暂用 <code>--forked</code> 每个测试一个进程；三个依赖真实网络与 key 的测试文件从 CI 里排除</td>
+<td><code>.github/workflows/tests.yml:125-138</code></td>
+</tr>
+<tr>
+<td>#1986<sup id="fnref:i1986"><a class="footnote-ref" href="#fn:i1986">26</a></sup></td>
+<td>Anthropic 的 prompt cache token 按 $0 计价</td>
+<td>修了成本计算</td>
+<td>2026-07 报，08 关</td>
+</tr>
+<tr>
+<td>#1694<sup id="fnref2:i1694"><a class="footnote-ref" href="#fn:i1694">19</a></sup></td>
+<td>未鉴权的 WebSocket 能提交 <code>mcp_configs</code> 里的任意 <code>command</code> / <code>args</code>，在服务器上起进程</td>
+<td>维护者按威胁模型关为不在范围，写进 <code>SECURITY.md:39-41</code></td>
+<td>2026-03 报，06 关</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="4-跑起来要什么">4. 跑起来要什么<a class="permalink" href="#4-跑起来要什么" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>要求</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>≥3.12；CI 测 3.12、3.13、3.14</td>
+<td><code>pyproject.toml:30</code>、<code>.github/workflows/tests.yml:28</code></td>
+</tr>
+<tr>
+<td>依赖</td>
+<td>PyPI 0.16.1 硬依赖 140 个，含 LangChain 全家、LangGraph、litellm、unstructured、pymupdf、weasyprint、fastapi、uvicorn、nltk 等</td>
+<td>wheel METADATA<sup id="fnref4:wheel"><a class="footnote-ref" href="#fn:wheel">1</a></sup></td>
+</tr>
+<tr>
+<td>依赖清单不一致</td>
+<td><code>tavily-python</code>、<code>ddgs</code>、<code>google-genai</code>、<code>python-pptx</code>、<code>pandas</code>、<code>langchain-mcp-adapters</code> 只在 <code>requirements.txt</code>；PyPI 硬依赖里是 <code>duckduckgo-search</code>，而检索器要的是 <code>ddgs</code>；<code>langchain-anthropic</code> 两边的硬依赖都没有，只在 extra <code>requirements-txt</code>。wheel 的 140 条硬依赖与仓库 <code>pyproject.toml</code> 逐条一致</td>
+<td><code>requirements.txt:24,27-28,36,39,62</code>、<code>pyproject.toml:31-173,182-204</code>、wheel METADATA<sup id="fnref5:wheel"><a class="footnote-ref" href="#fn:wheel">1</a></sup></td>
+</tr>
+<tr>
+<td>运行时自己装包</td>
+<td>缺 LLM provider 包、或选了 <code>tavily_extract</code> / <code>firecrawl</code> 抓取器时，用 <code>sys.executable -m pip install</code> 当场安装</td>
+<td><code>gpt_researcher/llm_provider/generic/base.py:407-425</code>、<code>gpt_researcher/scraper/scraper.py:160-192</code></td>
+</tr>
+<tr>
+<td>模型 key</td>
+<td>默认 <code>OPENAI_API_KEY</code>；可换其余 26 家 provider（含本地 Ollama、vLLM）；只认各家 API 的凭据，不认 Claude Code / Codex 的登录</td>
+<td><code>.env.example:1</code>、<code>gpt_researcher/llm_provider/generic/base.py:13-41</code></td>
+</tr>
+<tr>
+<td>搜索 key</td>
+<td>默认 <code>TAVILY_API_KEY</code>（商业 API；维护者是 Tavily 联合创始人<sup id="fnref2:crunchbase"><a class="footnote-ref" href="#fn:crunchbase">27</a></sup>，README 里 PIP 包文档的链接指向 docs.tavily.com）；不要 key 的组合：arxiv、openalex、pubmed_central、duckduckgo（要装 <code>ddgs</code>）、semantic_scholar（无 key 易 429）</td>
+<td><code>.env.example:2</code>、<code>README.md:286</code>、2.4 节</td>
+</tr>
+<tr>
+<td>可选 key</td>
+<td><code>TYPESAFE_API_KEY</code>（Jev，外部报道称 2026-09-15 开放<sup id="fnref:jev"><a class="footnote-ref" href="#fn:jev">29</a></sup>，代码 2026-09-26 才接入<sup id="fnref3:jevcommit"><a class="footnote-ref" href="#fn:jevcommit">31</a></sup>）、<code>NCBI_API_KEY</code>、<code>OPENALEX_EMAIL</code> / <code>OPENALEX_API_KEY</code>、<code>GOOGLE_API_KEY</code>（配图，见第 1 节走不通）</td>
+<td><code>.env.example:7,15-17</code>、<code>README.md:199-203</code></td>
+</tr>
+<tr>
+<td>外部服务</td>
+<td>模型 API、搜索 API、被抓取的网站（默认 15 并发；默认 User-Agent 是 Edge 119 的字符串，可用环境变量 <code>USER_AGENT</code> 覆盖）；tiktoken 首次用要联网下编码表（见 2.6）</td>
+<td><code>gpt_researcher/config/variables/default.py:21,29</code>、<code>gpt_researcher/config/config.py:72-76</code></td>
+</tr>
+<tr>
+<td>算力</td>
+<td>纯 CPU：硬依赖里没有 torch 这类 GPU 框架；BM25 是纯 Python 实现（README 报 0.02 秒）</td>
+<td>wheel METADATA<sup id="fnref6:wheel"><a class="footnote-ref" href="#fn:wheel">1</a></sup>、<code>gpt_researcher/context/lexical.py:1-7</code>、<code>README.md:235</code></td>
+</tr>
+<tr>
+<td>时间与花费（作者报的）</td>
+<td>写报告这一步约 45 秒（整次运行的时间 README 没给），每篇约 $0.115 到 $0.192（gpt-5.4，28 题回放）；deep 约 5 分钟、约 $0.4（o3-mini high，旧口径，且见 2.3 节成本漏算）</td>
+<td><code>README.md:222,232-239</code></td>
+</tr>
+<tr>
+<td>操作系统</td>
+<td>CI 只跑 ubuntu；weasyprint 是硬依赖但在 Windows 上不装（只在 <code>backend/</code> 导出 PDF 时用，Linux 上要 pango 等系统库）；Docker 镜像是 python:3.14 + chromium / firefox（浏览器抓取器用）；macOS 没有专门说明</td>
+<td><code>.github/workflows/tests.yml:23,100-105</code>、<code>pyproject.toml:164</code>、<code>Dockerfile:3-14</code></td>
+</tr>
+<tr>
+<td>写盘</td>
+<td>默认路径不留文件，PyMuPDF 的临时文件用完即删；非默认路径（<code>document_urls</code>、浏览器抓取器、配图）会写；stdout 有 print，写报告的流式正文关不掉</td>
+<td>2.1 节</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="5-和平台对照">5. 和平台对照<a class="permalink" href="#5-和平台对照" title="本节链接">#</a></h2>
+<h3 id="51-平台文献阶段现在有什么">5.1 平台文献阶段现在有什么<a class="permalink" href="#51-平台文献阶段现在有什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>现状</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>步骤能力</td>
+<td>没有。文献、假设、写作三个阶段都没有步骤；研究助理用 <code>ai4sci output new literature</code> 开产出目录，手写 <code>sources.md</code></td>
+<td><code>platform/framework/capabilities/__init__.py:42-52</code>、<code>platform/coordinator/README.md:64,120</code></td>
+</tr>
+<tr>
+<td>主文件</td>
+<td><code>sources.md</code>（页面名「材料来源」），写法不限；复现流程的两个步骤把文献产出目录里的文本文件原样拼进 prompt，<code>sources.md</code> 排在最前</td>
+<td><code>platform/framework/capabilities/__init__.py:47,55</code>、<code>platform/framework/capabilities/reproduction/__init__.py:282-285</code></td>
+</tr>
+<tr>
+<td>助理该找什么</td>
+<td>论文本身、官方代码、数据与权重、别人的复现与已知坑、跑起来要什么；每样写链接、commit 或版本、许可证、拿没拿到</td>
+<td><code>platform/coordinator/README.md:120-128</code></td>
+</tr>
+<tr>
+<td>联网</td>
+<td>两层都只用 CLI 自带的搜索与网页读取（Claude Code 的 WebSearch / WebFetch、Codex 的 <code>web_search</code>），查到的带来源</td>
+<td><code>docs/architecture/workflow.md:240</code>、<code>platform/coordinator/README.md:168</code></td>
+</tr>
+<tr>
+<td>skill</td>
+<td><code>pdf</code>：论文 PDF 出 <code>paper.md</code>、<code>images/</code>、<code>structured.json</code>（分节、表格、图注、参考文献、题目作者年份 DOI、arXiv 号）；<code>download</code>：git / 文件 / Hugging Face 拉进 <code>materials/</code> 并留收据</td>
+<td><code>platform/skills/pdf/SKILL.md:3,44</code>、<code>platform/skills/download/SKILL.md:3</code></td>
+</tr>
+<tr>
+<td>流程</td>
+<td><code>reproduce</code> 的文献格挂 <code>[pdf, download]</code> 两个 skill</td>
+<td><code>platform/workflows/reproduce.yaml:4,10</code></td>
+</tr>
+<tr>
+<td>对缺口的口径</td>
+<td>流程助理被要求：要文献检索、写综述这类还没有的能力时，直说平台还没有</td>
+<td><code>platform/coordinator/studio.md:42</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="52-多了什么重叠什么">5.2 多了什么重叠什么<a class="permalink" href="#52-多了什么重叠什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>能力</th>
+<th>平台现在</th>
+<th>GPT Researcher</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>拆检索式</td>
+<td>助理在对话里自己想</td>
+<td>一次模型调用出 3 条，deep 模式递归展开</td>
+<td>2.2、2.3 节</td>
+</tr>
+<tr>
+<td>学术 API 检索</td>
+<td>没有，只有助理的通用网页搜索</td>
+<td>arXiv、S2、OpenAlex、PMC 四个客户端，均只回标题、链接、摘要</td>
+<td>2.4 节</td>
+</tr>
+<tr>
+<td>批量抓页面</td>
+<td>助理 WebFetch 逐页读</td>
+<td>并行抓约 25 页，过滤反爬页与词表页</td>
+<td><code>gpt_researcher/scraper/scraper.py:40-106,194-274</code></td>
+</tr>
+<tr>
+<td>段落筛选</td>
+<td>没有，助理读全文</td>
+<td>BM25 / Jev / embeddings</td>
+<td>2.2 节第 7 步</td>
+</tr>
+<tr>
+<td>成文</td>
+<td>助理手写 <code>sources.md</code>：材料清单，含 commit、许可证、拿没拿到</td>
+<td>一次模型调用写综述式报告，≥1200 词，URL 级内联引用</td>
+<td><code>gpt_researcher/prompts.py:262-316</code></td>
+</tr>
+<tr>
+<td>PDF 解析</td>
+<td><code>pdf</code> skill：版面模式，分节、表格、参考文献进 <code>structured.json</code></td>
+<td>PyMuPDFLoader 逐页纯文本拼接，截前 5 万字符，无结构</td>
+<td><code>gpt_researcher/scraper/pymupdf/pymupdf.py:64-80</code></td>
+</tr>
+<tr>
+<td>书目元数据</td>
+<td><code>pdf</code> skill 从单篇 PDF 抽题目、作者、年份、DOI</td>
+<td>检索器把作者、年份、DOI 丢掉</td>
+<td>2.4 节</td>
+</tr>
+<tr>
+<td>找代码、数据、权重</td>
+<td>助理搜，<code>download</code> 拉并留收据</td>
+<td>没有对应检索器；要靠接 MCP server</td>
+<td>2.4 节</td>
+</tr>
+<tr>
+<td>本地文献库</td>
+<td>没有</td>
+<td><code>DOC_PATH</code> 本地模式（仍会联网初搜一次）</td>
+<td><code>gpt_researcher/skills/researcher.py:166-173,365-366</code></td>
+</tr>
+<tr>
+<td>引用可核</td>
+<td><code>sources.md</code> 要求带链接</td>
+<td>URL 级超链接，不校验；原文留在内存供事后核对</td>
+<td>2.5 节</td>
+</tr>
+<tr>
+<td>作者自测的增益</td>
+<td>—</td>
+<td>同一宿主 agent、同一模型下，换成它的工具后每篇被核实为支持的引用从 18.6 条到 35.2 条，精确率 53.9% 到 56.0%（10 题）</td>
+<td><code>deep_agents/BENCHMARK.md:35-38</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="53-会碰到的现有规则">5.3 会碰到的现有规则<a class="permalink" href="#53-会碰到的现有规则" title="本节链接">#</a></h3>
+<p>只列规则原文要点与 GPT Researcher 的对应事实，不下结论。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>规则</th>
+<th>规则要点</th>
+<th>GPT Researcher 的事实</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P-1</td>
+<td>代码、分析稿、论文正文只由执行层产出；框架不调模型写文本；总纲第 1 节与四层图把 skill 脚本定为「确定性工具」</td>
+<td>研究与成文都在它自己的进程里经 LangChain 调模型；若包成 skill 脚本，就是 skill 进程调模型写综述。只用检索器、抓取器、BM25、<code>quick_search()</code>，或预设 <code>agent</code> / <code>role</code> 并给定 <code>source_urls</code> 的 <code>conduct_research()</code> 时不调模型</td>
+<td><code>docs/architecture/README.md:7,28,151</code>、2.1 节</td>
+</tr>
+<tr>
+<td>P-20</td>
+<td>文献阶段主文件 <code>sources.md</code>，进这个阶段的步骤必须留下它；skill 不开产出目录，写哪里由调用者定</td>
+<td>默认路径不写文件，产出是内存里的报告字符串、URL 列表、来源全文；形状是叙述报告，不是材料清单</td>
+<td><code>docs/architecture/README.md:170</code>、2.1 节</td>
+</tr>
+<tr>
+<td>P-22</td>
+<td>agentskills.io 格式；脚本 PEP 723 自带依赖、锁进仓、<code>uv run --locked --offline</code> 起；<code>make skills</code> 预热是唯一联网的一步；脚本结果一行 JSON 到 stdout，诊断到 stderr</td>
+<td>硬依赖 140 个；缺 provider 包时运行中 <code>pip install</code>，uv 建的环境默认不带 pip（这一步在平台里的实际表现未实测）；<code>ddgs</code>、<code>langchain-mcp-adapters</code>、<code>langchain-anthropic</code> 不在 PyPI 硬依赖里；运行时必须联网（检索、抓取、模型 API，tiktoken 首次用还要下编码表），平台现有的 <code>download</code> skill 与 <code>pdf</code> 的链接输入也在运行时联网；核心包有 89 处 print 到 stdout，写报告的流式正文用 <code>verbose=False</code> 也关不掉</td>
+<td><code>docs/architecture/README.md:172</code>、<code>platform/docs/add-a-skill.md:55,65,71</code>、2.1、2.6、4 节</td>
+</tr>
+<tr>
+<td>P-25</td>
+<td>两层 agent 用哪家、什么模型、思考深度按人写在 <code>~/.config/ai4sci/agents.yaml</code>，走研究者自己的 agent 登录；订阅账号报不出美元时成本填 NaN</td>
+<td>读自己的 <code>FAST_LLM</code> / <code>SMART_LLM</code> / <code>STRATEGIC_LLM</code> 环境变量；只认各家 API 的凭据，不能用 Claude Code / Codex 的登录；成本一律报美元，价格表外的模型按固定单价估、不会出空值，deep 模式漏算</td>
+<td><code>docs/architecture/README.md:175</code>、2.3、2.6 节</td>
+</tr>
+<tr>
+<td>P-14</td>
+<td>agent 联网只用 CLI 自带的搜索与网页读取；配置归按人的设置与起服务的环境变量，不挂在命令前</td>
+<td>自带一条搜索通道（Tavily 等 API 加自己抓页面）；配置全在环境变量或 JSON。平台起 skill 脚本时把整份 <code>os.environ</code> 传下去，<code>download</code> 读 <code>HF_TOKEN</code> 是已有先例</td>
+<td><code>docs/architecture/README.md:164</code>、<code>platform/framework/skills/run.py:37-42</code>、<code>platform/skills/download/SKILL.md:4,31</code></td>
+</tr>
+<tr>
+<td>P-2</td>
+<td>需要模型判断的评审由隔离的新会话做，只给产物不给轨迹（尚未实现）</td>
+<td>核心包没有评审步骤；<code>multi_agents/</code> 的 reviewer 与 fact checker 是同一流水线里的模型调用</td>
+<td><code>docs/architecture/README.md:152</code>、<code>multi_agents/agents/reviewer.py:15-47</code>、<code>multi_agents/agents/fact_checker.py:10-32</code></td>
+</tr>
+<tr>
+<td>许可证</td>
+<td>—</td>
+<td>硬依赖 PyMuPDF 是 AGPL-3.0 或商业双许可；平台 <code>pdf</code> skill 用的 pymupdf4llm 同样是这两种许可<sup id="fnref:pymupdf"><a class="footnote-ref" href="#fn:pymupdf">30</a></sup></td>
+<td><code>pyproject.toml:128</code>、<code>platform/skills/pdf/scripts/extract.py:1-6</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="6-成熟度">6. 成熟度<a class="permalink" href="#6-成熟度" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>实况</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>规模与热度</td>
+<td>29.6k star、4.1k fork，2023-05-12 建库，默认分支 main；核心包约 1.6 万行</td>
+<td>GitHub API<sup id="fnref:ghmeta"><a class="footnote-ref" href="#fn:ghmeta">11</a></sup></td>
+</tr>
+<tr>
+<td>维护节奏</td>
+<td>近 12 个月 468 个提交、93 位作者，维护者本人 242 个（52%）；按月 9 到 92 个（2025-09 只算 27 日以后），2026-09 最密（92），其次 2026-03（52）、2026-07（51）；近 3 个月合并 62 个 PR</td>
+<td>GitHub API<sup id="fnref2:ghmeta"><a class="footnote-ref" href="#fn:ghmeta">11</a></sup></td>
+</tr>
+<tr>
+<td>issue</td>
+<td>开着 5 个、关了 742 个；PR 开着 9 个、合并 618 个。「开着 5 个」要连着这件事看：2026-07-14 一天关了 110 个 issue（其中 94 个在关闭时已开了一年以上），抽看 #510 的关闭评论是「开了一年以上、无近期动静的积压清理，不代表问题无效」，关闭状态记为 completed<sup id="fnref:bulkclose"><a class="footnote-ref" href="#fn:bulkclose">33</a></sup>。开着的 5 个里与本题相关的两个：#1764「研究时常卡住且日志看不出在干什么」，#1582 PyMuPDF 的 AGPL 许可问题（见下面许可证一行）</td>
+<td>GitHub search API<sup id="fnref3:ghmeta"><a class="footnote-ref" href="#fn:ghmeta">11</a></sup></td>
+</tr>
+<tr>
+<td>发版</td>
+<td>两条版本号并行：GitHub tag v3.x（2026 年 11 次，最近 v3.7.0，2026-09-26）与 PyPI 0.x（2026 年 7 次，最近 0.16.1，同日）。0.16.0（2026-07-18）在 3.12 / 3.13 上 import 即报错，修复 08-23 进 main、GitHub 发了 v3.6.1（08-24），PyPI 直到 09-26 才发 0.16.1。仓库 0957c30 的 <code>pyproject.toml</code> 版本号仍写 0.16.0</td>
+<td>发布列表<sup id="fnref:releases"><a class="footnote-ref" href="#fn:releases">12</a></sup>、<sup id="fnref2:wheel0160"><a class="footnote-ref" href="#fn:wheel0160">2</a></sup>、<code>pyproject.toml:3,25</code></td>
+</tr>
+<tr>
+<td>测试</td>
+<td>135 个测试文件、528 个测试函数、约 1.1 万行；从文件名看以各检索器、抓取器「坏输入不崩」的守卫测试为主（<code>test_*_malformed*</code>、<code>test_*_none*</code> 之类），没有端到端质量测试；新进的 BM25 与 Jev 筛选各有 8、13 个单测；<code>evals/</code> 下的评测是手动跑的离线脚本</td>
+<td><code>tests/</code>、<code>tests/test_lexical_context_filter.py</code>、<code>tests/test_jev_context_filter.py</code>、<code>evals/README.md</code></td>
+</tr>
+<tr>
+<td>CI</td>
+<td><code>tests.yml</code> 从 2026-08-23 起跑：import 矩阵、收集检查、断网单测（<code>GPTR_BLOCK_NETWORK=1</code>、<code>--forked</code>、排除三个联网文件）；另有 PR 成本评论、插件清单扫描、Docker 构建、部署到维护者自己的 AWS</td>
+<td><code>.github/workflows/tests.yml:14,125-138</code>、<code>.github/workflows/</code></td>
+</tr>
+<tr>
+<td>已知小缺陷</td>
+<td><code>ResearchConductor</code> 的 <code>_search</code>、<code>_extract_content</code>、<code>_summarize_content</code>、<code>_update_search_progress</code> 零调用；<code>add_costs</code> 里调异步的 <code>_log_event</code> 没有 await；配图开关读错属性名；<code>MCP_SERVERS</code> 被覆盖；缺 <code>langchain-mcp-adapters</code> 时 <code>mcp</code> 被静默换成 Tavily；写报告与拆子查询不用自定义 <code>PromptFamily</code>；流式正文的 print 不受 <code>verbose</code> 控制；deep 成本漏算；gptr-mcp 的 <code>content_length</code> 恒 0</td>
+<td><code>gpt_researcher/agent.py:801-806</code>、第 1、2 节</td>
+</tr>
+<tr>
+<td>安全</td>
+<td>后端无鉴权是设计选择；MCP 配置能起任意命令（#1694 按威胁模型不修）；抓取前有 SSRF 校验；PDF 下载 SSL 失败降级 <code>verify=False</code></td>
+<td><code>SECURITY.md:20-41</code>、<code>gpt_researcher/scraper/scraper.py:200-211</code>、<code>gpt_researcher/scraper/pymupdf/pymupdf.py:48-53</code></td>
+</tr>
+<tr>
+<td>许可证</td>
+<td><code>LICENSE</code> 是 Apache-2.0（GitHub 也识别为 Apache-2.0），README 写 Apache 2；wheel 里附带的也是这份 Apache-2.0 全文；但 <code>pyproject.toml</code>、<code>setup.py</code> 与 PyPI 元数据写 MIT，维护者账号在 #1582 的回复里也说「this project is MIT」<sup id="fnref:i1582"><a class="footnote-ref" href="#fn:i1582">25</a></sup>；没有 NOTICE 文件。Apache-2.0 要点：可商用、修改、再分发；分发时附许可证全文、标明改动、保留 NOTICE；含专利授权，对使用者提起专利诉讼则授权终止；不授商标权。gptr-mcp 是 MIT</td>
+<td><code>LICENSE:1-2</code>、<code>README.md:354</code>、<code>pyproject.toml:6,28</code>、<code>setup.py:33,35</code>、wheel<sup id="fnref7:wheel"><a class="footnote-ref" href="#fn:wheel">1</a></sup></td>
+</tr>
+<tr>
+<td>作者自己的免责声明</td>
+<td>「实验性软件，按现状提供……不建议用于学术或研究论文」</td>
+<td><code>README.md:352-354</code></td>
+</tr>
+<tr>
+<td>依赖的许可证与商业服务</td>
+<td>PyMuPDF AGPL-3.0 或商业双许可<sup id="fnref2:pymupdf"><a class="footnote-ref" href="#fn:pymupdf">30</a></sup>，是硬依赖、抓 PDF 与读本地 PDF 都用它。#1582 里有人给出 MIT 的 pdfminer.six 替代实现，维护者账号下的回复确认「许可问题真实存在、未解决，对把 GPT Researcher 当托管服务跑的人有影响，要维护者决定」，issue 仍开着<sup id="fnref2:i1582"><a class="footnote-ref" href="#fn:i1582">25</a></sup>。Tavily、TypeSafe 是商业 API</td>
+<td><code>pyproject.toml:128</code>、<code>gpt_researcher/scraper/pymupdf/pymupdf.py:5</code>、<code>gpt_researcher/document/document.py:73</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="7-还没弄清的问题">7. 还没弄清的问题<a class="permalink" href="#7-还没弄清的问题" title="本节链接">#</a></h2>
+<ol>
+<li>科研题目上的实际内容质量：按代码，arXiv 只进摘要、S2 无 key 易被限流、OpenAlex 付费墙论文只剩落地页。一个 PINN 或参数估计类题目跑下来，上下文里多少是论文正文、多少是博客与新闻，要 #172 实测。</li>
+<li>学术题上的引用精确率。作者的 56% 来自 DeepResearch Bench 10 道通用英文题、gpt-5.4、deepagents 宿主，换成学术题与 Claude 系模型是多少不知道。</li>
+<li>Claude 系模型走标准与 deep 两条路径时的 JSON 解析成功率与成本（#1772 修过，没实测）。</li>
+<li>放进 <code>uv run --locked --offline</code> 的脚本环境后，<code>_check_pkg</code> 的 <code>pip install</code> 是报错、静默失败还是被 offline 拦住；PEP 723 下 140 个硬依赖的锁与环境体积多大。</li>
+<li><code>npx skills add assafelovic/gpt-researcher</code> 装的是哪一份、<code>uvx gpt-researcher</code> 是否确实起不来，都只是读 CLI 源码与 wheel 推断，没跑。</li>
+<li>deep 模式成本漏算的实际数额，以及 README「约 5 分钟、约 $0.4」在 gpt-5.4 或 Claude 下是多少。</li>
+<li>中文查询：BM25 不切中文会不会让段落筛选退化成取第一页开头；有没有可接的中文学术源（现有的 bocha 是通用网页搜索）。</li>
+<li>本地模式能否完全离线：代码显示仍用第一个检索器联网初搜，把检索器设成不可用时拆子查询会怎样。</li>
+<li>每页截前 5 万字符对长论文（正文加附录）的影响。</li>
+<li>Semantic Scholar：官方 API 规范里 <code>/paper/search</code> 没有 <code>sort</code> 参数，代码照传；API 是忽略还是报错，本机请求全被 429 挡住，没测到。</li>
+<li>默认值与维护者商业利益的关系：维护者是 Tavily 联合创始人（二手来源<sup id="fnref:crunchbase"><a class="footnote-ref" href="#fn:crunchbase">27</a></sup>；README 的 PIP 文档链接指向 docs.tavily.com），有二手来源称 Tavily 2026-02 被 Nebius 收购<sup id="fnref:tavilywiki"><a class="footnote-ref" href="#fn:tavilywiki">28</a></sup>，API 条款是否变过没查；与 TypeSafe 的关系没查到，而把 Jev 设为默认的依据是作者自己的评测（<code>evals/context_filter/</code>）。</li>
+<li>PyMuPDF 的 AGPL 对平台分发的影响。上游 #1582 还没定；平台 <code>pdf</code> skill 已依赖同许可的 pymupdf4llm，这不是 GPT Researcher 新带来的问题，但结论要另行确认。另外 <code>LICENSE</code>（Apache-2.0，wheel 里附带的也是它）与包元数据、维护者说法（MIT）哪个算数，上游没有说明。</li>
+<li>仓库里没有一个真正「让宿主 agent 执行研究」的 skill，作者是否有这个计划，issue 里没找到。</li>
+<li>gptr-mcp 在 stdio 模式下，核心包往 stdout 的 print（含写报告的流式正文）会不会打乱协议消息；gptr-mcp #2「parsing errors」是否就是这个，issue 里只有截图，没查清。</li>
+<li>默认的 BM25 段落筛选与 Jev 都是 2026-09-26 才进代码，此前的默认是 embeddings；换了筛选之后，作者在 <code>deep_agents/BENCHMARK.md</code> 报的引用数字（该文件最后改于 2026-07-05，用的是当时的 embeddings 筛选）是否还成立，不知道。</li>
+<li>缺 <code>langchain-mcp-adapters</code> 时 <code>mcp</code> 被换成 Tavily：没有 <code>TAVILY_API_KEY</code> 时这个替身会报错还是返回空、会不会让整次研究失败，没实测。</li>
+</ol>
+<h2 id="8-调研方法">8. 调研方法<a class="permalink" href="#8-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>浅克隆到外层 <code>vendor/gpt-researcher</code>（gitignore 挡住），提交 0957c30。核心包逐文件读完主路径（<code>agent.py</code>、<code>skills/</code>、<code>actions/</code>、<code>context/</code>、<code>retrievers/</code> 四个学术源、<code>scraper/</code>、<code>llm_provider/</code>、<code>config/</code>、<code>mcp/</code>），<code>backend/</code>、<code>multi_agents/</code>、<code>deep_agents/</code> 只读与本题相关的部分。</li>
+<li>没装依赖、没跑项目代码。另外做了四件只读的事：下载 PyPI 0.16.0 与 0.16.1 的 wheel 看元数据与文件（0.16.1 的 <code>gpt_researcher/</code> 与 0957c30 <code>diff -rq</code> 无差异）；用 <code>gh api</code> 读 gptr-mcp、vercel-labs/skills 的源码与 issue、release、提交统计；用 curl 直接请求 arXiv、Semantic Scholar、OpenAlex 的公开 API 看返回格式；两次网页搜索确认维护者背景与 Jev 的发布时间。</li>
+<li>所有「零调用」「恒为 False」「推算 33 次」都来自读代码与 grep，标了「推断」「未实测」的留给 #172 实测验证。</li>
+<li>第一版写完后另做了一轮独立复查：逐条打开文中的 <code>文件:行</code> 核对；重新下载 0.16.0 / 0.16.1 wheel 核对元数据；用 <code>gh api</code> 重数提交、issue、release，读 gptr-mcp 的 issue 与 PR、关键文件的提交历史；下载 Semantic Scholar 官方 API 规范（<code>/graph/v1/swagger.json</code>）核对 <code>sort</code> 参数。改动集中在：MCP 缺包时的回落、<code>get_research_sources()</code> 的内容、stdout 与写盘、成本口径、BM25 中文回落、筛选代码的上线日期、issue 批量关闭、发版次数与月度提交数。</li>
+</ul>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:wheel">
+<p>PyPI gpt-researcher 0.16.1 的 wheel（2026-09-26 上传，poetry-core 2.5.0 构建）：<code>dist-info</code> 里没有 <code>entry_points.txt</code>；<code>Requires-Dist</code> 166 条，其中不带 extra 的 140 条，与仓库 <code>pyproject.toml</code> 的 <code>dependencies</code> 逐条一致，没有 torch 等 GPU 框架；<code>License: MIT</code>，而 <code>dist-info/licenses/LICENSE</code> 是 Apache-2.0 全文；包内只有 <code>gpt_researcher/</code>。<a href="https://pypi.org/project/gpt-researcher/0.16.1/">https://pypi.org/project/gpt-researcher/0.16.1/</a>&#160;<a class="footnote-backref" href="#fnref:wheel" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref2:wheel" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref3:wheel" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref4:wheel" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref5:wheel" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref6:wheel" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref7:wheel" title="回到正文第 1 处">↩</a></p>
+</li>
+<li id="fn:wheel0160">
+<p>PyPI gpt-researcher 0.16.0 的 wheel（2026-07-18 上传）中 <code>gpt_researcher/actions/query_processing.py</code>：第 6 行的函数签名已用到 <code>Any</code>、<code>List</code>，<code>from typing import Any, List, Dict</code> 却在第 37 行，文件也没有 <code>from __future__ import annotations</code>。<a href="https://pypi.org/project/gpt-researcher/0.16.0/">https://pypi.org/project/gpt-researcher/0.16.0/</a>&#160;<a class="footnote-backref" href="#fnref:wheel0160" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref2:wheel0160" title="回到正文第 2 处">↩</a></p>
+</li>
+<li id="fn:arxivapi">
+<p>2026-09-27 请求 <code>https://export.arxiv.org/api/query?search_query=all:electron&amp;max_results=1</code>，返回条目里 <code>title="pdf"</code> 的链接是 <code>https://arxiv.org/pdf/cond-mat/0011267v1</code>，没有 <code>.pdf</code> 后缀。&#160;<a class="footnote-backref" href="#fnref:arxivapi" title="回到正文第 3 处">↩</a></p>
+</li>
+<li id="fn:s2">
+<p>2026-09-27 从本机不带 key 请求 <code>https://api.semanticscholar.org/graph/v1/paper/search</code> 三次（不带 sort、<code>sort=citationCount</code>、<code>sort=relevance</code> 各一次），都返回 429「Too Many Requests … apply for a key」。&#160;<a class="footnote-backref" href="#fnref:s2" title="回到正文第 4 处">↩</a></p>
+</li>
+<li id="fn:openalex">
+<p>2026-09-27 请求 <code>https://api.openalex.org/works?search=physics informed neural network&amp;per_page=5&amp;sort=relevance_score:desc</code>：5 条里 3 条 <code>best_oa_location</code> 没有 <code>pdf_url</code>，落地页是 doi.org 链接（如 10.1016/j.jcp.2018.10.045）。&#160;<a class="footnote-backref" href="#fnref:openalex" title="回到正文第 5 处">↩</a></p>
+</li>
+<li id="fn:skillssh">
+<p>skills.sh 条目页 <a href="https://skills.sh/assafelovic/gpt-researcher/gpt-researcher">https://skills.sh/assafelovic/gpt-researcher/gpt-researcher</a>，2026-09-27 查：安装命令 <code>npx skills add https://github.com/assafelovic/gpt-researcher --skill gpt-researcher</code>，展示的 SKILL.md 标题是「GPT Researcher Development Skill」，安装数 1.9K。&#160;<a class="footnote-backref" href="#fnref:skillssh" title="回到正文第 6 处">↩</a></p>
+</li>
+<li id="fn:skillsts">
+<p>vercel-labs/skills 提交 f00c1a1（2026-09-08）的 <code>src/skills.ts</code>，函数 <code>discoverSkills()</code>：先对仓库根做深度 1 的子目录扫描，再扫 <code>skills/</code> 等容器目录，按 <code>name</code> 去重。<a href="https://github.com/vercel-labs/skills/blob/f00c1a1/src/skills.ts">https://github.com/vercel-labs/skills/blob/f00c1a1/src/skills.ts</a>&#160;<a class="footnote-backref" href="#fnref:skillsts" title="回到正文第 7 处">↩</a></p>
+</li>
+<li id="fn:plugincommit">
+<p>gpt-researcher 提交 ec126e0（2026-04-05，作者 internet-dot），一次加入 <code>.codex-plugin/plugin.json</code>、<code>.mcp.json</code>、<code>skills/gpt-researcher/SKILL.md</code> 与 <code>plugin-quality-gate.yml</code>。<a href="https://github.com/assafelovic/gpt-researcher/commit/ec126e0">https://github.com/assafelovic/gpt-researcher/commit/ec126e0</a>&#160;<a class="footnote-backref" href="#fnref:plugincommit" title="回到正文第 8 处">↩</a></p>
+</li>
+<li id="fn:gptrmcp">
+<p>assafelovic/gptr-mcp 提交 6388477（2025-11-07，也是最后一次提交）的 <code>server.py</code>、<code>utils.py</code>、<code>requirements.txt</code>、<code>.env.example</code>；仓库 MIT，371 star，2026-09-27 查。<a href="https://github.com/assafelovic/gptr-mcp">https://github.com/assafelovic/gptr-mcp</a>&#160;<a class="footnote-backref" href="#fnref:gptrmcp" title="回到正文第 9 处">↩</a></p>
+</li>
+<li id="fn:gptrmcpissues">
+<p>gptr-mcp 2026-09-27 仍开着的：#25「只认 OPENAI_API_KEY，配了别家模型也起不来」（2026-04-26）、#30「<code>content_length</code> 恒为 0」等三项修复（2026-07-18）、#31「<code>deep_research</code> 只构造 <code>GPTResearcher(query)</code>，deep 模式经 MCP 用不到」（2026-09-05）、#33「<code>run_server()</code> 的 <code>while True: pass</code> 空转占满 CPU」（2026-09-15）、#2「parsing errors」（2025-04-06，只有截图）。<a href="https://github.com/assafelovic/gptr-mcp/issues">https://github.com/assafelovic/gptr-mcp/issues</a>&#160;<a class="footnote-backref" href="#fnref:gptrmcpissues" title="回到正文第 10 处">↩</a></p>
+</li>
+<li id="fn:ghmeta">
+<p>GitHub API，2026-09-27 查：仓库元数据；search API 的 issue / PR 计数；<code>commits?since=2025-09-27</code> 全量翻页按月、按作者统计。<a href="https://github.com/assafelovic/gpt-researcher">https://github.com/assafelovic/gpt-researcher</a>&#160;<a class="footnote-backref" href="#fnref:ghmeta" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref2:ghmeta" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref3:ghmeta" title="回到正文第 11 处">↩</a></p>
+</li>
+<li id="fn:releases">
+<p>GitHub releases 列表与 v3.7.0 发布说明 <a href="https://github.com/assafelovic/gpt-researcher/releases/tag/v3.7.0">https://github.com/assafelovic/gpt-researcher/releases/tag/v3.7.0</a>；PyPI 各版本上传时间来自 <a href="https://pypi.org/pypi/gpt-researcher/json">https://pypi.org/pypi/gpt-researcher/json</a>。&#160;<a class="footnote-backref" href="#fnref:releases" title="回到正文第 12 处">↩</a></p>
+</li>
+<li id="fn:i1572">
+<p>Report Generator Halluzinates Sources，2025-12-08 报，2026-08-23 关。<a href="https://github.com/assafelovic/gpt-researcher/issues/1572">https://github.com/assafelovic/gpt-researcher/issues/1572</a>&#160;<a class="footnote-backref" href="#fnref:i1572" title="回到正文第 13 处">↩</a><a class="footnote-backref" href="#fnref2:i1572" title="回到正文第 13 处">↩</a><a class="footnote-backref" href="#fnref3:i1572" title="回到正文第 13 处">↩</a></p>
+</li>
+<li id="fn:i1846">
+<p>Snippet retrievers (searx): search snippets &gt;100 chars are treated as prefetched full content，2026-07-02 报；同类 #1892。<a href="https://github.com/assafelovic/gpt-researcher/issues/1846">https://github.com/assafelovic/gpt-researcher/issues/1846</a> <a href="https://github.com/assafelovic/gpt-researcher/issues/1892">https://github.com/assafelovic/gpt-researcher/issues/1892</a>&#160;<a class="footnote-backref" href="#fnref:i1846" title="回到正文第 14 处">↩</a><a class="footnote-backref" href="#fnref2:i1846" title="回到正文第 14 处">↩</a></p>
+</li>
+<li id="fn:i1893">
+<p>ContextCompressor fast path loses source URLs → reports cite "https://example.com"，2026-07-13 报。<a href="https://github.com/assafelovic/gpt-researcher/issues/1893">https://github.com/assafelovic/gpt-researcher/issues/1893</a>&#160;<a class="footnote-backref" href="#fnref:i1893" title="回到正文第 15 处">↩</a></p>
+</li>
+<li id="fn:i1894">
+<p>Arxiv scraper broken with arxiv&gt;=2.2，2026-07-13 报。<a href="https://github.com/assafelovic/gpt-researcher/issues/1894">https://github.com/assafelovic/gpt-researcher/issues/1894</a>&#160;<a class="footnote-backref" href="#fnref:i1894" title="回到正文第 16 处">↩</a></p>
+</li>
+<li id="fn:i1945">
+<p>No CI workflow actually runs the test suite，2026-07-18 报，08-23 关；同日的 PR #1943「fix: NameError on import in query_processing.py (package currently unusable as published)」，08-23 关。<a href="https://github.com/assafelovic/gpt-researcher/issues/1945">https://github.com/assafelovic/gpt-researcher/issues/1945</a> <a href="https://github.com/assafelovic/gpt-researcher/pull/1943">https://github.com/assafelovic/gpt-researcher/pull/1943</a>&#160;<a class="footnote-backref" href="#fnref:i1945" title="回到正文第 17 处">↩</a></p>
+</li>
+<li id="fn:i1772">
+<p>Deep Research: "Generated 0 queries: []" with Claude Haiku 4.5，2026-05-15 报。<a href="https://github.com/assafelovic/gpt-researcher/issues/1772">https://github.com/assafelovic/gpt-researcher/issues/1772</a>&#160;<a class="footnote-backref" href="#fnref:i1772" title="回到正文第 18 处">↩</a><a class="footnote-backref" href="#fnref2:i1772" title="回到正文第 18 处">↩</a><a class="footnote-backref" href="#fnref3:i1772" title="回到正文第 18 处">↩</a></p>
+</li>
+<li id="fn:i1694">
+<p>Unauthenticated Remote Code Execution via MCP Command Injection，2026-03-23 报，维护者按威胁模型关闭。<a href="https://github.com/assafelovic/gpt-researcher/issues/1694">https://github.com/assafelovic/gpt-researcher/issues/1694</a>&#160;<a class="footnote-backref" href="#fnref:i1694" title="回到正文第 19 处">↩</a><a class="footnote-backref" href="#fnref2:i1694" title="回到正文第 19 处">↩</a></p>
+</li>
+<li id="fn:i2100">
+<p>Prefetched sources never enter visited_urls, so they drop out of References，2026-09-02 报。<a href="https://github.com/assafelovic/gpt-researcher/issues/2100">https://github.com/assafelovic/gpt-researcher/issues/2100</a>&#160;<a class="footnote-backref" href="#fnref:i2100" title="回到正文第 20 处">↩</a></p>
+</li>
+<li id="fn:i2110">
+<p>Deep research zero-query path raises NameError before fallback state is initialized，2026-09-08 报。<a href="https://github.com/assafelovic/gpt-researcher/issues/2110">https://github.com/assafelovic/gpt-researcher/issues/2110</a>&#160;<a class="footnote-backref" href="#fnref:i2110" title="回到正文第 21 处">↩</a></p>
+</li>
+<li id="fn:i1579">
+<p>DEEP mode does not stop when retrievers can not obtain context，2025-12-16 报。<a href="https://github.com/assafelovic/gpt-researcher/issues/1579">https://github.com/assafelovic/gpt-researcher/issues/1579</a>&#160;<a class="footnote-backref" href="#fnref:i1579" title="回到正文第 22 处">↩</a></p>
+</li>
+<li id="fn:i1676">
+<p>Env pollution，2026-03-14 报。<a href="https://github.com/assafelovic/gpt-researcher/issues/1676">https://github.com/assafelovic/gpt-researcher/issues/1676</a>&#160;<a class="footnote-backref" href="#fnref:i1676" title="回到正文第 23 处">↩</a></p>
+</li>
+<li id="fn:i1875">
+<p>Two Tavily paths run simultaneously，2026-07-10 报。<a href="https://github.com/assafelovic/gpt-researcher/issues/1875">https://github.com/assafelovic/gpt-researcher/issues/1875</a>&#160;<a class="footnote-backref" href="#fnref:i1875" title="回到正文第 24 处">↩</a></p>
+</li>
+<li id="fn:i1582">
+<p>GPL License Alternative PDF Scraper Implementation，2026-01-05 报，2026-09-27 仍开着；引用了更早的 #1571。<a href="https://github.com/assafelovic/gpt-researcher/issues/1582">https://github.com/assafelovic/gpt-researcher/issues/1582</a>&#160;<a class="footnote-backref" href="#fnref:i1582" title="回到正文第 25 处">↩</a><a class="footnote-backref" href="#fnref2:i1582" title="回到正文第 25 处">↩</a></p>
+</li>
+<li id="fn:i1986">
+<p>Anthropic prompt-cache tokens are silently priced at $0，2026-07-24 报。<a href="https://github.com/assafelovic/gpt-researcher/issues/1986">https://github.com/assafelovic/gpt-researcher/issues/1986</a>&#160;<a class="footnote-backref" href="#fnref:i1986" title="回到正文第 26 处">↩</a></p>
+</li>
+<li id="fn:crunchbase">
+<p>Crunchbase「Assaf Elovic - Co-Founder @ Tavily」，二手来源，未与本人声明核对。<a href="https://www.crunchbase.com/person/assaf-elovic">https://www.crunchbase.com/person/assaf-elovic</a>&#160;<a class="footnote-backref" href="#fnref:crunchbase" title="回到正文第 27 处">↩</a><a class="footnote-backref" href="#fnref2:crunchbase" title="回到正文第 27 处">↩</a></p>
+</li>
+<li id="fn:tavilywiki">
+<p>AI Wiki「Tavily」条目，称 2026-02 Nebius 宣布收购 Tavily，二手来源，未核实。<a href="https://aiwiki.ai/wiki/tavily">https://aiwiki.ai/wiki/tavily</a>&#160;<a class="footnote-backref" href="#fnref:tavilywiki" title="回到正文第 28 处">↩</a></p>
+</li>
+<li id="fn:jev">
+<p>TypeSafe 博客「Introducing System One Models &amp; Jev」<a href="https://typesafe.ai/blog/introducing-system-one-models-and-jev">https://typesafe.ai/blog/introducing-system-one-models-and-jev</a>；MarkTechPost 2026-09-19 的报道称 2026-09-15 开放早期访问（二手）<a href="https://www.marktechpost.com/2026/09/19/typesafe-ai-releases-jev/">https://www.marktechpost.com/2026/09/19/typesafe-ai-releases-jev/</a>。&#160;<a class="footnote-backref" href="#fnref:jev" title="回到正文第 29 处">↩</a></p>
+</li>
+<li id="fn:pymupdf">
+<p>PyPI 上 pymupdf 1.28.2 与 pymupdf4llm 1.28.2 的 license 字段均为「Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License」，2026-09-27 查。&#160;<a class="footnote-backref" href="#fnref:pymupdf" title="回到正文第 30 处">↩</a><a class="footnote-backref" href="#fnref2:pymupdf" title="回到正文第 30 处">↩</a></p>
+</li>
+<li id="fn:jevcommit">
+<p><code>gpt_researcher/context/jev_filter.py</code> 与 <code>select.py</code> 的提交历史只有两条，都是 2026-09-26、维护者本人：a0a7449「feat(context): filter scraped content with Jev; embeddings become optional」与 2906e63「feat(context): keyword fallback so no filter needs a key or embeddings」。GitHub API <code>commits?path=…</code>，2026-09-27 查。&#160;<a class="footnote-backref" href="#fnref:jevcommit" title="回到正文第 31 处">↩</a><a class="footnote-backref" href="#fnref2:jevcommit" title="回到正文第 31 处">↩</a><a class="footnote-backref" href="#fnref3:jevcommit" title="回到正文第 31 处">↩</a></p>
+</li>
+<li id="fn:s2spec">
+<p>Semantic Scholar Graph API 官方规范 <a href="https://api.semanticscholar.org/graph/v1/swagger.json">https://api.semanticscholar.org/graph/v1/swagger.json</a>（2026-09-27 下载）：<code>/paper/search</code> 的参数是 query、fields、publicationTypes、openAccessPdf、minCitationCount、publicationDateOrYear、year、venue、fieldsOfStudy、offset、limit，没有 sort；<code>/paper/search/bulk</code> 有 sort，格式 <code>field:order</code>，可排 paperId、publicationDate、citationCount。&#160;<a class="footnote-backref" href="#fnref:s2spec" title="回到正文第 32 处">↩</a></p>
+</li>
+<li id="fn:bulkclose">
+<p>GitHub search API <code>is:issue closed:2026-07-14</code> 共 110 条，state_reason 全是 completed；#510 的关闭评论（维护者，2026-07-14）：「Closing as part of a long-tail backlog cleanup — this issue has been open for over a year with no recent activity. This is not a judgment on its validity」。<a href="https://github.com/assafelovic/gpt-researcher/issues/510">https://github.com/assafelovic/gpt-researcher/issues/510</a>&#160;<a class="footnote-backref" href="#fnref:bulkclose" title="回到正文第 33 处">↩</a></p>
+</li>
+</ol>
+</div>
+  </main>
+  <footer class="doc">原始稿是同目录的 gpt-researcher.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>

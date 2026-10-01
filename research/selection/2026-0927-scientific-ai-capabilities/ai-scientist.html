@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Scientist（一代与二代）方法深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>AI Scientist（一代与二代）方法深读</h1>
+    <p class="subtitle">研究创意选型 · 出想法与查新：提示词、反思轮数、打分字段、Semantic Scholar 判定，论文与代码逐条对账</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目方法借鉴（只读论文与代码，不跑、不装依赖、不评估整体接入）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-27</dd></div><div class="meta-row"><dt>范围</dt><dd>一代仓库 https://github.com/SakanaAI/AI-Scientist 提交 1de1dbc（2025-12-19），二代仓库 https://github.com/SakanaAI/AI-Scientist-v2 提交 96bd516（2025-12-19），均浅克隆到外层 vendor/；论文一代 arXiv 2408.06292（下载时最新是 v3，2024-09-01）、二代 arXiv 2504.08066（只有 v1，2025-04-10），均 2026-09-27 下载。只深读出想法与查新，实验与写作一两句带过。文中 文件:行 相对各自仓库根；两代同名的文件（llm.py、README.md、LICENSE、perform_writeup.py）前面标「一代」「二代」，平台一侧的路径标「外层」「内仓」</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-结论">1. 结论</a></li>
+<li><a href="#2-方法是什么">2. 方法是什么</a><ul>
+<li><a href="#21-一代出想法">2.1 一代：出想法</a></li>
+<li><a href="#22-一代查新">2.2 一代：查新</a></li>
+<li><a href="#23-二代出想法与检索合在一个循环里">2.3 二代：出想法与检索合在一个循环里</a></li>
+<li><a href="#24-两代差别">2.4 两代差别</a></li>
+<li><a href="#25-树搜索用在哪">2.5 树搜索用在哪</a></li>
+<li><a href="#26-实验与写作两句话">2.6 实验与写作两句话</a></li>
+</ul>
+</li>
+<li><a href="#3-为什么有效证据与对账">3. 为什么有效：证据与对账</a><ul>
+<li><a href="#31-论文给了哪些证据">3.1 论文给了哪些证据</a></li>
+<li><a href="#32-独立评测">3.2 独立评测</a></li>
+<li><a href="#33-代码是否按论文做">3.3 代码是否按论文做</a></li>
+</ul>
+</li>
+<li><a href="#4-平台哪里能用">4. 平台哪里能用</a><ul>
+<li><a href="#41-方法件与阶段">4.1 方法件与阶段</a></li>
+<li><a href="#42-跟平台现有规矩的对照">4.2 跟平台现有规矩的对照</a></li>
+</ul>
+</li>
+<li><a href="#5-局限与前提">5. 局限与前提</a><ul>
+<li><a href="#51-许可证条款要点">5.1 许可证条款要点</a></li>
+</ul>
+</li>
+<li><a href="#6-还没弄清的问题">6. 还没弄清的问题</a></li>
+<li><a href="#7-调研方法">7. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：两代「出想法」是同一个形状：把研究方向描述（一代还有整份基线代码）和已经出过的全部想法原文一起放进 prompt，让模型出一条「和前面不一样」的结构化想法，再在同一段对话里自我反思几轮。差别在查新。<strong>一代</strong>出完一批想法后，每条单独开一段对话，让模型扮「苛刻的查新者」：每轮给一个检索词、看 Semantic Scholar 前 10 条的摘要，最多 10 轮，靠回复里的字符串 <code>Decision made: novel / not novel</code> 判定（代码不数检索次数，第 1 轮一次没检索就写判定串也算数；10 轮用完没判定算不新），只存一个布尔值 <code>novel</code>，主流程只跑判新的想法。<strong>二代</strong>去掉了单独的查新和这个布尔值，检索变成出想法循环里模型可选的一次工具调用，最终只多一个模型自己写的「Related Work」字段；没有判定、没有过滤，挑哪条去跑实验由人用 <code>--idea_idx</code> 指定。二代的树搜索只用在实验的四个阶段，出想法里没有树。</p>
+<p>证据：两篇论文都没有消融出想法的反思轮数（一代唯一的反思消融做在自动审稿人上），也没有拿标准答案测过查新准不准。一代表 3 到表 5 的「Novel Ideas」就是查新自己的输出，论文自己说这是各模型给自己的想法判的、彼此不可比；附录 C 的 50 条想法里，自评有趣度 48 条是 9 分，自评新颖度 49 条在 8 到 9 分，46 条判新，其中有两对同名重复想法。代码里三个自评分数没有任何读取点。独立评测（Beel 等）用 gpt-4o 在推荐系统任务上跑，10 条生成想法加 2 条种子全部判新，包括 SGD 的 micro-batching 这种已知做法。一代论文与 2026 年的 Nature 版都写查新「接 Semantic Scholar 与网页访问」，Nature 版还写「与已有工作语义相似度高的丢弃」；代码里没有网页访问工具，也没有任何相似度计算，判定全靠模型写的那个字符串。</p>
+<p>这次摘出的方法件五样：带存档的出想法加早停串、二代的七字段想法表（下游实验硬读其中五个）、有轮数上限的检索判定循环、检索进出想法循环、写作时 bibtex 从检索 API 取而不让模型写（取的是 S2 返回的 <code>citationStyles</code> 字段，一代的 OpenAlex 分支没有这个字段）。它们在平台上对应假设阶段（主文件未定名）与文献、写作阶段，对照在<a href="#4-平台哪里能用">第 4 节</a>。许可证 2025-12-19 从 Apache 2.0 改成 AI Scientist Source Code License，带五类使用限制，其中一条要求用它产出的论文显著声明机器生成，条款要点在<a href="#51-许可证条款要点">第 5.1 节</a>。横向对比见同目录的 <a href="index.html">README.md</a>。</p>
+</blockquote>
+<h2 id="1-结论">1. 结论<a class="permalink" href="#1-结论" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>论文 / README 说</th>
+<th>代码里</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一代出想法的提示词</td>
+<td>以代码模板为起点，借鉴进化计算与开放式研究，用 LLM 做变异算子不断扩充想法存档（一代论文 §3）</td>
+<td>首轮 prompt = 模板的 <code>task_description</code> + 整份 <code>experiment.py</code> + 存档里全部想法的 JSON 原文，要求出「下一个有影响、有创意、用给定代码可行」的想法，并告知拿不到额外资源或数据集、想法不要过拟合特定数据集或模型；系统提示取模板里 <code>prompt.json</code> 的 <code>system</code></td>
+<td><code>ai_scientist/generate_ideas.py:14-52</code>、<code>:98-110</code></td>
+</tr>
+<tr>
+<td>反思轮数</td>
+<td>附录 B 表 6：3 轮</td>
+<td>主流程 <code>NUM_REFLECTIONS = 3</code>（首轮算第 1 轮，再反思 2 轮），同一段对话里做，模型写「I am done」就提前停；单独跑 <code>generate_ideas.py</code> 时是 5</td>
+<td><code>launch_scientist.py:22</code>、<code>ai_scientist/generate_ideas.py:54-72</code>、<code>:138-159</code>、<code>:497</code></td>
+</tr>
+<tr>
+<td>打分字段</td>
+<td>每条想法带自评的有趣度、新颖度、可行性（§3）；§5 承认 LLM 自评会高估</td>
+<td><code>Interestingness</code> / <code>Feasibility</code> / <code>Novelty</code> 各 1 到 10，只出现在 prompt 里，全仓 grep 没有读取点；查新另写一个布尔 <code>novel</code></td>
+<td><code>ai_scientist/generate_ideas.py:45-49</code></td>
+</tr>
+<tr>
+<td>一代查新的判定</td>
+<td>接 Semantic Scholar API 与网页访问当工具，丢掉与已有文献太像的想法（§3）；附录 B：10 轮</td>
+<td>每条想法一段新对话；每轮模型给一个 <code>Query</code>，框架调 S2 <code>/graph/v1/paper/search</code> 取前 10 条（含摘要）喂回；回复里出现判定串就停，判定检查排在抽 JSON 与检索之前，第 1 轮不检索也能判；10 轮用完没判就是「不新」；只存 <code>novel</code>；主流程只跑 <code>novel</code> 为真的。没有通用网页访问，另一个检索源是 OpenAlex</td>
+<td><code>ai_scientist/generate_ideas.py:285-352</code>、<code>:356-492</code>（判定 <code>:448-454</code> 早于检索 <code>:457-462</code>）、<code>launch_scientist.py:351-363</code></td>
+</tr>
+<tr>
+<td>二代与一代的差别</td>
+<td>从更高抽象层出发、像写基金申请；检索进循环，出想法时就查新（二代论文 §3.1）</td>
+<td>输入换成一份主题 Markdown，不要代码；每轮模型二选一：<code>SearchSemanticScholar</code> 或 <code>FinalizeIdea</code>；字段换成七个文本字段，三个分数与 <code>novel</code> 都去掉；「至少检索一次」只写在 prompt 里；没有查新判定、没有过滤。S2 key 现在可选，但仓库初版没有 <code>S2_API_KEY</code> 时检索工具直接抛错，2025-04-17 才改</td>
+<td><code>ai_scientist/perform_ideation_temp_free.py:24-39</code>、<code>:61-96</code>、<code>:158-250</code>；提交 39ee150 <sup id="fnref3:v2-commits"><a class="footnote-ref" href="#fn:v2-commits">13</a></sup></td>
+</tr>
+<tr>
+<td>树搜索用在哪</td>
+<td>四个实验阶段都用 agentic tree search（二代论文 §3.2.2）</td>
+<td>只在实验：启动器从想法 JSON 里按下标取一条，之后才进树搜索；四个阶段是初步实现、调参、创造性研究、消融</td>
+<td><code>launch_scientist_bfts.py:191-256</code>、<code>ai_scientist/treesearch/agent_manager.py:143-167</code></td>
+</tr>
+<tr>
+<td>想法质量与查新准确度的评估</td>
+<td>一代：表 3–5 报判新条数，§6 说是自评、不可比；二代：没有；Nature 版正文：没看到</td>
+<td>两篇都没有对出想法的消融、没有标准答案对照；独立评测给出反例</td>
+<td>一代论文 §4 §5 §6 §8、附录 C；二代论文 §4；Beel 等 <sup id="fnref2:beel"><a class="footnote-ref" href="#fn:beel">3</a></sup>；Nature 版 <sup id="fnref2:nature"><a class="footnote-ref" href="#fn:nature">11</a></sup></td>
+</tr>
+<tr>
+<td>许可证</td>
+<td>README：用它产出的论文必须显著声明使用了 AI</td>
+<td>两仓同一份 LICENSE（2025 年 12 月版 1.0），2025-12-19 从 Apache 2.0 改来</td>
+<td>一代 <code>LICENSE:1-53</code>；提交 2906fcb、c204ee8 <sup id="fnref2:lic"><a class="footnote-ref" href="#fn:lic">4</a></sup></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="2-方法是什么">2. 方法是什么<a class="permalink" href="#2-方法是什么" title="本节链接">#</a></h2>
+<h3 id="21-一代出想法">2.1 一代：出想法<a class="permalink" href="#21-一代出想法" title="本节链接">#</a></h3>
+<p>输入是模板目录里的三个文件（<code>ai_scientist/generate_ideas.py:98-110</code>）：<code>seed_ideas.json</code>（人写的种子想法，格式与输出相同；仓里 11 套模板各一到三条，论文用的 2d_diffusion、nanoGPT、grokking 是一到两条）、<code>experiment.py</code>（基线实验代码全文）、<code>prompt.json</code>（<code>system</code> 与 <code>task_description</code> 两句话，比如 nanoGPT 模板是「雄心勃勃的 AI 研究者」与「给你的文件在多个字符级数据集上训练多个小语言模型」，<code>templates/nanoGPT/prompt.json</code>）。</p>
+<p>流程（<code>ai_scientist/generate_ideas.py:112-172</code>）：</p>
+<ol>
+<li>存档先放种子想法的 JSON 字符串，每出一条就追加一条（<code>:98-102</code>、<code>:161</code>）。</li>
+<li>每条想法开一段新对话。首轮 prompt 拼上任务描述、整份代码、存档里全部想法原文，要求先写 THOUGHT 再写 JSON，THOUGHT 里要「说明这个想法和已有的有何不同」（<code>:14-52</code>）。这是它唯一的去重手段：靠 prompt 里的存档原文，没有任何相似度计算。</li>
+<li>之后在同一段对话里反思 <code>num_reflections - 1</code> 轮。反思提示要求考虑质量、新颖度、可行性，「除非有明显问题，否则保持原想法的方向」；没什么可改就原样重复 JSON 并写「I am done」，框架看到这个串就停（<code>:54-72</code>、<code>:138-159</code>）。</li>
+<li>JSON 从标了 json 的代码围栏里抽，抽不到退到正则找花括号（一代 <code>ai_scientist/llm.py:289-314</code>）；还抽不到就 <code>assert</code> 失败，整条想法被外层 <code>except</code> 打印一行后跳过（<code>:132-134</code>、<code>:162-164</code>）。</li>
+<li>全部写进 <code>ideas.json</code>，种子也在里面、排在最前（<code>:166-172</code>），所以种子同样会被查新、判新后同样会被执行。例外：社区加的 earthquake-prediction、sketch_rnn 两套模板，种子里预置了 <code>"novel": true</code>，查新时按「已查过」跳过（<code>:420-422</code>），直接进执行（<code>templates/earthquake-prediction/seed_ideas.json</code>、<code>templates/sketch_rnn/seed_ideas.json</code>）。</li>
+</ol>
+<p>想法 JSON 六个字段（<code>:41-47</code>）：<code>Name</code>、<code>Title</code>、<code>Experiment</code>（实现提纲：改哪些函数、结果怎么拿）、<code>Interestingness</code>、<code>Feasibility</code>、<code>Novelty</code>，后三个是 1 到 10 的自评分，prompt 另加一句「评分要谨慎务实」（<code>:49</code>）。</p>
+<p>参数：主流程出 50 条（<code>launch_scientist.py:79-84</code>）、3 轮（<code>:22</code>），查新默认开；单独跑 <code>generate_ideas.py</code> 是 32 条、5 轮，查新要加 <code>--check-novelty</code> 才跑（<code>:496-497</code>、<code>:520-546</code>）；温度用默认 0.75（一代 <code>ai_scientist/llm.py:150</code>），论文附录 B 表 6 只列了审稿温度 0.1。</p>
+<p>开放式变体 <code>generate_next_idea</code>（<code>:178-272</code>）每次只出一条（存档为空的第一次调用只放入第一条种子、不生成，<code>:191-197</code>），prompt 追加一句「已完成的想法带 Score 字段，是专家 ML 审稿人按 1 到 10 打的分，0 分表示实验、写作或审稿失败」（<code>:221-225</code>），分数由 <code>experimental/launch_oe_scientist.py:133</code>、<code>:390</code> 写回存档。论文 §3 说的「存档里可以带已完成想法的审稿分」只在 <code>experimental/</code> 下这个启动器里有；论文 §6 也说正式实验没等审稿分回来，一次性出完所有想法。</p>
+<h3 id="22-一代查新">2.2 一代：查新<a class="permalink" href="#22-一代查新" title="本节链接">#</a></h3>
+<p><code>check_idea_novelty</code>（<code>ai_scientist/generate_ideas.py:405-492</code>），每条想法一段新对话（<code>:427</code> 清空对话历史）：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>环节</th>
+<th>做法</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>身份</td>
+<td>系统提示：雄心勃勃的 AI 博士生，要判断想法是否与已有文献明显重叠，「做苛刻的查新者」，确保够一篇会议或 workshop 论文；附上任务描述与整份 <code>experiment.py</code></td>
+<td><code>:356-371</code></td>
+</tr>
+<tr>
+<td>每轮输入</td>
+<td>轮次号、想法本身（Python dict 直接格式化，含三个自评分）、上一轮检索结果（首轮为空）</td>
+<td><code>:373-383</code>、<code>:432-447</code></td>
+</tr>
+<tr>
+<td>每轮输出</td>
+<td>THOUGHT + 只有 <code>Query</code> 一个字段的 JSON；判定了就在 THOUGHT 里写 <code>Decision made: novel.</code> 或 <code>Decision made: not novel.</code>。提示说「能想起确切论文名或作者时检索效果最好」</td>
+<td><code>:385-402</code></td>
+</tr>
+<tr>
+<td>检索</td>
+<td>S2 <code>/graph/v1/paper/search</code>，<code>limit=10</code>，字段 title / authors / venue / year / abstract / citationStyles / citationCount；设了 <code>S2_API_KEY</code> 就带上；成功返回后睡 1 秒（出错走退避，不睡）。或 OpenAlex（<code>--engine openalex</code>，要装 <code>pyalex</code>，摘要截到 1000 字符，返回的字段里没有 <code>citationStyles</code>）</td>
+<td><code>:285-352</code>（睡眠 <code>:305</code>，OpenAlex 字段 <code>:338-345</code>）</td>
+</tr>
+<tr>
+<td>判定</td>
+<td>回复转小写后找子串：先找 <code>decision made: novel</code>，再找 <code>decision made: not novel</code>（两者不会互相命中，中间隔着 <code>not</code>）。判定检查在抽 JSON 与检索之前，模型第 1 轮一次都没检索就写判定串也会被接受；系统提示里「充分检索后没找到重叠才判新」只是文字要求，代码不数检索次数</td>
+<td><code>:448-454</code>、<code>:457-462</code>、<code>:364</code></td>
+</tr>
+<tr>
+<td>默认值</td>
+<td>10 轮用完没判定：<code>novel = False</code></td>
+<td><code>:410</code>、<code>:426</code>、<code>:485</code></td>
+</tr>
+<tr>
+<td>出错</td>
+<td>任何异常（JSON 抽不到、<code>ConnectionError</code> 这类不在退避范围里的网络错）打印后 <code>continue</code>，这一轮算用掉；对话历史保留，下一轮模型看到的检索结果还是上一次成功的那份</td>
+<td><code>:481-483</code></td>
+</tr>
+<tr>
+<td>检索为空</td>
+<td><code>papers is None</code> 时先把结果设成「No papers found.」，紧接着对 <code>None</code> 做 <code>enumerate</code> 抛 TypeError，被上面的 <code>except</code> 接住；下一轮模型看到的仍是「No papers found.」——结果对，但走的是异常路径</td>
+<td><code>:463-467</code></td>
+</tr>
+<tr>
+<td>留痕</td>
+<td>只写回 <code>idea["novel"]</code> 一个布尔；检索词、返回的论文、判定理由只打到 stdout</td>
+<td><code>:485-490</code></td>
+</tr>
+<tr>
+<td>续跑</td>
+<td>已经有 <code>novel</code> 键的想法跳过</td>
+<td><code>:420-422</code></td>
+</tr>
+<tr>
+<td>用在哪</td>
+<td>主流程 <code>novel_ideas = [idea for idea in ideas if idea["novel"]]</code>，只跑判新的</td>
+<td><code>launch_scientist.py:363</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>退避装饰器 <code>@backoff.on_exception(backoff.expo, requests.exceptions.HTTPError)</code> 既没设 <code>max_tries</code> 也没设 <code>max_time</code>（<code>:282-284</code>）。<code>rsp.raise_for_status()</code>（<code>:302</code>）把所有 4xx、5xx 都抛成 HTTPError，所以不只 429，其他 4xx（请求本身有错这类重试也不会好的）与 5xx 也会无上限重试。issue #78「always backing off」与 #133 贴出的日志就是 429 加退避；#116「检索阶段卡了一小时」贴出的日志里都是 200，维护者只是猜没 key 或超时，原因没有定论。维护者在 #78 的回复是没 key 时限速每秒 1 次、可以先把查新注释掉让它跑全部想法 <sup id="fnref:v1-hang"><a class="footnote-ref" href="#fn:v1-hang">5</a></sup>；社区为此加了 OpenAlex（PR #135，2025-01-14 合入）<sup id="fnref:v1-openalex"><a class="footnote-ref" href="#fn:v1-openalex">6</a></sup>。</p>
+<h3 id="23-二代出想法与检索合在一个循环里">2.3 二代：出想法与检索合在一个循环里<a class="permalink" href="#23-二代出想法与检索合在一个循环里" title="本节链接">#</a></h3>
+<p><code>ai_scientist/perform_ideation_temp_free.py</code>，319 行，文件名的 temp_free 指不依赖代码模板。</p>
+<ul>
+<li><strong>输入</strong>：一份主题 Markdown，README 要求写 Title、Keywords、TL;DR、Abstract（二代 <code>README.md:101</code>，样例 <code>ai_scientist/ideas/i_cant_believe_its_not_better.md</code>），不需要代码。输出写到同名 <code>.json</code>（<code>:309</code>），文件已存在就先读进来当存档（<code>:137-146</code>）。</li>
+<li><strong>系统提示</strong>（<code>:61-96</code>）：有经验的 AI 研究者，提「像激动人心的基金申请」那样的高影响想法、「确保新颖」；每个提案源自一个简单优雅的问题、观察或假设，说清与现有文献的区别；资源不超过学术实验室负担得起的；要能发在顶级 ML 会议；「定稿前至少做一次文献检索」。</li>
+<li><strong>每一轮</strong>：模型回复 <code>ACTION:</code> + <code>ARGUMENTS:</code>，ACTION 二选一：<code>SearchSemanticScholar</code>（参数 <code>{"query": ...}</code>）或 <code>FinalizeIdea</code>（参数 <code>{"idea": {...}}</code>）（<code>:24-39</code>、<code>:69-92</code>）。框架用正则抽出两段（<code>:184-206</code>）；检索就调工具，结果放进下一轮的反思提示（<code>:209-224</code>、<code>:111-125</code>）；定稿就追加到存档，开始下一条（<code>:225-237</code>）。</li>
+<li><strong>提示词</strong>：首轮 = 主题描述 + 已出过的全部提案原文 +「出一个与以前不同的新提案」（<code>:99-108</code>）；后续轮的反思提示与一代几乎同文，多一句「有工具返回的新信息就据此改进」（<code>:111-125</code>）。没有「I am done」，定稿就是停止条件。</li>
+<li><strong>检索工具</strong>：同一个 S2 端点，前 10 条，字段里没有 <code>citationStyles</code>，<strong>按引用数降序重排</strong>后才给模型（<code>ai_scientist/tools/semantic_scholar.py:57-85</code>）；这个方法里没有一代那样的 1 秒间隔；退避同时接 HTTPError 与 ConnectionError，同样不设上限（<code>:52-56</code>），断网时一旦模型选了检索就会一直等。仓库初版（f85bb03）没有 <code>S2_API_KEY</code> 时这个工具构造时就抛 <code>ValueError</code>，2025-04-17 的 39ee150 才改成只警告 <sup id="fnref:v2-commits"><a class="footnote-ref" href="#fn:v2-commits">13</a></sup>。没有 OpenAlex，社区的两个 OpenAlex PR 一个关闭未合、一个未合 <sup id="fnref:v2-openalex"><a class="footnote-ref" href="#fn:v2-openalex">8</a></sup>。</li>
+<li><strong>七个字段</strong>（<code>:30-37</code>）：<code>Name</code>、<code>Title</code>、<code>Short Hypothesis</code>（要说清为什么非这个方向不可、有没有更简单的回答办法）、<code>Related Work</code>（最相关的工作与区别，「不是平凡扩展」）、<code>Abstract</code>（约 250 词）、<code>Experiments</code>（简单可行、写清怎么检验假设、精确的算法改动、评价指标）、<code>Risk Factors and Limitations</code>。</li>
+<li><strong>失败</strong>：解析失败 <code>break</code>，这条想法作废（<code>:245-250</code>）；ACTION 不认识只打印、不告诉模型（<code>:240-244</code>）；<code>num_reflections</code> 轮内没定稿，这条也作废（<code>:158-253</code>）。全都只打到 stdout。</li>
+<li><strong>参数</strong>：<code>--num-reflections</code> 默认 5（<code>:292-297</code>），<code>--max-num-generations</code> 默认 1（<code>:280-285</code>），模型默认 gpt-4o-2024-05-13（<code>:276</code>），温度默认 0.7（二代 <code>ai_scientist/llm.py:274</code>）。</li>
+<li><strong>下游怎么读</strong>：启动器按 <code>--idea_idx</code> 取一条（<code>launch_scientist_bfts.py:63-67</code>、<code>:195</code>）；实验侧 <code>AgentManager</code> 要求 Title、Abstract、Short Hypothesis、Experiments、Risk Factors and Limitations 五个键都在，缺一个就抛错（<code>ai_scientist/treesearch/agent_manager.py:124-134</code>）；每个阶段都拼进 Title、Abstract、Short Hypothesis，启动时加了 <code>--load_code</code> 或 <code>--add_dataset_ref</code> 还有 Code（<code>:179-198</code>；<code>launch_scientist_bfts.py:205-242</code>），Experiments 只在第 3 阶段、Risk Factors 只在第 4 阶段拼进任务描述（<code>:216-247</code>），第 1、2 阶段看不到实验计划。各阶段目标里另写死了数据集要求：第 2 阶段「再引入两个 HuggingFace 数据集」、第 3 阶段「总共用三个 HuggingFace 数据集」（<code>:155-163</code>）。Related Work 不进实验，只经 <code>idea.md</code> 进写作（<code>ai_scientist/treesearch/bfts_utils.py:7-41</code>、<code>ai_scientist/perform_icbinb_writeup.py:648-662</code>）。</li>
+</ul>
+<h3 id="24-两代差别">2.4 两代差别<a class="permalink" href="#24-两代差别" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>一代</th>
+<th>二代</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入</td>
+<td>模板目录：基线代码 + 两句描述 + 种子想法</td>
+<td>一份主题 Markdown</td>
+<td>一代 <code>ai_scientist/generate_ideas.py:98-110</code>；二代 <code>perform_ideation_temp_free.py:303-316</code></td>
+</tr>
+<tr>
+<td>对想法的约束</td>
+<td>整份代码进 prompt，「用给定代码可行、不用额外资源或数据集」</td>
+<td>不看代码，「学术实验室负担得起」</td>
+<td>一代 <code>:25-27</code>；二代 <code>:63</code></td>
+</tr>
+<tr>
+<td>字段</td>
+<td>3 个文本 + 3 个自评分 + 查新布尔</td>
+<td>7 个文本，没有分数也没有布尔</td>
+<td>一代 <code>:41-47</code>；二代 <code>:30-37</code></td>
+</tr>
+<tr>
+<td>反思</td>
+<td>主流程 3 轮，「I am done」早停</td>
+<td>最多 5 轮，定稿即停</td>
+<td><code>launch_scientist.py:22</code>；二代 <code>:292-297</code></td>
+</tr>
+<tr>
+<td>检索时机</td>
+<td>出完一批后，每条单开一段对话查新</td>
+<td>出想法过程中，模型自己决定查不查</td>
+<td>一代 <code>:405-492</code>；二代 <code>:209-224</code></td>
+</tr>
+<tr>
+<td>查新判定</td>
+<td>字符串判新 / 不新，默认不新</td>
+<td>没有</td>
+<td>一代 <code>:448-454</code>、<code>:485</code></td>
+</tr>
+<tr>
+<td>过滤</td>
+<td>只跑判新的</td>
+<td>没有，人挑 <code>--idea_idx</code></td>
+<td><code>launch_scientist.py:363</code>；<code>launch_scientist_bfts.py:195</code></td>
+</tr>
+<tr>
+<td>检索源</td>
+<td>S2 或 OpenAlex</td>
+<td>只有 S2，结果按引用数重排</td>
+<td>一代 <code>:285-352</code>；二代 <code>tools/semantic_scholar.py:83-84</code></td>
+</tr>
+<tr>
+<td>留下什么</td>
+<td><code>ideas.json</code> 里的想法与布尔</td>
+<td>只有定稿的想法 JSON</td>
+<td>一代 <code>:487-490</code>；二代 <code>:260-265</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="25-树搜索用在哪">2.5 树搜索用在哪<a class="permalink" href="#25-树搜索用在哪" title="本节链接">#</a></h3>
+<p>实验，不在出想法。二代启动器先读想法 JSON、按下标取一条（<code>launch_scientist_bfts.py:191-195</code>），转成 <code>idea.md</code> 与 <code>idea.json</code>（<code>:217</code>、<code>:245-247</code>），然后才调 <code>perform_experiments_bfts</code>（<code>:249-256</code>）。树搜索的四个阶段写死在 <code>AgentManager</code>：初步实现、调参、创造性研究、消融（<code>ai_scientist/treesearch/agent_manager.py:143-167</code>）；选下一个扩展的节点时，先按 <code>debug_prob</code> 的概率挑一个可修的 buggy 叶子去修（<code>ai_scientist/treesearch/parallel_agent.py:1963-2004</code>）；否则第 2、4 阶段固定扩展上一阶段的最优节点（<code>:2006-2015</code>），第 1、3 阶段让 LLM 在非 buggy 节点里挑最好的（<code>:2016-2036</code>、<code>ai_scientist/treesearch/journal.py:420-447</code>）。论文 §3.2.2 写「四个实验阶段都用」树搜索，图 2 也写第 2、4 阶段从上一阶段选出的根节点生出调参、消融节点，与代码一致。</p>
+<h1 id="175-表里原稿的匹配点一行说二代通过-agentic-tree-search-扩展搜索并迭代研究方向与方案代码里研究方向在进树之前就由那条想法定死了树在第-3-阶段的目标里有探索新的改进设计揭示新见解的实验agent_managerpy159-163是在这条想法之内找实现与实验方案不在不同研究方向之间搜索">175 表里「原稿的匹配点」一行说二代「通过 Agentic Tree Search 扩展、搜索并迭代研究方向与方案」。代码里研究方向在进树之前就由那条想法定死了；树在第 3 阶段的目标里有「探索新的改进、设计揭示新见解的实验」（<code>agent_manager.py:159-163</code>），是在这条想法之内找实现与实验方案，不在不同研究方向之间搜索。<a class="permalink" href="#175-表里原稿的匹配点一行说二代通过-agentic-tree-search-扩展搜索并迭代研究方向与方案代码里研究方向在进树之前就由那条想法定死了树在第-3-阶段的目标里有探索新的改进设计揭示新见解的实验agent_managerpy159-163是在这条想法之内找实现与实验方案不在不同研究方向之间搜索" title="本节链接">#</a></h1>
+<h3 id="26-实验与写作两句话">2.6 实验与写作两句话<a class="permalink" href="#26-实验与写作两句话" title="本节链接">#</a></h3>
+<p>一代：Aider 在模板代码上按想法改，最多 5 次实验、每次失败最多重试 4 次（一代论文附录 B 表 6）；写作按节填 LaTeX，再用 S2 检索 20 轮补引用，bibtex 直接取 S2 返回的 <code>citationStyles</code>，不让模型写，框架把它插进 <code>references.bib</code>（一代论文 §3(b)；一代 <code>ai_scientist/perform_writeup.py:318</code> 检索、<code>:369-370</code> 取 bibtex、<code>:401-402</code> 默认 20 轮、<code>:474-478</code> 插入）。OpenAlex 分支返回的论文没有 <code>citationStyles</code>（<code>ai_scientist/generate_ideas.py:338-345</code>），<code>--engine openalex</code> 时 <code>:369</code> 会抛 KeyError、被 <code>:374</code> 接住，这一轮不加引用；按代码推断整篇论文都加不上引用，未运行验证。一代 issue #179（2025-01-19 开，至今未关）报的就是这个缺字段，OpenAlex PR 的作者回复「我认为这是 bug」<sup id="fnref:v1-i179"><a class="footnote-ref" href="#fn:v1-i179">12</a></sup>。二代：实验是基于 AIDE 的并行树搜索（二代 <code>README.md:196</code>，README 自述，本篇没有对照 AIDE 代码）；写作改成一次生成加反思，引用同样从 S2 取 bibtex，每轮取 5 条（<code>ai_scientist/perform_icbinb_writeup.py:450</code>、<code>:507</code>）。另外二代论文附录 A 表 2、表 3 的超参与仓里 <code>bfts_config.yaml</code> 有五处对不上：debug 概率 1.0 对 0.5、第 1 阶段 21 对 20 个节点、第 4 阶段 12 对 18 个节点、代码生成温度 0.5 对 1.0、代码生成 max tokens 8192 对 12000（<code>bfts_config.yaml:40</code>、<code>:43</code>、<code>:58-59</code>、<code>:75</code>；阶段上限按 <code>len(journal.nodes)</code> 计，确实是节点数，<code>ai_scientist/treesearch/agent_manager.py:398</code>、<code>:414</code>），属实验侧，本篇不展开。</p>
+<h2 id="3-为什么有效证据与对账">3. 为什么有效：证据与对账<a class="permalink" href="#3-为什么有效证据与对账" title="本节链接">#</a></h2>
+<h3 id="31-论文给了哪些证据">3.1 论文给了哪些证据<a class="permalink" href="#31-论文给了哪些证据" title="本节链接">#</a></h3>
+<p><strong>一代</strong> <sup id="fnref:v1paper"><a class="footnote-ref" href="#fn:v1paper">1</a></sup>：</p>
+<ul>
+<li>表 3 到表 5 报三个模板、四个模型的判新条数：</li>
+</ul>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>模板</th>
+<th>Sonnet 3.5</th>
+<th>GPT-4o</th>
+<th>DeepSeek Coder</th>
+<th>Llama-3.1 405b</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2D Diffusion（表 3）</td>
+<td>49 / 51</td>
+<td>41 / 51</td>
+<td>42 / 51</td>
+<td>31 / 51</td>
+</tr>
+<tr>
+<td>NanoGPT（表 4）</td>
+<td>50 / 52</td>
+<td>44 / 52</td>
+<td>37 / 52</td>
+<td>41 / 52</td>
+</tr>
+<tr>
+<td>Grokking（表 5）</td>
+<td>47 / 51</td>
+<td>51 / 51</td>
+<td>46 / 51</td>
+<td>36 / 51</td>
+</tr>
+</tbody>
+</table></div>
+<p>§6 原话的意思是：查新与检索都是各模型给自己的想法做的，模型之间的「新颖」不好比。这一列是查新的输出，不是对查新的评估。
+- 附录 C 列了 Grokking 模板、Sonnet 3.5 一次运行的 50 条生成想法加 1 条种子。按附录原文逐条数（数法见<a href="#7-调研方法">第 7 节</a>）：自评有趣度 48 条 9 分、2 条 8 分；自评新颖度 30 条 9 分、19 条 8 分、1 条 7 分；可行性 6 到 9 分；46 条生成想法判新，加上判新的种子共 47，和表 5 Sonnet 那一行对得上。名字完全相同的想法有两对：<code>mutual_information_grokking</code>（第 15、46 条，都判新，内容都是跟踪训练中互信息与 grokking 的关系，一个用分箱估计、一个用 MINE）与 <code>lottery_tickets_grokking</code>（第 20、47 条，都判不新）；另有 <code>critical_periods_grokking</code>（19）与 <code>critical_learning_periods_grokking</code>（32）两条都判新。存档原文在 prompt 里并没有挡住重复，查新也不和存档里的其他想法比。
+- §5 案例说，LLM 判断有偏，在想法有趣度、可行性、新颖度的高估上看得到；§8 说出想法常在不同运行、甚至不同模型之间给出很相似的想法。
+- §4 验证的是自动审稿人（ICLR 2022 数据上与人类 65% 对 66% 的平衡准确率），评的是成稿论文，不是想法。全文唯一的反思消融也在这里：审稿人加 Reflexion 平衡准确率 +2%。
+- 出想法没有反思轮数的消融，没有「有查新 / 没查新」的对比，没有用已知工作做标准答案测查新的准确度。</p>
+<p><strong>二代</strong> <sup id="fnref:v2paper"><a class="footnote-ref" href="#fn:v2paper">2</a></sup>：</p>
+<ul>
+<li>§4.2：以 ICBINB workshop 主题出了约 20 条想法，改系统提示偏向应用领域后又出约 20 条，人从中挑 3 条，每条用不同随机种子跑多遍完整流程，人再挑最好的一篇投稿；3 篇里 1 篇过了 workshop 评审（6、7、6 分）。挑想法与挑成稿都是人做的。</li>
+<li>被接收那篇的初始想法里，实验计划写的是 SCAN、COGS、IWSLT、GeoQuery（§4.2 与附录 C.1「Initial Idea」），成稿只用了合成的算术表达式数据（§1、§4.2）。这一例里想法的 Experiments 字段没有约束住实验；代码上 Experiments 也只在第 3 阶段进任务描述（见 <a href="#23-二代出想法与检索合在一个循环里">2.3 节</a>），第 1、2 阶段看不到。</li>
+<li>§4.1 提到成稿里有引用不准确；§5 说「提出真正新颖、高影响的假设」仍是难点。</li>
+<li>对出想法、对检索都没有任何定量评估；§6 引了 Si 等（人评下 LLM 想法更新颖、可行性更差）和 Beel 等的独立评测，没有针对它们做实验。</li>
+</ul>
+<p>两篇论文的证据能支持的是「这套流程能产出结构化想法，并在一代里筛掉一小部分」；「反思让想法更好」「查新能挡住已有工作」两件事，两篇都没有测量。</p>
+<h3 id="32-独立评测">3.2 独立评测<a class="permalink" href="#32-独立评测" title="本节链接">#</a></h3>
+<p>Beel、Kan、Baumgart 用一代跑了一个推荐系统课题：FunkSVD 在 MovieLens-100k 上，目标是找提升能效的新办法，模型 gpt-4o-2024-05-13，两条种子想法 <sup id="fnref:beel"><a class="footnote-ref" href="#fn:beel">3</a></sup>。</p>
+<ul>
+<li>10 条生成想法加 2 条种子<strong>全部判新</strong>，其中 SGD 的 micro-batching、自适应学习率、混合矩阵分解、e-fold 交叉验证都是已有工作（§2.3）。作者把原因归到关键词检索而非对文献的综合；脚注说此前的测试里它偶尔也会判不新，不是永远判新。</li>
+<li>三个自评分「看起来是随意给的，后续处理不用」（§2.3），与本篇 grep 的结果一致。</li>
+<li>12 个想法里 5 个（42%）因为代码错误没跑成；成稿的参考文献中位数 5 条，34 条里只有 5 条是 2020 年以后的。</li>
+<li>作者自己说明只用了一个数据集、一个领域、一组种子和一个模板（§2.8）。</li>
+<li>他们对机制的描述有一处与代码不符：§2.3 说「没找到明显匹配就判 novel=True」；代码的默认值是 <code>False</code>，只有模型写出 <code>Decision made: novel</code> 才为真（<code>ai_scientist/generate_ideas.py:426</code>、<code>:448-451</code>）。这不影响他们观察到的结果（12 条全判新）。</li>
+</ul>
+<p>一代仓 issue 里还有一条旁证：S2 对查新词返回 0 条结果，回复的是一位非维护者，说是关键词检索本身的问题 <sup id="fnref:v1-empty"><a class="footnote-ref" href="#fn:v1-empty">7</a></sup>。该 issue 贴出的返回格式（<code>totalHits</code> / <code>results</code>、<code>limit 5</code>）与当前代码请求的端点返回格式（<code>total</code> / <code>data</code>、<code>limit 10</code>）不同，报告者跑的可能不是原版代码。</p>
+<h3 id="33-代码是否按论文做">3.3 代码是否按论文做<a class="permalink" href="#33-代码是否按论文做" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>论文或 README 说</th>
+<th>代码</th>
+<th>证据</th>
+<th>对得上吗</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一代：3 轮反思、10 轮查新（附录 B 表 6）</td>
+<td>主流程 3、查新默认 10 且主流程不覆盖</td>
+<td><code>launch_scientist.py:22</code>、<code>ai_scientist/generate_ideas.py:410</code></td>
+<td>对上</td>
+</tr>
+<tr>
+<td>一代：查新接「Semantic Scholar API 与网页访问」（§3）；Nature 版同样写网页访问，并写「与已有工作语义相似度高的想法被丢弃」<sup id="fnref3:nature"><a class="footnote-ref" href="#fn:nature">11</a></sup></td>
+<td>只有 S2 检索端点与 OpenAlex，没有通用网页访问；判新靠模型回复里的字符串，没有任何相似度计算（grep <code>cosine</code> <code>embedding</code> <code>similarit</code> 在出想法与查新代码里零命中）</td>
+<td><code>ai_scientist/generate_ideas.py:285-352</code>、<code>:448-454</code></td>
+<td>网页访问没有；「语义相似度」没有</td>
+</tr>
+<tr>
+<td>一代：存档可以带已完成想法的审稿分（§3）</td>
+<td>只在 <code>experimental/launch_oe_scientist.py</code>；主启动器不回写分数</td>
+<td><code>ai_scientist/generate_ideas.py:221-225</code>、<code>experimental/launch_oe_scientist.py:133</code></td>
+<td>只接了一半，论文 §6 自己说明了</td>
+</tr>
+<tr>
+<td>一代：丢掉与文献太像的想法（§3）</td>
+<td>主启动器按 <code>novel</code> 过滤；开放式启动器查完新后不看 <code>novel</code>，照样跑</td>
+<td><code>launch_scientist.py:363</code>；<code>experimental/launch_oe_scientist.py:109-118</code>、<code>:368-377</code></td>
+<td>主流程对上，开放式没有</td>
+</tr>
+<tr>
+<td>一代 README：没有 S2 key 可以跳过查新与引用阶段（一代 <code>README.md:137</code>、<code>:368</code>）</td>
+<td><code>--skip-novelty-check</code> 存在，但跳过后主流程仍读 <code>idea["novel"]</code>；新出的想法没有这个键。论文用的三套模板种子也没有这个键、且排在列表第一个，所以 <code>:363</code> 读第一个元素就会 KeyError。这是读代码的推断，未运行；#116 的评论里有人说「注释掉查新后报一堆错」，与此相符但没贴错误 <sup id="fnref2:v1-hang"><a class="footnote-ref" href="#fn:v1-hang">5</a></sup></td>
+<td><code>launch_scientist.py:36-40</code>、<code>:351-363</code>；<code>templates/grokking/seed_ideas.json</code></td>
+<td>新出想法时跳不过去（未运行验证）</td>
+</tr>
+<tr>
+<td>一代：每条想法带自评分（§3）</td>
+<td>只在 prompt 里，没有读取点</td>
+<td><code>ai_scientist/generate_ideas.py:45-49</code></td>
+<td>论文没说拿来用，代码也没用</td>
+</tr>
+<tr>
+<td>二代：出想法时查文献评估新颖度（§3.1）；README 说用 S2「评估想法新颖度」（二代 <code>README.md:99</code>、<code>:188</code>）</td>
+<td>检索是可选工具；没有新颖度判定；「至少检索一次」只在 prompt</td>
+<td><code>ai_scientist/perform_ideation_temp_free.py:96</code>、<code>:209-237</code></td>
+<td>有检索，没有评估</td>
+</tr>
+<tr>
+<td>二代附录 B 系统提示：「确保提案能从给定代码库出发做」</td>
+<td>代码里的系统提示没有这半句；是论文挂出（2025-04-10）两天后的提交 364aa55 删的，提交说明是「删掉对不存在的代码库的引用」</td>
+<td><code>ai_scientist/perform_ideation_temp_free.py:63</code>；<sup id="fnref4:v2-commits"><a class="footnote-ref" href="#fn:v2-commits">13</a></sup></td>
+<td>文与码不一致，原因可查</td>
+</tr>
+<tr>
+<td>二代附录 B 的 IDEA JSON 示例没有外层 <code>"idea"</code> 键</td>
+<td>代码要求 <code>{"idea": {...}}</code>，缺了抛 <code>ValueError</code>、被外层接住后这条想法作废；2025-05-05 的 c31970c 才把示例改成带 <code>"idea"</code></td>
+<td><code>ai_scientist/perform_ideation_temp_free.py:79-92</code>、<code>:229-231</code>、<code>:245-250</code>；<sup id="fnref5:v2-commits"><a class="footnote-ref" href="#fn:v2-commits">13</a></sup></td>
+<td>仓里现在的示例与代码一致，论文里的是旧版</td>
+</tr>
+<tr>
+<td>二代 README：S2 有问题时可以跳过引用阶段（<code>README.md:83</code>），FAQ 说可以跳过查新与引用（<code>:188</code>）</td>
+<td>出想法脚本没有跳过检索的参数；查不查由模型每轮决定；一旦调用，S2 返回 4xx / 5xx 或连不上就无上限退避</td>
+<td><code>ai_scientist/perform_ideation_temp_free.py:269-297</code>、<code>ai_scientist/tools/semantic_scholar.py:52-56</code></td>
+<td>出想法阶段没有跳过的开关</td>
+</tr>
+<tr>
+<td>二代：每批约 20 条想法（§4.2）</td>
+<td>命令行默认 1 条，要自己传 <code>--max-num-generations</code></td>
+<td><code>ai_scientist/perform_ideation_temp_free.py:280-285</code></td>
+<td>默认值不同，参数可调</td>
+</tr>
+<tr>
+<td>二代：树搜索用于四个实验阶段（§3.2.2）</td>
+<td>同</td>
+<td><code>ai_scientist/treesearch/agent_manager.py:143-167</code></td>
+<td>对上</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="4-平台哪里能用">4. 平台哪里能用<a class="permalink" href="#4-平台哪里能用" title="本节链接">#</a></h2>
+<p>只列落点与事实，不写接不接。</p>
+<h3 id="41-方法件与阶段">4.1 方法件与阶段<a class="permalink" href="#41-方法件与阶段" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方法件</th>
+<th>落在哪个阶段</th>
+<th>需要什么输入</th>
+<th>产出什么</th>
+<th>AI Scientist 里的出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>带存档的出想法：已出过的想法原文进 prompt、要求「不同」，同一段对话里反思 N 轮，约定一个早停串</td>
+<td>假设</td>
+<td>研究方向描述（对应平台已确认的需求）；可选的基线代码（一代的 <code>experiment.py</code>，对应 <code>materials/</code> 里的代码）；本项目已出过的想法</td>
+<td>一组结构化想法</td>
+<td>一代 <code>ai_scientist/generate_ideas.py:14-72</code>、二代 <code>ai_scientist/perform_ideation_temp_free.py:99-125</code></td>
+</tr>
+<tr>
+<td>想法字段表：二代七个字段，下游实验硬读其中五个</td>
+<td>假设（主文件的内容）</td>
+<td>—</td>
+<td>每条想法一份结构化记录；实验侧拿它拼任务描述</td>
+<td>二代 <code>ai_scientist/perform_ideation_temp_free.py:30-37</code>、<code>ai_scientist/treesearch/agent_manager.py:124-134</code></td>
+</tr>
+<tr>
+<td>有上限的检索判定循环：新对话、苛刻查新者口吻、每轮一个检索词、看前 10 条摘要、字符串判定、用完轮数默认不新</td>
+<td>假设（也可看成文献阶段的一种检查）</td>
+<td>一条想法 + 一个返回摘要的检索通道</td>
+<td>新 / 不新；AI Scientist 没存、但检索时手上有的：检索词、命中论文、判定理由</td>
+<td>一代 <code>ai_scientist/generate_ideas.py:356-492</code></td>
+</tr>
+<tr>
+<td>检索进出想法循环：检索是模型可选的一个动作，结果进下一轮</td>
+<td>假设 + 文献</td>
+<td>同上</td>
+<td>想法与 Related Work 字段；检索命中本可以落成一份材料清单，AI Scientist 没落</td>
+<td>二代 <code>ai_scientist/perform_ideation_temp_free.py:209-237</code></td>
+</tr>
+<tr>
+<td>bibtex 从检索 API 取，不让模型写</td>
+<td>写作</td>
+<td>检索通道返回的 bibtex（两代都用 S2 的 <code>citationStyles</code> 字段；一代的 OpenAlex 分支不返回它）</td>
+<td>引用条目</td>
+<td>一代论文 §3(b)、一代 <code>ai_scientist/perform_writeup.py:369-370</code>、二代 <code>ai_scientist/perform_icbinb_writeup.py:507</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="42-跟平台现有规矩的对照">4.2 跟平台现有规矩的对照<a class="permalink" href="#42-跟平台现有规矩的对照" title="本节链接">#</a></h3>
+<ul>
+<li><strong>谁调模型</strong>：AI Scientist 两代都是 Python 程序直接调模型 API，按模型名分派：Anthropic（含 Bedrock、Vertex）走 <code>anthropic</code> SDK，OpenAI 走 <code>openai</code> SDK，DeepSeek、OpenRouter、Gemini 也走 <code>openai</code> SDK、换 <code>base_url</code>（一代 <code>ai_scientist/llm.py:317-351</code>、二代 <code>ai_scientist/llm.py:480-544</code>）；凭据来自环境变量（各家 key，Bedrock 用 AWS 凭据）。二代 2025-09-30 起还能接本机 Ollama（<code>http://localhost:11434/v1</code>，<code>OLLAMA_API_KEY</code> 可空；列表里有 qwen3、deepseek-r1、gpt-oss，二代 <code>ai_scientist/llm.py:54-72</code>、<code>:492-497</code>），这条路不需要付费 key <sup id="fnref2:v2-commits"><a class="footnote-ref" href="#fn:v2-commits">13</a></sup>。平台 P-1：框架不调模型写文本，执行层是唯一写代码的（外层 <code>docs/architecture/README.md:151</code>）；执行层用哪家 CLI、什么模型由按人的 <code>agents.yaml</code> 定（P-25，<code>:175</code>）。方法件里的「轮数、早停串、判定串」在平台上写进执行层会话的说明还是写进 skill 脚本，目前没有定。</li>
+<li><strong>检索通道</strong>：AI Scientist 用 S2 的 HTTP API（key 可选）。平台 P-14：联网只用 CLI 自带的搜索与网页读取工具，查到的带来源（外层 <code>docs/architecture/README.md:164</code>）；skill 脚本运行时联网有先例，<code>download</code> 拉 git 仓库与 Hugging Face，私有仓读环境变量 <code>HF_TOKEN</code>（内仓 <code>skills/download/SKILL.md:4</code>），依赖用 <code>uv run --locked --offline</code> 起（内仓 <code>docs/add-a-skill.md:65</code>）。CLI 自带搜索返回的是网页，S2 返回的是结构化元数据与摘要，两者给查新的输入不同。</li>
+<li><strong>评审隔离</strong>：一代查新是新开的一段对话，但与出想法同一个模型、同一个进程，还能看到想法自带的三个自评分。平台 P-2 要求需要模型判断的评审由隔离的新会话做、只给产物不给轨迹，这一段注明「尚未实现」（外层 <code>docs/architecture/README.md:152</code>）。</li>
+<li><strong>阶段主文件</strong>：假设、写作两个阶段还没有主文件，由第一个进来的能力定名（内仓 <code>framework/capabilities/__init__.py:42-51</code>、<code>docs/add-a-capability.md</code>「文件名按阶段定」一节）；文献阶段主文件是 <code>sources.md</code>（P-20，外层 <code>docs/architecture/README.md:170</code>），由助理手写（P-1，<code>:151</code>；内仓 <code>framework/capabilities/__init__.py:46</code>）。AI Scientist 两代都不保存检索命中的论文列表。</li>
+<li><strong>阶段之间</strong>：平台 P-18 阶段之间不做数据流校验、进下一阶段时助理自己看盘（外层 <code>docs/architecture/README.md:168</code>）；二代的想法 JSON 与实验之间是硬校验，五个键缺一个就抛错。</li>
+<li><strong>人确认</strong>：二代挑想法由人做（<code>--idea_idx</code>，二代论文 §4.2）；一代由 <code>novel</code> 过滤、不经人。平台上步骤能力的产出「能签」（P-22，外层 <code>docs/architecture/README.md:172</code>），要不要签由流程在哪放断点定（P-19，<code>:169</code>）。</li>
+</ul>
+<h2 id="5-局限与前提">5. 局限与前提<a class="permalink" href="#5-局限与前提" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>事实</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入</td>
+<td>一代出想法离不开代码模板：基线代码、<code>prompt.json</code>、<code>seed_ideas.json</code>，想法被限定在「给定代码可行、不用额外数据集」；二代只要一份主题 Markdown</td>
+<td>一代 <code>ai_scientist/generate_ideas.py:25-27</code>、<code>:98-110</code>；二代 <code>README.md:101</code></td>
+</tr>
+<tr>
+<td>领域</td>
+<td>提示词写死了 ML：「顶级 ML 会议」「AI 研究者 / 博士生」；二代 issue #32 报告生成的想法与主题 Markdown 无关，回复的是一位非维护者，归因到 ML 取向的提示词（未核实）。二代实验阶段的目标里写死了要用 HuggingFace 数据集</td>
+<td>二代 <code>ai_scientist/perform_ideation_temp_free.py:61-63</code>、一代 <code>ai_scientist/generate_ideas.py:356-358</code> <sup id="fnref:v2-i32"><a class="footnote-ref" href="#fn:v2-i32">9</a></sup>；二代 <code>ai_scientist/treesearch/agent_manager.py:155-163</code></td>
+</tr>
+<tr>
+<td>模型</td>
+<td>出想法与查新用同一个模型；判新条数随模型在 31/51 到 51/51 之间变，论文说不可比；一代 README 说不建议用明显弱于 GPT-4 的模型；二代论文附录 A 没列出想法用的模型，代码默认 gpt-4o-2024-05-13；二代可接本机 Ollama，本地模型能不能稳定按 <code>ACTION:</code> / <code>ARGUMENTS:</code> 格式回复没有数据</td>
+<td><code>launch_scientist.py:339-358</code>；一代论文表 3–5、§6；一代 <code>README.md:360</code>；二代 <code>perform_ideation_temp_free.py:276</code>、二代 <code>ai_scientist/llm.py:492-497</code></td>
+</tr>
+<tr>
+<td>算力与成本</td>
+<td>出想法本身不用 GPU。一代单独跑 <code>generate_ideas.py</code> 要装模型 SDK（<code>llm.py</code> 顶部 import 了 anthropic、openai、google.generativeai）；走主启动器则还要 torch 与 aider，并且在出想法之前先查 <code>pdflatex</code> 与 <code>chktex</code>，缺一个就退出。二代出想法脚本只依赖 anthropic、openai、backoff、requests、tiktoken，不碰 torch。二代 README 说出想法花费「一般几美元」</td>
+<td>一代 <code>ai_scientist/generate_ideas.py:1-10</code>、一代 <code>ai_scientist/llm.py:5-9</code>、<code>launch_scientist.py:10-13</code>、<code>:334-336</code>；二代 <code>ai_scientist/perform_ideation_temp_free.py:1-18</code>、二代 <code>ai_scientist/llm.py:1-9</code>、二代 <code>README.md:180</code></td>
+</tr>
+<tr>
+<td>依赖</td>
+<td>两仓都只有不带版本号的 <code>requirements.txt</code>，没有锁文件</td>
+<td>一代与二代 <code>requirements.txt</code>（<code>grep -c '=='</code> 均为 0）</td>
+</tr>
+<tr>
+<td>外部服务</td>
+<td>没有 key 时 S2 限速；两代的退避都不设上限，429 及其他 4xx / 5xx 都会让进程一直重试；一代有 OpenAlex 备选（只在查新里可用，写作取 bibtex 用不了），二代没有</td>
+<td>一代 <code>ai_scientist/generate_ideas.py:282-284</code>、<code>:302</code>；二代 <code>ai_scientist/tools/semantic_scholar.py:52-56</code>、<code>:101-103</code> <sup id="fnref3:v1-hang"><a class="footnote-ref" href="#fn:v1-hang">5</a></sup> <sup id="fnref2:v2-openalex"><a class="footnote-ref" href="#fn:v2-openalex">8</a></sup></td>
+</tr>
+<tr>
+<td>失败处理</td>
+<td>一代：异常打印后跳过，一次失败吃掉一轮查新；二代：解析失败、没定稿的想法直接作废，只有 stdout 记录</td>
+<td>一代 <code>:162-164</code>、<code>:481-483</code>；二代 <code>:240-253</code></td>
+</tr>
+<tr>
+<td>留痕</td>
+<td>一代只存 <code>novel</code> 布尔；二代只存定稿的想法。检索词、命中论文、判定理由都不落盘</td>
+<td>一代 <code>:485-490</code>；二代 <code>:260-265</code></td>
+</tr>
+<tr>
+<td>自评分</td>
+<td>集中在 8 到 9 分，没有读取点；独立评测说它们看起来是随意给的</td>
+<td>一代论文附录 C；<sup id="fnref3:beel"><a class="footnote-ref" href="#fn:beel">3</a></sup></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="51-许可证条款要点">5.1 许可证条款要点<a class="permalink" href="#51-许可证条款要点" title="本节链接">#</a></h3>
+<p>两仓 LICENSE 逐字相同（<code>diff</code> 无输出），名为 The AI Scientist Source Code License，Version 1.0，December 2025，基于 Responsible AI Source Code License v1.1（一代 <code>LICENSE:1-4</code>）。GitHub API 报的许可证类型是「Other / NOASSERTION」。</p>
+<ul>
+<li><strong>授权</strong>（§2）：非独占、全球、免版税的著作权许可，可复制、可做衍生作品、可分发（<code>LICENSE:18-19</code>）。</li>
+<li><strong>分发</strong>（§3.1）：分发任何部分都要附上完整的许可证文本（<code>:22</code>）。</li>
+<li><strong>使用限制</strong>（§3.2）：本体及衍生作品不得由你或你控制的第三方用于（<code>:23-40</code>）：</li>
+<li>a. 监控：检测或推断受美国联邦法保护的身份类别，或人的姓名、住址、性别、宗教、健康等身份特征；</li>
+<li>b. 计算机生成媒体：合成逼真的人物或事件音视频而不加说明、水印或元数据；</li>
+<li>c. 医疗：预测某人是否会提保险理赔；无人监督地诊断疾病；</li>
+<li>d. 犯罪：根据面部或个人数据预测犯罪；</li>
+<li>e. 科研稿件与学术诚信（「AI Scientist 条款」）：生成或传播科学稿件、论文、技术报告时，必须在显著位置（如摘要、专门的 Disclosure 或 Methods 节）明确说明内容是机器生成的或用 The AI Scientist 产出的。</li>
+<li><strong>传递</strong>（§3.3）：上述限制必须作为可执行条款写进任何约束本作品或衍生作品使用、分发的法律协议（<code>:42</code>）。</li>
+<li><strong>终止</strong>（§4）：出现受限用途时，许可方有权终止许可并要求归还或销毁全部副本（<code>:44-45</code>）。</li>
+<li>§5、§6：按现状提供、不担保、不担责（<code>:47-51</code>）。</li>
+</ul>
+<p>历史：两仓最初都是 Apache 2.0，2025-12-19 同日改成上面这份（一代提交 2906fcb「Update license from Apache 2.0 to AI Scientist License 1.0」，二代提交 c204ee8），随后 README 加了「Mandatory Disclosure」一节（一代 <code>README.md:391-395</code>、二代 <code>README.md:203-209</code>）<sup id="fnref:lic"><a class="footnote-ref" href="#fn:lic">4</a></sup>。本篇读的两个提交都在改许可证之后。二代 README 说树搜索基于 AIDE（二代 <code>README.md:196</code>），AIDE 仓库是 MIT <sup id="fnref:aide"><a class="footnote-ref" href="#fn:aide">10</a></sup>。</p>
+<h2 id="6-还没弄清的问题">6. 还没弄清的问题<a class="permalink" href="#6-还没弄清的问题" title="本节链接">#</a></h2>
+<ol>
+<li><strong>查新到底准不准</strong>：两篇论文都没有标准答案对照；Beel 等是一个领域、一个模型、12 条想法的单次观察。Nature 版（2026-03-25）<sup id="fnref:nature"><a class="footnote-ref" href="#fn:nature">11</a></sup> 这次只扫了网页正文：出想法用 o3，查新写成「语义相似度高的丢弃」、仍写「网页访问」，正文没看到对想法或查新的定量评估；补充材料没读，不知道那里有没有。</li>
+<li><strong>错判的来源分不开</strong>：误判新是 S2 关键词检索召回不到、模型没想到对的检索词（提示里说「能想起确切论文名时最好」）、还是模型读到了也判新，现有材料分不开。</li>
+<li><strong>反思轮数有没有用</strong>：没有消融；一代「I am done」在实际运行里第几轮出现、一代查新平均检索几轮才判定、二代有多少比例的想法定稿前真的检索过，都没有统计。二代论文说公开的 workshop 实验数据在 SakanaAI/AI-Scientist-ICLR2025-Workshop-Experiment <sup id="fnref:workshop-data"><a class="footnote-ref" href="#fn:workshop-data">15</a></sup>：用 <code>gh api</code> 列了文件树，只有三篇论文的标注版、AI 审稿结果与审稿代码，没有出想法的记录（约 40 条想法、检索词、反思轮次都不在里面）。</li>
+<li><strong>同模型自查</strong>：一代查新与出想法是同一个模型，且查新能看到想法的自评分；换模型或换一个看不到自评分的会话，判定会不会变，没有数据。</li>
+<li><strong>检索通道的差别</strong>：S2 现在没有 key 时的限速、key 的申请周期（2026-09 的情况）没查（#179 里 2025-01 有人说 S2 的 key 申请在排队等候，是旧情况 <sup id="fnref2:v1-i179"><a class="footnote-ref" href="#fn:v1-i179">12</a></sup>）；OpenAlex 用来查新效果如何没有数据；CLI 自带网页搜索与 S2 结构化检索用于查新孰优孰劣，没有数据。</li>
+<li><strong>领域迁移</strong>：提示词是 ML 取向，在课题组的工程学科题目上表现如何没有证据。二代 issue #133 是一次生物医学主题的独立评测（10 个题目、24 次写作）报的两个 bug，都在写作与 VLM 看图环节，不在出想法；报告者用的主模型 DeepSeek-Chat 不在二代 <code>AVAILABLE_LLMS</code> 里（二代 <code>ai_scientist/llm.py:13-73</code>），说明他改过代码；他们的出想法记录说是随论文发布，还没看到 <sup id="fnref:v2-i133"><a class="footnote-ref" href="#fn:v2-i133">14</a></sup>。</li>
+<li><strong>OpenAlex 与写作</strong>：一代 <code>--engine openalex</code> 时写作阶段会不会一条引用都加不上（见 <a href="#26-实验与写作两句话">2.6 节</a>），是读代码推断，未运行验证；issue #179 确认了缺字段，没人贴出实际运行结果 <sup id="fnref3:v1-i179"><a class="footnote-ref" href="#fn:v1-i179">12</a></sup>。</li>
+<li><strong>许可证怎么适用</strong>：照着方法重新实现、抄提示词原文、用改许可证之前的 Apache 2.0 提交，分别算不算这份许可证意义上的「衍生作品」，§3.3 对再分发的要求落到平台上意味着什么，这些是法律问题，本篇不下判断。</li>
+<li><strong>README 的「可以跳过查新」</strong>：<code>--skip-novelty-check</code> 配合新出的想法会不会真的 KeyError，是读代码推断，未运行验证。</li>
+<li><strong>本地模型</strong>：二代接 Ollama 后，出想法这段能不能不花钱跑通（本地模型守不守 <code>ACTION:</code> / <code>ARGUMENTS:</code> 格式、会不会调检索），没有数据。</li>
+</ol>
+<h2 id="7-调研方法">7. 调研方法<a class="permalink" href="#7-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>两个仓库浅克隆到外层 <code>vendor/</code>（gitignore 挡住），只读代码、不装依赖、不跑。重点逐行读了一代 <code>ai_scientist/generate_ideas.py</code>（546 行全读）、<code>launch_scientist.py</code>、<code>experimental/launch_oe_scientist.py</code> 的出想法部分，二代 <code>ai_scientist/perform_ideation_temp_free.py</code>（319 行全读）、<code>ai_scientist/tools/semantic_scholar.py</code>、<code>launch_scientist_bfts.py</code>，以及 <code>agent_manager.py</code> 里读想法的部分；分数字段、<code>novel</code>、检索函数的调用点都用 grep 全仓确认。</li>
+<li>论文用平台的 <code>pdf</code> skill 解析，原件与解析结果放在外层 <code>materials/research/2026-0927-scientific-ai-capabilities/papers/</code>（gitignore）。附录 C 的分数分布与判新条数，是对解析出的 <code>paper.md</code> 附录 C 一节按「Idea n/50」切段、用正则取 <code>"Interestingness"</code> <code>"Feasibility"</code> <code>"Novelty"</code> <code>"novel"</code> 数出来的；判新 46 条加种子共 47，与表 5 对上作为自检。</li>
+<li>许可证历史、issue 与 PR、出想法相关文件的提交历史用 <code>gh api</code> 只读查询；独立评测 Beel 等的论文下载后解析核对了数字；Nature 版只抓了网页正文扫读。</li>
+<li>2026-09-27 另一个会话照出处独立复核了一轮：逐个打开文中的 <code>文件:行</code>、重数附录 C 的分数与判新条数（结果与第一版一致）、重查 issue 与提交历史、对「没有网页访问 / 没有相似度计算 / 没有查新判定 / 分数没有读取点」几条否定说法重新 grep；改正的行号、补上的事实已并入正文。</li>
+</ul>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:v1paper">
+<p>Chris Lu 等，The AI Scientist: Towards Fully Automated Open-Ended Scientific Discovery，arXiv 2408.06292，<a href="https://arxiv.org/abs/2408.06292">https://arxiv.org/abs/2408.06292</a>。章节、表号按 2026-09-27 下载的版本（186 页；下载时 arXiv 最新是 v3，2024-09-01）。&#160;<a class="footnote-backref" href="#fnref:v1paper" title="回到正文第 1 处">↩</a></p>
+</li>
+<li id="fn:v2paper">
+<p>Yutaro Yamada 等，The AI Scientist-v2: Workshop-Level Automated Scientific Discovery via Agentic Tree Search，arXiv 2504.08066，<a href="https://arxiv.org/abs/2504.08066">https://arxiv.org/abs/2504.08066</a>。章节、表号按 2026-09-27 下载的版本（69 页；arXiv 只有 v1，2025-04-10）。&#160;<a class="footnote-backref" href="#fnref:v2paper" title="回到正文第 2 处">↩</a></p>
+</li>
+<li id="fn:beel">
+<p>Joeran Beel、Min-Yen Kan、Moritz Baumgart，Evaluating Sakana's AI Scientist: Bold Claims, Mixed Results, and a Promising Future?，arXiv 2502.14297，<a href="https://arxiv.org/abs/2502.14297">https://arxiv.org/abs/2502.14297</a>（v1 2025-02-20，v3 2025-10-15；v3 PDF 内的 ACM 引用格式题名是「Evaluating Sakana's AI Scientist for Autonomous Research: Wishful Thinking or an Emerging Reality Towards 'Artificial Research Intelligence' (ARI)?」）。本篇核对的是 2026-09-27 下载的 v3（16 页），章节号按 v3：§2.3 Idea Generation、§2.4、§2.5、§2.8。&#160;<a class="footnote-backref" href="#fnref:beel" title="回到正文第 3 处">↩</a><a class="footnote-backref" href="#fnref2:beel" title="回到正文第 3 处">↩</a><a class="footnote-backref" href="#fnref3:beel" title="回到正文第 3 处">↩</a></p>
+</li>
+<li id="fn:lic">
+<p>一代 LICENSE 提交历史 <a href="https://github.com/SakanaAI/AI-Scientist/commits/main/LICENSE">https://github.com/SakanaAI/AI-Scientist/commits/main/LICENSE</a>（d6576a3 初版 Apache 2.0，2906fcb 2025-12-19 改许可证）；二代 <a href="https://github.com/SakanaAI/AI-Scientist-v2/commits/main/LICENSE">https://github.com/SakanaAI/AI-Scientist-v2/commits/main/LICENSE</a>（f85bb03 初版 Apache 2.0，c204ee8 2025-12-19）。2026-09-27 用 <code>gh api</code> 查。&#160;<a class="footnote-backref" href="#fnref:lic" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref2:lic" title="回到正文第 4 处">↩</a></p>
+</li>
+<li id="fn:v1-hang">
+<p>一代 issue #78「always backing off」<a href="https://github.com/SakanaAI/AI-Scientist/issues/78">https://github.com/SakanaAI/AI-Scientist/issues/78</a>、#116「stuck at the retrieval phase for about an hour」<a href="https://github.com/SakanaAI/AI-Scientist/issues/116">https://github.com/SakanaAI/AI-Scientist/issues/116</a>、#133「429 - Too many requests」<a href="https://github.com/SakanaAI/AI-Scientist/issues/133">https://github.com/SakanaAI/AI-Scientist/issues/133</a>，均未关闭。&#160;<a class="footnote-backref" href="#fnref:v1-hang" title="回到正文第 5 处">↩</a><a class="footnote-backref" href="#fnref2:v1-hang" title="回到正文第 5 处">↩</a><a class="footnote-backref" href="#fnref3:v1-hang" title="回到正文第 5 处">↩</a></p>
+</li>
+<li id="fn:v1-openalex">
+<p>一代 PR #135「OpenAlex API support」，2025-01-14 合入，<a href="https://github.com/SakanaAI/AI-Scientist/pull/135">https://github.com/SakanaAI/AI-Scientist/pull/135</a>；对应代码 <code>ai_scientist/generate_ideas.py:311-350</code> 与一代 <code>README.md:146-158</code>。&#160;<a class="footnote-backref" href="#fnref:v1-openalex" title="回到正文第 6 处">↩</a></p>
+</li>
+<li id="fn:v1-empty">
+<p>一代 issue #113，S2 对查新词返回 <code>totalHits: 0</code>，<a href="https://github.com/SakanaAI/AI-Scientist/issues/113">https://github.com/SakanaAI/AI-Scientist/issues/113</a>。&#160;<a class="footnote-backref" href="#fnref:v1-empty" title="回到正文第 7 处">↩</a></p>
+</li>
+<li id="fn:v2-openalex">
+<p>二代 PR #59「Integrating OpenAlex」2025-07-27 关闭未合，<a href="https://github.com/SakanaAI/AI-Scientist-v2/pull/59">https://github.com/SakanaAI/AI-Scientist-v2/pull/59</a>；PR #56「Add OpenAlex search tool support」未合，<a href="https://github.com/SakanaAI/AI-Scientist-v2/pull/56">https://github.com/SakanaAI/AI-Scientist-v2/pull/56</a>。&#160;<a class="footnote-backref" href="#fnref:v2-openalex" title="回到正文第 8 处">↩</a><a class="footnote-backref" href="#fnref2:v2-openalex" title="回到正文第 8 处">↩</a></p>
+</li>
+<li id="fn:v2-i32">
+<p>二代 issue #32「JSON Output Unrelated to Original Markdown Content」，<a href="https://github.com/SakanaAI/AI-Scientist-v2/issues/32">https://github.com/SakanaAI/AI-Scientist-v2/issues/32</a>。&#160;<a class="footnote-backref" href="#fnref:v2-i32" title="回到正文第 9 处">↩</a></p>
+</li>
+<li id="fn:aide">
+<p>WecoAI/aideml，GitHub API 报许可证 MIT，<a href="https://github.com/WecoAI/aideml">https://github.com/WecoAI/aideml</a>，2026-09-27 查。&#160;<a class="footnote-backref" href="#fnref:aide" title="回到正文第 10 处">↩</a></p>
+</li>
+<li id="fn:nature">
+<p>Chris Lu、Cong Lu 等，Towards end-to-end automation of AI research，Nature，2026-03-25 在线发表，<a href="https://www.nature.com/articles/s41586-026-10265-5">https://www.nature.com/articles/s41586-026-10265-5</a>；Sakana AI 博客「The AI Scientist: Towards Fully Automated AI Research, Now Published in Nature」，2026-03-26，<a href="https://sakana.ai/ai-scientist-nature/">https://sakana.ai/ai-scientist-nature/</a>。2026-09-27 抓网页正文扫读（查新、出想法、模型选择几段），补充材料未读。&#160;<a class="footnote-backref" href="#fnref:nature" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref2:nature" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref3:nature" title="回到正文第 11 处">↩</a></p>
+</li>
+<li id="fn:v1-i179">
+<p>一代 issue #179「<code>citationStyles</code> key for OpenAlex API」，2025-01-19 开，未关闭，<a href="https://github.com/SakanaAI/AI-Scientist/issues/179">https://github.com/SakanaAI/AI-Scientist/issues/179</a>。&#160;<a class="footnote-backref" href="#fnref:v1-i179" title="回到正文第 12 处">↩</a><a class="footnote-backref" href="#fnref2:v1-i179" title="回到正文第 12 处">↩</a><a class="footnote-backref" href="#fnref3:v1-i179" title="回到正文第 12 处">↩</a></p>
+</li>
+<li id="fn:v2-commits">
+<p>二代出想法相关提交，2026-09-27 用 <code>gh api</code> 查：f85bb03（2025-04-08，初版；<code>ai_scientist/tools/semantic_scholar.py</code> 没有 <code>S2_API_KEY</code> 就抛错，出想法脚本调 <code>get_response_from_llm</code> 的参数名也写错了）；364aa55（2025-04-12，系统提示删掉「从给定代码库出发」）；39ee150（2025-04-17，S2 key 改成可选，修参数名）；c31970c（2025-05-05，IDEA JSON 示例加外层 <code>"idea"</code>）；9cda77f（2025-09-30，<code>ai_scientist/llm.py</code> 加 Ollama）。<a href="https://github.com/SakanaAI/AI-Scientist-v2/commits/main/ai_scientist">https://github.com/SakanaAI/AI-Scientist-v2/commits/main/ai_scientist</a>。&#160;<a class="footnote-backref" href="#fnref:v2-commits" title="回到正文第 13 处">↩</a><a class="footnote-backref" href="#fnref2:v2-commits" title="回到正文第 13 处">↩</a><a class="footnote-backref" href="#fnref3:v2-commits" title="回到正文第 13 处">↩</a><a class="footnote-backref" href="#fnref4:v2-commits" title="回到正文第 13 处">↩</a><a class="footnote-backref" href="#fnref5:v2-commits" title="回到正文第 13 处">↩</a></p>
+</li>
+<li id="fn:v2-i133">
+<p>二代 issue #133「Two v2 bugs (F11 VLM whitelist rejection, F13 UnboundLocalError on pdf_path) reproduce in 24/24 biomedical-prompt runs at SHA 96bd51617」，2026-08-16 开，未关闭，无回复，<a href="https://github.com/SakanaAI/AI-Scientist-v2/issues/133">https://github.com/SakanaAI/AI-Scientist-v2/issues/133</a>。&#160;<a class="footnote-backref" href="#fnref:v2-i133" title="回到正文第 14 处">↩</a></p>
+</li>
+<li id="fn:workshop-data">
+<p>SakanaAI/AI-Scientist-ICLR2025-Workshop-Experiment，<a href="https://github.com/SakanaAI/AI-Scientist-ICLR2025-Workshop-Experiment">https://github.com/SakanaAI/AI-Scientist-ICLR2025-Workshop-Experiment</a>，最后推送 2025-04-18，GitHub API 报无许可证；2026-09-27 用 <code>gh api .../git/trees/HEAD?recursive=1</code> 列了 37 项。&#160;<a class="footnote-backref" href="#fnref:workshop-data" title="回到正文第 15 处">↩</a></p>
+</li>
+</ol>
+</div>
+  </main>
+  <footer class="doc">原始稿是同目录的 ai-scientist.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>

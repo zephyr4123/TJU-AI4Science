@@ -1,0 +1,1226 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nature Skills 代码级深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>Nature Skills 代码级深读</h1>
+    <p class="subtitle">科研 AI 能力选型 · 文献、假设、写作三阶段的候选 · 19 个 skill 加一个共享包，逐个对到代码</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目选型深读（只读代码，不跑、不装依赖）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-27</dd></div><div class="meta-row"><dt>范围</dt><dd>仓库 https://github.com/Yuan1z0825/nature-skills，浅克隆到外层 vendor/nature-skills，提交 9e2d90e（2026-09-25）；不带前缀的 文件:行 相对该仓库根，带 platform/ 前缀的相对外层仓（内仓提交 de3d948，v1.0.1）；issue、PR、CI、提交历史用 gh api 于 2026-09-27 查；网页版 natureskills.cn 于同日用 curl 取页面；不读 README_EN、各 skill 的 README_EN、nature-figure 里的 figures4papers 第三方示例；对应 issue #187（母 issue #186）</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-是不是readme-说的能力在代码里对应哪段">1. 是不是：README 说的能力在代码里对应哪段</a><ul>
+<li><a href="#11-二十个目录逐个对账">1.1 二十个目录逐个对账</a></li>
+<li><a href="#12-readme-说了代码里没有或只接了一半的">1.2 README 说了、代码里没有或只接了一半的</a></li>
+<li><a href="#13-网页版-natureskillscn-与仓库的关系">1.3 网页版 natureskills.cn 与仓库的关系</a></li>
+</ul>
+</li>
+<li><a href="#2-怎么做主流程">2. 怎么做：主流程</a><ul>
+<li><a href="#21-一个-skill-被调起之后">2.1 一个 skill 被调起之后</a></li>
+<li><a href="#22-模型怎么调">2.2 模型怎么调</a></li>
+<li><a href="#23-数据怎么进出">2.3 数据怎么进出</a></li>
+<li><a href="#24-写作侧三个重点-skill">2.4 写作侧三个重点 skill</a></li>
+<li><a href="#25-文献与假设阶段相关的几个">2.5 文献与假设阶段相关的几个</a></li>
+</ul>
+</li>
+<li><a href="#3-为什么这么设计">3. 为什么这么设计</a><ul>
+<li><a href="#31-router-加静态片段为了少进上下文">3.1 router 加静态片段：为了少进上下文</a></li>
+<li><a href="#32-共享包为了让按需安装不断引用">3.2 共享包：为了让按需安装不断引用</a></li>
+<li><a href="#33-确认门加上又收回">3.3 确认门：加上又收回</a></li>
+<li><a href="#34-安装形态反复">3.4 安装形态反复</a></li>
+<li><a href="#35-issue-与-pr-里记下的坑">3.5 issue 与 PR 里记下的坑</a></li>
+</ul>
+</li>
+<li><a href="#4-跑起来要什么">4. 跑起来要什么</a><ul>
+<li><a href="#41-按-skill-的依赖">4.1 按 skill 的依赖</a></li>
+<li><a href="#42-模型key-与外部服务">4.2 模型、key 与外部服务</a></li>
+<li><a href="#43-算力与操作系统">4.3 算力与操作系统</a></li>
+<li><a href="#44-与-codexclaude-code-的兼容点">4.4 与 Codex、Claude Code 的兼容点</a></li>
+</ul>
+</li>
+<li><a href="#5-和平台对照">5. 和平台对照</a><ul>
+<li><a href="#51-平台这三个阶段现在有什么">5.1 平台这三个阶段现在有什么</a></li>
+<li><a href="#52-它多了什么和平台重叠什么">5.2 它多了什么、和平台重叠什么</a></li>
+<li><a href="#53-格式规范它自己的校验器平台三方对照">5.3 格式：规范、它自己的校验器、平台三方对照</a></li>
+<li><a href="#54-接进来会碰到的平台规则">5.4 接进来会碰到的平台规则</a></li>
+</ul>
+</li>
+<li><a href="#6-成熟度">6. 成熟度</a><ul>
+<li><a href="#61-测试">6.1 测试</a></li>
+<li><a href="#62-ci">6.2 CI</a></li>
+<li><a href="#63-发版与维护节奏">6.3 发版与维护节奏</a></li>
+<li><a href="#64-许可证">6.4 许可证</a></li>
+</ul>
+</li>
+<li><a href="#7-还没弄清的问题">7. 还没弄清的问题</a></li>
+<li><a href="#8-调研方法">8. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：它是 20 个按 agentskills.io 格式写的 skill 目录（19 个可触发，加一个共享包 <code>nature-shared</code>），主体是提示词：写作、润色两个目录零代码，连同共享包合计约 7800 行 Markdown（不含 README），共享包里只有一个 273 行的检查脚本。仓库里<strong>没有任何调文本模型的代码</strong>（按 SDK 导入与外部主机名全仓 grep 过），起草、润色、读论文、做 PPT 都由宿主 agent（Codex、Claude Code 等）自己完成；脚本做的事有：确定性检查（图的碰撞与对齐、PPTX 版式、公式定界符、术语与数值精度、返修包一致性）、格式转换与文档组装（RIS / BibTeX / ENW / DOCX，image2ppt 与 patent 还组装 PPTX、DOCX）、调公开检索与出版商接口（CrossRef、OpenAlex、PubMed、arXiv、Unpaywall、Europe PMC，Elsevier / Springer Nature / IEEE 要各自的 key）、驱动用户已登录的 Chrome 下全文与用 Playwright 爬国知局公布站，以及三个要单独凭据的图像 / OCR 服务（OpenRouter 图像接口、OpenAI 兼容图像接口或读 <code>~/.codex/auth.json</code> 走 ChatGPT 后端、百度 PaddleOCR）。</p>
+<p>放到平台要找的三个阶段上：<strong>写作</strong>最厚，但 <code>nature-writing</code> 与 <code>nature-polishing</code> 的默认产出是对话里的回复（writing 的投稿材料任务在用户要 <code>.tex</code> 时才填仓库的 LaTeX 模板，polishing 的排版请求直接改用户的 LaTeX 并编译）；写作侧代码量最大的是 <code>nature-figure</code>（约 3900 行），出图方式是 agent 自己写 matplotlib 或 ggplot2 并运行，仓库给 5 个 CSV 模板和约 2850 行 QA 脚本（含一个 R 文件），AI 示意图走 OpenRouter Images API；其余写作侧的代码只有 proposal-writer 的 md 转 DOCX（231 行）与 response 的返修包一致性检查（310 行）。<strong>文献</strong>有检索（一个 MCP server 加一个无 MCP 的 OpenAlex 脚本）、Nature/CNS 限定的引文检索导出、双语全文 reader、论文精读卡；<strong>假设</strong>没有专门的 skill，最接近的是精读卡第 16 节的六道门、文献管线里的 gap 分析、开题报告写作状态机。</p>
+<p>README 与代码对不上的主要几处：<code>nature-literature-pipeline</code> 自称 "production-tested" 并标 Stable，目录里零代码，靠宿主的 cron；<code>nature-ref-verifier</code> 标 Stable，零代码；<code>nature-academic-search</code> 的工具清单列了 11 个仓库里不存在的 MCP 工具（其中 6 个标注来自外部的 "paper-search MCP"），说"两个纯标准库脚本"其中一个要 <code>requests</code> 与 <code>defusedxml</code>；它的 MCP server 在当前 HEAD 上用 Python 3.13 及以下导入即失败（CI 用 3.11），CI 里的 skill 工具测试从 2026-09-16 起在 main 上一直失败，而且同一个 job 里排在它后面的 9 个 skill 的测试步骤从那时起都被跳过、没有跑。网页版 natureskills.cn 是另一个闭源的收费站点（Skills 交易市场加按积分计费的"科研 Agent"），仓库里没有它的代码。</p>
+<p>和平台对照只列事实：原样放进平台的 <code>skills/</code>，20 个目录里 14 个会被 <code>platform/framework/skills/library.py</code> 拒掉（脚本缺 PEP 723 头与锁、metadata 嵌套、名字与目录不一致；已用平台的 <code>load_skill</code> 对 20 个目录逐个跑过确认），且库里有一个坏的就整库报错；它的 router 写法要 agent 按相对路径读 <code>manifest.yaml</code>、<code>static/</code>、<code>../nature-shared/</code>，而平台的 <code>ai4sci skill show</code> 只给正文、<code>references/</code> 文件名与目录路径；它让 agent 直接跑 <code>python</code> / <code>Rscript</code> / <code>node</code>，平台的 Claude Code 适配器给执行层的 Bash 白名单只有 <code>ai4sci skill</code>，Codex 适配器没有按命令的白名单，别的命令留在断网的沙箱里跑。怎么读：第 1 节对账，第 2 节流程，第 5 节平台对照，第 7 节没弄清的。横向对比见同目录的 <a href="index.html">README.md</a>。</p>
+</blockquote>
+<h2 id="1-是不是readme-说的能力在代码里对应哪段">1. 是不是：README 说的能力在代码里对应哪段<a class="permalink" href="#1-是不是readme-说的能力在代码里对应哪段" title="本节链接">#</a></h2>
+<h3 id="11-二十个目录逐个对账">1.1 二十个目录逐个对账<a class="permalink" href="#11-二十个目录逐个对账" title="本节链接">#</a></h3>
+<p>README 的技能索引列 19 个可触发 skill，<code>nature-shared</code> 不计入（<code>README.md:482-506</code>），与 <code>skills/</code> 下 20 个目录一致。20 个目录每个都有 <code>manifest.yaml</code>，但只有 8 个声明了轴（writing 5 个、polishing 4 个、patent 3 个，figure、reader、paper-card、paper2ppt、academic-search 各 1 个；figure 另有两条路由），其余 12 个的 manifest 没有 <code>axes</code>，只列总要加载的文件与按需读取的条件表（用 PyYAML 逐个读 <code>axes</code> 键统计）。"形态"一列：<strong>router</strong> 指 SKILL.md 只是路由，按 <code>manifest.yaml</code> 的轴把 <code>static/</code> 里的片段读进来；<strong>无轴</strong>指有 manifest 但没有轴；<strong>纯提示词</strong>指目录里没有任何可执行文件（测试除外）。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>目录</th>
+<th>README 状态</th>
+<th>形态</th>
+<th>代码做什么</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nature-writing</code></td>
+<td>Draft</td>
+<td>router，5 轴（task、paper_type、section、language、journal），纯提示词</td>
+<td>无脚本；<code>templates/submission/</code> 四个初投稿 LaTeX 模板</td>
+<td><code>skills/nature-writing/SKILL.md:12-38</code>、<code>skills/nature-writing/manifest.yaml:8-92</code></td>
+</tr>
+<tr>
+<td><code>nature-polishing</code></td>
+<td>Stable</td>
+<td>router，4 轴，纯提示词</td>
+<td>无脚本；全文一致性扫描借用 <code>nature-shared</code> 的脚本</td>
+<td><code>skills/nature-polishing/SKILL.md:12-36</code>、<code>skills/nature-polishing/manifest.yaml:7-72</code></td>
+</tr>
+<tr>
+<td><code>nature-shared</code></td>
+<td>不计入索引</td>
+<td>共享参考包：11 个 <code>core/</code> 文件、3 个期刊格式文件</td>
+<td><code>check_consistency.py</code> 273 行，纯标准库：术语变体、同值不同精度、等值长度单位混用三项</td>
+<td><code>skills/nature-shared/manifest.yaml:12-52</code>、<code>skills/nature-shared/scripts/check_consistency.py:15-26,215-223</code></td>
+</tr>
+<tr>
+<td><code>nature-figure</code></td>
+<td>Stable</td>
+<td>router，1 轴（backend：python / r）加两条路由</td>
+<td>5 个 CSV 驱动的 matplotlib 模板；源码静态预检、PDF 字号审计、渲染后碰撞审计、多面板对齐审计；OpenRouter 出示意图；Python/R 偏好读写</td>
+<td><code>skills/nature-figure/manifest.yaml:16-63</code>、<code>skills/nature-figure/scripts/plot_templates.py:1-11</code></td>
+</tr>
+<tr>
+<td><code>nature-reader</code></td>
+<td>Beta</td>
+<td>router，1 轴（source_format）</td>
+<td>只有 <code>validate_reader_math.py</code>（458 行，标准库）查公式定界符、裸 LaTeX、公式锚点；PDF 抽取交给仓库外一个叫 <code>pdf</code> 的 skill</td>
+<td><code>skills/nature-reader/static/fragments/source/pdf-text.md:3</code>、<code>skills/nature-reader/static/core/output-contract.md:28-34</code></td>
+</tr>
+<tr>
+<td><code>nature-paper-card</code></td>
+<td>Beta</td>
+<td>router，1 轴（paper_type）</td>
+<td><code>prepare_paper.py</code> 从 PDF 或 reader 的 source map 出 <code>source_bundle.json</code>；<code>audit_paper_card.py</code> 查 16 节结构与页码定位</td>
+<td><code>skills/nature-paper-card/SKILL.md:35-50,106-125</code></td>
+</tr>
+<tr>
+<td><code>nature-paper2ppt</code></td>
+<td>Beta</td>
+<td>router，1 轴（paper_type，6 条叙事弧）</td>
+<td>没有生成 PPTX 的脚本，agent 自己写 python-pptx；只有 <code>audit_pptx_quality.py</code>（370 行，标准库）读 PPTX XML 查越界、字数、模板腔</td>
+<td><code>skills/nature-paper2ppt/static/core/toolchain.md:5-10,20-28</code>、<code>skills/nature-paper2ppt/scripts/audit_pptx_quality.py:2-19</code></td>
+</tr>
+<tr>
+<td><code>nature-image2ppt</code></td>
+<td>Beta</td>
+<td>自带 CLI 包，非 router</td>
+<td>约 1.05 万行 Python（其中 CLI 包 8300 行）：页面状态机、PPTX 组装、渲染 QA；图像生成与 OCR 走外部接口</td>
+<td><code>skills/nature-image2ppt/SKILL.md:9-18,79-92</code></td>
+</tr>
+<tr>
+<td><code>nature-academic-search</code></td>
+<td>Beta</td>
+<td>router，1 轴（workflow，6 条）</td>
+<td>MCP server（CrossRef、PubMed、arXiv、Scopus、ScienceDirect）约 2500 行；无 MCP 时的 OpenAlex 检索脚本；RIS/BibTeX 转换</td>
+<td><code>skills/nature-academic-search/mcp-server/academic_search_server.py:1-35</code></td>
+</tr>
+<tr>
+<td><code>nature-citation</code></td>
+<td>Beta</td>
+<td>无轴</td>
+<td><code>nature_citation.py</code> 2356 行：切段、查 CrossRef、按 Nature/CNS 期刊族过滤、导出 RIS/ENW/Zotero RDF</td>
+<td><code>skills/nature-citation/scripts/nature_citation.py:1-30,2239-2269</code></td>
+</tr>
+<tr>
+<td><code>nature-ref-verifier</code></td>
+<td>Stable</td>
+<td>纯提示词</td>
+<td>无脚本；要求 agent 用 CrossRef、WebSearch、<code>kimi-datasource</code>、<code>zotero-mcp</code> 等环境里现成的工具，超过 20 条拆给并行子代理</td>
+<td><code>skills/nature-ref-verifier/SKILL.md:43-59</code></td>
+</tr>
+<tr>
+<td><code>nature-literature-pipeline</code></td>
+<td>Stable</td>
+<td>纯提示词</td>
+<td>无脚本；每日检索、六维打分、推送、归档全靠宿主 agent 与宿主的定时任务（文中写 Hermes cron）</td>
+<td><code>skills/nature-literature-pipeline/SKILL.md:16-40,112</code></td>
+</tr>
+<tr>
+<td><code>nature-downloader</code></td>
+<td>Beta</td>
+<td>大 SKILL.md（345 行正文），非 router</td>
+<td>Node.js 22 编排：OA、出版商 API、CNKI 与机构访问走用户已登录的 Chrome（CDP 远程调试）；Python 做学校配置与 PDF 校验</td>
+<td><code>skills/nature-downloader/SKILL.md:4-5,31</code></td>
+</tr>
+<tr>
+<td><code>nature-proposal-writer</code></td>
+<td>Beta</td>
+<td>状态机提示词，frontmatter 名字是 <code>researchwrite</code></td>
+<td><code>build_proposal_docx.py</code>（python-docx）把 md 转 DOCX</td>
+<td><code>skills/nature-proposal-writer/SKILL.md:2,41-60</code></td>
+</tr>
+<tr>
+<td><code>nature-reviewer</code></td>
+<td>Draft</td>
+<td>纯提示词</td>
+<td>无脚本；要求三份互盲审稿报告各在独立上下文生成</td>
+<td><code>skills/nature-reviewer/SKILL.md:19-23</code></td>
+</tr>
+<tr>
+<td><code>nature-response</code></td>
+<td>Beta</td>
+<td>无轴：manifest 只有 2 个 <code>always_load</code> 与按需 references</td>
+<td><code>check_package_consistency.py</code>（310 行，标准库）查返修包内部一致；另有 3 个返修 LaTeX 模板</td>
+<td><code>skills/nature-response/scripts/check_package_consistency.py:1-12</code>、<code>skills/nature-response/manifest.yaml</code></td>
+</tr>
+<tr>
+<td><code>nature-statistics</code></td>
+<td>Draft</td>
+<td>纯提示词</td>
+<td>无脚本</td>
+<td><code>skills/nature-statistics/SKILL.md:1-4</code></td>
+</tr>
+<tr>
+<td><code>nature-data</code></td>
+<td>Draft</td>
+<td>无轴，纯提示词：manifest 自己写"there is therefore no content axis"，只有 2 个 core 文件加按需 references</td>
+<td>无脚本</td>
+<td><code>skills/nature-data/manifest.yaml:7-18</code></td>
+</tr>
+<tr>
+<td><code>nature-paper-to-patent</code></td>
+<td>Beta</td>
+<td>router</td>
+<td>约 4600 行：DOCX / OMML / Mermaid 渲染、权利要求审计、国知局检索（Playwright）</td>
+<td><code>skills/nature-paper-to-patent/requirements.txt:1-7</code>、<code>skills/nature-paper-to-patent/scripts/disclosure/requirements-cnipa.txt:1-2</code></td>
+</tr>
+<tr>
+<td><code>nature-experiment-log</code></td>
+<td>Draft</td>
+<td>纯提示词</td>
+<td>无脚本；可选接飞书 CLI 与 Obsidian</td>
+<td><code>skills/nature-experiment-log/SKILL.md:1-9</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>规模上（不含测试与 figures4papers）：全仓 skill 代码约 3.35 万行，其中 <code>nature-image2ppt</code> 1.05 万、<code>nature-downloader</code> 5300、<code>nature-paper-to-patent</code> 4600、<code>nature-academic-search</code> 4400、<code>nature-figure</code> 3900、<code>nature-citation</code> 2400；写作、润色、统计、数据、审稿、文献管线、文献核验、实验日志八个目录零代码。</p>
+<p><strong>仓库里调模型的只有图像与 OCR</strong>，没有一处调文本模型：<code>skills/nature-figure/scripts/generate_openrouter_schematic.py:19-20</code>（<code>https://openrouter.ai/api/v1/images</code>，默认 <code>openai/gpt-image-2</code>）、<code>skills/nature-image2ppt/cli/image2ppt/runtime/image_gen.py:39-52</code>（<code>codex-oauth</code> 与 <code>openai-compatible-api</code> 两个后端）、<code>skills/nature-image2ppt/cli/image2ppt/runtime/paddle_text_hints.py:11,32</code>（PaddleOCR）。</p>
+<h3 id="12-readme-说了代码里没有或只接了一半的">1.2 README 说了、代码里没有或只接了一半的<a class="permalink" href="#12-readme-说了代码里没有或只接了一半的" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>README 或 SKILL 里的说法</th>
+<th>代码里</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nature-literature-pipeline</code>："A complete, production-tested automated literature pipeline"，状态 Stable（定义是"已在真实学术内容上验证"）</td>
+<td>目录里只有 SKILL.md、6 个 references、1 个模板，零代码；定时、检索、推送全靠宿主 agent，文末自己写了"Hermes cron is local"</td>
+<td><code>skills/nature-literature-pipeline/SKILL.md:16,112</code>、<code>README.md:504,660</code></td>
+</tr>
+<tr>
+<td><code>nature-ref-verifier</code> 状态 Stable、"多源交叉验证"</td>
+<td>零代码；来源表里的 IEEE Xplore、CNKI/万方（<code>kimi-datasource / webbridge</code>）、<code>zotero-mcp</code> 都是环境里有才用</td>
+<td><code>skills/nature-ref-verifier/SKILL.md:47-59</code>、<code>README.md:501</code></td>
+</tr>
+<tr>
+<td><code>nature-academic-search</code> 工具清单：扩展检索 6 个（Google Scholar、Semantic Scholar、bioRxiv、medRxiv、WoS、Scopus）与 PubMed 工具 6 个</td>
+<td>本仓的 MCP server 实现 16 个工具：<code>search_papers</code>、<code>get_paper_by_id</code>、<code>get_citation</code>、<code>lookup_mesh</code> 与 12 个 Scopus/ScienceDirect 工具；清单上另外 11 个名字（扩展检索里除 <code>search_scopus</code> 外的 5 个、PubMed 工具 6 个）在全仓 <code>.py</code> / <code>.json</code> / <code>.toml</code> / <code>.sh</code> 里零命中；扩展检索一栏标注来源是"paper-search MCP"，PubMed 一栏没写来源，<code>config/</code> 与 <code>install.sh</code> 里也没有配置这两个外部 server。同目录调研的 openags/paper-search-mcp（<a href="paper-search-mcp.html">paper-search-mcp.md</a>，本地克隆提交 808e462）里有同名的 <code>search_google_scholar</code>、<code>search_biorxiv</code>、<code>search_medrxiv</code>，Semantic Scholar 在那边叫 <code>search_semantic</code>，没有 <code>search_webofscience</code> 与 <code>search_scopus</code>；清单指的是不是这个项目、哪个版本，未核实</td>
+<td><code>skills/nature-academic-search/static/core/tools.md:30-50</code>、<code>skills/nature-academic-search/mcp-server/academic_search_server.py:163-613</code>；paper-search-mcp 的 <code>paper_search_mcp/server.py:687-723,920</code></td>
+</tr>
+<tr>
+<td>无 MCP 时"two stdlib-only scripts"；同一文件前面还写 format converter "uses Python stdlib only — no extra dependencies"</td>
+<td><code>academic_search.py</code> 是纯标准库；<code>format-converter.py</code> 导入 <code>requests</code> 与 <code>defusedxml</code>（<code>defusedxml</code> 是 PR #225 于 09-22 换进来的）</td>
+<td><code>skills/nature-academic-search/static/core/routing-and-ops.md:47,51-54</code>、<code>skills/nature-academic-search/scripts/format-converter.py:31-32</code></td>
+</tr>
+<tr>
+<td>MCP server 可用（README 让用户 <code>pip install -r mcp-server/requirements.txt</code>）</td>
+<td>HEAD 上 <code>sources/arxiv.py</code> 用 <code>defusedxml.ElementTree as ET</code> 并在方法与函数的类型注解里写 <code>ET.Element</code>，该文件没有 <code>from __future__ import annotations</code>，Python 3.13 及以下在导入时就求值注解，报 <code>AttributeError</code>；server 经 <code>sources/__init__.py</code> 导入它，所以整个 server 起不来；CI（Python 3.11）日志里正是这个错误<sup id="fnref2:ci"><a class="footnote-ref" href="#fn:ci">1</a></sup>。同样换成 <code>defusedxml</code> 的 <code>pubmed.py</code>、<code>nature_citation.py</code> 有 <code>from __future__ import annotations</code>，不受影响。Python 3.14 起注解默认延迟求值，在 3.14 上能否导入未实测</td>
+<td><code>skills/nature-academic-search/mcp-server/sources/arxiv.py:1-8,243,329</code>、<code>skills/nature-academic-search/mcp-server/sources/pubmed.py:3</code>、<code>skills/nature-academic-search/mcp-server/sources/__init__.py:5</code>、<code>skills/nature-academic-search/mcp-server/academic_search_server.py:16-22</code>、<code>.github/workflows/test-skill-tooling.yml:54-57</code></td>
+</tr>
+<tr>
+<td>MCP 启动命令（<code>uv run --with …</code>）</td>
+<td>片段里的 <code>--with</code> 列表没有 <code>defusedxml</code>，而 <code>requirements.txt</code> 里有</td>
+<td><code>skills/nature-academic-search/config/mcp-snippet.json:5-20</code>、<code>skills/nature-academic-search/mcp-server/requirements.txt:6</code></td>
+</tr>
+<tr>
+<td><code>nature-polishing</code>："扫描全文术语、单位、数值精度和声称漂移"</td>
+<td>机器能查的只有术语组、同值不同精度、长度单位（μm/mm/cm/m）三项；"声称漂移"只在提示词里</td>
+<td><code>skills/nature-shared/scripts/check_consistency.py:15-26,112,158-163</code>、<code>skills/nature-shared/core/consistency-sweep.md:1-25</code></td>
+</tr>
+<tr>
+<td><code>nature-reader</code>："公式渲染、图文对应"</td>
+<td>抽取、裁图、OCR 都写成对 agent 的要求，第一步是"Load the <code>pdf</code> skill"，这个 skill 不在本仓；本仓代码只有公式校验器</td>
+<td><code>skills/nature-reader/static/fragments/source/pdf-text.md:3</code>、<code>skills/nature-reader/static/fragments/source/scanned-pdf.md:3</code></td>
+</tr>
+<tr>
+<td><code>nature-paper2ppt</code>："从科研论文生成中文 PPTX"</td>
+<td>没有生成 PPTX 的代码，SKILL 要求 agent 用 PyMuPDF、Pillow、python-pptx 自己写；目录里没有这几个依赖的声明</td>
+<td><code>skills/nature-paper2ppt/static/core/toolchain.md:5-12</code></td>
+</tr>
+<tr>
+<td><code>nature-proposal-writer</code> 的专家审查与去 AI 腔</td>
+<td>依赖 <code>professor</code>、<code>avoid-ai-writing</code>、<code>brainstorming</code>、<code>docx</code> 四个 skill，都不在本仓</td>
+<td><code>skills/nature-proposal-writer/SKILL.md:5-8,13,25,117</code></td>
+</tr>
+<tr>
+<td><code>nature-citation</code> 脚本"prefer when internet access is available"；academic-search 的脚本注释与 routing 文档都拿它当"无第三方依赖的单文件"样板</td>
+<td>从 PR #231（09-24 合并）起导入 <code>defusedxml</code>，但 <code>nature-citation</code> 目录下没有任何依赖声明。CI 里 citation 的测试步骤排在 academic-search 之后，09-16 起前一步失败、它被跳过，所以 #231 合并时 citation 的测试没有跑<sup id="fnref3:ci"><a class="footnote-ref" href="#fn:ci">1</a></sup>；即便跑，能导入 <code>defusedxml</code> 也只是因为同一个 job 装了 academic-search 的 requirements</td>
+<td><code>skills/nature-citation/scripts/nature_citation.py:24</code>、<code>skills/nature-academic-search/scripts/academic_search.py:8-10</code>、<code>skills/nature-academic-search/static/core/routing-and-ops.md:51</code>、<code>.github/workflows/test-skill-tooling.yml:70-86</code></td>
+</tr>
+<tr>
+<td>README 装机说明：单装 reader、paper2ppt、polishing、writing 时要连 <code>nature-shared</code> 一起装；示例命令单装 <code>nature-figure</code> 不带它</td>
+<td>实际有 10 个 manifest 引 <code>../nature-shared/</code>：上面 4 个之外还有 figure、paper-card、response、reviewer、statistics、data（多数是按需引 NMI 格式或一致性扫描）；writing 与 polishing 是在 <code>always_load</code> 里引</td>
+<td><code>README.md:158,161-166</code>、<code>skills/nature-figure/manifest.yaml:84</code>、<code>skills/nature-writing/manifest.yaml:8-13</code></td>
+</tr>
+<tr>
+<td>多份 <code>evals/evals.json</code></td>
+<td>是提示词加期望输出的声明，没有任何代码执行它们；<code>scripts/tests/</code> 只读 figure 的那份检查字段；reader 那份的输入文件是作者本机路径</td>
+<td><code>skills/nature-reader/evals/evals.json:8</code>、<code>scripts/tests/test_nature_figure_collision_audit.py:200</code></td>
+</tr>
+<tr>
+<td>nature-figure 与 figures4papers 说明里写"本仓库 MIT License"</td>
+<td>根 LICENSE 是 Apache-2.0（2026-06-18 由 MIT 改过来<sup id="fnref2:license"><a class="footnote-ref" href="#fn:license">2</a></sup>），这两处文字没跟着改</td>
+<td><code>skills/nature-figure/README.md:78</code>、<code>skills/nature-figure/assets/figures4papers/THIRD_PARTY_NOTICES.md:10-12</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="13-网页版-natureskillscn-与仓库的关系">1.3 网页版 natureskills.cn 与仓库的关系<a class="permalink" href="#13-网页版-natureskillscn-与仓库的关系" title="本节链接">#</a></h3>
+<p>README 顶部写"Nature Skills 网页版：内置 Nature Polishing（论文润色）与 Nature Figure（科研绘图）核心功能"（<code>README.md:21-25</code>）。仓库里与网页相关的只有 <code>index.html</code>（2827 行），它是 GitHub Pages 的静态介绍页（<code>yuan1z0825.github.io/nature-skills</code>），只有多语言切换脚本，全文不含 <code>natureskills.cn</code>。</p>
+<p>2026-09-27 取页面的结果<sup id="fnref:nscn"><a class="footnote-ref" href="#fn:nscn">3</a></sup>：根路径 307 跳到 <code>/agent</code>，页面标题"科研 Agent · NatureSkills"，站点自述"科研 Skills 发布与交易平台 — 发现、购买和发布科研 Skills、代码与在线工具"；sitemap 里有 <code>/marketplace</code>、<code>/legal/refunds</code> 与一批作品页（如 <code>drawio-skill</code>、<code>scipilot-figure-skill</code>、<code>paper-novelty-design</code>，也有 <code>nature-skills</code> 本身，以及与本组调研同名的 <code>academic-research-skills</code>、<code>ai-research-skills</code>，见 <a href="academic-research-skills.html">academic-research-skills.md</a>、<a href="ai-research-skills.html">ai-research-skills.md</a>；是不是同一项目、由谁上架，未核实）；隐私政策写明"科研 Agent 积分"计费，用户点击发送后"本轮原始对话文本和当轮所选原始附件"会提供给"平台配置的 AI 模型服务商"。页面是客户端渲染，润色与绘图功能本身没取到，也看不到它用的是不是本仓的 SKILL.md。能确定的只有：这是一个闭源、要注册、按积分收费、自己调模型的站点，仓库里没有它的代码。</p>
+<h2 id="2-怎么做主流程">2. 怎么做：主流程<a class="permalink" href="#2-怎么做主流程" title="本节链接">#</a></h2>
+<h3 id="21-一个-skill-被调起之后">2.1 一个 skill 被调起之后<a class="permalink" href="#21-一个-skill-被调起之后" title="本节链接">#</a></h3>
+<p>没有入口程序。宿主 agent 按 frontmatter 的 <code>description</code> 决定用哪个 skill，读 SKILL.md 后照做。router 型的 SKILL.md 都是同一套四步，以 <code>nature-writing</code> 为例：</p>
+<ol>
+<li>读 <code>manifest.yaml</code> 与 <code>always_load</code> 下的全部文件（写作是 4 个共享文件加 3 个本地 core 文件）（<code>skills/nature-writing/SKILL.md:12-16</code>、<code>skills/nature-writing/manifest.yaml:8-17</code>）。</li>
+<li>对每个轴按 <code>detect:</code> 提示判值，用一句话告诉用户，"This is a progress update, not an approval gate"（<code>skills/nature-writing/SKILL.md:18-32</code>）。</li>
+<li>只读选中值映射的片段，"Do <strong>not</strong> read every fragment"（<code>skills/nature-writing/SKILL.md:34-38</code>）。</li>
+<li>起草；<code>references/</code> 按 <code>on_demand</code> 条件表再读（<code>skills/nature-writing/SKILL.md:87-119</code>、<code>skills/nature-writing/manifest.yaml:94-139</code>）。</li>
+</ol>
+<p><strong>manifest 不被任何运行时代码解析</strong>：全仓提到 <code>manifest.yaml</code> 的代码只有三个校验脚本（<code>scripts/validate-*.py</code>）、<code>scripts/tests/</code> 与 image2ppt 的测试、<code>nature-academic-search/install.sh</code> 的拷贝清单和 <code>init_patent_project.py</code> 的拷贝清单。路由是 agent 读 YAML 后自己判断的，路径也由 agent 自己解析：同一个共享文件，manifest 里写 <code>../nature-shared/core/reader-workflow.md</code>（相对 skill 根），<code>static/core/stance.md</code> 里写 <code>../../../nature-shared/core/reader-workflow.md</code>（相对该文件）（<code>skills/nature-writing/manifest.yaml:10</code>、<code>skills/nature-writing/static/core/stance.md:11</code>）。</p>
+<h3 id="22-模型怎么调">2.2 模型怎么调<a class="permalink" href="#22-模型怎么调" title="本节链接">#</a></h3>
+<p>全部文本由宿主 agent 在它自己的会话里生成，skill 不指定模型、不带 key。脚本调外部模型的三处都是非文本：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>调用</th>
+<th>端点与凭据</th>
+<th>何时走</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>figure 的 AI 示意图</td>
+<td><code>POST https://openrouter.ai/api/v1/images</code>，<code>OPENROUTER_API_KEY</code>；<code>--api-url</code> 或 <code>SCHEMATIC_IMAGE_API_URL</code> 可换成任何 OpenAI 兼容图像端点；<code>--dry-run</code> 只打印请求</td>
+<td>用户明说要 OpenRouter / GPT Image 2 / 图像生成 API 时，跳过 Python/R 选择</td>
+<td><code>skills/nature-figure/scripts/generate_openrouter_schematic.py:137-140,230-242</code>、<code>skills/nature-figure/SKILL.md:29-39</code></td>
+</tr>
+<tr>
+<td>image2ppt 的图像编辑</td>
+<td>优先宿主 agent 暴露的 <code>image_gen.imagegen</code> 工具（仓库只称它为 agent tool，没写是哪家宿主；与 <code>codex-oauth</code> 并列，是不是 Codex 的内置工具未核实）；其次 <code>codex-oauth</code> 读 <code>~/.codex/auth.json</code> 调 <code>https://chatgpt.com/backend-api/codex</code>；或 <code>OPENAI_API_KEY</code> + <code>OPENAI_BASE_URL</code></td>
+<td>重建幻灯片里的复杂位图素材</td>
+<td><code>skills/nature-image2ppt/SKILL.md:79-92</code>、<code>skills/nature-image2ppt/cli/image2ppt/runtime/image_gen.py:39-52,68-74</code></td>
+</tr>
+<tr>
+<td>image2ppt 的 OCR</td>
+<td><code>https://paddleocr.aistudio-app.com/api/v2/ocr/jobs</code>，<code>PADDLE_OCR_TOKEN</code>（百度 AI Studio）；没有 token 退到本地只测几何不识字</td>
+<td>每页文字提示</td>
+<td><code>skills/nature-image2ppt/cli/image2ppt/runtime/paddle_text_hints.py:11,32</code>、<code>skills/nature-image2ppt/SKILL.md:95-104</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>需要"另一个模型会话"的地方靠宿主的子代理或多次调用，不靠代码：<code>nature-reviewer</code> 要求三位审稿人"in a genuinely separate context, subagent, process, or invocation"，做不到就明说不能保证互盲（<code>skills/nature-reviewer/SKILL.md:19-23</code>）；<code>nature-ref-verifier</code> 超过 20 条拆给并行子代理（<code>skills/nature-ref-verifier/SKILL.md:59</code>）；<code>nature-image2ppt</code> 的 <code>run dispatch</code> 只在 <code>page_jobs.json</code> 里记一笔派给谁（agent id、prompt 的 sha256、时间），不起任何进程，起 worker 是宿主的事（<code>skills/nature-image2ppt/SKILL.md:127-137</code>、<code>skills/nature-image2ppt/cli/image2ppt/runtime/record_page_dispatch.py:34-75</code>）。</p>
+<h3 id="23-数据怎么进出">2.3 数据怎么进出<a class="permalink" href="#23-数据怎么进出" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>skill</th>
+<th>进</th>
+<th>出</th>
+<th>写到哪</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nature-writing</code></td>
+<td>作者给的笔记、结果、图（对话里）</td>
+<td>对话回复：<code>Draft:</code>、<code>Section outline:</code>、<code>Assumptions or missing inputs:</code>、<code>Claim-evidence map:</code>、<code>Why this structure:</code>、<code>To redirect me:</code> 六段；缺证据写 <code>[Evidence needed: …]</code> 占位；<code>task=submission-package</code> 时换成六段投稿准备格式，用户要 <code>.tex</code> 时填 <code>templates/submission/</code> 的四个 LaTeX 模板</td>
+<td>默认不写文件；没有规定 <code>.tex</code> 写到哪</td>
+<td><code>skills/nature-writing/static/core/output-format.md:3-11,26-35</code>、<code>skills/nature-writing/static/fragments/task/submission-package.md:38</code></td>
+</tr>
+<tr>
+<td><code>nature-polishing</code></td>
+<td>已有文本；排版请求是用户的 LaTeX 工程</td>
+<td>润色后正文 + <code>Revision notes:</code> 3 到 5 条</td>
+<td>润色不写文件；排版请求直接改用户的 <code>.tex</code>，要求编译并看渲染页</td>
+<td><code>skills/nature-polishing/static/core/output-format.md:3-7</code>、<code>skills/nature-polishing/SKILL.md:90-98</code></td>
+</tr>
+<tr>
+<td><code>nature-figure</code></td>
+<td>数据文件或绘图脚本</td>
+<td><code>figure.svg/.pdf/.tiff</code>、<code>.alignment.json</code>、<code>.collision-audit.json</code>；AI 路线出图片 + <code>*_request_metadata.json</code></td>
+<td>绘图路线的文件名由 agent 写的代码定；AI 路线缺省写 <code>./openrouter_schematic/</code>，可用 <code>--outdir</code> 改</td>
+<td><code>skills/nature-figure/static/fragments/backend/python.md:26-39</code>、<code>skills/nature-figure/scripts/generate_openrouter_schematic.py:169-199,221</code></td>
+</tr>
+<tr>
+<td><code>nature-reader</code></td>
+<td>PDF、HTML、DOI/arXiv、粘贴文本</td>
+<td><code>paper.md</code>（逐段 Original / 中文 对照）、<code>source_map.json</code>（S/C/F/T/E 编号块）、<code>translation_notes.md</code>、<code>assets/</code></td>
+<td>用户指定目录</td>
+<td><code>skills/nature-reader/static/core/output-contract.md:3-9</code>、<code>skills/nature-reader/static/core/workflow.md:19-25</code></td>
+</tr>
+<tr>
+<td><code>nature-paper-card</code></td>
+<td>PDF 或 reader 的 <code>source_map.json</code></td>
+<td><code>source_bundle.json</code>、<code>paper-card.md</code>（固定 16 节）、<code>audit-report.json</code></td>
+<td><code>WORKDIR</code></td>
+<td><code>skills/nature-paper-card/SKILL.md:41-44,100,109-114</code></td>
+</tr>
+<tr>
+<td><code>nature-paper2ppt</code></td>
+<td>论文 PDF 或读书笔记</td>
+<td><code>.pptx</code>、<code>output/qa_report.md</code></td>
+<td>项目本地 <code>output/</code></td>
+<td><code>skills/nature-paper2ppt/SKILL.md:53,63</code></td>
+</tr>
+<tr>
+<td><code>nature-citation</code></td>
+<td>稿件文本、单条 claim、DOI、PMID</td>
+<td>一个 <code>.ris</code>（或 <code>.enw</code> / Zotero RDF），可选 JSON/TSV/HTML</td>
+<td><code>--output-file</code> / <code>--outdir</code></td>
+<td><code>skills/nature-citation/scripts/nature_citation.py:1-6,2248-2251</code></td>
+</tr>
+<tr>
+<td><code>nature-academic-search</code></td>
+<td>查询词、作者、ORCID、DOI</td>
+<td>MCP 工具返回 JSON 字符串；脚本 stdout 一段 JSON，单源失败退非零</td>
+<td>stdout</td>
+<td><code>skills/nature-academic-search/scripts/academic_search.py:1-40</code></td>
+</tr>
+<tr>
+<td><code>nature-proposal-writer</code></td>
+<td>题目、方向或已有稿</td>
+<td><code>00_scope.md</code> 到 <code>05_style_guide.md</code>、<code>state.json</code>、<code>drafts/</code>、<code>exports/</code>（md + docx）</td>
+<td><code>&lt;outputs&gt;/researchwrite/&lt;project-slug&gt;/</code></td>
+<td><code>skills/nature-proposal-writer/SKILL.md:41-60</code></td>
+</tr>
+<tr>
+<td><code>nature-shared</code> 一致性脚本</td>
+<td>若干文本文件</td>
+<td>发现项到 stdout（文本或 <code>--json</code>），<code>--fail-on-findings</code> 时有发现退 1</td>
+<td>stdout</td>
+<td><code>skills/nature-shared/scripts/check_consistency.py:226-269</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="24-写作侧三个重点-skill">2.4 写作侧三个重点 skill<a class="permalink" href="#24-写作侧三个重点-skill" title="本节链接">#</a></h3>
+<p><strong><code>nature-writing</code></strong>：先写一句话论证"In [system/problem], we show [advance] using [approach], supported by [evidence], with [boundary]"，写不出就告诉用户"论文还没有论证"；建术语表；每段只做一件事（context、gap、approach、result、comparison、mechanism、implication、limitation 之一）；Results 类任务先把每条结果分成 core / support / qualification / robustness 等并分配到正文、图注、SI；动词强度按证据校准；返修只改被点名的段落（<code>skills/nature-writing/static/core/workflow.md:5-81</code>）。期刊轴区分旗舰 Nature、Nat Commun、NMI、其他 Nature 子刊与通用，子刊规则不从旗舰推（<code>skills/nature-writing/manifest.yaml:77-92</code>）。它引的"Nature 风格"写作规则有两类来源：期刊官方要求（<code>journal-formats/</code>）和从已发表论文语料归纳的默认写法，后者在文件里反复声明"not official policy"（<code>skills/nature-writing/SKILL.md:60-74</code>）；共享包摘要指南里的同类声明"corpus-derived writing guidance, not official journal requirements"有字符串测试守着（<code>skills/nature-shared/core/nature-abstract.md:7</code>、<code>scripts/tests/test_nature_abstract_guidance.py:8,20-27</code>）。</p>
+<p><strong><code>nature-polishing</code></strong>：轴比 writing 少一个 <code>task</code>（剩 paper_type、section、language、journal 四个），section 的取值不同，期刊轴没有 <code>nature-family</code>（其他 Nature 子刊归 <code>generic</code>）；<code>always_load</code> 用 <code>failure-modes.md</code> 代替 writing 的 <code>workflow.md</code>（<code>skills/nature-polishing/manifest.yaml:7-70</code>）。改写顺序是"paper type → section job → paragraph logic → claim/evidence/boundary → sentence polish"，结构问题不补内容就修不好时要标出来而不是糊过去（<code>skills/nature-polishing/SKILL.md:38-48</code>）。LaTeX 排版请求绕开四个轴直接读 <code>references/latex-layout.md</code>（<code>skills/nature-polishing/SKILL.md:90-98</code>）。</p>
+<p><strong><code>nature-figure</code> 怎么出图</strong>：</p>
+<ol>
+<li>先判是不是 AI 示意图路线（用户明说 OpenRouter / GPT Image 2 / 图像生成 API）；是就读政策与出处要求后调 <code>generate_openrouter_schematic.py</code>，产出只算"draft schematic"（<code>skills/nature-figure/SKILL.md:16-39</code>）。脚本缺省在用户内容前拼两段：Nature 风格扁平矢量的样式要求，和"不要编数值、p 值、显微结果、机构标志"的约束；<code>--style</code> 可替换样式段，<code>--raw</code> 加自定义提示时两段都不拼（<code>skills/nature-figure/scripts/generate_openrouter_schematic.py:32-35,57-72,218-219</code>）。</li>
+<li>否则定 backend：当前请求明说 → 输入文件的语言 → 本任务已定 → <code>nature_figure_backend.py get</code> 读 <code>~/.config/nature-skills/nature-figure.json</code>；都没有就问一次"Python or R?"并存下来（<code>skills/nature-figure/SKILL.md:51-56</code>、<code>skills/nature-figure/scripts/nature_figure_backend.py:16-20</code>）。定了之后排他，缺运行时也不许换另一种语言出替代图（<code>skills/nature-figure/static/core/contract.md:17-31</code>）。</li>
+<li>写图前先填五点契约：核心结论、证据链（每个面板一个推理角色）、版式原型、backend、期刊导出参数；数据不许为了好画而删行（<code>skills/nature-figure/static/core/contract.md:33-49</code>）。</li>
+<li><strong>图由 agent 写 matplotlib/seaborn 或 ggplot2/patchwork 代码并自己运行</strong>；仓库给一段 rcParams 与导出函数（SVG + PDF + 600 dpi TIFF，<code>pdf.fonttype 42</code> 保证文字可编辑）（<code>skills/nature-figure/static/fragments/backend/python.md:5-39</code>），另有 <code>plot_templates.py</code> 的 volcano、roc、dotplot、marginal、paired 五个 CSV 模板，只有显式 <code>--demo</code> 才用模拟数据，否则缺 <code>--input</code> 就报错（<code>skills/nature-figure/scripts/plot_templates.py:1-11,206-210,526,538-585</code>）。这段 quick-start 要 <code>from audit_panel_alignment import …</code>，注释让用户把脚本拷到绘图源码旁边或把 skill 的 <code>scripts/</code> 加进 <code>PYTHONPATH</code>（<code>skills/nature-figure/static/fragments/backend/python.md:10-12</code>）。</li>
+<li>导出后必须跑的机器检查：<code>validate_figure.py</code> 对源码做 21 项静态检查（字体、字号、色图、矢量导出、分辨率、对数保护、演示数据等，零依赖）；多面板图在最终布局后测每个绘图区矩形，容差 1.5 pt，超差退 1 阻止交付；<code>audit_pdf_text.py</code> 读 PDF 内容流查最小字号；<code>audit_figure_collisions.py</code> 用 PyMuPDF 读最终 PDF 的几何查文字重叠与裁切（<code>skills/nature-figure/SKILL.md:76-118</code>、<code>skills/nature-figure/scripts/validate_figure.py:1-10,653-679</code>、<code>skills/nature-figure/scripts/audit_figure_collisions.py:1-13</code>）。</li>
+</ol>
+<h3 id="25-文献与假设阶段相关的几个">2.5 文献与假设阶段相关的几个<a class="permalink" href="#25-文献与假设阶段相关的几个" title="本节链接">#</a></h3>
+<ul>
+<li><strong>检索</strong>：<code>nature-academic-search</code> 首选 MCP 的 <code>search_papers</code>（CrossRef、PubMed、arXiv 并发，Scopus 与 ScienceDirect 要 <code>~/.config/pybliometrics.cfg</code> 并耗 Elsevier 配额）；无 MCP 时用 OpenAlex 脚本，带作者消歧（<code>--affiliation</code>、<code>--orcid</code>、<code>--list-authors</code>）（<code>skills/nature-academic-search/static/core/routing-and-ops.md:51-72</code>）。</li>
+<li><strong>引文</strong>：<code>nature-citation</code> 把稿件切段，每段查 CrossRef，按 Nature/CNS 期刊族过滤，缺名字的作者再按 PMID 回查，导出一个参考文献管理器文件（<code>skills/nature-citation/SKILL.md:31-35</code>）。</li>
+<li><strong>读论文</strong>：<code>nature-reader</code> 先建全文 source map 再逐段翻译，长文分页增量写、不许退化成摘要（<code>skills/nature-reader/static/core/workflow.md:15-43</code>）；<code>nature-paper-card</code> 强制用自带脚本准备材料，明文禁止 agent 临时写抽取脚本（<code>skills/nature-paper-card/SKILL.md:50,141-148</code>），并按能否拿到可靠页码分三种定位模式，拿不到就不许写页码（<code>skills/nature-paper-card/SKILL.md:52-58</code>）。</li>
+<li><strong>假设</strong>：没有专门 skill。最接近的三处都是提示词：精读卡第 16 节"Research Ideas"必须过六道门（可追溯到论文的具体局限、可证伪、写明改了什么、写明验证用的对照与变量与证伪结果、至少两条会失败的理由、不许用 novel / first 等词除非做过查新）（<code>skills/nature-paper-card/references/research-idea-gates.md:1-50</code>）；文献管线的 gap 分析是四步：至少 3 个来源精确检索并记命中数 → 直接命中为 0 时拆成子体系、命中按直接相关 / 边缘相关 / 无关分三档 → 摘出边缘相关论文的方法与发现 → 写 <code>outputs/literature/&lt;topic&gt;_gap_report.md</code>，例子是一个熔盐四元体系，回答的是"这个方向有没有人做过"，不生成假设（<code>skills/nature-literature-pipeline/references/gap-analysis.md:3-50</code>）；开题写作状态机的 compose 模式要先建 <code>02_evidence_table.md</code> 与 <code>03_argument_map.md</code>，章节契约里有"科学问题与研究目标""创新点"（<code>skills/nature-proposal-writer/references/compose-mode.md:53-160</code>）。<code>nature-writing</code> 的 <code>paper_type: hypothesis</code> 片段讲的是怎么写一篇假设驱动的论文，不是生成假设（<code>skills/nature-writing/static/fragments/paper_type/hypothesis.md:1-14</code>）。</li>
+</ul>
+<h2 id="3-为什么这么设计">3. 为什么这么设计<a class="permalink" href="#3-为什么这么设计" title="本节链接">#</a></h2>
+<h3 id="31-router-加静态片段为了少进上下文">3.1 router 加静态片段：为了少进上下文<a class="permalink" href="#31-router-加静态片段为了少进上下文" title="本节链接">#</a></h3>
+<p>2026-05-26 到 05-30 的一批 PR 把 SKILL.md 从一整篇改成"薄路由 + 按轴加载片段"：<code>nature-paper2ppt</code> 从 696 行的单文件变成 71 行路由（PR #45），写作与润色拆成 <code>static/core/</code>（总加载）和 <code>static/fragments/&lt;轴&gt;/</code>（按值加载），为之后把共用内容提成共享层做准备（PR #37）<sup id="fnref:prs"><a class="footnote-ref" href="#fn:prs">4</a></sup>。SKILL.md 里反复出现的"Do <strong>not</strong> read every fragment"就是这个目的（<code>skills/nature-writing/SKILL.md:38</code>）。PR 正文写的理由只有两条：按轴只读匹配的片段、给之后提共享层留出平行结构；没有写 token 数或上下文长度。把它对到 agentskills.io 规范"激活时整篇 SKILL.md 进上下文、正文建议 500 行以内、其余文件按需加载"<sup id="fnref:spec"><a class="footnote-ref" href="#fn:spec">5</a></sup>，是本文的推断。</p>
+<h3 id="32-共享包为了让按需安装不断引用">3.2 共享包：为了让按需安装不断引用<a class="permalink" href="#32-共享包为了让按需安装不断引用" title="本节链接">#</a></h3>
+<p><code>nature-shared</code> 原来是仓库级的 <code>_shared/</code> 目录，<code>npx skills add</code> 只装选中的 skill 时共享文件会丢；PR #121 把它改成可安装的包，并要求单装 reader、paper2ppt、polishing、writing 时连它一起装<sup id="fnref2:prs"><a class="footnote-ref" href="#fn:prs">4</a></sup>（<code>README.md:161-166</code>）。它的 <code>agents/openai.yaml</code> 设 <code>allow_implicit_invocation: false</code>，只给别的 skill 读（<code>skills/nature-shared/agents/openai.yaml:5-6</code>），仓库自己的校验器强制这一条（<code>scripts/validate-skill-metadata.py:141-144</code>）。只有两个以上 skill 用到的内容才进共享包（<code>skills/nature-shared/README.md:33-35</code>）。</p>
+<h3 id="33-确认门加上又收回">3.3 确认门：加上又收回<a class="permalink" href="#33-确认门加上又收回" title="本节链接">#</a></h3>
+<p>PR #76（2026-06-18）因为"起草结果不是我想要的"这类反馈，把写作默认流程从"先写再列缺口"翻成"先确认再写"，在 workflow 里加了 3b 确认门。PR #213（09-06）与 #215（09-14）又把它收窄：短请求与追问沿用已定上下文，确认改成"progress update, not an approval gate"，只在会实质改变论证的未决选择上停；同时缩短 15 个 skill 的 description，19 个可触发 skill 的 description 合计从 11835 字符降到 4311 字符（减 63.6%）<sup id="fnref3:prs"><a class="footnote-ref" href="#fn:prs">4</a></sup>。现状见 <code>skills/nature-writing/static/core/workflow.md:35-43</code>。作者自己留了一份小样本观察记录：6 个短请求在隔离上下文里跑，明说"不是基准、不是跨模型评测"（<code>docs/skill-scope-smoke-evaluation.md:3-14</code>）。</p>
+<h3 id="34-安装形态反复">3.4 安装形态反复<a class="permalink" href="#34-安装形态反复" title="本节链接">#</a></h3>
+<ul>
+<li>Claude Code 插件：2026-05-06 加 <code>.claude-plugin/</code>，06-15 整目录删除；前一天的 issue #72 报的是 <code>.mcp.json</code> 里用了 Claude Code 专有的 <code>${CLAUDE_PLUGIN_ROOT}</code>，Codex 不展开导致 MCP 起不来，维护者回复"推荐使用mac"，提问者回"和是不是mac无关"<sup id="fnref:i72"><a class="footnote-ref" href="#fn:i72">6</a></sup><sup id="fnref:plugins"><a class="footnote-ref" href="#fn:plugins">7</a></sup>。两个给 Claude Code 加插件的 PR（#70、#83）都没合<sup id="fnref4:prs"><a class="footnote-ref" href="#fn:prs">4</a></sup>。现在 README 让 Claude Code 用户自己写 subagent 或 slash command 包一层，或用脚本把目录拷进 <code>~/.claude/skills/</code>（<code>README.md:196-268</code>）。</li>
+<li>Codex：市场元数据 05-26 加、06-15 删、08-31 由 PR #210 以 <code>.codex-plugin/plugin.json</code> 加 <code>.agents/plugins/marketplace.json</code> 重新加上，PR 里写了用 <code>codex plugin marketplace add</code> 走过完整流程<sup id="fnref2:plugins"><a class="footnote-ref" href="#fn:plugins">7</a></sup>。</li>
+</ul>
+<h3 id="35-issue-与-pr-里记下的坑">3.5 issue 与 PR 里记下的坑<a class="permalink" href="#35-issue-与-pr-里记下的坑" title="本节链接">#</a></h3>
+<p>仓库没有 CHANGELOG 文件，下面取自 issue 与 PR 正文。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>编号</th>
+<th>坑</th>
+<th>怎么处理的</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>#62（06-06，提交者是 devin-ai-integration 机器人）</td>
+<td><code>nature_citation.py</code> 末尾引用两个未定义的变量，最终导出永远跑不到；另外没挂 MCP 的环境里检索不能用</td>
+<td>#64 修 NameError；#65 加无 MCP 的 OpenAlex 检索（两个 PR 正文都引 #62）</td>
+<td><sup id="fnref:i62"><a class="footnote-ref" href="#fn:i62">8</a></sup></td>
+</tr>
+<tr>
+<td>#74（06-16）</td>
+<td>academic-search 改成 router 后，<code>install.sh</code> 没拷 <code>manifest.yaml</code> 与 <code>static/</code>，装出来的 skill 看着在、路由文件缺</td>
+<td>#75 补拷贝；现在 <code>install.sh</code> 逐项拷</td>
+<td><sup id="fnref:i74"><a class="footnote-ref" href="#fn:i74">9</a></sup>、<code>skills/nature-academic-search/install.sh:60-71</code></td>
+</tr>
+<tr>
+<td>#60（06-02）</td>
+<td>figure 画出的柱线图有偏移、箭头落在框中间</td>
+<td>仓库作者回复把 SVG 导入 Illustrator 手调，另一位用户补"还可以导入 ppt"，当天关闭；8 月底加了碰撞审计（#206，08-24）与对齐门（#208，08-27），两个 PR 正文都没引 #60，是不是针对它不能确定</td>
+<td><sup id="fnref:i60"><a class="footnote-ref" href="#fn:i60">10</a></sup><sup id="fnref5:prs"><a class="footnote-ref" href="#fn:prs">4</a></sup></td>
+</tr>
+<tr>
+<td>#97（07-06）</td>
+<td>paper2ppt 可用度低：图裁不全、对齐不稳、"AI 味"重</td>
+<td>核心开发者 Travisma2233 回复"确实做的还有不足"；同日的 #99（"Improve paper2ppt QA"）加了 PPTX 审计脚本，PR 正文没引 #97</td>
+<td><sup id="fnref:i97"><a class="footnote-ref" href="#fn:i97">11</a></sup><sup id="fnref6:prs"><a class="footnote-ref" href="#fn:prs">4</a></sup></td>
+</tr>
+<tr>
+<td>#181（07-31）</td>
+<td>reader 生成的 md 里公式是 LaTeX 源码，要回 PDF 看</td>
+<td>e7a9bc0：公式单独成 E 编号块、低置信度显示原图、新增 <code>validate_reader_math.py</code></td>
+<td><sup id="fnref:i181"><a class="footnote-ref" href="#fn:i181">12</a></sup></td>
+</tr>
+<tr>
+<td>#183（08-01）</td>
+<td><code>prepare_paper.py</code> 把缺页码或页码非法的块记成第 1 页，和真第 1 页分不开</td>
+<td>4312c49：只收正整数页码，其余进 <code>unlocated_blocks</code> 并标状态</td>
+<td><sup id="fnref:i183"><a class="footnote-ref" href="#fn:i183">13</a></sup></td>
+</tr>
+<tr>
+<td>#66（06-07）</td>
+<td>中文特色强的稿子译出来"中文直译"感重，编辑原话"a direct translation from Chinese"</td>
+<td>仓库作者回复认为编辑的评价"比较片面"、用国外模型翻译应当没问题，06-09 关闭；<code>zh-to-en</code> 片段存在，是否针对此改动没查到对应提交</td>
+<td><sup id="fnref:i66"><a class="footnote-ref" href="#fn:i66">14</a></sup></td>
+</tr>
+<tr>
+<td>#222、#224、#225、#231（09-15 到 09-23 提，09-16 到 09-24 合并）</td>
+<td>外部贡献者 anupamme 按 bandit 扫描把 arxiv、pubmed、format-converter、nature_citation 的 XML 解析换成 <code>defusedxml</code></td>
+<td>#222 合并后 <code>arxiv.py</code> 导入失败，main 上 skill 工具测试从 09-16 起持续红；#224、#225、#231 合并时 main 上这个 workflow 已经是红的；#231 合并后那次 main 运行里，citation 的测试步骤因前一步失败被跳过；同一人 09-24 又提了两个安全加固 PR（#233、#234），仍开着</td>
+<td><sup id="fnref4:ci"><a class="footnote-ref" href="#fn:ci">1</a></sup><sup id="fnref2:issues"><a class="footnote-ref" href="#fn:issues">17</a></sup></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="4-跑起来要什么">4. 跑起来要什么<a class="permalink" href="#4-跑起来要什么" title="本节链接">#</a></h2>
+<h3 id="41-按-skill-的依赖">4.1 按 skill 的依赖<a class="permalink" href="#41-按-skill-的依赖" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>skill</th>
+<th>语言与包</th>
+<th>系统程序</th>
+<th>声明在哪</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>writing、polishing、statistics、data、reviewer、ref-verifier、literature-pipeline、experiment-log</td>
+<td>无</td>
+<td>无</td>
+<td>—</td>
+<td>目录里无 <code>.py</code> / <code>.mjs</code> / <code>.R</code> / <code>.sh</code>（reviewer 只有 <code>tests/</code> 下的字符串断言测试），见第 1.1 节</td>
+</tr>
+<tr>
+<td><code>nature-shared</code></td>
+<td>Python 标准库</td>
+<td>—</td>
+<td>无需声明</td>
+<td><code>skills/nature-shared/scripts/check_consistency.py:1-12</code></td>
+</tr>
+<tr>
+<td><code>nature-figure</code></td>
+<td>Python：matplotlib、numpy（模板与 helper）、PyMuPDF（碰撞审计）；或 R：ggplot2、patchwork、svglite、ragg</td>
+<td>R 路线要 <code>Rscript</code></td>
+<td><code>requirements.txt</code> 只写 PyMuPDF；matplotlib、numpy、R 包都没有声明</td>
+<td><code>skills/nature-figure/requirements.txt:1</code>、<code>skills/nature-figure/scripts/figure_safety.py:8</code>、<code>skills/nature-figure/scripts/plot_templates.py:31-37</code></td>
+</tr>
+<tr>
+<td><code>nature-reader</code></td>
+<td>标准库（校验器）；抽取依赖宿主的 <code>pdf</code> skill</td>
+<td>扫描件要 OCR</td>
+<td>无</td>
+<td><code>skills/nature-reader/static/fragments/source/scanned-pdf.md:3</code></td>
+</tr>
+<tr>
+<td><code>nature-paper2ppt</code></td>
+<td>PyMuPDF、Pillow、python-pptx（agent 自己写代码用）</td>
+<td>LibreOffice 可选</td>
+<td>无</td>
+<td><code>skills/nature-paper2ppt/static/core/toolchain.md:5-14</code></td>
+</tr>
+<tr>
+<td><code>nature-paper-card</code></td>
+<td>标准库 + PyMuPDF（懒加载）</td>
+<td>—</td>
+<td>无</td>
+<td><code>skills/nature-paper-card/scripts/prepare_paper.py:152</code></td>
+</tr>
+<tr>
+<td><code>nature-academic-search</code></td>
+<td>MCP server：mcp、requests、toml、lxml、pybliometrics、defusedxml；无 MCP 脚本：<code>academic_search.py</code> 标准库，<code>format-converter.py</code> 要 requests、defusedxml</td>
+<td><code>uv</code>（MCP 启动片段）</td>
+<td><code>mcp-server/requirements.txt</code>；<code>scripts/</code> 的依赖没有声明；<code>install.sh</code> 用全局 <code>pip install</code>，失败只打印 WARNING 继续装</td>
+<td><code>skills/nature-academic-search/mcp-server/requirements.txt:1-6</code>、<code>skills/nature-academic-search/scripts/format-converter.py:31-32</code>、<code>skills/nature-academic-search/install.sh:47-55</code></td>
+</tr>
+<tr>
+<td><code>nature-citation</code></td>
+<td>defusedxml（09-24 起）</td>
+<td>—</td>
+<td>无</td>
+<td><code>skills/nature-citation/scripts/nature_citation.py:24</code></td>
+</tr>
+<tr>
+<td><code>nature-proposal-writer</code></td>
+<td>python-docx（<code>build_proposal_docx.py</code>）</td>
+<td>—</td>
+<td>无</td>
+<td><code>skills/nature-proposal-writer/scripts/build_proposal_docx.py:14-17</code></td>
+</tr>
+<tr>
+<td><code>nature-response</code></td>
+<td>Python 标准库</td>
+<td>—</td>
+<td>无需声明</td>
+<td><code>skills/nature-response/scripts/check_package_consistency.py:4-12</code></td>
+</tr>
+<tr>
+<td><code>nature-image2ppt</code></td>
+<td>pypdfium2、Pillow、numpy、requests、PyYAML、openai（Python 3.10+）</td>
+<td>Linux/macOS 要 LibreOffice（Office 输入转换与渲染 QA），Windows 首选 PowerPoint 自动化；公式页要 TeX 引擎加 dvisvgm / pdf2svg / ImageMagick 之一，缺了公式页硬失败；中文页要 CJK 字体</td>
+<td><code>requirements.txt</code> 与 <code>cli/pyproject.toml</code></td>
+<td><code>skills/nature-image2ppt/requirements.txt:1-7</code>、<code>skills/nature-image2ppt/references/runtime-dependencies.md:36-48</code>、<code>.github/workflows/test-skill-tooling.yml:65-68</code></td>
+</tr>
+<tr>
+<td><code>nature-downloader</code></td>
+<td>Node.js 22+；Python：pdfplumber、pypdf、PyYAML、jsonschema</td>
+<td>Chrome 开远程调试</td>
+<td><code>requirements.txt</code>；Node 与 Chrome 的要求只写在 SKILL frontmatter 的 <code>metadata.compatibility</code> 里</td>
+<td><code>skills/nature-downloader/requirements.txt:1-4</code>、<code>skills/nature-downloader/SKILL.md:4-5</code></td>
+</tr>
+<tr>
+<td><code>nature-paper-to-patent</code></td>
+<td>python-docx、matplotlib、Pillow、pypdf、mammoth、latex2mathml、python-pptx；可选 Playwright</td>
+<td>Node + <code>@mermaid-js/mermaid-cli</code>（可 npx 临时拉）</td>
+<td>两份 requirements、一份 package.json</td>
+<td><code>skills/nature-paper-to-patent/scripts/disclosure/mermaid_render.py:8-15</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>仓库自己的安装脚本不装 Python 依赖，README 让用户按需 <code>python -m pip install -r …</code>（<code>README.md:368-378</code>）。全仓只有 <code>academic_search.py</code> 一个脚本带 PEP 723 块，且块里没有依赖、没有锁文件（<code>skills/nature-academic-search/scripts/academic_search.py:1-4</code>）。</p>
+<h3 id="42-模型key-与外部服务">4.2 模型、key 与外部服务<a class="permalink" href="#42-模型key-与外部服务" title="本节链接">#</a></h3>
+<ul>
+<li><strong>文本模型</strong>：宿主 agent 自己的登录，skill 不管。</li>
+<li><strong>要单独凭据的</strong>：<code>OPENROUTER_API_KEY</code>（figure 示意图）；<code>OPENAI_API_KEY</code> + <code>OPENAI_BASE_URL</code> 或 <code>~/.codex/auth.json</code>（image2ppt 图像）；<code>PADDLE_OCR_TOKEN</code>（image2ppt OCR）；<code>PUBMED_EMAIL</code> 与可选 PubMed key、<code>~/.config/pybliometrics.cfg</code> 的 Elsevier key（academic-search）；Elsevier / Springer Nature / IEEE 出版商 key 与学校图书馆入口（downloader）。image2ppt 的 <code>config.yaml</code>（含 key）默认写在 skill 目录自己下面，<code>.gitignore</code> 挡住（<code>skills/nature-image2ppt/cli/image2ppt/runtime/runtime_env.py:40-62</code>、<code>skills/nature-image2ppt/config.example.yaml:1-4</code>）。</li>
+<li><strong>免 key 的公开接口</strong>：CrossRef、OpenAlex、PubMed E-utilities、arXiv、DOI 解析、Europe PMC、Unpaywall（要填邮箱，没填就不查）、国知局公布公告站（Playwright 爬）（<code>skills/nature-downloader/scripts/lib/open-access-provider.mjs:48,77-79</code>）。</li>
+<li><strong>会把稿件内容发出去的</strong>：OpenRouter 路线，参考文档自己写了"Do not send confidential manuscript content to OpenRouter without user permission"（<code>skills/nature-figure/references/openrouter-image-generation.md:34-41</code>）。</li>
+</ul>
+<h3 id="43-算力与操作系统">4.3 算力与操作系统<a class="permalink" href="#43-算力与操作系统" title="本节链接">#</a></h3>
+<p>没有 GPU 需求；最重的是 image2ppt 的 LibreOffice 渲染与 LaTeX 公式。操作系统：README 装机步骤以 macOS/Linux shell 为主；issue #26 问 Windows 教程、#72 维护者回复"推荐使用mac"；代码层面 image2ppt 在 CI 里跑了 ubuntu、macOS、Windows 三平台矩阵（只跑 9 个不需要 Office 渲染的可移植测试文件，完整测试只在 ubuntu 上跑），paper2ppt 的工具链要求"must work on macOS, Linux, and Windows"，patent 修过 Windows 下带空格路径的 Mermaid 渲染（PR #212）（<code>.github/workflows/test-skill-tooling.yml:96-98,120-161</code>、<code>skills/nature-paper2ppt/static/core/toolchain.md:12</code>）。figure 的两处命令写的是相对仓库根的路径（<code>python skills/nature-figure/scripts/…</code>、<code>source("skills/nature-figure/scripts/panel_alignment.R")</code>），用户当前目录不是本仓库根时这两处解析不到（按路径写法推断，未实测）；共享包的清单则明写"resolve relative to the nature-shared package directory, never the user working directory"（<code>skills/nature-figure/SKILL.md:103</code>、<code>skills/nature-figure/static/fragments/backend/r.md:10</code>、<code>skills/nature-shared/manifest.yaml:52</code>）。</p>
+<h3 id="44-与-codexclaude-code-的兼容点">4.4 与 Codex、Claude Code 的兼容点<a class="permalink" href="#44-与-codexclaude-code-的兼容点" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>Codex</th>
+<th>Claude Code</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>安装</td>
+<td>仓库是一个 Codex 插件市场（<code>.codex-plugin/plugin.json</code> + <code>.agents/plugins/marketplace.json</code>）；或 <code>update-codex-skills.sh</code> 用 rsync 拷到 <code>~/.codex/skills/</code> 并逐目录 diff 校验</td>
+<td>无插件；自己写 subagent / slash command 指向 SKILL.md，或用 <code>autoupdate-skills.sh</code> 拷进 <code>~/.claude/skills/</code></td>
+<td><code>.codex-plugin/plugin.json:1-38</code>、<code>scripts/update-codex-skills.sh:5-16,129,279-280</code>、<code>README.md:196-268</code></td>
+</tr>
+<tr>
+<td>每个 skill 的 UI 元数据</td>
+<td>每个目录一份 <code>agents/openai.yaml</code>（display_name、short_description、<code>$skill</code> 形式的 default_prompt），仓库校验器强制</td>
+<td>不读这个文件</td>
+<td><code>scripts/validate-skill-metadata.py:88-145</code></td>
+</tr>
+<tr>
+<td>自动更新</td>
+<td>Codex <code>SessionStart</code> hook，同步执行，靠 1 小时节流与断网跳过</td>
+<td><code>SessionStart</code> hook，<code>async: true</code></td>
+<td><code>README.md:283-313,394-429</code></td>
+</tr>
+<tr>
+<td>只在一家有的能力</td>
+<td>image2ppt 的 <code>codex-oauth</code> 直接读 <code>~/.codex/auth.json</code>；首选的 <code>image_gen.imagegen</code> 仓库称为 agent tool，属于哪家宿主未写明</td>
+<td>—</td>
+<td><code>skills/nature-image2ppt/SKILL.md:79-92</code>、<code>skills/nature-image2ppt/references/manifest-schema.md:68-70</code></td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>academic-search 的 <code>mcp-snippet.json</code> 用 <code>uv run --no-project</code></td>
+<td><code>install.sh</code> 写 <code>~/.claude/.mcp.json</code>（<code>python3 …/academic_search_server.py</code>）与 <code>settings.json</code>，skill 装成 <code>~/.claude/skills/academic-search</code>，目录名与 frontmatter 名 <code>nature-academic-search</code> 不同</td>
+<td><code>skills/nature-academic-search/config/mcp-snippet.json:1-24</code>、<code>skills/nature-academic-search/install.sh:7-10,76-110</code></td>
+</tr>
+<tr>
+<td>两家都依赖宿主的</td>
+<td>子代理（reviewer、ref-verifier、image2ppt）；在宿主 shell 里跑 python / Rscript / node；<code>../nature-shared/</code> 要求共享包与 skill 装在同一级目录</td>
+<td>同左</td>
+<td><code>skills/nature-reviewer/SKILL.md:21</code>、<code>README.md:442</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="5-和平台对照">5. 和平台对照<a class="permalink" href="#5-和平台对照" title="本节链接">#</a></h2>
+<h3 id="51-平台这三个阶段现在有什么">5.1 平台这三个阶段现在有什么<a class="permalink" href="#51-平台这三个阶段现在有什么" title="本节链接">#</a></h3>
+<ul>
+<li>七个阶段里只有设计、实验、分析、验证有"步骤"能力；文献、假设、写作没有。研究助理的指南原话："文献、假设、写作三个阶段还没有步骤……你自己写：<code>ai4sci output new &lt;stage&gt; --title &lt;一句&gt;</code>"（<code>platform/coordinator/README.md:64</code>）。</li>
+<li>阶段主文件只定了文献的 <code>sources.md</code>（助理手写），假设与写作待第一个能力定名（<code>platform/framework/capabilities/__init__.py:45-52</code>、纲领 P-20）。</li>
+<li>文献阶段的做法是助理用 CLI 自带的 WebSearch / WebFetch 找材料、手写 <code>sources.md</code>、用 <code>download</code> skill 拉材料（<code>platform/coordinator/README.md:120-130</code>、<code>platform/backends/claude_code.py:42</code>）。</li>
+<li>通用 skill 只有两个：<code>pdf</code>（论文 PDF → <code>paper.md</code> + <code>images/</code> + <code>structured.json</code>，pymupdf4llm，不做 OCR）与 <code>download</code>（git、单文件、HF 拉进 <code>materials/</code>）；领域包里另有一个只有说明、没有脚本的 <code>petab</code>（<code>platform/docs/add-a-skill.md:87-90</code>、<code>platform/skills/pdf/SKILL.md:4</code>）。平台里没有文献检索、引文核对、参考文献导出、绘图、写作、润色相关的任何代码（内仓 <code>git grep -i</code> crossref、openalex、pubmed、bibtex，唯一命中是 <code>projects/boehm-nll</code> 示例数据里的一条 PubMed 链接）。</li>
+</ul>
+<h3 id="52-它多了什么和平台重叠什么">5.2 它多了什么、和平台重叠什么<a class="permalink" href="#52-它多了什么和平台重叠什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>平台现有</th>
+<th>nature-skills 有</th>
+<th>关系</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>论文 PDF 解析</td>
+<td><code>pdf</code> skill，出 <code>paper.md</code> / <code>structured.json</code> / <code>images/</code>，无 OCR</td>
+<td>reader 三处写"先 load <code>pdf</code> skill"（包括扫描件的 OCR 指导），这个 <code>pdf</code> 不在本仓；downloader 在抽取失败时提"local <code>pdf</code> skill"；paper2ppt 不引它，要 agent 直接用 PyMuPDF；reader 自己的产出也叫 <code>paper.md</code>（双语对照，内容不同）；paper-card 自带 <code>prepare_paper.py</code>（PyMuPDF）</td>
+<td>重叠，且同名；reader 期望的 <code>pdf</code> skill 要能做 OCR，平台的不做</td>
+<td><code>skills/nature-reader/static/fragments/source/pdf-text.md:3</code>、<code>skills/nature-reader/static/fragments/source/scanned-pdf.md:3</code>、<code>skills/nature-reader/static/core/output-contract.md:38</code>、<code>skills/nature-downloader/references/delivery-verification-and-failures.md:66</code>、<code>skills/nature-paper2ppt/static/core/toolchain.md:7</code>、<code>platform/skills/pdf/SKILL.md:4</code></td>
+</tr>
+<tr>
+<td>拉材料</td>
+<td><code>download</code>（git / 文件 / HF）</td>
+<td><code>nature-downloader</code>（OA、出版商 API、CNKI 与机构登录态）</td>
+<td>覆盖对象不同：平台拉代码与数据，它拉论文全文</td>
+<td><code>platform/docs/add-a-skill.md:89</code>、<code>skills/nature-downloader/SKILL.md:10-16</code></td>
+</tr>
+<tr>
+<td>文献检索</td>
+<td>靠 CLI 自带联网工具，无脚本</td>
+<td>academic-search 的 MCP 与 OpenAlex 脚本；citation 的 CrossRef 脚本；ref-verifier 提示词</td>
+<td>平台没有，它多出来</td>
+<td><code>platform/coordinator/README.md:120</code>、第 1.1 节</td>
+</tr>
+<tr>
+<td>文献阶段主文件</td>
+<td><code>sources.md</code></td>
+<td>无对应命名；产出是 RIS、JSON、reader 包、精读卡</td>
+<td>不对应</td>
+<td><code>platform/framework/capabilities/__init__.py:47</code>、第 2.3 节</td>
+</tr>
+<tr>
+<td>假设</td>
+<td>无</td>
+<td>精读卡第 16 节六道门、gap 分析、开题状态机（都是提示词）</td>
+<td>平台没有</td>
+<td>第 2.5 节</td>
+</tr>
+<tr>
+<td>写作与润色</td>
+<td>无</td>
+<td>writing、polishing、shared 约 7800 行 Markdown 提示词；统计、数据可用性、审稿、返修</td>
+<td>平台没有</td>
+<td>第 1.1 节</td>
+</tr>
+<tr>
+<td>绘图</td>
+<td>无</td>
+<td>figure 的模板与四个 QA 脚本；OpenRouter 示意图</td>
+<td>平台没有</td>
+<td>第 2.4 节</td>
+</tr>
+<tr>
+<td>数字核对</td>
+<td><code>verify</code> 能力做数字回溯（零模型）</td>
+<td><code>check_consistency.py</code> 只查术语变体、同值不同精度、长度单位写法，不回溯来源</td>
+<td>对象不同</td>
+<td><code>platform/coordinator/README.md:60</code>、<code>skills/nature-shared/scripts/check_consistency.py:215-223</code></td>
+</tr>
+<tr>
+<td>模型评审</td>
+<td>P-2：派隔离新会话，尚未实现</td>
+<td>reviewer 用提示词要求宿主开独立上下文</td>
+<td>平台没有</td>
+<td>纲领 P-2、<code>skills/nature-reviewer/SKILL.md:21</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="53-格式规范它自己的校验器平台三方对照">5.3 格式：规范、它自己的校验器、平台三方对照<a class="permalink" href="#53-格式规范它自己的校验器平台三方对照" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>规则</th>
+<th>agentskills.io 规范<sup id="fnref2:spec"><a class="footnote-ref" href="#fn:spec">5</a></sup></th>
+<th>它自己的校验器</th>
+<th>平台 <code>library.py</code></th>
+<th>nature-skills 现状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>frontmatter 字段</td>
+<td>name、description、license、compatibility、metadata、allowed-tools（实验性）</td>
+<td>允许 name、description、license、metadata、allowed-tools；<strong>不允许 compatibility</strong></td>
+<td>允许 name、description、license、compatibility、metadata；<strong>不允许 allowed-tools</strong></td>
+<td>没有人用 compatibility 与 allowed-tools；downloader 把 compatibility 塞进 metadata（<code>skills/nature-downloader/SKILL.md:4-5</code>、<code>scripts/validate-skill-metadata.py:31-38</code>、<code>platform/framework/skills/library.py:26</code>）</td>
+</tr>
+<tr>
+<td>name 等于目录名</td>
+<td>必须</td>
+<td>有一条豁免：<code>nature-proposal-writer</code> → <code>researchwrite</code></td>
+<td>必须</td>
+<td>1 个不符（<code>skills/nature-proposal-writer/SKILL.md:2</code>、<code>scripts/validate-skill-metadata.py:30</code>、<code>platform/framework/skills/library.py:190-191</code>）</td>
+</tr>
+<tr>
+<td>metadata 是字符串到字符串</td>
+<td>必须</td>
+<td>不查</td>
+<td>查</td>
+<td>3 个嵌套了 <code>hermes</code> 字典：experiment-log、literature-pipeline、proposal-writer（<code>skills/nature-literature-pipeline/SKILL.md:6-11</code>、<code>platform/framework/skills/library.py:205-209</code>）</td>
+</tr>
+<tr>
+<td>正文 500 行以内</td>
+<td>建议</td>
+<td>不查</td>
+<td>强制</td>
+<td>全部符合，最长 downloader 345 行</td>
+</tr>
+<tr>
+<td>目录外引用</td>
+<td>建议从 skill 根写相对路径、只引一层</td>
+<td>只允许 <code>../nature-shared/</code> 一种出目录</td>
+<td>不查引用；<code>show</code> 只给目录路径、正文与 <code>references/</code> 顶层文件名</td>
+<td>10 个 skill 的 manifest 引 <code>../nature-shared/</code>（<code>scripts/validate-skill-metadata.py:181-195</code>、<code>platform/framework/cli/skill.py:41-57</code>）</td>
+</tr>
+<tr>
+<td>脚本</td>
+<td>自包含或写清依赖；语言随宿主</td>
+<td>不查</td>
+<td>只认 <code>scripts/*.py</code>，每个要 PEP 723 块与 <code>.lock</code>，<code>uv run --locked --offline</code> 起</td>
+<td>12 个目录的 <code>scripts/*.py</code> 全无锁；另有 <code>cli/</code>、<code>mcp-server/</code>、<code>src/</code>、<code>.mjs</code>、<code>.R</code> 不在平台的识别范围（<code>platform/framework/skills/library.py:147-150,218-228</code>、<code>platform/framework/skills/run.py:21</code>）</td>
+</tr>
+<tr>
+<td>额外文件</td>
+<td>允许任意</td>
+<td>要求 README.md、README_EN.md、manifest.yaml、agents/openai.yaml</td>
+<td>不管</td>
+<td>每个目录都有这四样</td>
+</tr>
+<tr>
+<td>坏一个的后果</td>
+<td>—</td>
+<td>校验失败</td>
+<td>整库报错，清单一个都不给</td>
+<td>—（<code>platform/framework/skills/library.py:110-132</code>）</td>
+</tr>
+</tbody>
+</table></div>
+<p>照这张表逐个算（只看 frontmatter 与 <code>scripts/*.py</code> 两条门），原样放进平台 <code>skills/</code> 时能过 <code>load_skill</code> 的是 6 个没有脚本、metadata 平铺的目录：writing、polishing、statistics、data、reviewer、ref-verifier。不过的 14 个：12 个因为 <code>scripts/*.py</code> 没有 PEP 723 块或锁（academic-search、citation、downloader、figure、image2ppt、paper-card、paper-to-patent、paper2ppt、proposal-writer、reader、response、shared），3 个因为 metadata 嵌套（experiment-log、literature-pipeline、proposal-writer），1 个因为名字（proposal-writer），有重叠。能过的 6 个里，writing 与 polishing 在 <code>always_load</code> 里引 <code>../nature-shared/</code> 的 4 个 core 文件，statistics、data、reviewer 按需引它的 NMI 格式或一致性扫描，只有 ref-verifier 不引；而 <code>nature-shared</code> 自带脚本、自己过不了 <code>load_skill</code>，放进同一个 <code>skills/</code> 会让整库报错，不放则这 5 个的共享引用落空。另外平台测试要求有脚本的 skill 正文里出现 <code>ai4sci skill run</code>，全仓零处（<code>platform/tests/test_skills.py:95-100</code>）。上面 6 过 14 不过的结果，是用内仓 venv 的 Python 对 <code>vendor/nature-skills/skills/</code> 下 20 个目录逐个调 <code>framework.skills.library.load_skill</code> 得到的（只读，没有复制进 <code>skills/</code>，没有跑 <code>make skills</code> 与 nature-skills 的代码）。</p>
+<h3 id="54-接进来会碰到的平台规则">5.4 接进来会碰到的平台规则<a class="permalink" href="#54-接进来会碰到的平台规则" title="本节链接">#</a></h3>
+<p>只列碰到的事实，不下结论。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>平台规则</th>
+<th>碰到的事实</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P-1 执行层是唯一写代码的；框架不调模型</td>
+<td>它的文本全由宿主 agent 写，框架侧不需要调模型；但 figure、image2ppt 的脚本自己调外部图像与 OCR 接口，这些脚本若进平台是 skill 脚本，不在 <code>framework/</code> 下</td>
+<td>第 2.2 节表；纲领 P-1 的判据是 <code>framework/</code> 下 grep 不到模型 API 名</td>
+</tr>
+<tr>
+<td>P-25 底座归人（模型与登录在 <code>~/.config/ai4sci/agents.yaml</code>）</td>
+<td>图像接口要 <code>OPENROUTER_API_KEY</code> / <code>OPENAI_API_KEY</code> / <code>PADDLE_OCR_TOKEN</code>，不经 agent 登录；image2ppt 的 <code>codex-oauth</code> 直接读 <code>~/.codex/auth.json</code> 调 ChatGPT 后端</td>
+<td><code>skills/nature-image2ppt/cli/image2ppt/runtime/image_gen.py:51-52,68-74</code></td>
+</tr>
+<tr>
+<td>P-22 加载不靠 agent 原生机制；框架把清单拼进 prompt，全文用 <code>ai4sci skill show</code></td>
+<td>router 型 skill 要 agent 自己读 <code>manifest.yaml</code>、<code>static/…</code>、<code>../nature-shared/…</code>；<code>show</code> 打印 skill 目录的绝对路径、SKILL.md 正文与 <code>references/</code> 顶层文件名，不打印 <code>manifest.yaml</code> 与 <code>static/</code>。执行层的 Claude Code 适配器给 allowed_paths 的 Edit / Write 规则和会话工作目录（多数能力就是产出目录）的 Read 规则，研究助理可写整个项目、额外可读的只有流程库两层与需求模板库，skill 目录都不在里面；Codex 适配器每次起会话都把 Codex 原生 skill 关掉</td>
+<td><code>platform/framework/cli/skill.py:41-57</code>、<code>platform/backends/claude_code.py:151-155</code>、<code>platform/framework/capabilities/analysis/analyze.py:54</code>、<code>platform/framework/chat/scope.py:39-43</code>、<code>platform/backends/codex.py:25-29</code></td>
+</tr>
+<tr>
+<td>P-22 脚本 PEP 723 + 锁 + <code>uv run --locked --offline</code></td>
+<td>见 5.3；Node、R、CLI 包形态的脚本不在这套机制里</td>
+<td><code>platform/framework/skills/run.py:1-23</code></td>
+</tr>
+<tr>
+<td>P-14 CLI 主导：不裸跑 python；执行层命令前缀只有 <code>ai4sci skill</code>，研究助理只有 <code>ai4sci</code></td>
+<td>它的 SKILL.md 让 agent 直接跑 <code>python &lt;skill&gt;/scripts/…</code>、<code>Rscript</code>、<code>node</code>、<code>uv run</code>、<code>npx</code>；figure 的出图本身就是 agent 运行自己写的绘图代码；paper2ppt 是 agent 运行自己写的 python-pptx。两家适配器落实这条前缀的方式不同：Claude Code 在 dontAsk 下按 <code>Bash(ai4sci skill *)</code> 白名单放行，别的写命令被拒（注释说只读的 grep / ls / wc 本就自动放行）；Codex 没有按命令的白名单，<code>ai4sci</code> 在沙箱外跑，别的命令留在沙箱里，只能写工作区、不能联网</td>
+<td><code>platform/framework/skills/__init__.py:37</code>、<code>platform/framework/chat/guide.py:28</code>、<code>platform/backends/claude_code.py:149-150</code>、<code>platform/backends/codex.py:16-22,33</code>、<code>skills/nature-figure/SKILL.md:102-106</code></td>
+</tr>
+<tr>
+<td>P-20 阶段主文件；假设、写作待第一个能力定名；skill 不开产出目录</td>
+<td>writing、polishing 默认产出是对话回复（例外见第 2.3 节）；reader 的 <code>paper.md</code> 与平台 <code>pdf</code> skill 的 <code>paper.md</code> 同名、内容不同；proposal-writer 自定 <code>&lt;outputs&gt;/researchwrite/&lt;slug&gt;/</code> 的目录结构与 <code>state.json</code></td>
+<td>第 2.3 节表</td>
+</tr>
+<tr>
+<td>P-13 文档即接口：名字是角色名词、版本在文件里、一个名字一个生产者</td>
+<td>同上 <code>paper.md</code> 两个生产者；paper-card 缺省写 <code>paper-card.md</code>；proposal 的 <code>00_scope.md</code> 到 <code>05_style_guide.md</code> 带两位序号前缀（纲领列的禁项是模型名、日期、轮次，没提序号）</td>
+<td><code>skills/nature-paper-card/SKILL.md:100</code>、<code>skills/nature-proposal-writer/SKILL.md:48-53</code></td>
+</tr>
+<tr>
+<td>P-2 评审上下文隔离（模型评审未实现）</td>
+<td>reviewer 把"独立上下文"写成对宿主的要求，做不到就在报告里声明</td>
+<td><code>skills/nature-reviewer/SKILL.md:21</code></td>
+</tr>
+<tr>
+<td>P-11 领域 skill 只进执行层、通用 skill 两层都有</td>
+<td>它的 skill 按任务分（写作、绘图、检索），没有按学科分；学科差异放在各 skill 的 <code>paper_type</code> 片段里</td>
+<td><code>skills/nature-paper2ppt/manifest.yaml:19-41</code></td>
+</tr>
+<tr>
+<td>P-15 项目边界；P-23、P-25 配置归人的一份文件</td>
+<td>figure 把 backend 偏好写到 <code>~/.config/nature-skills/nature-figure.json</code>；image2ppt 把含 key 的 <code>config.yaml</code> 默认写在 skill 目录里；downloader 把出版商凭据与学校配置写到用户目录</td>
+<td><code>skills/nature-figure/manifest.yaml:35-43</code>、<code>skills/nature-image2ppt/cli/image2ppt/runtime/runtime_env.py:40-62</code>、<code>skills/nature-downloader/scripts/lib/credentials.mjs:8-14</code></td>
+</tr>
+<tr>
+<td>P-7 fail-closed</td>
+<td>academic-search 规定脚本失败两次后"fall back to manual generation from MCP-fetched metadata"；patent 的 Mermaid 渲染失败"不中断"、保留原代码块继续导出；figure 的对齐与碰撞审计失败是阻断交付的</td>
+<td><code>skills/nature-academic-search/static/core/routing-and-ops.md:76-78</code>、<code>skills/nature-paper-to-patent/scripts/disclosure/mermaid_render.py:15</code>、<code>skills/nature-figure/SKILL.md:108-113</code></td>
+</tr>
+<tr>
+<td>P-14 联网只用 CLI 自带工具</td>
+<td>检索类脚本自己发 HTTP（CrossRef、OpenAlex、PubMed、arXiv）；平台现有 <code>pdf</code>、<code>download</code> 脚本也自己联网，<code>--offline</code> 只管依赖解析。Codex 下只有经 <code>ai4sci skill run</code> 起的脚本在沙箱外、能联网，agent 直接敲的 <code>python …</code> 在沙箱里断网</td>
+<td><code>platform/framework/skills/run.py:6-8</code>、<code>platform/backends/codex.py:16-22,33</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="6-成熟度">6. 成熟度<a class="permalink" href="#6-成熟度" title="本节链接">#</a></h2>
+<h3 id="61-测试">6.1 测试<a class="permalink" href="#61-测试" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>数量</th>
+<th>测的是什么</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/tests/</code>（CI 的 content contracts）</td>
+<td>109 个</td>
+<td>约一半（9 个文件 55 个）是对 md 文件做"某句话在不在"的字符串断言，如摘要指南必须含 "corpus-derived writing guidance, not official journal requirements"；另一半是 figure 对齐（24）与碰撞审计（8）的几何测试、star 曲线脚本（10）、元数据与 workflow 校验器自测（12）</td>
+<td><code>scripts/tests/test_nature_abstract_guidance.py:20-27</code>、<code>scripts/tests/test_nature_figure_panel_alignment.py:113-140</code></td>
+</tr>
+<tr>
+<td><code>nature-image2ppt/tests</code></td>
+<td>168 个</td>
+<td>状态机、路径约束、渲染、并发派发；三平台矩阵只跑其中 9 个文件</td>
+<td><code>.github/workflows/test-skill-tooling.yml:96-98,120-161</code></td>
+</tr>
+<tr>
+<td><code>nature-downloader/tests</code></td>
+<td>108 个 JS（bun test）+ 10 个 Python</td>
+<td>路由、元数据、PDF 原子写入、凭据</td>
+<td><code>.github/workflows/test-skill-tooling.yml:88-91,163-175</code></td>
+</tr>
+<tr>
+<td><code>nature-academic-search/mcp-server/tests</code></td>
+<td>43 个</td>
+<td>各数据源解析与 MCP 工具；另有 <code>test_elsevier_live.py</code></td>
+<td><code>.github/workflows/test-skill-tooling.yml:80-83</code></td>
+</tr>
+<tr>
+<td>figure / citation / paper-card / patent / shared</td>
+<td>13 / 9 / 7 / 10 / 5 个</td>
+<td>各自脚本</td>
+<td><code>.github/workflows/test-skill-tooling.yml:84-119</code></td>
+</tr>
+<tr>
+<td>reviewer、response</td>
+<td>4 / 11 个 Python</td>
+<td>reviewer 的 4 个与 response 的 4 个是对 SKILL.md 的字符串断言（如必须含 "genuinely separate context"）；response 另 7 个测 <code>check_package_consistency.py</code></td>
+<td><code>skills/nature-reviewer/tests/test_reviewer_instruction_contracts.py:21-27</code>、<code>skills/nature-response/tests/test_package_consistency.py:10-15</code></td>
+</tr>
+<tr>
+<td>reviewer、response、writing 的 <code>tests/*.md</code></td>
+<td>4 / 11 / 1 份</td>
+<td>人工对照的场景与评分表，文件自己写"not an executed model benchmark"</td>
+<td><code>skills/nature-writing/tests/scoped-drafting.md:3-4</code>、<code>skills/nature-response/tests/rubric.md:1-3</code></td>
+</tr>
+<tr>
+<td>writing、polishing、reader、paper2ppt、statistics、data 的行为</td>
+<td>0</td>
+<td>没有任何会执行提示词、比较输出的测试；<code>evals.json</code> 不被执行</td>
+<td>第 1.2 节</td>
+</tr>
+<tr>
+<td>上面 <code>test-skill-tooling.yml</code> 里 python-tests job 的部分（academic-search、citation、downloader Python、figure、image2ppt 完整、paper-card、patent、response、reviewer、shared）</td>
+<td>—</td>
+<td>09-16 起在 main 上：academic-search 这一步收集阶段就报错中断（43 个一个没跑），后面 9 步全部 skipped；downloader 的 bun、image2ppt 三平台可移植部分、安装同步测试这几个独立 job 仍是绿的</td>
+<td><sup id="fnref5:ci"><a class="footnote-ref" href="#fn:ci">1</a></sup>、<code>.github/workflows/test-skill-tooling.yml:80-118</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="62-ci">6.2 CI<a class="permalink" href="#62-ci" title="本节链接">#</a></h3>
+<p>8 个 workflow：content contracts、skill tooling（Python 多目录、image2ppt 三平台矩阵、downloader 的 bun、安装脚本同步测试）、元数据、README 中英镜像、技能索引、workflow 路径过滤、仓库校验，以及每三天更新 star 曲线的机器人（<code>.github/workflows/</code> 下 8 个 yml）。测试依赖以 <code>-c .github/requirements-ci.txt</code> 约束安装，这个文件钉了 48 个包的版本，但 numpy、matplotlib、openai、PyMuPDF、defusedxml 不在里面、不钉（<code>.github/requirements-ci.txt:1-3</code>、<code>.github/workflows/test-skill-tooling.yml:70-78</code>）；设了 Python 版本的 workflow 都用 3.11，只有 image2ppt 的矩阵另跑 3.10 与 3.12；actions 按 commit SHA 钉（<code>.github/workflows/test-skill-tooling.yml:52</code>）。当前状态：main 上 "Test skill tooling" 从 2026-09-16（c17a4c9，合并 #222）起连续 6 次失败，最近一次 2026-09-24（351f619）失败在 "Test nature-academic-search"，错误是 <code>module 'defusedxml.ElementTree' has no attribute 'Element'</code>，同 job 后面 9 个测试步骤 skipped<sup id="fnref:ci"><a class="footnote-ref" href="#fn:ci">1</a></sup>；其余 workflow（content contracts、元数据、索引、仓库校验等）在 main 上最近几次都是 success；HEAD 9e2d90e 只改了 README 图片，没触发 skill tooling 这个 workflow。</p>
+<h3 id="63-发版与维护节奏">6.3 发版与维护节奏<a class="permalink" href="#63-发版与维护节奏" title="本节链接">#</a></h3>
+<ul>
+<li>0 个 release、0 个 tag、没有 CHANGELOG；版本号只写在各 <code>manifest.yaml</code>（如 polishing 6.6.0、writing 1.5.0、figure 2.8.0）和 <code>.codex-plugin/plugin.json</code> 的 0.1.0<sup id="fnref:repo"><a class="footnote-ref" href="#fn:repo">15</a></sup>。</li>
+<li>2026-04-24 建仓，到 09-25 共 858 个提交，其中 312 个是 star 曲线机器人；人工提交 546 个、37 个作者，按月 4 月 19、5 月 119、6 月 95、7 月 205、8 月 72、9 月 36；前两位是创建者（220）与核心开发者 Travisma2233（195）<sup id="fnref:commits"><a class="footnote-ref" href="#fn:commits">16</a></sup>。</li>
+<li>31 个 issue 全部关闭；198 个 PR 中 164 个合并、32 个未合、2 个开着（均为 09-24 的安全加固）<sup id="fnref:issues"><a class="footnote-ref" href="#fn:issues">17</a></sup>。</li>
+<li>44,699 star、2,346 fork（2026-09-27）<sup id="fnref2:repo"><a class="footnote-ref" href="#fn:repo">15</a></sup>。README 前部有代充值与成品号服务、知识星球、商务合作等运营内容（<code>README.md:53-88</code>）。</li>
+</ul>
+<h3 id="64-许可证">6.4 许可证<a class="permalink" href="#64-许可证" title="本节链接">#</a></h3>
+<ul>
+<li>根目录 Apache-2.0（2026-06-18 提交 54eadc6 由 MIT 改为 Apache-2.0<sup id="fnref:license"><a class="footnote-ref" href="#fn:license">2</a></sup>），<code>.codex-plugin/plugin.json:11</code> 同。要点：可商用、修改、再分发；附带专利授权；再分发要保留许可证文本与版权声明，改过的文件要标明改动；没有 NOTICE 文件。</li>
+<li>目录内另有 MIT：<code>skills/nature-downloader/LICENSE</code>（baihe26）、<code>skills/nature-image2ppt/LICENSE</code>（版权人 Image2PPT contributors 与 ningzimu；README 与 manifest 说实现同步自 Paul-Jeo/Image2PPT，<code>skills/nature-image2ppt/manifest.yaml:8</code>）、<code>skills/nature-paper-to-patent/references/disclosure/patent-disclosure-skill-MIT-LICENSE.txt</code>；三个 SKILL frontmatter 写 <code>license: MIT</code>（experiment-log、literature-pipeline、proposal-writer）。</li>
+<li><code>skills/nature-figure/assets/figures4papers/</code>（约 28 MB，占仓库体积大头）来自无许可证的上游，仓库自己的说明写明"does not grant permission to copy, modify, redistribute"（<code>skills/nature-figure/assets/figures4papers/THIRD_PARTY_NOTICES.md:8-17</code>）。</li>
+<li><code>validate_figure.py</code> 与 <code>plot_templates.py</code> 注明规则与模板思路来自 Apache-2.0 的 academic-figure-skill（<code>skills/nature-figure/scripts/validate_figure.py:8-9</code>、<code>skills/nature-figure/scripts/plot_templates.py:8-10</code>）。</li>
+</ul>
+<h2 id="7-还没弄清的问题">7. 还没弄清的问题<a class="permalink" href="#7-还没弄清的问题" title="本节链接">#</a></h2>
+<ol>
+<li><strong>写作类提示词的实际效果</strong>：仓库里没有任何执行过的对比评测，只有 6 条短请求的观察记录。它在我们的真稿子上能省多少改稿量，只能靠 #188 实测回答。</li>
+<li><strong>natureskills.cn 用的是不是本仓的 SKILL.md</strong>，用哪家模型，收费多少：页面客户端渲染，未登录取不到。</li>
+<li><strong>执行层能不能读到 skill 目录下的其他文件</strong>：Claude Code 适配器只给会话工作目录的 Read 规则（<code>ai4sci skill show</code> 会把 skill 目录的绝对路径打出来），但 <code>platform/backends/claude_code.py:149-150</code> 的注释说 dontAsk 下只读的 Bash（grep、ls、wc）自动放行；router 型 skill 在执行层里能否读到 <code>manifest.yaml</code> 与 <code>static/</code>，Codex 沙箱对工作区外的读是否放行，都未实测。</li>
+<li><strong><code>defusedxml</code> 能否被 MCP 启动片段的传递依赖带进来</strong>：片段的 <code>--with</code> 列表没有它，mcp / pybliometrics 等是否间接依赖它未查；CI 的约束文件里没有 <code>defusedxml</code>，但那个文件连 numpy、openai 也没列，不是完整的解析结果，推不出结论。即便带进来了，<code>arxiv.py</code> 在 Python 3.13 及以下的导入错误仍在；Python 3.14 注解延迟求值后能否正常导入、运行时有没有别处用到 <code>ET.Element</code>，未实测。</li>
+<li><strong>"Nature 风格"规则的出处有多扎实</strong>：共享包里的摘要、引言、Results/Discussion 指南自称从 NMI 与旗舰 Nature 已发表论文归纳、Nat Commun 2025 语料有词频统计；语料规模、抽样方式、统计脚本仓库里都没有，只有结论文本。</li>
+<li><strong>figure 出图在无显示器环境、中文字体下的表现</strong>：<code>plot_templates.py</code> 设了 <code>mpl.use("Agg")</code>，但 agent 自己写的绘图代码没有这层保证；字体回退到 DejaVu Sans 时 5 pt 字号门会不会误报，未跑。</li>
+<li><strong>中文直译问题（#66）是否改过</strong>：issue 已关，<code>zh-to-en</code> 片段里有没有针对它的改动，没有逐提交追。</li>
+<li><strong>README 里"Stable / Beta / Draft"的判定依据</strong>：定义是"已在真实学术内容上验证"，但文献管线与文献核验两个零代码目录标 Stable，验证记录在哪没找到。</li>
+<li><strong>子代理依赖在平台里怎么落</strong>：reviewer 的互盲、ref-verifier 的并行、image2ppt 的多页 worker 都靠宿主开子代理。已查到的：Claude Code 适配器给执行层的 <code>--allowedTools</code> 只有 Edit / Write / Read / <code>Bash(ai4sci skill *)</code> / WebSearch / WebFetch，没有子代理工具，dontAsk 下不在白名单的工具被拒（<code>platform/backends/claude_code.py:40-42,151-159</code>）；Codex 适配器的事件表里有 <code>collab_tool_call</code>，没看到关掉它的配置（<code>platform/backends/codex.py:38-40,116-117</code>）。两家实际能不能开子代理，未实测。</li>
+<li><strong><code>install.sh</code> 写的 MCP 配置 Claude Code 读不读</strong>：它把 server 写进 <code>~/.claude/.mcp.json</code> 并往 <code>~/.claude/settings.json</code> 的 <code>enabledMcpjsonServers</code> 加名字（<code>skills/nature-academic-search/install.sh:10,73-133</code>）；Claude Code 的 <code>.mcp.json</code> 是否会从 <code>~/.claude/</code> 这个位置读，没有查官方文档、未实测。</li>
+<li><strong>academic-search 清单里 11 个外部工具名从哪来</strong>：扩展检索标"paper-search MCP"、PubMed 工具没标来源，仓库没有配置这两个 server，issue 与 PR 里也没找到讨论；和同目录调研的 paper-search-mcp 只对上 3 个名字。</li>
+</ol>
+<h2 id="8-调研方法">8. 调研方法<a class="permalink" href="#8-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>浅克隆到外层 <code>vendor/nature-skills</code>（gitignore 挡住），提交 9e2d90e，工作树 78 MB，其中 figure 目录 34 MB。</li>
+<li>逐个读了 20 个 SKILL.md、全部 <code>manifest.yaml</code>、写作 / 润色 / 共享包的 core 文件、figure 与 reader 与 paper2ppt 与 paper-card 的 core 与主要 references；脚本读了头部、导入、参数表与关键函数，按导入与 URL grep 了全部外部依赖与外部主机；统计了每个目录的 md 行数、代码行数、测试数。</li>
+<li>用仓库自带校验器的规则、agentskills.io 规范、平台 <code>library.py</code> 的规则对 20 个 frontmatter 逐个做了比对（Python 读 YAML，不跑项目代码）。</li>
+<li>用 gh api 取了仓库元数据、全部提交、全部 issue 与 PR、关键 PR 正文、插件目录与 LICENSE 的文件历史、CI 最近的运行与一次失败日志。</li>
+<li>用 curl 取了 natureskills.cn 的首页、sitemap、manifest、关于页与两份法律文本。</li>
+<li>没有找到与本仓对应的论文。没有安装任何依赖、没有运行任何 nature-skills 代码。</li>
+<li>复查（同日，另一人）：逐条打开文中的 <code>文件:行</code> 核对；独立重搜了"零调用文本模型""零代码""工具名零命中""MCP 导入失败""平台命令白名单"几条否定判断；用内仓 venv 的 Python 对 20 个目录调平台的 <code>load_skill</code>（只读平台代码，不跑 nature-skills 代码）；用 gh api 重取了 CI 运行的 job 与 step 结论、失败日志、issue 评论与 PR 正文；用 curl 复核了 natureskills.cn 的跳转、标题、sitemap 与隐私政策原文；对照了同目录调研克隆的 paper-search-mcp（808e462）的工具名。</li>
+</ul>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:ci">
+<p>GitHub Actions run 35950391382（main，351f619，2026-09-24）"Test skill tooling" 的失败日志：<code>tests/test_sources.py</code> 与 <code>tests/test_elsevier_live.py</code> 收集阶段 <code>AttributeError: module 'defusedxml.ElementTree' has no attribute 'Element'</code>；同一次运行的 python-tests job 里，"Test nature-academic-search" 之后的 9 个步骤（citation、downloader Python、figure、image2ppt 完整、paper-card、patent、response、reviewer、shared）结论都是 skipped，另外 6 个 job（bun、image2ppt 四个可移植矩阵、安装同步）success。同 workflow 在 main 上 c17a4c9（2026-09-16，合并 #222）起连续 6 次 failure（c17a4c9、2375e0a、ed94f39、f4f828a、9c9953a、351f619），之前 54b7e03 为 success。gh api <code>actions/runs/35950391382/jobs</code>、<code>actions/jobs/&lt;id&gt;/logs</code>、<code>actions/workflows/test-skill-tooling.yml/runs?branch=main</code> 于 2026-09-27 查。&#160;<a class="footnote-backref" href="#fnref:ci" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref2:ci" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref3:ci" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref4:ci" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref5:ci" title="回到正文第 1 处">↩</a></p>
+</li>
+<li id="fn:license">
+<p>提交 54eadc6（2026-06-18，"Update LICENSE"）：LICENSE 由 "MIT License, Copyright (c) 2026 Yuan Yizhe" 换成 Apache License 2.0 全文。gh api <code>repos/Yuan1z0825/nature-skills/commits/54eadc6</code>。&#160;<a class="footnote-backref" href="#fnref:license" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref2:license" title="回到正文第 2 处">↩</a></p>
+</li>
+<li id="fn:nscn">
+<p>2026-09-27 curl https://natureskills.cn（307 → /agent）、/sitemap.xml、/manifest.webmanifest、/about、/legal/terms、/legal/privacy；隐私政策第 3、4 节讲积分与"平台配置的 AI 模型服务商"。&#160;<a class="footnote-backref" href="#fnref:nscn" title="回到正文第 3 处">↩</a></p>
+</li>
+<li id="fn:prs">
+<p>PR #37、#45（router 拆分，2026-05-28 / 05-30 合并）、#76（确认门，06-18）、#121（npx skills 与 nature-shared 包，07-15）、#213、#215（收窄确认与缩短 description，09-06 / 09-14）、#206、#208（碰撞审计与对齐门，08-24 / 08-27）、#70、#83（Claude Code 插件，未合并）、#64、#65（修 #62，06-07）、#99（paper2ppt QA，07-07）、#210（Codex 插件，08-31）、#212（Windows Mermaid 路径，09-03）、#222、#224、#225、#231（defusedxml，09-16 至 09-24 合并）、#233、#234（09-24 提，仍开着）的正文与合并状态，gh api 于 2026-09-27 查。&#160;<a class="footnote-backref" href="#fnref:prs" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref2:prs" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref3:prs" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref4:prs" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref5:prs" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref6:prs" title="回到正文第 4 处">↩</a></p>
+</li>
+<li id="fn:spec">
+<p>agentskills.io Specification，https://agentskills.io/specification，2026-09-27 取：字段表、name 须等于父目录名、metadata 为字符串到字符串映射、allowed-tools 实验性、SKILL.md 建议 500 行以内、引用只引一层。&#160;<a class="footnote-backref" href="#fnref:spec" title="回到正文第 5 处">↩</a><a class="footnote-backref" href="#fnref2:spec" title="回到正文第 5 处">↩</a></p>
+</li>
+<li id="fn:i72">
+<p>issue #72「codex中无法打开nature-academic-search MCP」（2026-06-14，2 条评论）。&#160;<a class="footnote-backref" href="#fnref:i72" title="回到正文第 6 处">↩</a></p>
+</li>
+<li id="fn:plugins">
+<p>文件历史：<code>.claude-plugin/plugin.json</code> 由 cf4387d（05-06）加入、574e167（06-15 "Delete .claude-plugin directory"）删除；<code>.agents/plugins/marketplace.json</code> 由 77dc9be（05-26）加入、f6c791d（06-15）删除、2fc270f（08-31，PR #210）重新加入。&#160;<a class="footnote-backref" href="#fnref:plugins" title="回到正文第 7 处">↩</a><a class="footnote-backref" href="#fnref2:plugins" title="回到正文第 7 处">↩</a></p>
+</li>
+<li id="fn:i62">
+<p>issue #62（2026-06-06），报告 <code>nature_citation.py</code> 的 NameError 与无 MCP 环境的可移植性问题。&#160;<a class="footnote-backref" href="#fnref:i62" title="回到正文第 8 处">↩</a></p>
+</li>
+<li id="fn:i74">
+<p>issue #74（2026-06-16），academic-search 安装脚本漏拷 <code>manifest.yaml</code> 与 <code>static/</code>。&#160;<a class="footnote-backref" href="#fnref:i74" title="回到正文第 9 处">↩</a></p>
+</li>
+<li id="fn:i60">
+<p>issue #60（2026-06-02 提、当天关闭）及两条评论：仓库作者 Yuan1z0825 与另一用户 YUAN-0014。&#160;<a class="footnote-backref" href="#fnref:i60" title="回到正文第 10 处">↩</a></p>
+</li>
+<li id="fn:i97">
+<p>issue #97（2026-07-06）及两条评论。&#160;<a class="footnote-backref" href="#fnref:i97" title="回到正文第 11 处">↩</a></p>
+</li>
+<li id="fn:i181">
+<p>issue #181（2026-07-31）及维护者评论，指向修复提交 e7a9bc0。&#160;<a class="footnote-backref" href="#fnref:i181" title="回到正文第 12 处">↩</a></p>
+</li>
+<li id="fn:i183">
+<p>issue #183（2026-08-01）及维护者评论，指向修复提交 4312c49。&#160;<a class="footnote-backref" href="#fnref:i183" title="回到正文第 13 处">↩</a></p>
+</li>
+<li id="fn:i66">
+<p>issue #66（2026-06-07 提、06-09 关闭）及仓库作者的一条评论（06-08）。&#160;<a class="footnote-backref" href="#fnref:i66" title="回到正文第 14 处">↩</a></p>
+</li>
+<li id="fn:repo">
+<p>gh api <code>repos/Yuan1z0825/nature-skills</code>、<code>/releases</code>、<code>/tags</code>，2026-09-27：44,699 star、2,346 fork、license Apache-2.0、release 与 tag 均为 0。&#160;<a class="footnote-backref" href="#fnref:repo" title="回到正文第 15 处">↩</a><a class="footnote-backref" href="#fnref2:repo" title="回到正文第 15 处">↩</a></p>
+</li>
+<li id="fn:commits">
+<p>gh api 提交列表全量（858 条），2026-09-27 取；机器人指 github-actions[bot]；作者按 login 或提交署名计。&#160;<a class="footnote-backref" href="#fnref:commits" title="回到正文第 16 处">↩</a></p>
+</li>
+<li id="fn:issues">
+<p>gh api issues（state=all）与 pulls（state=all）全量，2026-09-27 取：issue 31 条全关；PR 198 条，164 合并、32 关闭未合、2 开着（#233、#234）。&#160;<a class="footnote-backref" href="#fnref:issues" title="回到正文第 17 处">↩</a><a class="footnote-backref" href="#fnref2:issues" title="回到正文第 17 处">↩</a></p>
+</li>
+</ol>
+</div>
+  </main>
+  <footer class="doc">原始稿是同目录的 nature-skills.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>

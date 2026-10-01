@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Research SKILLs 代码级深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>AI Research SKILLs 代码级深读</h1>
+    <p class="subtitle">科研 AI 能力选型 · 写作与出想法四个 skill：98 个 skill 没有一个脚本，能力全在 Markdown 正文里</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目选型深读（只读代码，不跑、不装依赖）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-27</dd></div><div class="meta-row"><dt>范围</dt><dd>仓库 https://github.com/Orchestra-Research/AI-Research-SKILLs，浅克隆到外层 vendor/AI-Research-SKILLs，提交 773a529（release v1.7.2，2026-06-16）；深读 20-ml-paper-writing/ml-paper-writing、20-ml-paper-writing/academic-plotting 与 21-research-ideation 下两个，0-autoresearch-skill 只概述，其余 93 个只盘格式与分布；平台一侧对照内仓提交 de3d948 与外层提交 b537e64；文中不带前缀的 文件:行 相对该仓库根，带 platform/ 或 docs/ 前缀的相对外层仓根；GitHub 上的 issue、PR、release、提交数据 2026-09-27 用 gh api 查</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#0-仓库画像与分布">0. 仓库画像与分布</a><ul>
+<li><a href="#01-整体格式">0.1 整体格式</a></li>
+<li><a href="#02-98-个-skill-的分布">0.2 98 个 skill 的分布</a></li>
+</ul>
+</li>
+<li><a href="#1-是不是">1. 是不是</a><ul>
+<li><a href="#11-整库层面">1.1 整库层面</a></li>
+<li><a href="#12-论文写作两个">1.2 论文写作两个</a></li>
+<li><a href="#13-出想法两个">1.3 出想法两个</a></li>
+</ul>
+</li>
+<li><a href="#2-怎么做">2. 怎么做</a><ul>
+<li><a href="#21-skill-在运行时是什么">2.1 skill 在运行时是什么</a></li>
+<li><a href="#22-ml-paper-writing">2.2 ml-paper-writing</a></li>
+<li><a href="#23-引用核对的示范代码">2.3 引用核对的示范代码</a></li>
+<li><a href="#24-academic-plotting">2.4 academic-plotting</a></li>
+<li><a href="#25-出想法两个">2.5 出想法两个</a></li>
+<li><a href="#26-autoresearch-一段话">2.6 autoresearch 一段话</a></li>
+</ul>
+</li>
+<li><a href="#3-为什么">3. 为什么</a><ul>
+<li><a href="#31-文档里写明的设计理由">3.1 文档里写明的设计理由</a></li>
+<li><a href="#32-issue-与提交里踩过的坑">3.2 issue 与提交里踩过的坑</a></li>
+</ul>
+</li>
+<li><a href="#4-跑起来要什么">4. 跑起来要什么</a></li>
+<li><a href="#5-和平台对照">5. 和平台对照</a><ul>
+<li><a href="#51-平台这三个阶段现在有什么">5.1 平台这三个阶段现在有什么</a></li>
+<li><a href="#52-多了什么重叠什么">5.2 多了什么、重叠什么</a></li>
+<li><a href="#53-会碰到的平台规则">5.3 会碰到的平台规则</a></li>
+</ul>
+</li>
+<li><a href="#6-成熟度">6. 成熟度</a></li>
+<li><a href="#7-还没弄清的问题">7. 还没弄清的问题</a></li>
+<li><a href="#8-调研方法">8. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：AI Research SKILLs 是一个<strong>以文档为主的库</strong>。98 个 <code>SKILL.md</code> 没有一个带 <code>scripts/</code> 目录，技能目录里的代码文件只有 <code>06-post-training/grpo-rl-training/</code> 下两个示例 <code>.py</code>（另有 NeurIPS 模板的一个 Makefile）。技能目录之外能执行的是：npm 安装器（<code>packages/ai-research-skills/src/</code>，5 个 JS 文件 2,600 行）、四条 GitHub Actions 与它们调的 <code>scripts/check-inventory.sh</code>、绘图演示的三个 Python 脚本（<code>demos/scientific-plotting-demo/figures/</code>），以及一个做宣传视频的 Remotion 工程（<code>video-promo/</code>）。README 列的能力都以「Markdown 正文 + 正文里可复制的代码片段」存在，由宿主 agent（Claude Code、Codex 等）读了照做。</p>
+<p>这次看的四个：<strong><code>ml-paper-writing</code></strong> 真有的是 6 个会议的 LaTeX 模板目录（会议样式文件的拷贝，44 个文件）和一份写作方法清单；README 说的 citation verification 是 <code>references/citation-workflow.md</code> 里一段示范 Python（Semantic Scholar + CrossRef + arXiv + DOI 内容协商），不是脚本、没有测试，示范代码本身把检索第一条当命中、<code>verify</code> 先无条件记一个来源、网络错误 <code>except: pass</code>、核不上只打印警告仍返回 BibTeX。<strong><code>academic-plotting</code></strong> 的数据图走 matplotlib / seaborn，不要 key；架构图那条工作流写死 Gemini（<code>google-genai</code> + <code>GEMINI_API_KEY</code> + <code>gemini-3-pro-image-preview</code>），<code>SKILL.md</code> 只在「替代方案」表里点了 TikZ、draw.io、Mermaid 的名字，TikZ 与 Mermaid 的写法在 references 里各一段；把模型改成可切换的外部 PR #71 开着没合，它把 key 换成 <code>OPENROUTER_API_KEY</code>，仍是一把单独的 key。<strong>出想法</strong>两个（<code>brainstorming-research-ideas</code>、<code>creative-thinking-for-research</code>）是纯提示词：10 个与 8 个思考框架，<code>dependencies: []</code>，不检索文献、不落文件。</p>
+<p>成熟度：零测试；CI 只核「文档里写的 skill 总数与分类数」与磁盘上对得上；维护者在 issue #2 里说 skill 是用带搜索 MCP 的 Claude Code 汇总写成、人再通读，「只验证了一部分」。2026-06-16 之后没有提交，6 月 25 日以来的 17 条 issue / PR 维护者只回过一条。</p>
+<p>和平台的关系（只列事实，见<a href="#5-和平台对照">第 5 节</a>）：按 <code>platform/framework/skills/library.py</code> 的校验读，这四个原样放进 <code>skills/</code> 过不了 <code>make skills</code>：frontmatter 多出 <code>version</code> <code>author</code> <code>tags</code> <code>dependencies</code> 四个字段，<code>ml-paper-writing</code> 正文按平台的算法 974 行，超过 500 行上限；而且库里有一个不合规，整库扫描就报错，<code>ai4sci skill list</code> 一个也列不出来。正文里的指令假设 agent 能 <code>pip install</code>、裸跑 <code>python</code>、<code>cp -r</code> 模板、跑 <code>latexmk</code>、装 Exa MCP、开 <code>/loop</code>；平台执行层在 Claude Code 上的 Bash 白名单只有 <code>ai4sci skill</code>、Read 只放行工作目录，在 Codex 上除 <code>ai4sci</code> 外的命令都在没网的沙箱里，MCP 在两家适配器里都被清空，两家 agent 自带的 skill 加载也都关掉。LaTeX 模板目录、<code>figures/</code> 下的文件命名约定、<code>research-state.yaml</code> 里的假设条目形状这几样本身不含要执行的东西，但在平台上要用它们，仍要经过拷贝文件、编译 LaTeX 这些白名单里没有的动作（<a href="#53-会碰到的平台规则">5.3</a>）。</p>
+<p>怎么读：第 0 节是整库格式与 98 个 skill 的分布；第 1 到 7 节按七个问题各一节；<a href="#7-还没弄清的问题">第 7 节</a>是没弄清的。横向对比见同目录 <a href="index.html">README.md</a>。</p>
+</blockquote>
+<h2 id="0-仓库画像与分布">0. 仓库画像与分布<a class="permalink" href="#0-仓库画像与分布" title="本节链接">#</a></h2>
+<h3 id="01-整体格式">0.1 整体格式<a class="permalink" href="#01-整体格式" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>实况</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>仓库</td>
+<td>Orchestra-Research 维护，MIT，13,064 star、931 fork，2025-11-03 建库；没有论文，只有 <code>CITATION.cff</code> 与博客链接；组织下公开仓库共 3 个（本仓、<code>.github</code>、ARA 模板仓）</td>
+<td><sup id="fnref:gh-meta"><a class="footnote-ref" href="#fn:gh-meta">1</a></sup>、<code>CITATION.cff:1-17</code></td>
+</tr>
+<tr>
+<td>可执行代码</td>
+<td>npm 安装器 <code>@orchestra-research/ai-research-skills</code> 1.7.2：<code>installer.js</code> 1,038 行、<code>prompts.js</code> 685、<code>index.js</code> 533、<code>agents.js</code> 179、<code>ascii.js</code> 165（另有 8 行的 <code>bin/cli.js</code>）；<code>scripts/check-inventory.sh</code> 66 行；四条 workflow（<code>check-inventory</code> <code>claude</code> <code>publish-npm</code> <code>sync-skills</code>）；绘图演示三个 Python 脚本（<code>gen_fig_andes_architecture_gemini.py</code> 311 行、<code>gen_fig_andes_workflow.py</code> 280 行、<code>gen_fig_experiment_results.py</code> 347 行）；<code>video-promo/</code> 下一个 Remotion（React）宣传视频工程</td>
+<td><code>packages/ai-research-skills/package.json:3</code>、<code>.github/workflows/</code>、<code>demos/scientific-plotting-demo/figures/</code>、<code>video-promo/ai-research-skills-promo/package.json:6-16</code></td>
+</tr>
+<tr>
+<td>技能目录里的代码</td>
+<td>98 个 skill 里 0 个有 <code>scripts/</code>；全部技能目录只找到两个 <code>.py</code>：<code>06-post-training/grpo-rl-training/examples/reward_functions_library.py</code>、<code>06-post-training/grpo-rl-training/templates/basic_grpo_training.py</code>；其余非 Markdown 文件是 LaTeX 模板（<code>.tex</code> <code>.sty</code> <code>.bst</code> <code>.bib</code>、样例 PDF、一个 Makefile）与 autoresearch 的两个模板（<code>research-state.yaml</code>、不含脚本的 <code>progress-presentation.html</code>）</td>
+<td><code>find</code> 全仓</td>
+</tr>
+<tr>
+<td>frontmatter</td>
+<td>98 个都有 <code>name</code> <code>description</code> <code>version</code> <code>author</code> <code>license</code> <code>tags</code>，96 个有 <code>dependencies</code>（缺的是 <code>systems-paper-writing</code> 与 <code>0-autoresearch-skill</code>）；前六个是自家 <code>CLAUDE.md</code> 定的必填字段，<code>dependencies</code> 在那里标可选</td>
+<td><code>CLAUDE.md:62-74</code></td>
+</tr>
+<tr>
+<td>license 与 author 字段</td>
+<td>98 个都写 <code>MIT</code>；author 96 个是 Orchestra Research，另两个是 dailycafi、A-EVO Lab</td>
+<td>逐个解析 frontmatter</td>
+</tr>
+<tr>
+<td>name 与目录名</td>
+<td>48 个不一致，例如 <code>0-autoresearch-skill</code> 的 name 是 <code>autoresearch</code>、<code>22-agent-native-research-artifact/compiler</code> 的 name 是 <code>ara-compiler</code>；这次深读的四个一致</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>正文长度</td>
+<td>自家规矩「200 到 500 行，超过 500 不可接受」（同一文件的目录结构图里又写 200 到 600 行，README 的结构图写 50 到 150 行）；17 个超过 500，其中 <code>ml-paper-writing</code> 正文 973 行</td>
+<td><code>CLAUDE.md:46,86,104</code>、<code>README.md:341</code></td>
+</tr>
+<tr>
+<td>references/</td>
+<td>91 个有，7 个没有（4 个 safety、<code>grpo-rl-training</code>、出想法两个）；README 与 <code>CLAUDE.md</code> 写「300KB+ 文档」，references 达到 300 KB 的只有 3 个（deepspeed、axolotl、unsloth）</td>
+<td><code>README.md:347,362</code>、<code>CLAUDE.md:47,118</code></td>
+</tr>
+<tr>
+<td>怎么写出来的</td>
+<td>工程类 skill 用 Skill Seeker 抓官方文档；维护者说 skill 是用带搜索 MCP 的 Claude Code 查仓库与帖子后汇总，再人工通读。<code>ml-paper-writing</code> 的首个提交（4643521，2026-01-22）信息里带「Generated with Claude Code」与 Claude 合著行</td>
+<td><code>README.md:484</code>、<code>dev_data/SKILL_BUILD_PLAN.md:1-10</code>、<sup id="fnref:i2"><a class="footnote-ref" href="#fn:i2">5</a></sup>、<sup id="fnref:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup></td>
+</tr>
+<tr>
+<td>安装方式</td>
+<td>① <code>npx</code> 安装器，全局模式：<code>git clone --depth 1</code> 当前 main 到 <code>~/.orchestra/.temp-clone</code>，拷到 <code>~/.orchestra/skills/</code>，再在检测到的每家 agent 的全局 skills 目录建软链（软链失败时整目录拷贝）；项目模式：直接拷进项目下的 <code>.claude/skills/</code>、<code>.codex/skills/</code> 等，锁文件 <code>.orchestra-skills.json</code> 记在项目根；② Claude Code 插件市场（<code>.claude-plugin/marketplace.json</code> 23 个插件）；③ 让 agent 读网上的 <code>WELCOME.md</code> 自己装</td>
+<td><code>packages/ai-research-skills/src/installer.js:62-127,132-170,668-703,708-769</code>、<code>packages/ai-research-skills/src/agents.js:14-95,127-135</code>、<code>packages/ai-research-skills/src/prompts.js:121</code>、<code>README.md:84-139</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>安装器装的是「clone 时 main 的样子」，不跟 npm 版本号走（<code>packages/ai-research-skills/src/installer.js:8,74</code>）；建软链前对同名路径 <code>rmSync(..., {recursive: true, force: true})</code>，不看它是不是自己建的（<code>packages/ai-research-skills/src/installer.js:150-153</code>），项目模式拷贝前同样整目录删（<code>packages/ai-research-skills/src/installer.js:692-695</code>）。</p>
+<h3 id="02-98-个-skill-的分布">0.2 98 个 skill 的分布<a class="permalink" href="#02-98-个-skill-的分布" title="本节链接">#</a></h3>
+<p>磁盘上 23 个分类目录、98 个 <code>SKILL.md</code>。和平台这次要找的三个阶段（文献、假设、写作）有关的只在四个目录里，合计 10 个；其余 19 个目录 88 个是训练、推理、评测等工程工具的用法手册。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>分类目录</th>
+<th>磁盘上</th>
+<th>README 分类表写的</th>
+<th>内容</th>
+<th>与三个阶段的关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0-autoresearch-skill</code></td>
+<td>1</td>
+<td>1</td>
+<td>全流程编排提示词 + 4 个模板</td>
+<td>文献、假设、写作都经过它，只概述（<a href="#26-autoresearch-一段话">2.6</a>）</td>
+</tr>
+<tr>
+<td><code>20-ml-paper-writing</code></td>
+<td>4</td>
+<td>2</td>
+<td><code>ml-paper-writing</code>、<code>academic-plotting</code>、<code>systems-paper-writing</code>、<code>presenting-conference-talks</code></td>
+<td>写作；这次深读前两个</td>
+</tr>
+<tr>
+<td><code>21-research-ideation</code></td>
+<td>2</td>
+<td>2</td>
+<td><code>brainstorming-research-ideas</code>、<code>creative-thinking-for-research</code></td>
+<td>假设；这次深读</td>
+</tr>
+<tr>
+<td><code>22-agent-native-research-artifact</code></td>
+<td>3</td>
+<td>3</td>
+<td><code>compiler</code>（论文、仓库转成结构化产物）、<code>research-manager</code>（会话结束时记录决策）、<code>rigor-reviewer</code>（六维评审）</td>
+<td>文献与验证沾边，这次没深读</td>
+</tr>
+<tr>
+<td><code>01</code> 到 <code>19</code> 共 19 个</td>
+<td>88</td>
+<td>82</td>
+<td>模型结构、分词、微调、可解释性、数据、后训练、安全、分布式、算力平台、量化、评测、推理、MLOps、agent 框架、RAG、提示工程、可观测、多模态、新技术</td>
+<td>实验阶段的工具手册，与三个阶段无关</td>
+</tr>
+</tbody>
+</table></div>
+<p>README 分类表逐行加起来是 90 而不是标题写的 98（<code>README.md:146-170</code>）：写作少列 2 个，优化、MLOps、agents 各少 1 个，多模态少 3 个。补齐列表的 PR #73 开着没合<sup id="fnref:gh-issues"><a class="footnote-ref" href="#fn:gh-issues">4</a></sup>。</p>
+<h2 id="1-是不是">1. 是不是<a class="permalink" href="#1-是不是" title="本节链接">#</a></h2>
+<h3 id="11-整库层面">1.1 整库层面<a class="permalink" href="#11-整库层面" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>README 说</th>
+<th>代码里</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>98 个 skill、23 个分类</td>
+<td>磁盘上属实。但文档内部不一致：README 分类表合计 90，统计表写 87，<code>WELCOME.md</code> 第 3 行写 86、第 13 行写 98。CI 的 <code>check-inventory.sh</code> 对 <code>CLAUDE.md</code>、npm README、<code>WELCOME.md</code> 各用一条固定短语的正则，取第一处匹配里的数字比对（<code>WELCOME.md</code> 只认「installs N skills」，所以第 3 行的 86 查不到）；短语找不到只警告、不失败；README 不在检查范围</td>
+<td><code>README.md:146-170,381</code>、<code>WELCOME.md:3,13</code>、<code>scripts/check-inventory.sh:21-35,45-51</code></td>
+</tr>
+<tr>
+<td>Research-Grade Quality：每个 skill 300KB+ 官方文档、真实 GitHub issue</td>
+<td>3 / 98 达到 300 KB；7 个没有 references</td>
+<td><code>README.md:78,362</code>，见 0.1</td>
+</tr>
+<tr>
+<td>Skill 结构里有 <code>scripts/</code>（可选）</td>
+<td>0 / 98 有</td>
+<td><code>README.md:355</code></td>
+</tr>
+<tr>
+<td>autoresearch 自动路由到全部领域 skill，「agent 不需要知道用哪个」</td>
+<td>路由是 <code>0-autoresearch-skill/SKILL.md</code> 里一张「研究活动 → 去哪个分类目录找」的表加一份 references，agent 自己去读；没有路由代码。references 里的完整路由表列了 77 个 skill 路径，其中 17 个在磁盘上不存在（如 <code>06-post-training/trl/</code>、<code>13-mlops/wandb/</code>、<code>11-evaluation/inspect-ai/</code>、<code>14-agents/smolagents/</code>）</td>
+<td><code>README.md:538</code>、<code>0-autoresearch-skill/SKILL.md:152-166</code>、<code>0-autoresearch-skill/references/skill-routing.md:9-218</code>（逐条对磁盘）</td>
+</tr>
+<tr>
+<td>全部 98 个自动同步到 Orchestra 平台</td>
+<td><code>sync-skills.yml</code> 用 <code>^[0-9]{2}-</code> 识别改动的 skill 目录，<code>0-autoresearch-skill</code> 只有一位数字前缀，它的改动匹配不上</td>
+<td><code>README.md:317</code>、<code>.github/workflows/sync-skills.yml:35,41</code></td>
+</tr>
+<tr>
+<td>v1.7.1：同步时 zip 超过 190 个文件会「fails loudly」</td>
+<td>打一行错误后 <code>continue</code> 跳过这个 skill，job 不失败</td>
+<td><code>README.md:513</code>、<code>.github/workflows/sync-skills.yml:145-150</code></td>
+</tr>
+<tr>
+<td>维护者在 #56 说「文献检索已由我们的 <code>deep-research</code> 与 <code>autoresearch</code> 覆盖」</td>
+<td>仓库里没有 <code>deep-research</code> skill；「deep_research」只作为 <code>dev_data/</code> 里一份建库调研稿的文件名出现（<code>SKILL_BUILD_PLAN.md</code> 第 3 行引用它）；组织下另两个公开仓库也不叫这个名字</td>
+<td><sup id="fnref:i56"><a class="footnote-ref" href="#fn:i56">11</a></sup>、<code>dev_data/deep_research_report_1.md</code>、<code>dev_data/SKILL_BUILD_PLAN.md:3</code>、<sup id="fnref2:gh-meta"><a class="footnote-ref" href="#fn:gh-meta">1</a></sup></td>
+</tr>
+<tr>
+<td>安装器可逐个选 skill</td>
+<td>逐个选的清单里 4 个 id 在磁盘上不存在：<code>03-fine-tuning/torchtune</code>（没有这个 skill）、<code>08-distributed-training/fsdp</code>（目录叫 <code>pytorch-fsdp2</code>）、<code>13-mlops/wandb</code>（<code>weights-and-biases</code>）、<code>11-evaluation/lm-eval-harness</code>（<code>lm-evaluation-harness</code>），下载时 <code>existsSync</code> 为假直接跳过、不报错；<code>wandb</code> 与 <code>lm-eval-harness</code> 也在 quickstart 套装里。<code>20-ml-paper-writing</code> 仍按「整个分类是一个独立 skill」处理：逐个安装时不查 <code>SKILL.md</code> 就把整个分类目录拷过去、以分类名建一个软链，而 2026-03-26 重构后分类根上已没有 <code>SKILL.md</code>，四个 skill 在下一层。分类菜单里写的各类数目加起来是 91（写作写 1 个）</td>
+<td><code>packages/ai-research-skills/src/prompts.js:8-30,49,56,62-63,67,82-98</code>、<code>packages/ai-research-skills/src/installer.js:205-223,142-148</code>、提交 415c770<sup id="fnref2:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="12-论文写作两个">1.2 论文写作两个<a class="permalink" href="#12-论文写作两个" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>README 说</th>
+<th>代码里</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ML Paper Writing 分类 2 个 skill</td>
+<td>4 个。另两个 README 分类表没列：<code>systems-paper-writing</code>（OSDI / SOSP / NSDI / ASPLOS 的段落级写法与 4 套模板）、<code>presenting-conference-talks</code>（从论文出 Beamer PDF 与 PPTX，依赖 <code>python-pptx</code>，生成代码同样写在正文与 references 的代码块里）</td>
+<td><code>README.md:150</code>、<code>20-ml-paper-writing/systems-paper-writing/SKILL.md:1-8,267-269</code>、<code>20-ml-paper-writing/presenting-conference-talks/SKILL.md:1-8,187-215</code></td>
+</tr>
+<tr>
+<td>LaTeX templates for 6 major conferences</td>
+<td>属实：<code>templates/</code> 下 aaai2026、acl、colm2025、iclr2026、icml2026、neurips2025 六个目录 44 个文件（<code>.sty</code> 13、<code>.tex</code> 11、<code>.bib</code> 5、<code>.bst</code> 5、样例 PDF 4，另有各目录的 README、ACL 的格式说明、NeurIPS 的 Makefile 等），是会议样式文件的拷贝，不是生成的；模板总 README 第 3 行称「official LaTeX templates」。NeurIPS 那份在自家 README 里标「Community template」：<code>main.tex</code> 用 <code>\usepackage[nonatbib, final]{neurips}</code>、作者栏写死 Bojian Zheng；样式文件里 <code>final</code> 会把投稿模式关掉（不匿名、不加行号）</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/templates/README.md:3,112</code>、<code>20-ml-paper-writing/ml-paper-writing/templates/neurips2025/main.tex:3,23-26</code>、<code>20-ml-paper-writing/ml-paper-writing/templates/neurips2025/neurips.sty:48,273-278,346-351</code></td>
+</tr>
+<tr>
+<td>citation verification</td>
+<td>只有文字规则和示范代码：<code>SKILL.md</code> 里 6 步清单（检索 → 两处来源确认 → DOI 取 BibTeX → 核对论点 → 入库 → 失败标占位符），references 里一个 <code>CitationManager</code> 类。没有脚本、没有测试；示范代码的问题见 <a href="#23-引用核对的示范代码">2.3</a></td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:724-829</code>、<code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:218-405</code></td>
+</tr>
+<tr>
+<td>「AI 生成的引用约 40% 出错」</td>
+<td>出处是 <code>sources.md</code> 里一篇 Enago 博客；<code>citation-workflow.md</code> 里「NeurIPS 2025 有 100+ 条幻觉引用」出处是 ByteIota 博客。都是二手来源</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:38,726</code>、<code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:25</code>、<code>20-ml-paper-writing/ml-paper-writing/references/sources.md:139-141</code></td>
+</tr>
+<tr>
+<td>frontmatter <code>dependencies: [semanticscholar, arxiv, habanero, requests]</code></td>
+<td>示范代码只用到 <code>semanticscholar</code> 与 <code>requests</code>（arXiv 走 <code>requests</code> 直连 export.arxiv.org）；<code>arxiv</code>、<code>habanero</code> 两个库只出现在推荐清单里</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:8</code>、<code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:295-304,555-558</code>、<code>20-ml-paper-writing/ml-paper-writing/references/sources.md:103-105</code></td>
+</tr>
+<tr>
+<td>写作方法「来自顶尖研究者」</td>
+<td>正文确有 Nanda、Farquhar、Gopen &amp; Swan、Lipton、Steinhardt、Perez 的要点摘录与链接（Steinhardt 的链接是博客首页；来源表里的 Karpathy 一行写「Various lectures」，没有链接），另有 NeurIPS 16 项清单、ICML / ICLR / ACL 要求、审稿标准</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:356-424</code>、<code>20-ml-paper-writing/ml-paper-writing/references/checklists.md:15-198</code></td>
+</tr>
+<tr>
+<td>Academic Plotting：架构图 via Gemini、数据图 via matplotlib / seaborn</td>
+<td>属实。架构图工作流写死 <code>gemini-3-pro-image-preview</code> 与 <code>GEMINI_API_KEY</code>，<code>SKILL.md</code> 里不走 Gemini 的架构图画法没有写成工作流，只在「替代方案」表里点了 TikZ、draw.io、Mermaid 三个名字；TikZ 与 Mermaid 的写法在 references 里各一段，Mermaid 那段定位成「写 Gemini 提示词之前先理结构」</td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:15-30,195,229-239,463</code>、<code>20-ml-paper-writing/academic-plotting/references/diagram-generation.md:361-394</code></td>
+</tr>
+<tr>
+<td>数据图「自动选图型」</td>
+<td>一张「数据形状 → 图型」的判断表，由 agent 照着选；没有选图型的代码</td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:73-79,314-324</code></td>
+</tr>
+<tr>
+<td>配色「colorblind-safe」</td>
+<td>自相矛盾：第 187 行写数据图「必须」用 Okabe-Ito，而第 343-347 行的样式模板用的是自家「Ocean Dusk」并称其色盲安全；<code>ml-paper-writing</code> 又说用 Okabe-Ito 或 Paul Tol</td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:187,343-347</code>、<code>20-ml-paper-writing/ml-paper-writing/SKILL.md:913</code></td>
+</tr>
+<tr>
+<td>海报图「用 <code>latex-posters</code> skill」</td>
+<td>本仓没有这个 skill；PR #71 的说明也把它叫作悬空引用</td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:466</code>、<sup id="fnref:pr71"><a class="footnote-ref" href="#fn:pr71">18</a></sup></td>
+</tr>
+<tr>
+<td>绘图演示「真实 BurstGPT trace 上的 CDF」</td>
+<td>演示的数据图用 <code>np.random</code> 按论文报的分布合成（函数注释写明 synthetic），演示 README 有三处把图说成 BurstGPT trace 上的结果（第 70、104 行明写「real-world」，第 74 行图注写「on BurstGPT Trace」），只在页尾一行注明合成数据。skill 正文没有要求数据图的数从哪个文件来，输入可以是「一段带数字的话」或内联数组</td>
+<td><code>demos/scientific-plotting-demo/figures/gen_fig_experiment_results.py:61-83,139</code>、<code>demos/scientific-plotting-demo/README.md:70,74,104,211</code>、<code>20-ml-paper-writing/academic-plotting/SKILL.md:42,67,307</code></td>
+</tr>
+<tr>
+<td>正文里的「引用本库」一节</td>
+<td><code>ml-paper-writing</code> 末尾有一节「Citing AI Research Skills」，请用了本库的研究者在致谢或参考文献里引用它，给了 BibTeX 与一句致谢模板（2026-03-30 提交 4bdd8b5 加入，提交信息写「for researchers using the library」）。这一节写在 <code>SKILL.md</code> 里，读它的是 agent；正文没有指示 agent 自己把它加进论文</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:920-939</code>、<sup id="fnref3:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup></td>
+</tr>
+</tbody>
+</table></div>
+<p>主线 #189 里记的学长原稿匹配点是「覆盖论文起草、LaTeX 模板与研究写作流程」：起草与写作流程是正文里的方法清单，LaTeX 模板是实打实的文件，二者都属实；「引用核对」一项只到示范代码这一层。</p>
+<h3 id="13-出想法两个">1.3 出想法两个<a class="permalink" href="#13-出想法两个" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>README 说</th>
+<th>代码里</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Research Brainstorming：10 个互补视角的结构化框架</td>
+<td>属实，正文 10 节，每节有说明与一段 Workflow 步骤，只有第 1、3、6 节另带自检清单（第 10 节是几条校准问题），后接 Diverge（10 到 20 个候选）→ Converge（5 条淘汰标准）→ Refine（两句话陈述、3 个验证实验、2 周试点）三段流程</td>
+<td><code>21-research-ideation/brainstorming-research-ideas/SKILL.md:31-286,288-335</code>（自检清单在 54、109、189 行）</td>
+</tr>
+<tr>
+<td>Creative Thinking：认知科学框架，「empirically grounded」</td>
+<td>8 节框架属实；提到 Koestler、Gentner、Dunbar、Boden、Kauffman、Steven Johnson、Rothenberg 的名字，全文没有一条参考文献或链接；「Meta-research consistently shows」无出处。示例表里写神经编解码器「compress beyond information-theoretic limits」，字面上与信源编码定理（压缩率不低于信源熵）不符</td>
+<td><code>21-research-ideation/creative-thinking-for-research/SKILL.md:13,34,36,108,142,249,282,292</code></td>
+</tr>
+<tr>
+<td>找新颖方向</td>
+<td>新颖性检查只有自检问题（「这个问题真的没被解决吗」），两个 skill 的流程里都没有检索文献的步骤；只有 creative-thinking 一句「5 年前能做的多半有人做过，查一下文献」</td>
+<td><code>21-research-ideation/brainstorming-research-ideas/SKILL.md:54-57</code>、<code>21-research-ideation/creative-thinking-for-research/SKILL.md:276</code></td>
+</tr>
+<tr>
+<td>文献综述请用 <code>scientific-skills:literature-review</code></td>
+<td>本仓没有这个 skill，指的是 K-Dense 的。K-Dense 仓库 2026-04 之前叫 <code>claude-scientific-skills</code>，插件市场文件里的插件名就是 <code>scientific-skills</code>、清单里有 <code>literature-review</code>；2026-04-10 那个文件被删，现在插件名是 <code>scientific-agent-skills</code>。出想法两个 skill 在 2026-02-19 加入时这个名字对得上，现在对不上（见 <a href="k-dense-skills.html">k-dense-skills.md</a>）</td>
+<td><code>21-research-ideation/brainstorming-research-ideas/SKILL.md:27</code>、<code>21-research-ideation/creative-thinking-for-research/SKILL.md:26</code>、<code>vendor/scientific-agent-skills/plugin.json:3</code>、<sup id="fnref:kdense-old"><a class="footnote-ref" href="#fn:kdense-old">22</a></sup></td>
+</tr>
+<tr>
+<td>产出</td>
+<td>没有文件约定：只说「保留一份写下来的候选清单，被否的也留着」（creative-thinking 是「维护一份滚动清单」），不给文件名与格式</td>
+<td><code>21-research-ideation/brainstorming-research-ideas/SKILL.md:383</code>、<code>21-research-ideation/creative-thinking-for-research/SKILL.md:358</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="2-怎么做">2. 怎么做<a class="permalink" href="#2-怎么做" title="本节链接">#</a></h2>
+<h3 id="21-skill-在运行时是什么">2.1 skill 在运行时是什么<a class="permalink" href="#21-skill-在运行时是什么" title="本节链接">#</a></h3>
+<p>没有运行时。一个 skill = 一个目录里的 <code>SKILL.md</code>（frontmatter + 正文）加可选的 <code>references/</code> 与模板。宿主 agent 用自己的原生机制加载：安装器把目录软链进 <code>~/.claude/skills/</code>、<code>~/.codex/skills/</code>、<code>~/.agents/skills/</code> 等十个位置（<code>~</code> 下有哪家 agent 的配置目录就链进哪家，<code>packages/ai-research-skills/src/agents.js:14-95,101-119</code>），或在项目模式下拷进项目里的同名目录；agent 按 <code>description</code> 决定读不读全文，读了之后照正文做，正文里的 Python 与 shell 片段由 agent 复制出来自己执行。这次看的四个 skill <strong>都不自己调模型</strong>：写作、出想法的「智能」全来自宿主 agent；唯一在代码里直接调另一个模型的是 <code>academic-plotting</code> 让 agent 生成的 Gemini 出图脚本（演示目录里有一份照模板写出的 <code>demos/scientific-plotting-demo/figures/gen_fig_andes_architecture_gemini.py:28-38</code>）。</p>
+<h3 id="22-ml-paper-writing">2.2 ml-paper-writing<a class="permalink" href="#22-ml-paper-writing" title="本节链接">#</a></h3>
+<p>入口是 <code>SKILL.md</code>，五条工作流按编号散在正文里：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>工作流</th>
+<th>做什么</th>
+<th>进</th>
+<th>出</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0 从研究仓库起步</td>
+<td><code>ls</code>、<code>find</code>、<code>grep</code> 摸仓库结构、找结果文件与已有引用，和研究者确认一句话贡献，再检索文献</td>
+<td>研究者的代码仓、结果、已有 <code>.bib</code></td>
+<td>对贡献的一句话表述</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:90-175</code></td>
+</tr>
+<tr>
+<td>1 写一篇完整论文</td>
+<td>10 步：一句话贡献（要研究者确认）→ Figure 1 → 摘要（Farquhar 五句式）→ 引言 → 方法 → 实验 → 相关工作 → 局限 → 会议清单 → 终审</td>
+<td>同上</td>
+<td>各节草稿</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:246-346</code></td>
+</tr>
+<tr>
+<td>4 从模板起一篇</td>
+<td>整目录拷贝模板（<code>cp -r</code>）→ 先原样编译（<code>latexmk -pdf</code>，或 pdflatex → bibtex → pdflatex 两遍）→ 按节替换示例内容 → 最后清理</td>
+<td><code>templates/&lt;会议&gt;/</code></td>
+<td>LaTeX 工程目录，主文件名随会议变（<code>main.tex</code>、<code>example_paper.tex</code>、<code>iclr2026_conference.tex</code>、<code>acl_latex.tex</code>、<code>aaai2026-unified-template.tex</code>、<code>colm2025_conference.tex</code>）</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:467-617</code></td>
+</tr>
+<tr>
+<td>2 加引用</td>
+<td>检索（Exa MCP 或 Semantic Scholar）→ 两处来源确认 → DOI 内容协商取 BibTeX → 核对论点 → 入 <code>.bib</code> → 任一步失败写 <code>\cite{PLACEHOLDER_...}</code> 并告诉研究者</td>
+<td>检索词</td>
+<td><code>.bib</code> 条目或占位符</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:737-829</code></td>
+</tr>
+<tr>
+<td>3 换会议格式</td>
+<td>用目标会议新模板起工程，只搬正文，按页数增删</td>
+<td>旧 LaTeX 工程</td>
+<td>新 LaTeX 工程</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:627-721</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>行为基调写在前面：「主动交完整初稿，不要每节都等反馈」，只有会议不明、叙事有多种同样合理的讲法、结果不完整、研究者要求先看时才停下来问（<code>20-ml-paper-writing/ml-paper-writing/SKILL.md:19-29,192-222</code>）。同一份文档里工作流 0 第 3 步写「永远不要假设叙事，一定和人核实」、工作流 1 第 1 步写「这一步要研究者明确确认」（<code>20-ml-paper-writing/ml-paper-writing/SKILL.md:133-141,264-273</code>），两处的尺度靠 agent 自己拿捏。autoresearch 调它写论文时又明写「如果 ml-paper-writing 提到要人协作的地方，自己适应、继续往下写」（<code>0-autoresearch-skill/SKILL.md:340</code>）。</p>
+<h3 id="23-引用核对的示范代码">2.3 引用核对的示范代码<a class="permalink" href="#23-引用核对的示范代码" title="本节链接">#</a></h3>
+<p><code>references/citation-workflow.md</code> 里的 <code>CitationManager</code> 是这个 skill 唯一接近「实现」的部分，agent 要么照抄运行，要么照着步骤手动做。逐段读下来：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>做什么</th>
+<th>问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:252-273</code></td>
+<td><code>search()</code>：<code>SemanticScholar().search_paper(query, limit)</code>，转成 <code>Paper</code></td>
+<td>没传 key 时走公共限流。<code>limit</code> 在库里是每页条数：按 <code>semanticscholar</code> 库默认分支的源码，<code>search_paper</code> 返回 <code>PaginatedResults</code>，它的 <code>__iter__</code> 在还有下一页时继续请求，相关性搜索上限 1,000 条<sup id="fnref:s2lib"><a class="footnote-ref" href="#fn:s2lib">20</a></sup>；所以这里的 <code>for r in results</code> 会一路翻页，<code>cite()</code> 用 <code>limit=5</code> 时最多约 200 次请求才返回。<code>SKILL.md</code> 第 1 步的示范（<code>20-ml-paper-writing/ml-paper-writing/SKILL.md:766-767</code>）同样写法。读的是库源码，没跑；示范代码没钉库版本</td>
+</tr>
+<tr>
+<td><code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:275-306</code></td>
+<td><code>verify()</code>：凑够两个来源算通过</td>
+<td>第 280 行先无条件 <code>append("Semantic Scholar")</code>，所以只要 CrossRef 或 arXiv 任一处有就「两处确认」；CrossRef、arXiv 请求的异常都 <code>except: pass</code>（291-292、303-304）</td>
+</tr>
+<tr>
+<td><code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:308-344</code></td>
+<td><code>get_bibtex()</code>：<code>doi.org</code> 内容协商取 BibTeX，失败退到 <code>_generate_bibtex()</code> 用 Semantic Scholar 元数据拼一条</td>
+<td>异常 <code>except: pass</code>（320-321）；兜底拼出来的一律是 <code>@article</code>，会议论文也是</td>
+</tr>
+<tr>
+<td><code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:346-368</code></td>
+<td><code>cite()</code>：检索 → 取第一条 → verify → 取 BibTeX → 记进 <code>verified_papers</code></td>
+<td>取检索第一条，不比对标题（353-354）；verify 没过只 <code>print</code> 一行警告，照样返回 BibTeX 并记为 verified（358-366）</td>
+</tr>
+<tr>
+<td><code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:167-179</code></td>
+<td>「核对论点」：取摘要，查论点字符串在不在摘要里</td>
+<td>子串匹配，只看摘要；取不到摘要时返回 <code>None</code>，下一行 <code>abstract.lower()</code> 直接抛错</td>
+</tr>
+<tr>
+<td><code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:389-404</code></td>
+<td><code>batch_cite()</code>：逐条 <code>cite()</code>，结果写进 <code>references.bib</code></td>
+<td>没过核对的条目与兜底拼出来的 <code>@article</code> 一起写进文件，文件里分不出哪条核过</td>
+</tr>
+</tbody>
+</table></div>
+<p>也就是说，文字规则（<code>20-ml-paper-writing/ml-paper-writing/SKILL.md:739-747</code> 的「每一条都要两处确认，任一步失败就标占位符」，<code>20-ml-paper-writing/ml-paper-writing/SKILL.md:823</code> 的「找到论文但取不到 BibTeX 就标占位符」）比示范代码严，代码照抄运行达不到文字规则。</p>
+<h3 id="24-academic-plotting">2.4 academic-plotting<a class="permalink" href="#24-academic-plotting" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>做什么</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0 从上下文抽取</td>
+<td>读论文段落或结果数据，数实体、找关系、定布局（流水线左到右、分层横带、中心辐射、树），或定维度与图型；「有数值轴用 matplotlib，有框和箭头用 Gemini」</td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:30,34-89</code></td>
+</tr>
+<tr>
+<td>工作流 1 架构图</td>
+<td>选四种视觉风格之一（手绘、极简、图标、色条）与配色 → 写六段式提示词（框定、风格 20-30 行、配色、布局 50-150 行、连线 30-80 行、约束）→ 生成 <code>figures/gen_fig_&lt;name&gt;.py</code> → 连跑 3 次 → 人或 agent 按五维打分挑一张存 <code>figures/fig_&lt;name&gt;.png</code></td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:95-221,289-293</code>、<code>20-ml-paper-writing/academic-plotting/references/diagram-generation.md:343-359</code></td>
+</tr>
+<tr>
+<td>出图脚本模板</td>
+<td><code>google.genai.Client(api_key=os.environ["GEMINI_API_KEY"])</code>，<code>generate_content(model="gemini-3-pro-image-preview", response_modalities=["IMAGE","TEXT"])</code>，存第一个 <code>inline_data</code>；异常 <code>print</code> 后返回 None，三次全失败才 <code>exit(1)</code></td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:225-285</code></td>
+</tr>
+<tr>
+<td>工作流 2 数据图</td>
+<td>按判断表选图型 → 套一段 <code>rcParams</code> 样式 → 「我们的方法」单独配色 → 同时存 PDF 与 300 DPI PNG，脚本存 <code>figures/gen_fig_&lt;name&gt;.py</code></td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:299-424</code></td>
+</tr>
+<tr>
+<td>文件约定</td>
+<td><code>figures/gen_fig_&lt;name&gt;.py</code>、<code>fig_&lt;name&gt;.pdf</code>、<code>fig_&lt;name&gt;.png</code>、<code>fig_&lt;name&gt;_attempt*.png</code></td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:471-479</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>架构图输出是 PNG 位图（<code>20-ml-paper-writing/academic-plotting/SKILL.md:440</code>「PNG only for AI-generated diagrams」）。演示目录里还有一张纯 matplotlib 画的流程图 <code>gen_fig_andes_workflow.py</code>（280 行，不调 Gemini），这条路线 <code>academic-plotting</code> 的 <code>SKILL.md</code> 没写成工作流（<code>demos/scientific-plotting-demo/figures/gen_fig_andes_workflow.py:11-15</code>）。</p>
+<h3 id="25-出想法两个">2.5 出想法两个<a class="permalink" href="#25-出想法两个" title="本节链接">#</a></h3>
+<p>两者都是「agent 带着研究者一步步过框架」的交互式提示词，不调任何工具：</p>
+<ul>
+<li><code>brainstorming-research-ideas</code>：先判断研究者处在哪种状态（没方向、有方向没点子、有点子不确定、想换角度……），按选择表挑 2 到 3 个框架，逐步问研究者要领域内容，攒 10 到 20 个候选，用 5 条淘汰标准收到 3 到 5 个，再把第一名写成两句话陈述、3 个验证实验、一个 2 周试点（<code>21-research-ideation/brainstorming-research-ideas/SKILL.md:339-351,369-384</code>）。</li>
+<li><code>creative-thinking-for-research</code>：按「卡在哪种思维障碍」挑框架，给一个 90 分钟的四段协议（映射 15、扰动 30、深化 30、评估 15），最后用 brainstorming 的两句话测试收口，再交回 brainstorming 做收敛（<code>21-research-ideation/creative-thinking-for-research/SKILL.md:311-335,350-366</code>）。</li>
+<li>分工写在各自的「给 agent 的用法」里：creative-thinking 写「领域知识来自研究者，agent 只提供思考的结构」（<code>21-research-ideation/creative-thinking-for-research/SKILL.md:365</code>），brainstorming 写「最终选哪个由研究者定，agent 只做引导」（<code>21-research-ideation/brainstorming-research-ideas/SKILL.md:384</code>）。</li>
+</ul>
+<h3 id="26-autoresearch-一段话">2.6 autoresearch 一段话<a class="permalink" href="#26-autoresearch-一段话" title="本节链接">#</a></h3>
+<p><code>0-autoresearch-skill</code> 是一份 403 行正文的编排提示词，加 3 份 references 与 4 个模板（<code>research-state.yaml</code>、<code>findings.md</code>、<code>research-log.md</code>、<code>progress-presentation.html</code>），没有代码。它让宿主 agent 在项目根建固定目录（<code>literature/</code>、<code>experiments/&lt;假设&gt;/protocol.md</code>、<code>to_human/</code>、<code>paper/</code> 等，<code>0-autoresearch-skill/SKILL.md:38-52</code>），<strong>第一件事</strong>是开一个挂钟循环：Claude Code 上 <code>/loop 20m &lt;一段续跑提示&gt;</code>，OpenClaw 上 <code>cron.add</code> 每 20 分钟一次（<code>0-autoresearch-skill/SKILL.md:244-282</code>，标 MANDATORY）；然后 bootstrap（用 Exa MCP、Semantic Scholar、arXiv、CrossRef 查文献，每篇存一个摘要文件，调 <code>21-research-ideation</code> 出假设，锁定评估指标，<code>0-autoresearch-skill/SKILL.md:95-122</code>）→ 内环（每个假设先写 <code>protocol.md</code> 并 git commit 再跑，<code>0-autoresearch-skill/SKILL.md:131-148</code>）→ 外环（每 5 到 10 次实验综合一次，更新 <code>findings.md</code>，在深入、拓宽、转向、收尾四个方向里选，<code>0-autoresearch-skill/SKILL.md:188-228</code>）→ 调 <code>ml-paper-writing</code> 写论文。文首一句「不要征求用户许可或确认」（<code>0-autoresearch-skill/SKILL.md:16</code>），写论文一段又让它越过 <code>ml-paper-writing</code> 里要人协作的地方（<code>0-autoresearch-skill/SKILL.md:340,351</code>）。OpenClaw 版的循环提示还让 agent 把 PDF 报告经 Telegram、WhatsApp 或 Slack 发给用户（<code>0-autoresearch-skill/SKILL.md:271</code>）。它是整库唯一把文献、假设、实验、写作串起来的地方，也是唯一给出假设条目形状的地方：<code>id</code>、<code>statement</code>、<code>status</code>（pending / active / supported / refuted / inconclusive）、<code>motivation</code>、<code>parent</code>、<code>priority</code>（<code>0-autoresearch-skill/templates/research-state.yaml:22-29</code>）；同一模板里文献条目的形状是 <code>id</code>、<code>title</code>、<code>authors</code>、<code>year</code>、<code>relevance</code>（<code>0-autoresearch-skill/templates/research-state.yaml:12-20</code>）。</p>
+<h2 id="3-为什么">3. 为什么<a class="permalink" href="#3-为什么" title="本节链接">#</a></h2>
+<h3 id="31-文档里写明的设计理由">3.1 文档里写明的设计理由<a class="permalink" href="#31-文档里写明的设计理由" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>设计</th>
+<th>作者写的理由</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>纯 Markdown、渐进披露</td>
+<td>照 Anthropic 的 skill 最佳实践：<code>SKILL.md</code> 200 到 500 行是概览，细节放一层 references；「不要解释 Claude 已经知道的基础」。为什么不带脚本没有写</td>
+<td><code>CLAUDE.md:83-106</code>、<code>anthropic_official_docs/best_practices.md</code></td>
+</tr>
+<tr>
+<td>引用必须程序化取、不许凭记忆写 BibTeX</td>
+<td>AI 生成的引用错误率高，幻觉引用会导致拒稿或撤稿；2026-01-22 专门一次提交加上警告与 Exa MCP 推荐</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:33-58</code>、提交 a1f5cd5<sup id="fnref4:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup></td>
+</tr>
+<tr>
+<td>先交完整初稿再问</td>
+<td>「科学家很忙」，给个具体东西让人反应比逐节等反馈快</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:19-29</code></td>
+</tr>
+<tr>
+<td>模板整目录拷贝、先原样编译、不改 <code>.sty</code></td>
+<td>列了 agent 常犯的五种模板错误（只拷 <code>main.tex</code>、改样式文件、乱加包、过早删示例、不常编译）</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:596-604</code></td>
+</tr>
+<tr>
+<td>架构图用图像模型、每次跑 3 遍</td>
+<td>框和箭头的空间布局复杂；同一提示词出图质量波动大；Gemini 会拼错或挪动文字，所以要求逐字写出每个标签。演示 README 说这一版三次全对、「上一代」三次都有拼写错误，没说上一代指模型还是提示词</td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:22,289-293</code>、<code>demos/scientific-plotting-demo/README.md:50</code></td>
+</tr>
+<tr>
+<td>两个出想法 skill 分工</td>
+<td>brainstorming 给「发散 → 收敛 → 细化」的操作流程与过滤器，creative-thinking 给更底层的思维框架，二者配合用</td>
+<td><code>21-research-ideation/creative-thinking-for-research/SKILL.md:28</code></td>
+</tr>
+<tr>
+<td>autoresearch 强制挂钟循环</td>
+<td>不开循环 agent 跑完一轮就停</td>
+<td><code>0-autoresearch-skill/SKILL.md:31,246</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="32-issue-与提交里踩过的坑">3.2 issue 与提交里踩过的坑<a class="permalink" href="#32-issue-与提交里踩过的坑" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>坑</th>
+<th>经过</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>skill 内容没逐条验证</td>
+<td>维护者答复：用 Claude Code 带搜索 MCP 汇总写，人再通读，「只验证了一部分，所以容易出错」</td>
+<td><sup id="fnref2:i2"><a class="footnote-ref" href="#fn:i2">5</a></sup></td>
+</tr>
+<tr>
+<td>文档里的数字互相打架</td>
+<td>外部审计发现 <code>CLAUDE.md</code> 等处 skill 数与分类列表过期；修法是加 <code>check-inventory</code> CI（PR #60），但它只核三个文件里固定短语处的总数与分类数，README 与各处分类明细不在内</td>
+<td><sup id="fnref:i54"><a class="footnote-ref" href="#fn:i54">10</a></sup>、<code>scripts/check-inventory.sh:12-13,45-51</code></td>
+</tr>
+<tr>
+<td>YAML frontmatter 写坏</td>
+<td>ray-data、ray-train 两个 skill 的 frontmatter 不合法，PR #13 修</td>
+<td><sup id="fnref:i12"><a class="footnote-ref" href="#fn:i12">6</a></sup></td>
+</tr>
+<tr>
+<td>Windows 上装不上</td>
+<td>安装器用 shell <code>cp</code>，改成 Node <code>cpSync</code>，软链失败退到拷贝</td>
+<td><sup id="fnref:i15"><a class="footnote-ref" href="#fn:i15">7</a></sup>、<code>packages/ai-research-skills/src/installer.js:155-167</code></td>
+</tr>
+<tr>
+<td>GitHub Action 可被任意人触发</td>
+<td><code>claude.yml</code> 原先任何人评论 <code>@claude</code> 就以写权限跑；外部贡献者报告后自己提 PR #39（提交 a515c5e，2026-03-18）加了 <code>author_association</code> 限制</td>
+<td><sup id="fnref:i38"><a class="footnote-ref" href="#fn:i38">9</a></sup>、<code>.github/workflows/claude.yml:17-20</code>、<sup id="fnref5:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup></td>
+</tr>
+<tr>
+<td>市场平台单个 zip 不超过 200 个文件</td>
+<td>维护者复现不了，加了超 190 个就报错的检查（实际是跳过不失败，见 1.1）；issue 至今开着</td>
+<td><sup id="fnref:i57"><a class="footnote-ref" href="#fn:i57">12</a></sup></td>
+</tr>
+<tr>
+<td>全装后 skill 头太占上下文</td>
+<td>用户实测 95 个 skill 的 frontmatter 约 13k token，问能否只暴露 autoresearch，未答复</td>
+<td><sup id="fnref:i65"><a class="footnote-ref" href="#fn:i65">14</a></sup></td>
+</tr>
+<tr>
+<td>卸载会删掉别人的软链</td>
+<td><code>uninstallAllSkills</code> 只判断「是软链」不判断指向哪里，会删掉其他工具建的软链；两个修复 PR 未合</td>
+<td><sup id="fnref:i74"><a class="footnote-ref" href="#fn:i74">15</a></sup></td>
+</tr>
+<tr>
+<td>架构图写死 Gemini</td>
+<td>PR #71 改成走 OpenRouter 的 OpenAI 兼容图像接口、默认 <code>gpt-image-2</code>、key 换成 <code>OPENROUTER_API_KEY</code>，未合</td>
+<td><sup id="fnref2:pr71"><a class="footnote-ref" href="#fn:pr71">18</a></sup></td>
+</tr>
+<tr>
+<td><code>ml-paper-writing</code> 982 行一整块</td>
+<td>PR #75 把它压成渐进披露入口、加「论点 → 证据」工作流，未合</td>
+<td><sup id="fnref:pr75"><a class="footnote-ref" href="#fn:pr75">19</a></sup></td>
+</tr>
+<tr>
+<td>引用核对要不要换成专门工具</td>
+<td>bibtools 作者提议集成；维护者以「还在 alpha、没有许可证」为由不做深度集成，只同意列进推荐工具。作者次日补了 MIT，issue 仍开着，推荐工具清单里至今没有 bibtools</td>
+<td><sup id="fnref:i18"><a class="footnote-ref" href="#fn:i18">8</a></sup>、<code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:560-562</code></td>
+</tr>
+<tr>
+<td>收什么、不收什么</td>
+<td>拒了文献检索与翻译类（与已有能力重叠、偏医学检索、依赖外部专有 API）和机械工程领域工作流（超出 AI/ML 研究范围）；说明更倾向「本地可复现、自包含」的 skill。本仓自己的写作与 autoresearch 正文也依赖外部服务（Exa MCP、Semantic Scholar、Gemini，见第 4 节）</td>
+<td><sup id="fnref2:i56"><a class="footnote-ref" href="#fn:i56">11</a></sup>、<sup id="fnref:i58"><a class="footnote-ref" href="#fn:i58">13</a></sup></td>
+</tr>
+<tr>
+<td>autoresearch 的循环提示反复加码</td>
+<td>2026-03-15 到 03-24 的 15 次提交里 9 次在改 <code>/loop</code> 或 cron 的提示词，另一次在文首加「完全自主」指令</td>
+<td>提交 8698e20、f286608、2aaeb62 等<sup id="fnref6:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="4-跑起来要什么">4. 跑起来要什么<a class="permalink" href="#4-跑起来要什么" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>ml-paper-writing</th>
+<th>academic-plotting</th>
+<th>出想法两个</th>
+<th>autoresearch</th>
+<th>安装器</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>依赖</td>
+<td>宿主 agent；示范代码要 <code>semanticscholar</code>、<code>requests</code>（frontmatter 另列 <code>arxiv</code>、<code>habanero</code> 未用到）；编译要 TeX Live（<code>latexmk</code> 或 <code>pdflatex</code> + <code>bibtex</code>），NeurIPS 的 Makefile 还要 <code>pdfcrop</code></td>
+<td><code>matplotlib&gt;=3.8</code>、<code>seaborn&gt;=0.13</code>、<code>numpy</code>；架构图另要 <code>google-genai&gt;=1.0</code>；样式里写 Times New Roman</td>
+<td>无（<code>dependencies: []</code>）</td>
+<td>取决于路由到的领域 skill；进度报告 HTML 打不开时退到 weasyprint / playwright / wkhtmltopdf 出 PDF</td>
+<td>Node ≥ 18、git</td>
+</tr>
+<tr>
+<td>模型与 key</td>
+<td>不调模型；Semantic Scholar key 可选</td>
+<td>数据图不要；架构图要 <code>GEMINI_API_KEY</code>（Google AI Studio 申请）</td>
+<td>不要</td>
+<td>不调模型</td>
+<td>不要</td>
+</tr>
+<tr>
+<td>外部服务</td>
+<td>api.semanticscholar.org、doi.org 与 api.crossref.org、export.arxiv.org（示范代码用 http）；可选 Exa MCP（<code>npx -y mcp-remote https://mcp.exa.ai/mcp</code>）</td>
+<td>Google Generative Language API</td>
+<td>无</td>
+<td>Exa MCP、Semantic Scholar、arXiv、CrossRef；Claude Code 的 <code>/loop</code> 或 OpenClaw 的 cron；OpenClaw 版要经 Telegram、WhatsApp 或 Slack 发报告</td>
+<td>github.com</td>
+</tr>
+<tr>
+<td>算力</td>
+<td>CPU</td>
+<td>CPU；图像生成在 Google 侧</td>
+<td>无</td>
+<td>实验本身的 GPU</td>
+<td>无</td>
+</tr>
+<tr>
+<td>操作系统</td>
+<td>不限；模板 README 给了 macOS / Ubuntu / Windows 的 TeX 装法</td>
+<td>不限</td>
+<td>不限</td>
+<td>不限</td>
+<td>不限；Windows 无开发者模式时软链改拷贝</td>
+</tr>
+<tr>
+<td>证据</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:8,60-86,505-514</code>、<code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:248-249,298</code>、<code>20-ml-paper-writing/ml-paper-writing/templates/neurips2025/Makefile:9,19-20</code>、<code>20-ml-paper-writing/ml-paper-writing/templates/README.md:12-15</code></td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:8,195,229-239,333-334</code></td>
+<td><code>21-research-ideation/brainstorming-research-ideas/SKILL.md:8</code>、<code>21-research-ideation/creative-thinking-for-research/SKILL.md:8</code></td>
+<td><code>0-autoresearch-skill/SKILL.md:99-104,253,260-280,311</code></td>
+<td><code>packages/ai-research-skills/package.json:41-48</code>、<code>packages/ai-research-skills/src/installer.js:74,155-167</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>另几件事：Exa MCP 的托管端点按 Exa 自己的 README 可以匿名用、有限流，要更高额度或它的 agent 功能才要 OAuth 或 API key<sup id="fnref:exa"><a class="footnote-ref" href="#fn:exa">21</a></sup>，额度多少、从课题组网络能不能连上没查；从课题组网络能不能访问 Google 的图像接口没实测（第 7 节）。安装器全局模式写用户全局目录（<code>~/.orchestra/</code>、各家 agent 的 <code>~/.&lt;agent&gt;/skills/</code>），项目模式写项目里的 <code>.&lt;agent&gt;/skills/</code>；两种模式都会把同名目录整个删掉再建（<code>packages/ai-research-skills/src/installer.js:150-153,692-695</code>）。</p>
+<h2 id="5-和平台对照">5. 和平台对照<a class="permalink" href="#5-和平台对照" title="本节链接">#</a></h2>
+<h3 id="51-平台这三个阶段现在有什么">5.1 平台这三个阶段现在有什么<a class="permalink" href="#51-平台这三个阶段现在有什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>平台现有</th>
+<th>这个仓库对应的</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文献</td>
+<td>没有步骤能力；主文件 <code>sources.md</code> 由研究助理用 CLI 自带的搜索与读网页手写；两个 skill：<code>pdf</code>（论文 → <code>paper.md</code> + <code>structured.json</code>，含本篇的题目、作者、年份、DOI、arXiv 号，以及每条参考文献一段原文，参考文献不拆字段）、<code>download</code>（拉仓库、文件、HF）</td>
+<td>没有专做检索或综述的 skill。沾边的：autoresearch 的 bootstrap 一段文字（查文献、每篇存摘要、写 <code>literature/survey.md</code>）；<code>ml-paper-writing</code> 的引用示范代码（检索 + 取 BibTeX）；这次没深读的 ARA <code>compiler</code>（论文、仓库转结构化产物）</td>
+<td><code>docs/architecture/README.md:151,174</code>、<code>platform/framework/capabilities/__init__.py:43-47</code>、<code>platform/skills/pdf/SKILL.md:3,44</code>、<code>platform/workflows/reproduce.yaml:10</code>；<code>0-autoresearch-skill/SKILL.md:95-106</code>、<code>README.md:308</code></td>
+</tr>
+<tr>
+<td>假设</td>
+<td>没有能力，主文件未定名</td>
+<td>两个出想法 skill（交互式提示词，不落文件）；autoresearch 的 <code>research-state.yaml</code> 假设条目形状与每个假设一份 <code>protocol.md</code></td>
+<td><code>docs/architecture/README.md:170</code>、<code>platform/framework/capabilities/__init__.py:43</code>；见 2.5、2.6</td>
+</tr>
+<tr>
+<td>写作</td>
+<td>没有能力，主文件未定名。相邻的：分析阶段 <code>analysis</code> 只写三节固定的 <code>analysis.md</code>，描述符写明「不画图」「作图是这个阶段里另外的能力」，执行层写了 <code>analysis.md</code> 以外的文件判失败；验证阶段 <code>verify</code> 零模型把 <code>analysis.md</code> 里的数回溯到 <code>results.json</code></td>
+<td><code>ml-paper-writing</code>（模板 + 方法 + 引用示范代码）、<code>academic-plotting</code>（出图脚本约定）、另有 <code>systems-paper-writing</code>、<code>presenting-conference-talks</code></td>
+<td><code>platform/framework/capabilities/analysis/__init__.py:22-32</code>、<code>platform/framework/capabilities/verify/__init__.py:29-44</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="52-多了什么重叠什么">5.2 多了什么、重叠什么<a class="permalink" href="#52-多了什么重叠什么" title="本节链接">#</a></h3>
+<p>多出来的（平台现在没有对应物的）：</p>
+<ul>
+<li>6 个 ML 会议加 4 个系统会议的 LaTeX 模板目录与编译步骤。</li>
+<li>论文各节的写法要点、NeurIPS 16 项清单、ICML / ICLR / ACL 的会议要求、审稿标准。</li>
+<li>引用核对的步骤与示范代码（Semantic Scholar、CrossRef、arXiv、DOI 内容协商）。</li>
+<li>数据图的样式模板、图型判断表、<code>figures/</code> 命名约定；架构图的六段式提示词与五维挑图标准。</li>
+<li>两套出想法的问答框架。</li>
+</ul>
+<p>重叠的：</p>
+<ul>
+<li>文献材料清单：平台是助理手写的 <code>sources.md</code>（<code>docs/architecture/README.md:174</code>），autoresearch 是 <code>literature/</code> 下每篇一个摘要加 <code>survey.md</code>（<code>0-autoresearch-skill/SKILL.md:106</code>）。</li>
+<li>论文元数据：平台 <code>pdf</code> skill 从 PDF 里抽出本篇的 DOI、arXiv 号和每条参考文献的原文（<code>platform/skills/pdf/SKILL.md:44,56</code>）；引用核对要的是每条参考文献的标题或 DOI，与它有交集，但 <code>pdf</code> 不把参考文献拆成字段。</li>
+<li>「数从哪来」：平台 <code>verify</code> 核 <code>analysis.md</code> 的数（<code>platform/framework/capabilities/verify/__init__.py:35-40</code>）；这个仓库的 <code>ml-paper-writing</code> 与 <code>academic-plotting</code> 里没有把正文或图里的数回溯到结果文件的步骤，绘图 skill 允许数据来自一段话或内联数组，绘图演示本身用了合成数据（1.2）。</li>
+<li>编排：autoresearch 的「文献 → 假设 → 内环 → 外环 → 写作」与平台的流程文件是同一件事的两种做法，前者由 agent 自己决定下一步，后者由研究助理按流程文件走、断点等人签。</li>
+</ul>
+<h3 id="53-会碰到的平台规则">5.3 会碰到的平台规则<a class="permalink" href="#53-会碰到的平台规则" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>规则</th>
+<th>碰到的点</th>
+<th>这个仓库的证据</th>
+<th>平台的证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P-22 frontmatter 只收规范字段</td>
+<td>四个 skill 都有 <code>version</code> <code>author</code> <code>tags</code> <code>dependencies</code>（出想法两个的 <code>dependencies</code> 是空列表）；校验会报「规范之外的字段」。平台扫库时一个 skill 不合规就整库报错，<code>ai4sci skill list</code> 一个都列不出</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:4-8</code> 等</td>
+<td><code>platform/framework/skills/library.py:5,26,110-131,182-185</code>、<code>platform/framework/cli/skill.py:28-33</code></td>
+</tr>
+<tr>
+<td>P-22 正文不超过 500 行</td>
+<td><code>ml-paper-writing</code> 按 <code>library.py</code> 的算法 974 行（从 frontmatter 结尾的 <code>---</code> 之后切，开头的空行也算一行）；另三个 358 到 471 行</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md</code>（982 行含 frontmatter）</td>
+<td><code>platform/framework/skills/library.py:32,144-145,164-177</code></td>
+</tr>
+<tr>
+<td>P-22 name 等于目录名</td>
+<td>深读的四个一致；<code>0-autoresearch-skill</code> 与 <code>autoresearch</code> 不一致</td>
+<td><code>0-autoresearch-skill/SKILL.md:2</code></td>
+<td><code>platform/framework/skills/library.py:190-191</code></td>
+</tr>
+<tr>
+<td>P-22 脚本 PEP 723 自带依赖、锁进仓、<code>ai4sci skill run</code> 起</td>
+<td>四个 skill 都没有脚本；要执行的东西写在正文代码块里，依赖靠 <code>pip install</code>（autoresearch 明写 <code>pip install semanticscholar</code>）。平台对没有 <code>scripts/</code> 的 skill，<code>run</code> 报「只能读不能跑」</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:762-793</code>、<code>0-autoresearch-skill/SKILL.md:101-102</code></td>
+<td><code>platform/framework/skills/library.py:218-228</code>、<code>platform/framework/skills/run.py:45-48</code>、<code>docs/architecture/README.md:172</code></td>
+</tr>
+<tr>
+<td>P-22 uv 装不了的系统命令</td>
+<td><code>ml-paper-writing</code> 编译要 TeX Live（<code>latexmk</code> 或 <code>pdflatex</code> + <code>bibtex</code>，NeurIPS 的 Makefile 另要 <code>pdfcrop</code>）；平台为这类命令留了 metadata 键 <code>ai4sci-system-tools</code>，<code>make skills</code> 逐个 <code>which</code></td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:505-518</code>、<code>20-ml-paper-writing/ml-paper-writing/templates/neurips2025/Makefile:9-20</code></td>
+<td><code>platform/framework/skills/library.py:33-35,62-64</code></td>
+</tr>
+<tr>
+<td>P-22 加载不靠 agent 原生机制</td>
+<td>本仓的安装方式全是 agent 原生目录（全局或项目里的 <code>.&lt;agent&gt;/skills/</code>）与插件市场</td>
+<td><code>packages/ai-research-skills/src/agents.js:14-95</code>、<code>.claude-plugin/marketplace.json</code></td>
+<td><code>docs/architecture/README.md:172</code>；Claude Code 适配器带 <code>--disable-slash-commands</code> 清空 skill（<code>platform/backends/claude_code.py:8,39</code>）；Codex 适配器每次起会话把系统、个人、管理员三处 skill 逐个关掉（<code>platform/backends/codex.py:25-29,123-126</code>）</td>
+</tr>
+<tr>
+<td>P-14 / P-22 执行层命令白名单与读文件范围</td>
+<td>正文让 agent 跑 <code>ls</code> <code>find</code> <code>grep</code> <code>cp -r</code> <code>latexmk</code> <code>python</code> 与 <code>pip install</code>，并读 <code>references/</code> 与 <code>templates/</code> 下的文件。平台执行层在 Claude Code 上只放行限定目录的 Edit / Write、工作目录的 Read、<code>Bash(ai4sci skill *)</code> 与 WebSearch、WebFetch（代码注释记着只读 Bash 在 dontAsk 下自动放行、写操作被拒）；<code>ai4sci skill show</code> 只打印正文、skill 目录的绝对路径与 references 文件名，不打印 references 与模板的内容。Codex 没有按命令的白名单：<code>ai4sci</code> 在沙箱外跑，其余命令在沙箱里，只能写工作区、没有网络</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:107-128,485-514</code>、<code>20-ml-paper-writing/ml-paper-writing/SKILL.md:829,881,966</code></td>
+<td><code>platform/framework/skills/__init__.py:37</code>、<code>platform/backends/claude_code.py:146-160</code>、<code>platform/framework/cli/skill.py:41-57</code>、<code>platform/backends/__init__.py:66-72</code>、<code>platform/backends/codex.py:16-24,30-33,127-133</code></td>
+</tr>
+<tr>
+<td>P-14 联网只用 CLI 自带工具</td>
+<td>两个 skill 的正文都推荐装 Exa MCP 做检索，示范代码用 <code>requests</code> 直连 Semantic Scholar、CrossRef、arXiv；平台两家适配器都清空 MCP、都放行 CLI 自带的搜索；Codex 沙箱里的命令没网，联网的动作只能走 <code>ai4sci</code></td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:60-86</code>、<code>0-autoresearch-skill/SKILL.md:100</code></td>
+<td><code>platform/backends/claude_code.py:39-42</code>（<code>--strict-mcp-config</code>、WebSearch / WebFetch）、<code>platform/backends/codex.py:114,118</code>（<code>web_search="live"</code>、<code>mcp_servers={}</code>）</td>
+</tr>
+<tr>
+<td>P-1 框架不调模型、执行层唯一写代码</td>
+<td>架构图要一个脚本拿单独的 key 调 Gemini。P-1 的机器判据是「<code>framework/</code> 下 grep 不到模型 API 名」，skill 脚本放在 <code>skills/</code> 下，不在这条 grep 的范围里；这种脚本由执行层或助理经 <code>ai4sci skill run</code> 起，调模型的是脚本进程而不是 agent 会话本身，纲领没写这种情形怎么算。两家适配器起 agent 会话时继承服务进程的全部环境变量，skill 脚本再继承一次：起服务的人环境里有 <code>GEMINI_API_KEY</code>，agent 会话和脚本都读得到；<code>download</code> 已有读 <code>HF_TOKEN</code> 的先例</td>
+<td><code>20-ml-paper-writing/academic-plotting/SKILL.md:229-239</code></td>
+<td><code>docs/architecture/README.md:151</code>、<code>platform/backends/claude_code.py:122</code>、<code>platform/backends/codex.py:241</code>、<code>platform/framework/skills/run.py:40</code>、<code>platform/skills/download/scripts/fetch.py:15,136</code></td>
+</tr>
+<tr>
+<td>P-25 底座归人</td>
+<td><code>agents.yaml</code> 只记助理与执行层各用哪家、每家的模型、思考深度与上次自检，没有第三方模型 key 的位置</td>
+<td>同上</td>
+<td><code>docs/architecture/README.md:175</code>、<code>platform/framework/agents.py:139-144</code></td>
+</tr>
+<tr>
+<td>P-20 主文件归阶段、skill 不开产出目录</td>
+<td>写作与假设的主文件未定名；<code>ml-paper-writing</code> 的主文件名随会议变；<code>academic-plotting</code> 有 <code>figures/</code> 命名约定；出想法两个不落文件；autoresearch 有 <code>research-state.yaml</code>、<code>protocol.md</code></td>
+<td>2.2、2.4、2.5、2.6</td>
+<td><code>docs/architecture/README.md:170</code>、<code>platform/framework/capabilities/__init__.py:43-52</code></td>
+</tr>
+<tr>
+<td>P-19 只有人能确认 / P-10 框架没有下一步</td>
+<td>autoresearch「不要征求许可」「永不停止」、自己开循环决定方向，并让 agent 越过 <code>ml-paper-writing</code> 里要人协作的地方；<code>ml-paper-writing</code>「先交初稿、不要逐节等」与「一句话贡献要研究者确认」并存</td>
+<td><code>0-autoresearch-skill/SKILL.md:16,150,244-282,340,351</code>、<code>20-ml-paper-writing/ml-paper-writing/SKILL.md:133-141,194-222,264-273</code></td>
+<td><code>docs/architecture/README.md:160,169</code></td>
+</tr>
+<tr>
+<td>P-7 fail-closed / P-8 不许吞异常</td>
+<td>引用示范代码三处 <code>except: pass</code>、核不上仍返回；出图脚本 <code>except Exception</code> 后 <code>print</code></td>
+<td><code>20-ml-paper-writing/ml-paper-writing/references/citation-workflow.md:291-292,303-304,320-321,358-366</code>、<code>20-ml-paper-writing/academic-plotting/SKILL.md:266-268</code></td>
+<td><code>docs/architecture/README.md:157-158</code></td>
+</tr>
+<tr>
+<td>P-2 评审上下文隔离</td>
+<td>平台的模型评审段未实现；本仓的 <code>reviewer-guidelines.md</code> 与 ARA <code>rigor-reviewer</code> 都是评审提示词，文中没有要求换一个会话或 agent 来评（两份里搜 subagent、fresh context、separate session 都没有命中），这次没深读</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/references/reviewer-guidelines.md</code>、<code>22-agent-native-research-artifact/rigor-reviewer/SKILL.md:1-9</code></td>
+<td><code>docs/architecture/README.md:152</code></td>
+</tr>
+<tr>
+<td>P-11 指南与领域 skill 隔离</td>
+<td>平台的 skill 分两处库：<code>skills/</code>（通用，两层都拿到）与 <code>domains/&lt;包&gt;/skills/</code>（领域，只进执行层）。写作四个都按 ML / 系统会议写（页数、清单、模板），维护者也明确把本库限定在 AI/ML 研究；放进哪一处库，平台文档没有对应的判据</td>
+<td><code>20-ml-paper-writing/ml-paper-writing/SKILL.md:446-461</code>、<sup id="fnref2:i58"><a class="footnote-ref" href="#fn:i58">13</a></sup></td>
+<td><code>docs/architecture/README.md:161</code>、<code>platform/framework/skills/library.py:79-91</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="6-成熟度">6. 成熟度<a class="permalink" href="#6-成熟度" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>实况</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>测试</td>
+<td>全仓没有测试文件；npm 包 <code>"test": "node --test"</code> 找不到任何测试，仓库根 <code>package.json</code> 的 test 是 npm 初始化留下的 <code>exit 1</code> 占位；<code>publish-npm</code> 发包前不跑测试；skill 内容的四项自动检查在 <code>CONTRIBUTING.md</code> 里标「when implemented」，至今没实现，外部提议帮忙（#69）未答复</td>
+<td><code>packages/ai-research-skills/package.json:12</code>、<code>package.json:9-11</code>、<code>.github/workflows/publish-npm.yml:59-69</code>、<code>CONTRIBUTING.md:446-450</code>、<sup id="fnref2:gh-issues"><a class="footnote-ref" href="#fn:gh-issues">4</a></sup></td>
+</tr>
+<tr>
+<td>CI</td>
+<td><code>check-inventory</code>：只核 skill 总数与分类数；<code>sync-skills</code>：把改动的 skill 打 zip 推到 Orchestra 自家接口（要仓库 secret）；<code>publish-npm</code>：版本号变了就发 npm；<code>claude</code>：成员评论 <code>@claude</code> 时跑 Claude Code Action。没有一条校验 frontmatter、链接或代码块</td>
+<td><code>.github/workflows/check-inventory.yml:25-31</code>、<code>.github/workflows/sync-skills.yml:65-187</code>、<code>.github/workflows/publish-npm.yml:26-69</code>、<code>.github/workflows/claude.yml:15-27</code></td>
+</tr>
+<tr>
+<td>发版</td>
+<td>GitHub release 10 个（v0.10.0 到 v1.7.2），另有只打 tag 的 v1.0.0；README 写的 v1.6.0（4 月，ARA 分类）没有 tag 也没有 release。版本号有四套：npm 包 1.7.2、各 skill 自己的 <code>version</code>（<code>ml-paper-writing</code> 1.2.0）、<code>CITATION.cff</code> 1.4.0、仓库根 <code>package.json</code> 1.0.1。仓库没有 CHANGELOG 文件，版本说明写在 README 的「Recent Updates」里</td>
+<td><sup id="fnref:gh-rel"><a class="footnote-ref" href="#fn:gh-rel">3</a></sup>、<code>README.md:506-727</code>、<code>CITATION.cff:6</code>、<code>package.json:3</code></td>
+</tr>
+<tr>
+<td>维护节奏</td>
+<td>默认分支 220 个提交：2025-11 53、12 月 8、2026-01 44、02 40、03 55、04 13、05 0、06 7，之后没有。主力作者 zechenzhangAGI 136 个、AmberLJC 42 个，共 16 个作者身份（含 <code>claude</code> 8 个）</td>
+<td><sup id="fnref7:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup></td>
+</tr>
+<tr>
+<td>issue 与 PR</td>
+<td>35 个 issue（12 开）、43 个 PR（11 开）；2026-06-25 以来 17 条 issue / PR 只有 #72 有一条维护者回复（07-25），PR 零 review</td>
+<td><sup id="fnref3:gh-issues"><a class="footnote-ref" href="#fn:gh-issues">4</a></sup></td>
+</tr>
+<tr>
+<td>这四个 skill 的改动</td>
+<td><code>ml-paper-writing</code> 2026-01-22 加入（当天另有三次提交补引用警告、模板用法、写作来源），03-26 挪进子目录，03-30 加「引用本库」一节，04-10 拆出 <code>systems-paper-writing</code>；<code>academic-plotting</code> 03-25 一次加入之后没动；出想法两个 02-19 一次加入之后没动</td>
+<td><sup id="fnref8:gh-commits"><a class="footnote-ref" href="#fn:gh-commits">2</a></sup>、<sup id="fnref:pr24"><a class="footnote-ref" href="#fn:pr24">16</a></sup>、<sup id="fnref:pr41"><a class="footnote-ref" href="#fn:pr41">17</a></sup></td>
+</tr>
+<tr>
+<td>许可证</td>
+<td><code>LICENSE</code> 是 MIT，版权行「Claude AI Research Skills Contributors」；每个 skill 的 frontmatter 写 MIT；仓库根 <code>package.json</code> 写 ISC。模板目录里的第三方文件自带许可：<code>natbib.sty</code>、<code>fancyhdr.sty</code> 是 LPPL，会议样式文件（<code>icml2026.sty</code>、<code>aaai2026.sty</code> 等）来自各会议，文件里没有许可声明；README 只有一句「个别 skill 引用的库许可证可能不同」。<code>video-promo/</code> 依赖 Remotion，它用自己的两档许可（个人、3 人以内的营利机构、非营利机构免费，更大的营利机构要买公司许可）<sup id="fnref:remotion"><a class="footnote-ref" href="#fn:remotion">23</a></sup>，与 skill 本身无关</td>
+<td><code>LICENSE:1-3</code>、<code>package.json:18</code>、<code>20-ml-paper-writing/ml-paper-writing/templates/colm2025/natbib.sty:12-14</code>、<code>20-ml-paper-writing/ml-paper-writing/templates/colm2025/fancyhdr.sty:10</code>、<code>README.md:452</code>、<code>video-promo/ai-research-skills-promo/package.json:11-16</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="7-还没弄清的问题">7. 还没弄清的问题<a class="permalink" href="#7-还没弄清的问题" title="本节链接">#</a></h2>
+<ol>
+<li>引用示范代码的实际请求量：按 <code>semanticscholar</code> 库源码，<code>for</code> 迭代会一路翻页到 1,000 条上限（2.3），但没跑；在不带 key 的公共限流下一次 <code>cite()</code> 会不会被限流卡住、库遇到 429 怎么重试，没查。示范代码不钉库版本，旧版本库的迭代行为是否相同也没查。</li>
+<li>Exa MCP 托管端点匿名可用的额度有多大、从课题组网络能不能连上，没查（「匿名可用、有限流」只是 Exa README 的自述）。</li>
+<li>从课题组网络能不能访问 Google Generative Language API 与 OpenRouter；<code>gemini-3-pro-image-preview</code> 这个预览模型名现在还能不能用，没查。</li>
+<li>P-1 的边界：一个 skill 脚本拿单独的 key 调图像模型，算不算「框架调模型」、归不归执行层，纲领没写；P-25 的 <code>agents.yaml</code> 没有第三方 key 的位置，而两家适配器与 skill 脚本都继承起服务那个进程的全部环境变量，key 若放在环境里，agent 会话本身也读得到。这些要主人定，这里不下结论。</li>
+<li>维护者在 #56 说文献检索由 <code>deep-research</code> 覆盖：本仓没有，Orchestra-Research 组织下另两个公开仓库也没有；是在 Orchestra 平台上、在私有仓，还是记错了，不清楚。</li>
+<li>执行层能不能读到 skill 目录里的 <code>references/</code> 与 <code>templates/</code>：Claude Code 执行层的 Read 规则只放行工作目录（<code>platform/backends/claude_code.py:154</code>），skill 目录在工作目录之外，<code>ai4sci skill show</code> 也不打印这些文件的内容；平台现有的 <code>pdf</code> skill 正文同样让 agent 去看 <code>references/structured.md</code>（<code>platform/skills/pdf/SKILL.md:46</code>）。dontAsk 模式下读工作目录外的文件会不会被拒，代码里没看到放行规则，没实测。</li>
+<li>NeurIPS 模板用 <code>final</code> 选项与写死作者，是有意给相机版用，还是拷贝时带进来的：加入它的提交（4643521）信息里没提。</li>
+<li>在 Codex 执行层上，正文里的 <code>python</code> 片段能不能跑：按平台 Codex 适配器文件头的实测记录，沙箱里的命令只能写工作区、没有网络（<code>platform/backends/codex.py:16-24,30-33</code>），所以要联网的示范代码在沙箱里连不上；沙箱里有没有可用的 Python 与 <code>semanticscholar</code> 包，没实测。</li>
+<li>2026-06-16 之后停更是暂停还是转移到 Orchestra 平台内部维护，GitHub 上看不出来；<code>sync-skills</code> 推送的目标接口是私有的。</li>
+<li>开着的外部 PR #71（换图像模型）与 #75（重写 <code>ml-paper-writing</code>）合不合、什么时候合，决定这两个 skill 的下一个样子；目前都零 review。</li>
+<li>这次没深读的 <code>systems-paper-writing</code>、<code>presenting-conference-talks</code> 与 ARA 三个（论文转结构化产物、会话记录、六维评审）与文献、写作、验证阶段也沾边，没有逐行读。</li>
+</ol>
+<h2 id="8-调研方法">8. 调研方法<a class="permalink" href="#8-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>浅克隆到外层 <code>vendor/AI-Research-SKILLs</code>（gitignore 挡住），提交 773a529。只读：没装依赖，没跑仓库里任何代码，没在 GitHub 上留评论。</li>
+<li>整库格式用 <code>find</code> 与逐个解析 frontmatter 统计（skill 数、字段、name 与目录名、正文行数、references 体积、<code>scripts/</code> 有无）；四个 skill 的 <code>SKILL.md</code> 与全部 references、NeurIPS 模板、绘图演示脚本逐行读；安装器与四条 workflow 读到函数级。</li>
+<li>提交、release、issue、PR 用 <code>gh api</code> 拉全量（220 个提交、78 条 issue / PR），重点 issue 与 PR 读了正文与全部评论。</li>
+<li>平台一侧读了纲领 P-1 到 P-25、<code>platform/framework/skills/library.py</code> 的校验、<code>ai4sci skill</code> 三个子命令、执行层白名单、两家适配器的隔离参数与子进程环境、<code>analysis</code> 与 <code>verify</code> 的描述符、<code>pdf</code> 与 <code>download</code> 两个 skill。</li>
+<li>第一版之后做过一轮独立复查：逐条核对 <code>文件:行</code>，并对「没有脚本」「只有安装器能执行」「不调模型」「零测试」「CI 只核总数」这几条否定说法重新全仓搜了一遍；另用 <code>gh api</code> 读了 <code>semanticscholar</code> 库的分页源码、Exa MCP 的 README、K-Dense 仓库改名前的插件文件与 Remotion 的许可证，都是只读，没装、没跑。</li>
+</ul>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:gh-meta">
+<p>GitHub API <code>repos/Orchestra-Research/AI-Research-SKILLs</code> 与 <code>orgs/Orchestra-Research/repos</code>，2026-09-27 查：13,064 star、931 fork、创建于 2025-11-03、最后一次 push 2026-06-16、许可证 MIT；组织下公开仓库为 AI-Research-SKILLs、.github、Agent-Native-Research-Artifact-template 三个。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs">https://github.com/Orchestra-Research/AI-Research-SKILLs</a>&#160;<a class="footnote-backref" href="#fnref:gh-meta" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref2:gh-meta" title="回到正文第 1 处">↩</a></p>
+</li>
+<li id="fn:gh-commits">
+<p>GitHub API 默认分支提交列表（220 个），以及按路径 <code>20-ml-paper-writing</code>、<code>21-research-ideation</code>、<code>0-autoresearch-skill</code> 过滤的提交列表，2026-09-27 查。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/commits/main">https://github.com/Orchestra-Research/AI-Research-SKILLs/commits/main</a>&#160;<a class="footnote-backref" href="#fnref:gh-commits" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref2:gh-commits" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref3:gh-commits" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref4:gh-commits" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref5:gh-commits" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref6:gh-commits" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref7:gh-commits" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref8:gh-commits" title="回到正文第 2 处">↩</a></p>
+</li>
+<li id="fn:gh-rel">
+<p>GitHub API releases 与 tags，2026-09-27 查。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/releases">https://github.com/Orchestra-Research/AI-Research-SKILLs/releases</a>&#160;<a class="footnote-backref" href="#fnref:gh-rel" title="回到正文第 3 处">↩</a></p>
+</li>
+<li id="fn:gh-issues">
+<p>GitHub API issues 列表（含 PR，state=all，78 条），以及 #65 到 #82 的评论与 review，2026-09-27 查。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues</a>&#160;<a class="footnote-backref" href="#fnref:gh-issues" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref2:gh-issues" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref3:gh-issues" title="回到正文第 4 处">↩</a></p>
+</li>
+<li id="fn:i2">
+<p>issue #2「关于 skill 的验证问题」，维护者 2026-01-17 回复。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/2">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/2</a>&#160;<a class="footnote-backref" href="#fnref:i2" title="回到正文第 5 处">↩</a><a class="footnote-backref" href="#fnref2:i2" title="回到正文第 5 处">↩</a></p>
+</li>
+<li id="fn:i12">
+<p>issue #12「Invalid YAML frontmatter in ray-data and ray-train skills」，由 PR #13 关闭。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/12">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/12</a>&#160;<a class="footnote-backref" href="#fnref:i12" title="回到正文第 6 处">↩</a></p>
+</li>
+<li id="fn:i15">
+<p>issue #15「npx installer fails on Windows Powershell」，由 PR #16 关闭。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/15">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/15</a>&#160;<a class="footnote-backref" href="#fnref:i15" title="回到正文第 7 处">↩</a></p>
+</li>
+<li id="fn:i18">
+<p>issue #18「Open-source adoptation proposal for bibtex verify: bibtools」，维护者 2026-06-15 回复。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/18">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/18</a>&#160;<a class="footnote-backref" href="#fnref:i18" title="回到正文第 8 处">↩</a></p>
+</li>
+<li id="fn:i38">
+<p>issue #38「critical prompt injection in claude code github action」。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/38">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/38</a>&#160;<a class="footnote-backref" href="#fnref:i38" title="回到正文第 9 处">↩</a></p>
+</li>
+<li id="fn:i54">
+<p>issue #54「NLPM Audit: 7 CLAUDE.md inventory bugs + 1 security finding」，由 PR #60 关闭。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/54">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/54</a>&#160;<a class="footnote-backref" href="#fnref:i54" title="回到正文第 10 处">↩</a></p>
+</li>
+<li id="fn:i56">
+<p>issue #56「Scope question: Suppr literature-search and document-translation skills」，维护者 2026-06-15 回复。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/56">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/56</a>&#160;<a class="footnote-backref" href="#fnref:i56" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref2:i56" title="回到正文第 11 处">↩</a></p>
+</li>
+<li id="fn:i57">
+<p>issue #57「Zip contains too many files (maximum 200)」，维护者 2026-06-15 回复。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/57">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/57</a>&#160;<a class="footnote-backref" href="#fnref:i57" title="回到正文第 12 处">↩</a></p>
+</li>
+<li id="fn:i58">
+<p>issue #58「Scope question: domain-specific engineering research workflow skill」，维护者 2026-06-15 回复。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/58">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/58</a>&#160;<a class="footnote-backref" href="#fnref:i58" title="回到正文第 13 处">↩</a><a class="footnote-backref" href="#fnref2:i58" title="回到正文第 13 处">↩</a></p>
+</li>
+<li id="fn:i65">
+<p>issue #65「should autoresearch be exposable as the only always-visible skill?」，无回复。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/65">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/65</a>&#160;<a class="footnote-backref" href="#fnref:i65" title="回到正文第 14 处">↩</a></p>
+</li>
+<li id="fn:i74">
+<p>issue #74「global uninstall removes unrelated symlinks from agent skill directories」，相关 PR #77、#82 未合。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/74">https://github.com/Orchestra-Research/AI-Research-SKILLs/issues/74</a>&#160;<a class="footnote-backref" href="#fnref:i74" title="回到正文第 15 处">↩</a></p>
+</li>
+<li id="fn:pr24">
+<p>PR #24「Add Research Ideation category」，2026-02-19 合并。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/pull/24">https://github.com/Orchestra-Research/AI-Research-SKILLs/pull/24</a>&#160;<a class="footnote-backref" href="#fnref:pr24" title="回到正文第 16 处">↩</a></p>
+</li>
+<li id="fn:pr41">
+<p>PR #41「add Academic Plotting skill with scientific-plotting demo」，2026-03-25 合并。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/pull/41">https://github.com/Orchestra-Research/AI-Research-SKILLs/pull/41</a>&#160;<a class="footnote-backref" href="#fnref:pr41" title="回到正文第 17 处">↩</a></p>
+</li>
+<li id="fn:pr71">
+<p>PR #71「support switchable image models, default gpt-image-2」，外部贡献者 2026-07-14 开，改 3 个文件（+72 −54），未合、零 review；说明里列的检查是 frontmatter 能解析、正文 495 行、模板能 <code>py_compile</code>、对照 OpenRouter 与 OpenAI 文档核接口形状，没有列实际调用。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/pull/71">https://github.com/Orchestra-Research/AI-Research-SKILLs/pull/71</a>&#160;<a class="footnote-backref" href="#fnref:pr71" title="回到正文第 18 处">↩</a><a class="footnote-backref" href="#fnref2:pr71" title="回到正文第 18 处">↩</a></p>
+</li>
+<li id="fn:pr75">
+<p>PR #75「Refine ML paper writing around claims and reader-first figures」，外部贡献者 2026-08-02 开，改 2 个文件（+467 −925），未合、零 review。<a href="https://github.com/Orchestra-Research/AI-Research-SKILLs/pull/75">https://github.com/Orchestra-Research/AI-Research-SKILLs/pull/75</a>&#160;<a class="footnote-backref" href="#fnref:pr75" title="回到正文第 19 处">↩</a></p>
+</li>
+<li id="fn:s2lib">
+<p><code>danielnsilva/semanticscholar</code> 默认分支源码（最新 release v0.12.0，2026-03-29），2026-09-27 用 gh api 读：<code>semanticscholar/PaginatedResults.py</code> 的 <code>__iter__</code> 与 <code>_has_next_page</code>，<code>semanticscholar/AsyncSemanticScholar.py</code> 的 <code>search_paper</code>（相关性搜索 <code>max_results=1000</code>，<code>limit</code> 为每页条数、上限 100）。<a href="https://github.com/danielnsilva/semanticscholar">https://github.com/danielnsilva/semanticscholar</a>&#160;<a class="footnote-backref" href="#fnref:s2lib" title="回到正文第 20 处">↩</a></p>
+</li>
+<li id="fn:exa">
+<p><code>exa-labs/exa-mcp-server</code> 的 README，2026-09-27 读：「The hosted MCP server works anonymously with rate limits. For higher limits and access to Exa Agent, use either OAuth or an API key.」<a href="https://github.com/exa-labs/exa-mcp-server">https://github.com/exa-labs/exa-mcp-server</a>&#160;<a class="footnote-backref" href="#fnref:exa" title="回到正文第 21 处">↩</a></p>
+</li>
+<li id="fn:kdense-old">
+<p>K-Dense 仓库（现名 <code>K-Dense-AI/scientific-agent-skills</code>，旧名 <code>claude-scientific-skills</code> 会重定向）在提交 575404d（2026-04-02）时的 <code>.claude-plugin/marketplace.json</code>：插件名 <code>scientific-skills</code>，清单含 <code>./scientific-skills/literature-review</code>；该文件在提交 398fc37（2026-04-10）被删。2026-09-27 用 gh api 读。<a href="https://github.com/K-Dense-AI/scientific-agent-skills">https://github.com/K-Dense-AI/scientific-agent-skills</a>&#160;<a class="footnote-backref" href="#fnref:kdense-old" title="回到正文第 22 处">↩</a></p>
+</li>
+<li id="fn:remotion">
+<p><code>remotion-dev/remotion</code> 的 <code>LICENSE.md</code>，2026-09-27 读。<a href="https://github.com/remotion-dev/remotion/blob/main/LICENSE.md">https://github.com/remotion-dev/remotion/blob/main/LICENSE.md</a>&#160;<a class="footnote-backref" href="#fnref:remotion" title="回到正文第 23 处">↩</a></p>
+</li>
+</ol>
+</div>
+  </main>
+  <footer class="doc">原始稿是同目录的 ai-research-skills.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>
