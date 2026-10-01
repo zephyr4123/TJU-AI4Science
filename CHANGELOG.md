@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-01
+
 ### 新增
 - 公开区加 `research/selection/2026-0927-scientific-ai-capabilities/`：李瑞彬调研的 18 个科研 AI 开源项目（文献 / 假设 / 写作三个阶段），原表归档，选 13 个做代码级深读并经独立复查，按 6 类能力横向比较；接不接待讨论（#151）
 
@@ -92,7 +94,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.3.0...v1.0.0
