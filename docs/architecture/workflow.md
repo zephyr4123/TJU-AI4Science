@@ -249,7 +249,7 @@ harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各�
 
 同一批 CLI 的第二种用法：多轮、按 session id 续接、事件边跑边出。端口 `Chat` 与 `Runner` 放同一个 `backends/__init__.py`，适配器放同一个文件；换一家 CLI 就是加一个文件，自研 agent 就是第三个适配器（主人红线：涉及 agent 的一律可替换）。形状以端口文件为准（`turn(...) -> Iterator[ChatEvent]`、`knobs()` 报这家有哪些模型与深度档位及起点、`tool_guide()`、`guide_channel`、`cost_reporting`、`forget()`）。
 
-- **续接**：Claude Code `claude -p <message> --resume <session id> --append-system-prompt <指南>`（指南每轮整份送）；Codex `codex exec resume <thread_id> -`（指南只在开线程那次送，中途变了框架把全文塞进那一轮的话里）。
+- **续接**：Claude Code `claude -p <message> --resume <session id>`，Codex `codex exec resume <thread_id> -`。两家的指南都只在开会话那次生效（Claude Code 的 `--append-system-prompt` 续接时再送也不生效，2026-10-01 实测），中途变了（平台加了命令、流程实例上新挂了 skill）框架把新指南全文塞进那一轮的话里。
 - **指南注入**：服务会话隔离了所有设置源，两份指南（`coordinator/README.md` 研究助理、`coordinator/studio.md` 流程助理，**都是线上 prompt**）由 `framework/chat/guide.py` 连同一段「你在服务里」的前言按域塞进 system prompt，前言之后接这家 CLI 自己的「工具怎么用」，研究助理再接本项目装载的 skill 清单（每轮现算，P-26）。指南受 lint：代码块里每条命令以 `ai4sci ` 开头（P-14）；研究助理的指南里没有 `workflows/` 的写法（P-16）。
 - **分权靠三样**（P-16）：可写目录（研究助理整个项目，库的两层与 `templates/` 只读；流程助理站在数据根 `studio/` 里，只写 `studio/workflows/`，出厂的 `workflows/` 对它也只读）、命令前缀（研究助理 `ai4sci`；流程助理只有 `ai4sci show` 与 `ai4sci workflow`）、端点前缀（`/projects/<p>/…` 与 `/studio/…`）；配置一律走起服务的人的环境变量与按人的设置，命令上不带。
 - **长命令不进后台**：适配器起会话时设 `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` 并把 Bash 超时抬到与本轮超时一致；真长的活走 `--detach` 作业。
