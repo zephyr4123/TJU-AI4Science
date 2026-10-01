@@ -4,7 +4,7 @@
 
 | 编号 | 问题 | 状态 |
 |---|---|---|
-| Q-1 | 首版提供哪几个能力 | 已定：六个步骤（设计 `design` `reproduction`、实验 `auto-research`、分析 `analysis` `reproducibility`、验证 `verify`）+ 两个 skill（`pdf` `download`）；顺序不由框架定（P-10、P-18） |
+| Q-1 | 首版提供哪几个能力 | 已定：六个步骤（设计 `design` `reproduction`、实验 `auto-research`、分析 `analysis` `reproducibility`、验证 `verify`）+ 平台自带的两个 skill（`pdf` `download`）+ 收录的社区 skill（`skills-curated/`，挂上才装载，P-26）；顺序不由框架定（P-10、P-18） |
 | Q-2 | 执行层 skill 怎么注入 | 已定（P-22）：框架拼清单注入 + `ai4sci skill`，不走原生机制 |
 | Q-3 | 验收怎么定义 | **未决**，见下；[#10](https://github.com/zephyr4123/TJU-AI4Science/issues/10) |
 | Q-4 | 评测怎么做 | **未决**，见下；[#11](https://github.com/zephyr4123/TJU-AI4Science/issues/11) |
@@ -13,8 +13,8 @@
 | Q-7 | 无人值守时怎么通知人 | **未决**，见下 |
 | Q-8 | 协调层与执行层各用哪个 CLI | 已定（P-25）：按人的 `agents.yaml`，两层各选一家 |
 | Q-9 | 项目级记忆怎么做 | 已定（P-15，[#136](https://github.com/zephyr4123/TJU-AI4Science/issues/136)）：项目级产物是项目里走写作流的工作区的产出，`--from` 兄弟工作区；助理的全局视角来自 `show project`，不来自对话记忆 |
-| Q-10 | 协调层 skill 包放哪 | 已定（P-22）：指南在 `coordinator/` 由框架注入，工具型 skill 用通用 `skills/` |
-| Q-11 | 文献检索走学术 API 还是 agent 联网 | 已定（P-24）：用 agent 自带的搜索与读网页，不做按站点的脚本；「引用真伪」以后在验证阶段按 DOI / arXiv id 核 |
+| Q-10 | 协调层 skill 包放哪 | 已定（P-22、P-26）：指南在 `coordinator/` 由框架注入；skill 三处库（平台自带 `skills/` 常驻、收录 `skills-curated/`、领域包），按项目装载 |
+| Q-11 | 文献检索走学术 API 还是 agent 联网 | 已定（P-24、P-22）：缺省用 agent 自带的搜索与读网页，平台不自己写按站点的脚本；收录的社区 skill（`paper-lookup` 等，零 key）挂上就能用；「引用真伪」以后在验证阶段按 DOI / arXiv id 核 |
 | Q-12 | 写作能力的形态 | **未决**，见下；[#32](https://github.com/zephyr4123/TJU-AI4Science/issues/32) |
 | Q-13 | 低代码协调层的形状 | 已定（P-16、P-18）：流程 = 阶段 + 断点的 YAML，编辑台画布编辑它、流程助理拼它；照流程走的是研究助理，不建第二种运行器 |
 | Q-14 | 加一个能力非得写代码吗（声明式能力） | **未决**，见下 |

@@ -100,6 +100,6 @@ PEtab 包自带的标称参数就在这份数据的最优点旁边：基线从 1
 | `ledger.tsv`、`notebook.md` | 三轮搜索的账本与执行层的笔记（假设 / 改动 / 预期 / 裁决） |
 | `analysis.md` | 分析初稿（12 个数全部回溯到结果） |
 | `report.json` | 数字核对报告（PASS，4 项） |
-| `transcript.md` | 整段对话：研究者每句话、助理每轮回话、框架的叫醒；两次塞进来的指南全文略去 |
+| `transcript.md` | 整段对话：研究者每句话、助理每轮回话、框架的叫醒；两次塞进来的指南全文略去。人那一行开头的「（平台提示：…）」是 1.0.x 的旧行为：指南中途变了框架把它拼在人话前面；1.1 起另存 `turn-N/guide-update.md`、页面不再显示（#200），这里是当时的原样记录，不改 |
 
 主机、端口、本机路径按红线抹成 `<autodl-host>`、`<port>`、`<workspace>`、`<repo>`。原件不进 git：PEtab 包九个文件与 sha256 见 [boehm-stat5-petab](../boehm-stat5-petab/README.md) 的原件索引；工作区全貌（七次 design 作业、执行层每次会话的事件流与 stderr）在本机 `materials/home/projects/boehm-codex/workspaces/boehm-codex/`（2026-09-22 搬成项目）。
