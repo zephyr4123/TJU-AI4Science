@@ -62,7 +62,7 @@ stages:
 │                               ├── studio/workflows/        人在编辑台存的流程；与出厂的合起来是库
 ├── templates/  需求模板        └── projects/<p>/            一个项目一位助理（P-15）
 ├── domains/    领域包              ├── project.md           目标一段；一级标题是项目名
-├── skills/     平台自带的 skill    ├── materials/           几个工作区共用的原件
+├── skills/     平台自带的 skill    ├── materials/           共用原件：设计、复现时与工作区的一起进 data/
 ├── skills-curated/ 收录的 skill    │
 ├── coordinator/ 两份指南           ├── .ai4sci/chats/<cid>/ 助理的对话；每段一个收件箱 inbox/
 └── ui/         页面构建            └── workspaces/<id>/
