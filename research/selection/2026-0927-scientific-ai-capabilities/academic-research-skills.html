@@ -1,0 +1,1410 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academic Research Skills 代码级深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>Academic Research Skills 代码级深读</h1>
+    <p class="subtitle">科研 AI 能力选型 · 文献、假设、写作三阶段候选 · 4.4 万行提示词的 Claude Code 插件，和围着它的 27 万行确定性脚本</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目选型深读（只读代码，不跑、不装依赖）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-27</dd></div><div class="meta-row"><dt>范围</dt><dd>仓库 https://github.com/Imbad0202/academic-research-skills，浅克隆到 vendor/academic-research-skills，提交 e79085d（2026-09-25，v3.22.2 发版后一次文档提交）；读了插件清单、hooks、commands、agents、四个 skill 的 SKILL.md 与主要 agents / references、shared 的协议与契约、scripts 里运行时会被调起的脚本与几支关键 lint、docs 下的 ARCHITECTURE / CONTROL_AVAILABILITY / DATA_FLOWS / STAGE_CAPABILITY_MATRIX / SETUP / PERFORMANCE、POSITIONING、GOVERNANCE、LICENSE、evals 与 plugin-evals 的说明、CI 配置；GitHub 上的 release、issue、提交统计用 gh api 查（2026-09-27）；docs/design 下 100 多份设计稿与 2500 行 CHANGELOG 只按关键词抽读，不读各语言 README 翻译；Codex 版是另一个仓，只用 gh api 读了它的元数据、VERSION 与 CHANGELOG 开头，没读代码；平台一侧对照内仓提交 de3d948；文中 文件:行 不带前缀的均相对该仓库根，带 platform/ 的相对内仓根，标「外层」的相对外层仓根；2026-09-27 经过一轮独立复查，改动见第 8 节末</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-是不是">1. 是不是</a><ul>
+<li><a href="#11-仓库里放了什么">1.1 仓库里放了什么</a></li>
+<li><a href="#12-readme-说的能力代码里是什么">1.2 README 说的能力，代码里是什么</a></li>
+<li><a href="#13-诚信闸门与引用核对哪些是脚本哪些是提示词">1.3 诚信闸门与引用核对：哪些是脚本，哪些是提示词</a></li>
+<li><a href="#14-ars_claim_audit-实际做什么">1.4 ARS_CLAIM_AUDIT 实际做什么</a></li>
+<li><a href="#15-style-calibration-与-writing-quality-check">1.5 Style Calibration 与 Writing Quality Check</a></li>
+<li><a href="#16-对-claude-code-专有能力的依赖">1.6 对 Claude Code 专有能力的依赖</a></li>
+<li><a href="#17-作者自己标的证据上限">1.7 作者自己标的证据上限</a></li>
+</ul>
+</li>
+<li><a href="#2-怎么做">2. 怎么做</a><ul>
+<li><a href="#21-入口">2.1 入口</a></li>
+<li><a href="#22-主流程与人确认点">2.2 主流程与人确认点</a></li>
+<li><a href="#23-怎么调模型">2.3 怎么调模型</a></li>
+<li><a href="#24-数据怎么进出">2.4 数据怎么进出</a></li>
+<li><a href="#25-运行时真正会被叫起来的脚本">2.5 运行时真正会被叫起来的脚本</a></li>
+</ul>
+</li>
+<li><a href="#3-为什么">3. 为什么</a><ul>
+<li><a href="#31-设计取舍">3.1 设计取舍</a></li>
+<li><a href="#32-作者踩过的坑">3.2 作者踩过的坑</a></li>
+</ul>
+</li>
+<li><a href="#4-跑起来要什么">4. 跑起来要什么</a></li>
+<li><a href="#5-和平台对照">5. 和平台对照</a><ul>
+<li><a href="#51-三个阶段平台现在有什么ars-对应什么">5.1 三个阶段：平台现在有什么，ARS 对应什么</a></li>
+<li><a href="#52-重叠的部分">5.2 重叠的部分</a></li>
+<li><a href="#53-接进来会碰到的平台规则">5.3 接进来会碰到的平台规则</a></li>
+</ul>
+</li>
+<li><a href="#6-成熟度">6. 成熟度</a><ul>
+<li><a href="#61-发版与维护节奏">6.1 发版与维护节奏</a></li>
+<li><a href="#62-测试ci-与评测">6.2 测试、CI 与评测</a></li>
+<li><a href="#63-许可证条款要点">6.3 许可证条款要点</a></li>
+</ul>
+</li>
+<li><a href="#7-还没弄清的问题">7. 还没弄清的问题</a></li>
+<li><a href="#8-调研方法">8. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：ARS 是一个 Claude Code 插件：4 个 skill（deep-research、academic-paper、academic-paper-reviewer、academic-pipeline）、16 条 <code>/ars-*</code> 命令、2 个 hook、3 个插件子 agent。干活的主体是约 4.4 万行 markdown 提示词，39 个角色里除 3 个插件子 agent 外，默认都由当前会话的模型在同一个会话里按角色提示词依次执行（<code>docs/PERFORMANCE.md:55</code>）。仓库另有 27 万行 Python：一半是测试，五分之一是 <code>check_*</code> 脚本（多数是把提示词文本钉住的 CI lint，含整文件 sha256 锁）；三十多支脚本在提示词里给了运行方式，不都在默认流程里（运行账本、修订补丁的确定性应用、PDF 页数预检、审稿面板算术复核、缩写检查、投稿包校验等）。</p>
+<p><strong>是不是</strong>：README 上最显眼的几项，代码里的实现与 README 的说法有落差。「每个阶段停下等人确认」「7 模式诚信闸门」「让步门槛」「防泄漏」「Style Calibration」「Writing Quality Check」都是提示词，作者自己在 <code>docs/CONTROL_AVAILABILITY.md:96-103</code> 写明是「prompt-level, trust-based controls」；Writing Quality Check 里只有缩写检查是脚本。<code>ARS_CLAIM_AUDIT=1</code> 没有任何代码读它：打开后是一个提示词 agent 让模型逐条引用当 judge；同名的 Python 流水线是依赖注入的参考实现，仓库里没有生产调用方，自带的校准测试用的是「原样返回金标」的桩 judge。v3.11 的四索引引用存在性闸门是真的确定性代码（Semantic Scholar、OpenAlex、Crossref、arXiv，免 key，SQLite 缓存），但诚信 agent 的提示词里没有给出在 Stage 2.5 / 4.5 调它的命令，写的是让模型按协议自己查 S2、逐条 WebSearch；它唯一的命令行入口 <code>verify_passport.py</code> 默认拒绝输出，文件头说真正的数据对应由「Stage 4→5 流水线或 formatter 批处理」接，而那条 Python 流水线在仓库里没有生产调用方。编排提示词里还有一道 v3.6.7 的交叉模型审计闸门：synthesis 等三个角色交付之后，要一份由会话外手动运行的 Codex 审计脚本产出的审计记录，提示词写明不可跳过；SETUP 的最小配置与 CONTROL_AVAILABILITY 都没提它。作者的能力矩阵 16 行里 10 行行为证据是 NOT_RUN，外部或人类结果证据 16 行都是 none。这些上限作者自己多半写在文档里，大量段落注明「不是运行时保证」。</p>
+<p><strong>和平台对照</strong>（只列事实）：平台文献阶段只有助理手写的 <code>sources.md</code> 与 pdf、download 两个 skill，假设、写作两个阶段没有能力也没有主文件；ARS 在这三个阶段都有相近的模式（假设阶段对应的是研究问题与方法蓝图；苏格拉底模式下不替研究者生成候选问题，full 等模式里 <code>research_question_agent</code> 会从研究者给的题目生成 3–5 个候选研究问题）。它的格式接近 agentskills.io；拿平台自己的校验函数跑四个 SKILL.md，每个报两处（metadata 里有列表值、正文 524 至 761 行超过 500）；脚本一项不报，是因为四个 skill 目录里都没有 <code>scripts/</code>，运行时要叫的脚本全在仓库根 <code>scripts/</code>，没有一个带 PEP 723 头。它还依赖 Claude Code 的 Skill / Agent 工具、hook、<code>${CLAUDE_PLUGIN_ROOT}</code> 与交互式的用户回合；平台执行层是带隔离参数的一次性 <code>claude -p</code> / <code>codex exec</code>，Bash 白名单只有 <code>ai4sci skill</code>。许可证 CC BY-NC 4.0，覆盖代码。</p>
+<p>怎么读：第 1 节逐条对账 README 与代码，第 2 节是一次运行怎么走，第 3 节是设计理由与作者踩过的坑，第 5 节和平台规则逐条对照，第 7 节是没弄清、要靠外层仓 #185 实测回答的问题（文中其余 <code>#n</code> 不加说明的都是 ARS 仓的 issue）。横向对比见同目录的 <a href="index.html">README.md</a>。</p>
+</blockquote>
+<h2 id="1-是不是">1. 是不是<a class="permalink" href="#1-是不是" title="本节链接">#</a></h2>
+<h3 id="11-仓库里放了什么">1.1 仓库里放了什么<a class="permalink" href="#11-仓库里放了什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>目录</th>
+<th>放什么</th>
+<th>规模</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.claude-plugin/</code></td>
+<td>插件清单与 marketplace 清单，列 4 个 skill，版本 3.22.2，许可证写 CC-BY-NC-4.0</td>
+<td>2 个 JSON</td>
+<td><code>.claude-plugin/plugin.json:3,11</code>、<code>.claude-plugin/marketplace.json:13-20</code></td>
+</tr>
+<tr>
+<td><code>skills/</code></td>
+<td>4 个符号链接，指向仓库根的四个 skill 目录，插件从这里发现 skill</td>
+<td>4 个链接</td>
+<td><code>git ls-files -s skills</code>（模式 120000）</td>
+</tr>
+<tr>
+<td><code>deep-research/</code> <code>academic-paper/</code> <code>academic-paper-reviewer/</code> <code>academic-pipeline/</code></td>
+<td>每个 skill：<code>SKILL.md</code> + <code>agents/</code>（角色提示词）+ <code>references/</code>（协议）+ <code>templates/</code> + <code>examples/</code></td>
+<td>SKILL.md 536–775 行（去掉 frontmatter、按平台校验的算法是正文 524–761 行）；agents 38 个文件 1.65 万行；references 86 个 md 1.75 万行；四个 skill 目录都没有 <code>scripts/</code></td>
+<td><code>wc -l */SKILL.md</code>、<code>ls &lt;skill&gt;/</code></td>
+</tr>
+<tr>
+<td><code>agents/</code></td>
+<td>3 个插件子 agent（synthesis、research_architect、report_compiler），与 skill 内同名文件逐字节相同；frontmatter 带 <code>model: inherit</code> 与工具白名单 <code>Read, Write, Edit, Grep, Glob</code></td>
+<td>3 个文件 1025 行</td>
+<td><code>agents/synthesis_agent.md:1-6</code></td>
+</tr>
+<tr>
+<td><code>commands/</code></td>
+<td>16 条命令。13 条模式命令只做一件事：调 Skill 工具加载对应 skill 并带上模式名；3 条工具命令（mark-read、unmark-read、cache-invalidate）直接跑 Python</td>
+<td>250 行</td>
+<td><code>commands/ars-full.md:1-14</code>、<code>commands/ars-mark-read.md:13-16</code></td>
+</tr>
+<tr>
+<td><code>hooks/</code></td>
+<td><code>SessionStart</code> 跑 <code>scripts/announce-ars-loaded.sh</code>（注入命令清单、路由规则、更新提醒）；<code>PreToolUse</code> 对 Write / Edit / MultiEdit / Bash 跑写入范围守卫</td>
+<td>2 个文件</td>
+<td><code>hooks/hooks.json:3-24</code></td>
+</tr>
+<tr>
+<td><code>shared/</code></td>
+<td>跨 skill 的协议（交接 schema、交叉模型核对、风格校准、诚信边界、路由规则）、107 个 JSON 契约文件（多数是 JSON Schema）、审稿标准来源快照；<code>shared/agents/compliance_agent.md</code> 是第 39 个角色</td>
+<td>md 约 8000 行，JSON 116 个</td>
+<td><code>shared/handoff_schemas.md:676</code>、<code>shared/contracts/</code>、<code>shared/model_tiering.md:62,74</code></td>
+</tr>
+<tr>
+<td><code>scripts/</code></td>
+<td>全部 Python / shell：顶层 <code>test_*</code> 217 个文件 13.5 万行，<code>check_*</code> 114 个 5.5 万行，其余 106 个 7.4 万行；5 个子目录共 186 个文件：<code>adapters/</code>（Zotero、Obsidian、文件夹三个文献导入器）、<code>verification_gate/</code>（1 个文件）、<code>cross_model_verification/</code>（jq 过滤器）、<code>fixtures/</code>、<code>legacy/</code></td>
+<td>623 个文件 27.7 万行</td>
+<td>按文件名前缀统计</td>
+</tr>
+<tr>
+<td><code>tools/</code></td>
+<td>从另一个项目整份拷来的发版纪律脚本</td>
+<td>6 个文件</td>
+<td><code>tools/release-discipline/README.md:1-5</code></td>
+</tr>
+<tr>
+<td><code>evals/</code> <code>plugin-evals*/</code></td>
+<td>金标集、留出集测量记录、<code>claude plugin eval</code> 用例</td>
+<td>见<a href="#6-成熟度">第 6 节</a></td>
+<td><code>evals/README.md</code></td>
+</tr>
+<tr>
+<td><code>docs/</code> <code>audits/</code></td>
+<td>架构、能力矩阵、数据流、风险登记、100 多份设计稿；每月一次的「提示词债」清理审计</td>
+<td>docs 125 个文件 5 万行</td>
+<td><code>docs/ARCHITECTURE.md</code></td>
+</tr>
+<tr>
+<td><code>pi/</code></td>
+<td>社区维护的 Pi 编码 agent 包装层</td>
+<td>4 个文件</td>
+<td><code>pi/README.md:1-12</code></td>
+</tr>
+<tr>
+<td><code>.claude/CLAUDE.md</code></td>
+<td>仓库自己的开发说明与路由规则，只在仓库目录里启动的会话加载</td>
+<td>405 行</td>
+<td><code>docs/CONTROL_AVAILABILITY.md:110-123</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><code>check_*</code> 前缀不等于 CI lint：其中一部分（<code>check_acronyms.py</code>、<code>check_phase_conformance.py</code>、<code>check_panel_synthesis.py</code>、<code>check_re_review_synthesis.py</code>、<code>check_revision_token_conservation.py</code>，以及 <code>check_committee_correspondence.py</code>、<code>check_review_pathway_output.py</code>、<code>check_literature_corpus_schema.py</code> 等）是提示词在运行中或用户手动叫起来的检查器，其余是 CI 里查提示词文本的 lint（<code>academic-paper/references/committee_correspondence_protocol.md:159</code>、<code>shared/references/review_pathway_rule_trace_protocol.md:126</code>、<code>academic-pipeline/references/adapters/overview.md:143</code>）。</p>
+<h3 id="12-readme-说的能力代码里是什么">1.2 README 说的能力，代码里是什么<a class="permalink" href="#12-readme-说的能力代码里是什么" title="本节链接">#</a></h3>
+<p>形态一栏主要是四种：<strong>提示词</strong>（模型照着做，没有代码约束）、<strong>运行时脚本</strong>（提示词给了命令、会话去跑）、<strong>库未接线</strong>（有确定性代码，但提示词里找不到调用它的命令）、<strong>CI lint</strong>（只在仓库 CI 里查文本，从不在用户机器上跑）。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>README 说的</th>
+<th>代码里</th>
+<th>形态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>13 / 12 / 7 个 agent 组成的团队</td>
+<td>skill 内 38 个角色文件（deep-research 实有 14 个）加 <code>shared/agents/compliance_agent.md</code>，共 39 个角色；只有 3 个注册成插件子 agent，其余是 skill 内模板，主会话 inline 执行。作者 2026-08 把分发文案里的「39-agent ensemble」删掉，理由是默认 inline 路径不提供执行上的独立性</td>
+<td>提示词</td>
+<td><code>README.md:100-102</code>、<code>docs/PERFORMANCE.md:45-55</code>、<code>CHANGELOG.md:199</code></td>
+</tr>
+<tr>
+<td>每个阶段停下等人确认</td>
+<td><code>IRON RULE</code> 一段文字；流水线状态记在对话里，压缩会改写它；v3.22.2 加了运行账本兜底，但账本条目由编排提示词自己写</td>
+<td>提示词 + 可选账本脚本</td>
+<td><code>README.md:21</code>、<code>academic-pipeline/SKILL.md:183</code>、<code>academic-pipeline/agents/state_tracker_agent.md:146</code>、<code>academic-pipeline/agents/pipeline_orchestrator_agent.md:807</code></td>
+</tr>
+<tr>
+<td>Stage 2.5 / 4.5 跑 7 模式阻断清单</td>
+<td><code>integrity_verification_agent.md</code> 886 行提示词，要求每条参考文献都走 WebSearch 并留审计记录（同一文件的 A0 路由表又写 S2_VERIFIED 可跳过 A1，两处并存）；判定由模型做，确定性部分是论断登记覆盖差与证据行两支脚本，修订轮另加数字 / 引用守恒检查与论断强度漂移处置两支</td>
+<td>提示词为主</td>
+<td><code>README.md:29</code>、<code>academic-pipeline/agents/integrity_verification_agent.md:18-19,110-115,159-165,492,539,605-611</code>、<code>docs/STAGE_CAPABILITY_MATRIX.md:131-133</code></td>
+</tr>
+<tr>
+<td>Semantic Scholar API 核对，标题 Levenshtein ≥ 0.70（ARCHITECTURE 标为机器闸门）</td>
+<td>协议文档告诉模型 GET 哪个 URL、按什么阈值算相似度；诚信 agent 的 A0 就是让模型照它做</td>
+<td>提示词</td>
+<td><code>docs/ARCHITECTURE.md:257</code>、<code>deep-research/references/semantic_scholar_api_protocol.md:21-37</code>、<code>academic-pipeline/agents/integrity_verification_agent.md:104-115</code></td>
+</tr>
+<tr>
+<td>v3.11 确定性四索引引用存在性闸门</td>
+<td><code>verification_gate/__init__.py</code> 345 行 + 四个 urllib 客户端（<code>scripts/semantic_scholar_client.py</code> 等）+ SQLite 缓存 + <code>verify_passport.py</code> 命令行；命令行默认拒绝输出（汇总要求每条引用有 <code>ref_slug</code>，只读 Passport 拿不到），加 <code>--synthetic-ref-slug</code> 才出诊断用结果，文件头说真正的对应由「Stage 4→5 流水线或 formatter 批处理」接；非测试代码里直接 import 它的只有这个命令行，另有评测脚本 <code>run_evals.py</code> 按金标集清单里的入口名调它，其余出现处是注释与 lint；CI 只用夹具测；诚信 agent 说「可执行层就是这个闸门」，但没有写调用命令</td>
+<td>库未接线（运行时由谁调，未弄清）</td>
+<td><code>scripts/verification_gate/__init__.py:1-22</code>、<code>scripts/verify_passport.py:1-18</code>、<code>academic-pipeline/agents/integrity_verification_agent.md:119</code>、<code>docs/STAGE_CAPABILITY_MATRIX.md:61-71</code></td>
+</tr>
+<tr>
+<td>v3.6.7 交叉模型审计闸门（marketplace 描述写「Includes v3.6.7 cross-model audit gate」）</td>
+<td>编排提示词 §3.5：<code>synthesis_agent</code>、<code>research_architect_agent</code>（survey-designer 模式）、<code>report_compiler_agent</code>（abstract-only 模式）交付后的每个阶段转换，要一条审计记录才放行，没有记录就 BLOCK，「不可跳过」；记录由 <code>scripts/run_codex_audit.sh</code>（1205 行，调 <code>codex exec</code>，默认 <code>gpt-6-astra</code> xhigh）产出，脚本头规定不许由产出交付物的同一会话调用，只能人在别的终端、CI 或 SubagentStop hook 跑；SubagentStop hook 在 v3.7.0 被砍掉，插件的 <code>hooks.json</code> 里没有；设计稿自己写「没装 codex CLI 的新用户会在第一个 synthesis 阶段被硬拦」</td>
+<td>提示词 + 会话外手动跑的 Codex 脚本</td>
+<td><code>.claude-plugin/marketplace.json:12</code>、<code>academic-pipeline/agents/pipeline_orchestrator_agent.md:531-560</code>、<code>scripts/run_codex_audit.sh:4-8,802-810</code>、<code>CHANGELOG.md:1412</code>、<code>docs/design/2026-04-30-ars-v3.6.7-step-6-orchestrator-hooks-spec.md:2197-2201</code></td>
+</tr>
+<tr>
+<td><code>ARS_CLAIM_AUDIT=1</code> 逐条核对论断是否被引文支持</td>
+<td>见 1.4</td>
+<td>提示词 + 未接线的参考实现</td>
+<td><code>academic-pipeline/SKILL.md:44</code></td>
+</tr>
+<tr>
+<td>Style Calibration 学习作者文风</td>
+<td>让模型读 3 篇以上样文，按 6 个维度自己估算后写成 Style Profile；没有任何脚本算句长均值、标准差</td>
+<td>提示词</td>
+<td><code>shared/style_calibration_protocol.md:34-75</code>、<code>academic-paper/agents/intake_agent.md:240-262</code></td>
+</tr>
+<tr>
+<td>Writing Quality Check 抓 AI 腔</td>
+<td>一份词表与检查清单，明确「不是禁词、不阻断」；v3.22.2 起多了一支缩写检查脚本</td>
+<td>提示词 + 一支运行时脚本</td>
+<td><code>academic-paper/references/writing_quality_check.md:11,15-47,151-183</code></td>
+</tr>
+<tr>
+<td>防泄漏（缺材料标 <code>[MATERIAL GAP]</code>，ARCHITECTURE 标为机器闸门）</td>
+<td>写作 agent 的规则文字，没有脚本</td>
+<td>提示词</td>
+<td><code>docs/ARCHITECTURE.md:259</code>、<code>academic-paper/references/anti_leakage_protocol.md:48-49</code></td>
+</tr>
+<tr>
+<td>VLM 图表核对（ARCHITECTURE 标为机器闸门）</td>
+<td>可选步骤：渲染图、交给多模态模型按 10 点清单查、最多改 2 轮；不可用就跳过</td>
+<td>提示词</td>
+<td><code>docs/ARCHITECTURE.md:260</code>、<code>academic-paper/agents/visualization_agent.md:403-411</code></td>
+</tr>
+<tr>
+<td>魔鬼代言人让步门槛（反驳 1–5 分，≥4 才让步，ARCHITECTURE 标为机器闸门）</td>
+<td>提示词规则；对应 lint 的文件头写明「只钉文本，不测运行时审稿行为」</td>
+<td>提示词 + CI lint</td>
+<td><code>README.md:296-305</code>、<code>docs/ARCHITECTURE.md:263</code>、<code>scripts/check_reviewer_finding_contract.py:23-26,362-366</code></td>
+</tr>
+<tr>
+<td><code>data_access_level</code> 由 <code>check_data_access_level.py</code> 强制</td>
+<td>lint 只核对每个 SKILL.md frontmatter 里的值等于钉死的值；四个 skill 现在都是 <code>raw</code></td>
+<td>CI lint</td>
+<td><code>README.md:104</code>、<code>scripts/check_data_access_level.py:1-12</code>、<code>docs/ARCHITECTURE.md:140</code></td>
+</tr>
+<tr>
+<td>写入范围守卫（单阶段 agent 不能写别的阶段目录）</td>
+<td>真的确定性 hook，但阶段范围只在 hook payload 的 <code>agent_type</code> 命中清单里 23 个名字时生效；主会话 inline 执行时没有 <code>agent_type</code>，除了不许写 ARS 插件自己的 hook / 守卫文件外一律放行</td>
+<td>运行时 hook，覆盖面窄</td>
+<td><code>scripts/ars_write_scope_guard.py:8-24,63-80,264-274,326-328,377-382</code>、<code>scripts/ars_phase_scope_manifest.json:5-6</code></td>
+</tr>
+<tr>
+<td>审稿校准模式（量 FNR / FPR）</td>
+<td>协议、语料清单与维护者脚本在；从来没跑过，首次测量卡在 OpenReview 账号审批，另有相机版替换会泄露录用标签的问题</td>
+<td>提示词 + 维护者脚本，未运行过</td>
+<td><code>docs/STAGE_CAPABILITY_MATRIX.md:171-180</code>、<sup id="fnref:i828"><a class="footnote-ref" href="#fn:i828">7</a></sup></td>
+</tr>
+<tr>
+<td>交叉模型核对</td>
+<td>提示词里写好的 curl（OpenAI、Gemini、OpenAI 兼容端点），由会话执行；从回复里抽来源与「是否有检索依据」的判断写成 jq 过滤器、CI 有行为测试</td>
+<td>提示词驱动的 HTTP + 确定性过滤</td>
+<td><code>shared/cross_model_verification.md:444-500</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="13-诚信闸门与引用核对哪些是脚本哪些是提示词">1.3 诚信闸门与引用核对：哪些是脚本，哪些是提示词<a class="permalink" href="#13-诚信闸门与引用核对哪些是脚本哪些是提示词" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>环节</th>
+<th>确定性脚本</th>
+<th>只靠提示词（模型判断）</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>参考文献是否存在（Phase A）</td>
+<td>四索引闸门库与 <code>verify_passport.py</code>（运行时接线未弄清；命令行默认拒绝输出，见 1.2）</td>
+<td>A0 按协议查 S2，S2_VERIFIED 的按路由表跳过 A1；A1 WebSearch，三次查不到判 NOT_FOUND；A2 核对作者、年份、刊名，并要求每条都有 WebSearch 审计记录</td>
+<td><code>academic-pipeline/agents/integrity_verification_agent.md:104-165</code></td>
+</tr>
+<tr>
+<td>撤稿</td>
+<td><code>retraction_status.py</code> 把 OpenAlex <code>is_retracted</code> 与 Crossref 撤稿信号归一化</td>
+<td>取数据由会话做</td>
+<td><code>deep-research/agents/bibliography_agent.md:387-389</code></td>
+</tr>
+<tr>
+<td>引用锚点格式（<code>&lt;!--ref:slug--&gt;</code> 后必须跟 <code>&lt;!--anchor:kind:value--&gt;</code>）</td>
+<td><code>check_v3_7_3_three_layer_citation.py</code> 能查草稿文件的格式</td>
+<td>锚点指的页、句是否真支持论断，仍由模型判</td>
+<td><code>scripts/check_v3_7_3_three_layer_citation.py:1-25</code>、<code>docs/STAGE_CAPABILITY_MATRIX.md:114-120</code></td>
+</tr>
+<tr>
+<td>PDF 页码可不可信</td>
+<td><code>pdf_read_preflight.py</code>：页树声明、递归枚举、pypdf 三路页数一致才 PASS，只有 PASS 允许用页码当锚点</td>
+<td>—</td>
+<td><code>scripts/pdf_read_preflight.py:1-25</code></td>
+</tr>
+<tr>
+<td>论断与引文是否一致（Phase E）</td>
+<td><code>claim_registry_coverage.py</code>（只查两类机械可检的漏登）、<code>evidence_rows.py</code>（证据行构建与校验）</td>
+<td>抽取论断、找原文、判支持与否</td>
+<td><code>academic-pipeline/agents/integrity_verification_agent.md:478-575</code>、<code>docs/STAGE_CAPABILITY_MATRIX.md:125-134</code></td>
+</tr>
+<tr>
+<td>数据核对（Phase C）</td>
+<td>—</td>
+<td>WebSearch 原始来源、查内部一致性</td>
+<td><code>academic-pipeline/agents/integrity_verification_agent.md:202-225</code></td>
+</tr>
+<tr>
+<td>原创性（Phase D）</td>
+<td>—</td>
+<td>WebSearch 8–12 词片段；报告里自己声明不是专业查重</td>
+<td><code>academic-pipeline/agents/integrity_verification_agent.md:428-447,808</code></td>
+</tr>
+<tr>
+<td>折磨短语（论文工厂痕迹）</td>
+<td><code>tortured_phrase_screening.py</code> 3502 行，确定性匹配；只在合成语料上 190/190；仓库不带短语表，要用户自己提供短语快照与带 sha256 的清单文件</td>
+<td>—</td>
+<td><code>docs/STAGE_CAPABILITY_MATRIX.md:136-145</code>、<code>deep-research/agents/bibliography_agent.md:411-415</code></td>
+</tr>
+<tr>
+<td>7 模式 AI 研究失败清单</td>
+<td>—</td>
+<td>全部</td>
+<td><code>academic-pipeline/references/ai_research_failure_modes.md</code></td>
+</tr>
+<tr>
+<td>修订轮数字与引用漂移</td>
+<td><code>check_revision_token_conservation.py</code>，只出提示不阻断；E6 论断强度漂移的处置记录由 <code>claim_strength_drift_disposition.py</code> 做字节绑定与重放</td>
+<td>E6 的漂移检测本身由模型做</td>
+<td><code>academic-pipeline/agents/integrity_verification_agent.md:605-611,784</code></td>
+</tr>
+<tr>
+<td>出稿前拒绝（formatter 规则 6–12）</td>
+<td>—</td>
+<td>formatter 提示词看到 HIGH-WARN 标记就拒绝输出；能力矩阵把它记为「prompt-contract refusal layer」</td>
+<td><code>docs/ARCHITECTURE.md:111</code>、<code>docs/STAGE_CAPABILITY_MATRIX.md:198-207</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>诚信 agent 的判决是 PASS / FAIL，FAIL 进修订轮（2.5 失败回 Stage 2、4.5 失败走修订模式）后复查，最多 3 轮；仍不过就列出核实不了的条目，由用户选择手工处理、删掉这些引用或带「部分未核实」警告继续，决定要记录，重复放行时理由要求逐级提高（<code>academic-pipeline/SKILL.md:168,173,409</code>、<code>academic-pipeline/references/pipeline_state_machine.md:338-345</code>、<code>academic-pipeline/agents/pipeline_orchestrator_agent.md:1290</code>）。</p>
+<h3 id="14-ars_claim_audit-实际做什么">1.4 ARS_CLAIM_AUDIT 实际做什么<a class="permalink" href="#14-ars_claim_audit-实际做什么" title="本节链接">#</a></h3>
+<ul>
+<li><strong>没有代码读这个变量。</strong> 全仓 <code>.py</code> / <code>.sh</code> / <code>.js</code> / <code>.json</code> / <code>.yml</code> 里 grep 不到 <code>ARS_CLAIM_AUDIT</code>，它只出现在 20 个 markdown 文件的 49 行里；<code>docs/SETUP.md:129-139</code> 的环境开关表也没有列它。提示词里也没有写「用什么命令读环境变量」，模型怎么知道它开了，未弄清。同样没有运行时代码读取的还有 <code>ARS_MODEL_TIERING</code>（全仓代码零命中）与 <code>ARS_PASSPORT_RESET</code>（只出现在一支 CI lint <code>scripts/check_passport_reset_contract.py:32</code> 与它的测试里）；有代码读取的是 <code>ARS_CROSS_MODEL*</code>、<code>ARS_VERIFICATION_CACHE_PATH</code>、<code>ARS_CACHE_REVALIDATE</code>、<code>ARS_CACHE_STALE_ADVISORY_DAYS</code>、<code>ARS_UPDATE_CHECK*</code> 等（对 <code>scripts/</code>、<code>hooks/</code> 下 <code>.py</code> / <code>.sh</code> grep <code>ARS_[A-Z_]*</code>）。审计 agent 说它的配置在「<code>academic-pipeline/SKILL.md</code> mode flags 里的 <code>claim_audit_config</code> 块」，SKILL.md 里没有这个块，全仓只有这个 agent 与两份设计稿提到它（<code>academic-pipeline/agents/claim_ref_alignment_audit_agent.md:79</code>）。</li>
+<li><strong>打开后的行为全在提示词里。</strong> Stage 4 → 5 之间，编排提示词派 <code>claim_ref_alignment_audit_agent</code>（415 行）：锚点是 <code>none</code> 的引用直接记 RETRIEVAL_FAILED；其余按 <code>literature_corpus[]</code> 条目取原文（API、用户给的 PDF），取不到分三类：付费墙（<code>failed</code>，低级提示）、检索接口说查无此文（<code>not_found</code>，判为编造、HIGH-WARN）、临时故障（<code>audit_tool_failure</code>，中级提示）；取到了就让模型当 judge，一次调用同时问「是否支持」与「是否违反作者声明的约束」，judge 输出 SUPPORTED / UNSUPPORTED / AMBIGUOUS / PARTIAL / VIOLATED，再归到结果行，UNSUPPORTED 还要标出错在哪一环；另外对没有引用的句子查作者预先声明的否定约束（例如「不许用因果措辞」）有没有被违反，查论断强度漂移；引用超过 100 条按桶抽样（<code>academic-pipeline/SKILL.md:44</code>、<code>academic-pipeline/agents/pipeline_orchestrator_agent.md:562-618</code>、<code>academic-pipeline/agents/claim_ref_alignment_audit_agent.md:1-12,83-110,118-144,193-197</code>）。</li>
+<li><strong>结果怎么用。</strong> 写进 <code>claim_audit_results[]</code> 等五个聚合，按 8 行矩阵分级；5 类 HIGH-WARN 让 formatter 的拒绝规则 6–10 不出稿（<code>docs/ARCHITECTURE.md:110-111</code>）。judge 是谁由调用方填 <code>judge_model</code>，填不出就记 <code>unknown</code>，缓存不跨运行复用（<code>academic-pipeline/agents/claim_ref_alignment_audit_agent.md:84-94</code>）。</li>
+<li><strong>那 1609 行 Python 是什么。</strong> <code>scripts/claim_audit_pipeline.py</code> 文件头写明「在测试下跑」，检索与 judge 都是注入的函数，「生产调用方在自己的调度层接真客户端」（<code>scripts/claim_audit_pipeline.py:1-16</code>）；除测试外没有 <code>run_audit_pipeline</code>（<code>:989</code>）的调用方（非测试文件里提到它的只有 lint 与注释），也没有 <code>__main__</code>。<code>claim_audit_finalizer.py</code> 同样没有命令行入口；编排提示词把两者列为「实现」，另在 Stage 6 一处点名函数 <code>claim_audit_finalizer.py:render_stage6_histogram</code>，没给调用方式（<code>academic-pipeline/agents/pipeline_orchestrator_agent.md:592,617-618</code>）。</li>
+<li><strong>校准。</strong> 25 条合成金标，门槛 FNR &lt; 0.15、FPR &lt; 0.10；测试里的 judge 是「原样返回金标」的桩（<code>scripts/test_claim_audit_calibration.py:75</code>），README 自己写了「checks the tooling, not a live judge」，默认关，上线要等真 judge 的校准结果（<code>README.md:33</code>）。</li>
+</ul>
+<p>一句话：这个开关让编排提示词多走一段「逐条引用让模型当 judge、按矩阵分级、formatter 按标记拒绝」的流程；分级规则有一份被测试钉住的 Python 参考实现，运行时调不调它、judge 用哪个模型，由会话自己决定。</p>
+<h3 id="15-style-calibration-与-writing-quality-check">1.5 Style Calibration 与 Writing Quality Check<a class="permalink" href="#15-style-calibration-与-writing-quality-check" title="本节链接">#</a></h3>
+<p><strong>Style Calibration</strong>：入口是 academic-paper 配置访谈的第 10 步，可选。模型读用户给的样文（建议 3 篇以上），自己估 6 个维度：句长分布（均值、标准差、节奏）、段长、用词偏好（缓和词、连接词、引述动词、正式程度）、引用融入方式（叙述式占比、密度、位置）、修饰密度、各节语域变化，写成 Style Profile（Schema 10）挂在配置记录上，由 <code>draft_writer_agent</code> 与 <code>report_compiler_agent</code> 消费。使用时有优先级：学科惯例 &gt; 目标期刊 &gt; 个人风格，冲突时用惯例并记日志、提醒用户一次（<code>shared/style_calibration_protocol.md:21-133</code>、<code>academic-paper/agents/intake_agent.md:240-262</code>、<code>academic-paper/agents/draft_writer_agent.md:62</code>）。仓库里没有任何脚本计算这些统计量，数字是模型估的。</p>
+<p><strong>Writing Quality Check</strong>：<code>academic-paper/references/writing_quality_check.md</code> 195 行，A–E 五节是给模型的自查清单：25 个高频词（delve、tapestry、leverage 等，学科术语例外）、破折号与分号、「It is important to note」这类开场白、凑三条、同义词轮换、句长；文件开头写明这些「是判断提示，不是禁词表、不设标点配额」，不阻断交付（<code>:11</code>、<code>:15-147</code>、<code>:194-195</code>）。F 节是唯一的脚本：<code>scripts/check_acronyms.py</code>（1023 行，不调模型、不改文件）查缩写是否首次出现时定义、是否重复定义，由派发写作 agent 的会话在起草、摘要、审稿决定之后跑，结果只做提示（<code>:151-183</code>）。写作 agent 本身跑不了脚本（<code>:162</code>）。</p>
+<p>两者都在 README 里被放在「帮你写得更好，不是帮你藏 AI」的定位下（<code>README.md:23</code>、<code>POSITIONING.md:75-81</code>）。</p>
+<h3 id="16-对-claude-code-专有能力的依赖">1.6 对 Claude Code 专有能力的依赖<a class="permalink" href="#16-对-claude-code-专有能力的依赖" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>机制</th>
+<th>依赖的 Claude Code 能力</th>
+<th>缺了会怎样</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模式命令与 skill 加载</td>
+<td>插件 commands、Skill 工具、<code>${CLAUDE_PLUGIN_ROOT}</code>、frontmatter <code>disable-model-invocation</code> / <code>model</code></td>
+<td>拷贝安装、仓库克隆、Cowork 等渠道没有 <code>/ars-*</code>（Pi 包装层为 Conditional）；claude.ai Project 只能读、Claude Science 只剩「方法论层」</td>
+<td><code>commands/ars-citation-check.md:1-15</code>、<code>docs/CONTROL_AVAILABILITY.md:22-24,35-47</code></td>
+</tr>
+<tr>
+<td>多角色分派</td>
+<td>Agent（Task）工具；3 个插件子 agent 由插件清单注册</td>
+<td>Cowork 等渠道「每个 skill 单独跑」，流水线的分阶段检查点不按设计运行</td>
+<td><code>docs/CONTROL_AVAILABILITY.md:22,44</code></td>
+</tr>
+<tr>
+<td>写入范围守卫</td>
+<td>PreToolUse hook 与 payload 里的 <code>agent_type</code></td>
+<td>只在插件渠道生效（用户手动把 hook 配进自己的设置也行）；Windows 没有 Git Bash 时守卫不工作、每次调用记一条错误</td>
+<td><code>scripts/ars_write_scope_guard.py:30-34</code>、<code>docs/CONTROL_AVAILABILITY.md:42,69-74,148-152</code></td>
+</tr>
+<tr>
+<td>会话开头注入命令清单与路由规则</td>
+<td>SessionStart hook 的 <code>additionalContext</code></td>
+<td>路由规则退回到「skill 加载之后才生效」</td>
+<td><code>scripts/announce-ars-loaded.sh:77-152</code>、<code>docs/CONTROL_AVAILABILITY.md:110-129</code></td>
+</tr>
+<tr>
+<td>子 agent 的工具白名单</td>
+<td>插件 agent frontmatter 的 <code>tools:</code></td>
+<td>拷贝安装时白名单不生效</td>
+<td><code>docs/CONTROL_AVAILABILITY.md:43,69-74</code></td>
+</tr>
+<tr>
+<td>按角色换模型档位</td>
+<td>Agent 工具的 <code>model</code> 参数</td>
+<td>派不出子 agent 时 inline 跑并声明「不适用」</td>
+<td><code>shared/model_tiering.md:50-54</code></td>
+</tr>
+<tr>
+<td>等人确认</td>
+<td>交互式会话：模型停下，等用户下一回合</td>
+<td>无人回答时流程停在检查点</td>
+<td><code>academic-pipeline/SKILL.md:183-191</code></td>
+</tr>
+<tr>
+<td>查文献</td>
+<td>会话自带的 WebSearch / WebFetch</td>
+<td>Pi 等环境要自己装等价工具</td>
+<td><code>docs/DATA_FLOWS.md:75-80</code>、<code>pi/README.md:18-25</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>作者给了 7 种安装渠道的可用性矩阵：「插件」渠道是唯一没有 Absent 项的，但它也有 5 项是 Conditional（路由规则、SessionStart 注入、写入守卫、靠 Python 的功能、交叉模型核对，各有前提条件）；拷贝 skill 目录时 hook、插件 agent 与白名单都不生效，靠仓库根 <code>scripts/</code> 的功能还要求保留完整克隆；claude.ai Project 只能读、什么都不执行（<code>docs/CONTROL_AVAILABILITY.md:15-47,78-87</code>）。</p>
+<p><strong>Codex 版</strong>：本仓 README 说 Codex CLI 用户装另一个仓 <code>Imbad0202/academic-research-skills-codex</code>，「同样的流程内容，按 Codex 原生方式打包成一个 <code>$academic-research-suite</code> skill，带 <code>ars-*</code> 别名」（<code>README.md:81</code>、<code>POSITIONING.md:5</code>、<code>docs/SETUP.md:295</code>）。那个仓的代码没读；它的 <code>VERSION</code> 是 3.22.0，CHANGELOG 说 3.22.0（2026-09-16）同步的是上游 v3.22.0 的提交 3c546bc，另外单独钉了一个 experiment-agent v1.1.0，比本仓 v3.22.2 落后两个补丁版本<sup id="fnref:codexrepo"><a class="footnote-ref" href="#fn:codexrepo">11</a></sup>。本仓自己在三处用 Codex CLI：订阅通道的单条引用核对（<code>scripts/cross_model_codex_transport.py:1-8,507</code>，只接受 <code>Logged in using ChatGPT</code> 的登录态）；v3.6.7 审计闸门要的审计记录由 <code>scripts/run_codex_audit.sh</code> 调 <code>codex exec</code> 产出（见 1.2）；维护者自己的测量与发版前审查（例如 <code>scripts/run_review_criteria_constructive_value.py</code>，<code>docs/DATA_FLOWS.md:23-32</code>）。另有社区的 Pi 包装层，自己声明不提供 agent 隔离、没有 hook（<code>pi/README.md:7-12</code>）。</p>
+<h3 id="17-作者自己标的证据上限">1.7 作者自己标的证据上限<a class="permalink" href="#17-作者自己标的证据上限" title="本节链接">#</a></h3>
+<p><code>docs/STAGE_CAPABILITY_MATRIX.md</code> 由 <code>shared/contracts/capability/stage_capability_matrix.json</code> 生成，逐项写机制状态、行为证据和「最多能说到哪」：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>行为证据</th>
+<th>行数</th>
+<th>例子</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MEASURED</td>
+<td>3</td>
+<td>RQ 措辞提示在 48 条留出集上漏报 0.094、误报 0/16（单一 judge 模型、英文、一次测量）；修订漂移防护提示词 1/16 对 7/16（测的是浓缩版提示词，不是上线的流程）；折磨短语筛查合成语料 190/190</td>
+<td><code>docs/STAGE_CAPABILITY_MATRIX.md:14-23,136-145,184-194</code></td>
+</tr>
+<tr>
+<td>MIXED</td>
+<td>1</td>
+<td>审稿面板在 2 篇种子缺陷稿上召回 1.00，但严重度一致性 0.607 低于基线 0.672，是回退</td>
+<td><code>docs/STAGE_CAPABILITY_MATRIX.md:160-169</code></td>
+</tr>
+<tr>
+<td>DESIGNED</td>
+<td>2</td>
+<td>构思多样性测量、论断立场探针</td>
+<td><code>docs/STAGE_CAPABILITY_MATRIX.md:26-35,73-82</code></td>
+</tr>
+<tr>
+<td>NOT_RUN</td>
+<td>10</td>
+<td>引用存在性闸门、方法蓝图、综合、起草、论断核对、审稿校准、出稿拒绝等</td>
+<td>同文件各节</td>
+</tr>
+</tbody>
+</table></div>
+<p>16 行的「外部 / 人类结果证据」全部是 none。README 的样例论文是 2026-03 用 v2.3 跑的，作者注明「不代表当前性能」（<code>README.md:120</code>）。</p>
+<h2 id="2-怎么做">2. 怎么做<a class="permalink" href="#2-怎么做" title="本节链接">#</a></h2>
+<h3 id="21-入口">2.1 入口<a class="permalink" href="#21-入口" title="本节链接">#</a></h3>
+<ul>
+<li><strong>命令</strong>：<code>/ars-full</code> 让模型调 Skill 工具加载 <code>academic-research-skills:academic-pipeline</code>，再按它的 SKILL.md 走；其它 12 条模式命令同理，带上模式名（<code>commands/ars-full.md:7-14</code>）。</li>
+<li><strong>自然语言</strong>：SessionStart 注入的文字要求模型遇到匹配的请求先调核心 skill，再附上路由规则：显式意图直接进；给了横跨两个以上阶段的材料却没点名技能时，用 a–d 选项问用户要哪条流程；什么都没给也问（<code>scripts/announce-ars-loaded.sh:111</code>、<code>academic-pipeline/SKILL.md:23-40</code>）。</li>
+<li><strong>中途进入</strong>：已有论文从 Stage 2.5 进，拿到审稿意见从 Stage 4 进（<code>academic-pipeline/SKILL.md:62-72</code>）；<code>resume_from_passport=&lt;hash&gt;</code> 在新会话里从 Material Passport 的重置点接着跑，前提是上一个会话开了 <code>ARS_PASSPORT_RESET=1</code>（<code>:74-83</code>）。</li>
+<li>编排 skill 自己声明「不做实质工作，只识别阶段、推荐模式、派发 skill、管转换、记状态」（<code>academic-pipeline/SKILL.md:19</code>）。</li>
+</ul>
+<h3 id="22-主流程与人确认点">2.2 主流程与人确认点<a class="permalink" href="#22-主流程与人确认点" title="本节链接">#</a></h3>
+<p>10 个阶段（含 2.5、3'、4'、4.5）加一个可选的 4→5 核对，每个阶段结束都有检查点；FULL 列出全部产物，连续两次「继续」后降为 SLIM 一行，诚信失败、审稿决定、定稿入口是 MANDATORY 不能跳（<code>academic-pipeline/SKILL.md:140-153,164-191</code>、<code>docs/ARCHITECTURE.md:17-41</code>）。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>谁做</th>
+<th>人确认什么</th>
+<th>这一步里的确定性部分</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 RESEARCH</td>
+<td>deep-research（socratic / full / quick 等）：内部 6 个 phase，研究问题与方法蓝图、检索与来源核验、综合、成稿、主编 + 伦理 + 魔鬼代言人三方审、修订，三处魔鬼代言人检查点；synthesis 交付后按编排提示词要过 v3.6.7 审计闸门（见 1.2）</td>
+<td>RQ Brief 与方法蓝图</td>
+<td>本地 PDF 页数预检；文献导入器（会话外跑）</td>
+<td><code>deep-research/SKILL.md:189-304</code>、<code>academic-pipeline/agents/pipeline_orchestrator_agent.md:531-550,575</code></td>
+</tr>
+<tr>
+<td>2 WRITE</td>
+<td>academic-paper（plan / full）：Phase 0 配置访谈 → 1 文献策略 → 2 大纲 → 3 论证 → 4 起草 → 5a 引用合规 + 5b 双语摘要 → 6 内部审稿 → 7 排版</td>
+<td>配置记录、大纲</td>
+<td>缩写检查</td>
+<td><code>academic-paper/SKILL.md:158-170</code></td>
+</tr>
+<tr>
+<td>2.5 INTEGRITY</td>
+<td><code>integrity_verification_agent</code></td>
+<td>确认诚信报告；失败回 2 修订后复查，最多 3 轮</td>
+<td>论断登记覆盖差、证据行</td>
+<td>1.3 节</td>
+</tr>
+<tr>
+<td>3 REVIEW</td>
+<td>academic-paper-reviewer full：领域分析定 3 个审稿席位 + 期刊契合席 + 魔鬼代言人，两段式（先只看契约、再看论文），合成者给 Accept / Minor / Major / Reject</td>
+<td>编辑决定</td>
+<td>Phase 1 泄漏检查（12 词片段比对）、合成算术复核</td>
+<td><code>docs/ARCHITECTURE.md:103</code>、<code>academic-paper-reviewer/references/sprint_contract_protocol.md:34,68,231</code></td>
+</tr>
+<tr>
+<td>3→4</td>
+<td>修订辅导，最多 8 轮苏格拉底对话，可说「直接改」跳过</td>
+<td>修订策略</td>
+<td>—</td>
+<td><code>docs/ARCHITECTURE.md:104</code></td>
+</tr>
+<tr>
+<td>4 REVISE</td>
+<td>academic-paper revision：写作 agent 交的是补丁文档，不是整篇重写</td>
+<td>修订内容</td>
+<td>草稿分块锚定 + 补丁确定性应用</td>
+<td><code>academic-pipeline/agents/pipeline_orchestrator_agent.md:1290-1297</code></td>
+</tr>
+<tr>
+<td>3' RE-REVIEW</td>
+<td>三次按契约的调用 + 追溯矩阵</td>
+<td>复审决定</td>
+<td><code>check_re_review_synthesis.py</code>（写明是 MANDATORY 运行时步骤）</td>
+<td><code>academic-pipeline/agents/pipeline_orchestrator_agent.md:1385-1392</code></td>
+</tr>
+<tr>
+<td>4' RE-REVISE</td>
+<td>最多再修一轮，之后内容冻结；剩余问题写进「已知局限」</td>
+<td>冻结</td>
+<td>—</td>
+<td><code>docs/ARCHITECTURE.md:108</code></td>
+</tr>
+<tr>
+<td>4.5 FINAL INTEGRITY</td>
+<td>诚信 agent 深检一遍</td>
+<td>确认报告</td>
+<td>同 2.5</td>
+<td><code>docs/ARCHITECTURE.md:109</code></td>
+</tr>
+<tr>
+<td>4→5 CLAIM-AUDIT</td>
+<td>可选，见 1.4</td>
+<td>—</td>
+<td>—</td>
+<td>1.4 节</td>
+</tr>
+<tr>
+<td>5 FINALIZE</td>
+<td>formatter：MD → DOCX（Pandoc）→ 问要不要 LaTeX → PDF（tectonic）；AI 使用声明按 15 个期刊或政策目标出</td>
+<td>输出格式</td>
+<td>投稿包校验 <code>verify_submission_package.py</code></td>
+<td><code>academic-pipeline/SKILL.md:152</code>、<code>docs/ARCHITECTURE.md:111</code>、<code>academic-pipeline/agents/pipeline_orchestrator_agent.md:1409</code></td>
+</tr>
+<tr>
+<td>6 PROCESS SUMMARY</td>
+<td>过程记录 MD + PDF，含协作深度章节与 AI 自评（让步率、谄媚风险）</td>
+<td>语言、最终确认</td>
+<td>—</td>
+<td><code>docs/ARCHITECTURE.md:112</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="23-怎么调模型">2.3 怎么调模型<a class="permalink" href="#23-怎么调模型" title="本节链接">#</a></h3>
+<ul>
+<li><strong>默认</strong>：所有角色都由当前 Claude Code 会话的模型执行。3 个插件子 agent <code>model: inherit</code>，工具白名单里没有 Bash、没有联网；其余 36 个角色是 skill 内模板，主会话 inline 执行（<code>docs/PERFORMANCE.md:43-55</code>）。</li>
+<li><strong>命令钉模型</strong>：16 条命令里 13 条 frontmatter 写 <code>model: sonnet</code>，<code>/ars-full</code>、<code>/ars-reviewer</code>、<code>/ars-revision-coach</code> 继承会话模型（<code>grep '^model:' commands/*.md</code>）。作者推荐的会话模型是 Fable 5.1 或 Opus 5.5 配 Max 套餐，Opus 5.5 要把 effort 调到 high 以上（<code>docs/PERFORMANCE.md:3-5</code>）。</li>
+<li><strong>换档</strong>：<code>ARS_MODEL_TIERING=economy|quality-boost</code> 把 39 个角色分成判断型 26、执行型 13，用 Agent 工具的 <code>model</code> 参数派子 agent 升一档或降一档；派不出时 inline 并声明（<code>shared/model_tiering.md:50-54,62-83</code>、<code>docs/ARCHITECTURE.md:280</code>）。这个开关同样没有代码读取，靠会话自己知道它开了（见 1.4）。</li>
+<li><strong>第二模型</strong>：<code>ARS_CROSS_MODEL</code> 只是配置，每个会话还要用户显式同意才发数据；调用方式是提示词里写好的 curl（OpenAI Responses、Gemini generateContent、OpenAI 兼容端点），或者 Codex CLI 订阅通道（只限引用核对）。用在诚信抽样复核、魔鬼代言人盲评、方法冻结与最终编辑决定两处「盲分歧检查」；分歧交给人，不取平均（<code>docs/SETUP.md:188-227</code>、<code>shared/cross_model_verification.md:199-372,444-500</code>）。</li>
+<li><strong>Python 基本不调模型</strong>：会在用户一侧调模型的脚本只有 Codex 那几支：<code>cross_model_codex_transport.py</code>（经 <code>cross_model_codex_verify.sh</code>，起 Codex app-server 做单条引用核对）与 <code>run_codex_audit.sh</code>（v3.6.7 审计，<code>codex exec</code>），外加用户手动跑的 <code>cross_model_smoke_test*.sh</code>；OpenAI / Gemini 的交叉核对是提示词里的 curl，由会话执行。其余运行时脚本不调模型接口。会调 <code>claude -p</code> 的只有维护者自己做测量的脚本，例如审稿面板逐席隔离派发用 <code>claude -p --bare --no-session-persistence --strict-mcp-config --tools ""</code>（<code>docs/DATA_FLOWS.md:23-32,68-71</code>、<code>scripts/dispatch_e4_panel.py:530-560</code>）。</li>
+<li><strong>没有 MCP</strong>：仓库不带 MCP 配置；代码里出现 MCP 的地方只是在隔离参数或禁止事件清单里把它关掉（<code>scripts/cross_model_codex_transport.py:593</code>、<code>scripts/dispatch_e4_panel.py:551</code>、<code>scripts/run_review_criteria_constructive_value.py:137</code>），提示词里没有 MCP 工具；文献索引走协议文档（会话自己发 HTTP）或 Python urllib 客户端。</li>
+</ul>
+<h3 id="24-数据怎么进出">2.4 数据怎么进出<a class="permalink" href="#24-数据怎么进出" title="本节链接">#</a></h3>
+<p><strong>进</strong>：用户消息（其中别人写的粘贴文本与运行中读到的网页、文档当数据、不当指令，<code>academic-pipeline/SKILL.md:94-108</code>）；用户给的 PDF、DOCX、Markdown；会话自己的 WebSearch / WebFetch 与四个索引 API；可选的 <code>literature_corpus[]</code>，由用户在会话外用导入器生成 <code>passport.yaml</code> + <code>rejection_log.yaml</code>，自带三个导入器（Zotero Better BibTeX 导出的 JSON、Obsidian、PDF 文件夹，都只读本地文件）（<code>docs/ARCHITECTURE.md:165-201</code>、<code>scripts/adapters/zotero.py:1-13</code>）；外部实验结果由研究者在 Stage 1 登记成 <code>experiment_provenance[]</code>，ARS 自己不跑实验（<code>README.md:110</code>）。</p>
+<p><strong>出</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>产物</th>
+<th>位置</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>各阶段文件</td>
+<td>当前工作目录下的 <code>phaseN_*/</code>，按 agent 约定（编号是各 skill 内部的 phase 号，三个 skill 都用 <code>phase1_*/</code>）；排版阶段固定名 <code>phase7_*/paper.md</code>、<code>paper.tex</code>、<code>references.bib</code>、<code>cover_letter.md</code>、<code>provenance_summary.md</code>；写作 agent 的草稿是 <code>phase4_*/draft.md</code></td>
+<td><code>scripts/ars_phase_scope_manifest.json:9-31</code>（formatter 在第 25 行）、<code>scripts/check_pipeline_integrity.py:16-19</code>、<code>academic-paper/references/writing_quality_check.md:162</code></td>
+</tr>
+<tr>
+<td>v3.6.7 审计记录</td>
+<td>会话外跑 <code>run_codex_audit.sh</code> 写到 <code>audit_artifacts/</code>，编排合并后进 Passport 的 <code>audit_artifact[]</code></td>
+<td><code>scripts/run_codex_audit.sh:26</code>、<code>shared/handoff_schemas.md:895-899</code></td>
+</tr>
+<tr>
+<td>阶段间交接物</td>
+<td>12 种 schema（RQ Brief、书目、综合、草稿、诚信报告、审稿报告、修订路线图、回复信、Material Passport、风格档案、追溯矩阵、合规报告），多数以 markdown 段落在对话里传</td>
+<td><code>shared/handoff_schemas.md:25-1133</code></td>
+</tr>
+<tr>
+<td>Material Passport</td>
+<td>用户自己命名的路径；不命名就没有这个文件</td>
+<td><code>docs/DATA_FLOWS.md:94</code></td>
+</tr>
+<tr>
+<td>运行账本</td>
+<td>Passport 旁边的 <code>&lt;stem&gt;_run_ledger.yaml</code>，哈希链，存用户原话</td>
+<td><code>docs/DATA_FLOWS.md:95</code>、<code>scripts/run_ledger.py:1-25</code></td>
+</tr>
+<tr>
+<td>引用核验缓存</td>
+<td><code>~/.cache/ars/verification.db</code>（SQLite，条目 90 天过期）</td>
+<td><code>docs/DATA_FLOWS.md:91</code></td>
+</tr>
+<tr>
+<td>终稿与过程记录</td>
+<td>MD / DOCX / LaTeX / PDF</td>
+<td><code>academic-pipeline/SKILL.md:152-153</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>状态</strong>：流水线状态记在对话里，压缩会改写（<code>academic-pipeline/agents/state_tracker_agent.md:146</code>）；v3.22.2 的运行账本就是为了压缩、续接、子 agent 返回后能对账（<code>academic-pipeline/agents/pipeline_orchestrator_agent.md:797-807</code>）。</p>
+<h3 id="25-运行时真正会被叫起来的脚本">2.5 运行时真正会被叫起来的脚本<a class="permalink" href="#25-运行时真正会被叫起来的脚本" title="本节链接">#</a></h3>
+<p>提示词里以 <code>python scripts/...</code> 写法给出命令的有 27 支（grep 统计，方法见<a href="#8-调研方法">第 8 节</a>），另有十来支以「Run <code>scripts/...</code>」「pipe to <code>scripts/...</code>」写法出现，两者去重约 37 支，其中一部分只在可选流程或手动步骤里。提示词规定这些脚本由派发方（主会话）跑，单阶段 agent 不跑；这些 agent 作为插件子 agent 派出时，守卫会拒它们的全部 Bash（<code>scripts/ars_write_scope_guard.py:13-22</code>、<code>academic-paper/references/writing_quality_check.md:162</code>）。主要的几支：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>脚本</th>
+<th>什么时候跑</th>
+<th>做什么</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run_ledger.py</code></td>
+<td>每个检查点开与关、压缩或续接后</td>
+<td>追加哈希链条目；<code>report</code> 对照摘要里声称的决定与账本</td>
+<td><code>academic-pipeline/agents/pipeline_orchestrator_agent.md:801-804</code></td>
+</tr>
+<tr>
+<td><code>pdf_read_preflight.py</code></td>
+<td>Stage 1 导入每个本地 PDF</td>
+<td>三路页数一致才允许页码锚点</td>
+<td>同上 <code>:575</code></td>
+</tr>
+<tr>
+<td><code>ars_anchorize_draft.py</code> + <code>ars_apply_revision_patch.py</code></td>
+<td>每个修订轮</td>
+<td>草稿分块打锚；写作 agent 交补丁 JSON，脚本确定性应用</td>
+<td>同上 <code>:1290-1297</code></td>
+</tr>
+<tr>
+<td><code>check_phase_conformance.py</code>、<code>check_panel_synthesis.py</code></td>
+<td>reviewer full</td>
+<td>审稿第一段是否偷看了正文；合成算术复核</td>
+<td><code>academic-paper-reviewer/references/sprint_contract_protocol.md:34,231</code></td>
+</tr>
+<tr>
+<td><code>check_re_review_synthesis.py</code></td>
+<td>Stage 3'</td>
+<td>复审追溯矩阵校验</td>
+<td><code>academic-pipeline/agents/pipeline_orchestrator_agent.md:1389</code></td>
+</tr>
+<tr>
+<td><code>claim_registry_coverage.py</code>、<code>evidence_rows.py</code></td>
+<td>Stage 2.5 / 4.5 Phase E</td>
+<td>论断登记漏登、证据行</td>
+<td><code>academic-pipeline/agents/integrity_verification_agent.md:492,539</code></td>
+</tr>
+<tr>
+<td><code>check_acronyms.py</code></td>
+<td>起草、摘要、审稿决定后</td>
+<td>缩写定义检查</td>
+<td><code>academic-paper/references/writing_quality_check.md:160-176</code></td>
+</tr>
+<tr>
+<td><code>verify_submission_package.py</code></td>
+<td>Stage 5 formatter 之后</td>
+<td>投稿包对照期刊限制</td>
+<td><code>academic-pipeline/agents/pipeline_orchestrator_agent.md:1409</code></td>
+</tr>
+<tr>
+<td><code>retraction_status.py</code>、<code>tortured_phrase_screening.py</code></td>
+<td>文献导入</td>
+<td>撤稿归一化、折磨短语（短语快照要用户自备）</td>
+<td><code>deep-research/agents/bibliography_agent.md:387-415</code></td>
+</tr>
+<tr>
+<td><code>ars_mark_read.py</code>、<code>ars_cache_invalidate.py</code></td>
+<td>用户命令</td>
+<td>记「已读」声明、清缓存</td>
+<td><code>commands/ars-mark-read.md:15</code>、<code>commands/ars-cache-invalidate.md:17</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>这些脚本的依赖写在两份清单里：<code>requirements-dev.txt</code>（pyyaml、ruamel.yaml、jsonschema[format]、pypdf、defusedxml，另两行 markdown-it-py、linkify-it-py 是给测试的）与只含 <code>pdf-inspector==0.2.6</code> 的 <code>requirements-pdf-content-classifier.txt</code>；<code>pyproject.toml</code> 只有 pytest 配置；没有锁文件，也没有一支脚本带 PEP 723 头（<code>grep -rl '^# /// script' scripts</code> 零命中）；脚本之间互相 import（例如 <code>scripts/verification_gate/__init__.py:29-40</code>）。</p>
+<h2 id="3-为什么">3. 为什么<a class="permalink" href="#3-为什么" title="本节链接">#</a></h2>
+<h3 id="31-设计取舍">3.1 设计取舍<a class="permalink" href="#31-设计取舍" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>取舍</th>
+<th>解决什么</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>人在环，不做全自动</td>
+<td>引 AI Scientist 论文列的失败模式（实现 bug、幻觉结果、捷径、把 bug 当发现、编造方法、框架锁定、幻觉引用）与一篇综述转引的 PNAS 复现实验（人工 94%、AI 辅助 91%、AI 主导 37%，AI 辅助组发现的重大编码错误还少于纯人工组）作设计依据，README 注明这是设计理由、不是 ARS 自身有效的证据；明确拒绝「自主生成研究假设」「自主跑实验」「批量出稿」等机制</td>
+<td><code>README.md:25-29,39</code>、<code>POSITIONING.md:13-37</code></td>
+</tr>
+<tr>
+<td>提示词为主，Python 可选</td>
+<td>核心 skill 不需要 Python，方法论层在 claude.ai、Claude Science、Cowork 等渠道也能读</td>
+<td><code>docs/SETUP.md:17</code>、<code>docs/CONTROL_AVAILABILITY.md:37</code></td>
+</tr>
+<tr>
+<td>模型靠不住的环节换确定性脚本</td>
+<td>引用存在性（v2.7 的事后审计）；修订时让模型整篇重写会悄悄改坏文档（改成补丁 + 哈希前置条件 + 脚本应用，设计稿自己注明这是未验证的假设）；压缩丢决定（运行账本）；PDF 截断导致页码锚点错（页数预检）</td>
+<td><code>CHANGELOG.md:2433-2440</code>、<code>docs/design/2026-06-10-390-diff-patch-revision-mode-spec.md:52-95</code>、<code>scripts/run_ledger.py:1-10</code>、<code>scripts/pdf_read_preflight.py:1-9</code></td>
+</tr>
+<tr>
+<td>把提示词当产品管</td>
+<td>提示词就是交付物，编辑会悄悄改坏它；逐句钉「12 轮交叉审查都收敛不了」，于是对 5 个编排文件上整文件 sha256 锁，改一个字节 CI 就不过</td>
+<td><code>scripts/check_pipeline_boundary_semantics.py:54-78</code></td>
+</tr>
+<tr>
+<td>反谄媚、防框架锁定</td>
+<td>魔鬼代言人对用户的反驳打 1–5 分，≥4 才让步、不许连续让步；苏格拉底导师每 3 轮判一次用户是在探索还是要结论</td>
+<td><code>README.md:284-321</code></td>
+</tr>
+<tr>
+<td>能力声明不超过证据</td>
+<td>能力矩阵加分发文案 lint；2026-08 删掉「Production-grade」「39-agent ensemble」</td>
+<td><code>CHANGELOG.md:199</code>、<code>docs/STAGE_CAPABILITY_MATRIX.md:1-10</code></td>
+</tr>
+<tr>
+<td>引用存在性默认只提示</td>
+<td>人文、非英文、区域期刊没有 DOI 多是覆盖缺口不是造假；只有 DOI / arXiv ID 被索引明确否认才判 false，拦截要用户自己选 strict</td>
+<td><code>academic-pipeline/agents/pipeline_orchestrator_agent.md:1246,1250-1258</code></td>
+</tr>
+<tr>
+<td>第三方文字是数据不是指令</td>
+<td>作者引 Opus 5.5 系统卡：它比旧模型更容易执行用户粘贴文本里藏的指令，同样文字经工具读入则在卡里的测试中 0/105 被执行</td>
+<td><code>docs/PERFORMANCE.md:7</code>、<code>academic-pipeline/SKILL.md:94-108</code></td>
+</tr>
+<tr>
+<td>交叉模型审计做成硬闸门</td>
+<td>v3.6.7 把「审计建议做」改成「没有审计记录就不放行」，并规定审计脚本不许由产出交付物的同一会话调用，理由是防止产出交付物的会话在没做审计时自称审计已通过（作者叫 Pattern C3）；设计稿承认这会让没装 Codex 的新用户在第一个 synthesis 阶段被拦，明确不提供跳过命令</td>
+<td><code>scripts/run_codex_audit.sh:4-8</code>、<code>docs/design/2026-04-30-ars-v3.6.7-step-6-orchestrator-hooks-spec.md:2197-2209</code></td>
+</tr>
+<tr>
+<td>定期清理「提示词债」</td>
+<td>为某代模型写的补丁性提示会堆积（注释里写「5 天 9 个 tag 攒了一堆」），每月开 issue 审一遍</td>
+<td><code>.github/workflows/harness-retirement-monthly.yml:3-14</code>、<code>audits/harness-retirement-*.md</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="32-作者踩过的坑">3.2 作者踩过的坑<a class="permalink" href="#32-作者踩过的坑" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>时间 / 编号</th>
+<th>发生了什么</th>
+<th>怎么改的</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-03，v2.7</td>
+<td>样例论文过了 3 轮诚信检查，事后用 WebSearch 全量核对 68 条参考文献，21 条仍有问题（31%），含 4 条编造</td>
+<td>诚信 agent 改成每条必须 WebSearch、取消「难以核实」这一档；后来 v3.3 加 S2、v3.11 加四索引闸门</td>
+<td><code>CHANGELOG.md:2433-2440</code>、<code>README.md:134</code></td>
+</tr>
+<tr>
+<td>2026-04，v3.0</td>
+<td>作者自己用时发现三件事：魔鬼代言人只攻论点不攻前提；用户一反驳就让步；导师总想收尾出产物</td>
+<td>让步门槛、意图识别、对话健康度</td>
+<td><code>README.md:286-321</code></td>
+</tr>
+<tr>
+<td>#133，2026-05</td>
+<td>按阶段派 agent 时，文献 agent 自己一路跑完 Phase 3–6，三个独立检查点全被跳过</td>
+<td>v3.9.2 路由澄清 + 提示词围栏 + 事后目录扫描；v3.10 上 PreToolUse 写入守卫</td>
+<td><sup id="fnref:i133"><a class="footnote-ref" href="#fn:i133">1</a></sup>、<code>scripts/check_pipeline_integrity.py:1-20</code></td>
+</tr>
+<tr>
+<td>#454，2026-06</td>
+<td>Windows 上 <code>python3</code> 是应用商店占位；与另一个 hook 工具冲突，守卫以退出码 49 崩溃刷日志</td>
+<td>改成 shell 启动器找真 Python，找不到就放行、不报错</td>
+<td><sup id="fnref:i454"><a class="footnote-ref" href="#fn:i454">2</a></sup>、<code>hooks/run_guard.sh:3-21</code></td>
+</tr>
+<tr>
+<td>#857，2026-09</td>
+<td>16 条命令里 13 条用相对路径引用插件文件、也不调 Skill 工具；工作目录不是插件根时，模式提示词根本没加载，模型只凭命令摘要作答。是用 <code>claude plugin eval</code> 对照实验发现的</td>
+<td>v3.22.1 改成先调 Skill、路径带 <code>${CLAUDE_PLUGIN_ROOT}</code></td>
+<td><sup id="fnref:i857"><a class="footnote-ref" href="#fn:i857">3</a></sup>、<code>commands/ars-citation-check.md:8-14</code></td>
+</tr>
+<tr>
+<td>#892，2026-09</td>
+<td>路由规则只写在 <code>.claude/CLAUDE.md</code>，插件与拷贝安装都不加载；修复前用 #133 夹具测，插件安装的会话在 Opus 5.5 上 12 个失败 6 个</td>
+<td>v3.22.2 复制进每个 SKILL.md 与 SessionStart 注入，lint 钉住副本一致；issue 仍开</td>
+<td><sup id="fnref:i892"><a class="footnote-ref" href="#fn:i892">4</a></sup>、<code>CHANGELOG.md:41</code>、<code>academic-pipeline/SKILL.md:21-40</code></td>
+</tr>
+<tr>
+<td>#887，2026-09</td>
+<td>上下文压缩与子 agent 返回会丢掉待决的决定与用户原话；依据是 Opus 5.5 系统卡，不是 ARS 自己复现的</td>
+<td>运行账本</td>
+<td><sup id="fnref:i887"><a class="footnote-ref" href="#fn:i887">5</a></sup></td>
+</tr>
+<tr>
+<td>#753，2026-08</td>
+<td>分发文案里的说法超出证据</td>
+<td>能力矩阵 + 文案 lint</td>
+<td><code>CHANGELOG.md:199</code></td>
+</tr>
+<tr>
+<td>#475</td>
+<td>子 agent 派发继承 1M 上下文档导致报错，上游问题，仍开</td>
+<td>记录追踪条件</td>
+<td><sup id="fnref:i475"><a class="footnote-ref" href="#fn:i475">6</a></sup></td>
+</tr>
+<tr>
+<td>#828</td>
+<td>OpenReview 相机版替换会泄露录用标签，挡住审稿校准的第一次测量，仍开</td>
+<td>—</td>
+<td><sup id="fnref2:i828"><a class="footnote-ref" href="#fn:i828">7</a></sup></td>
+</tr>
+<tr>
+<td>#595，2026-07</td>
+<td>中文 DOI 多注册在 ISTIC / CNKI，Crossref 查不到，四索引闸门把中文引用几乎都判成 unresolvable，与编造分不开</td>
+<td>写了独立的中文文献客户端（doi.org、Handle、NCBI，不爬 CNKI），没接进闸门，也没有命令行入口</td>
+<td><sup id="fnref:i595"><a class="footnote-ref" href="#fn:i595">8</a></sup>、<code>scripts/chinese_literature_client.py:7-14,50-56</code>、<code>docs/DATA_FLOWS.md:64</code></td>
+</tr>
+<tr>
+<td>v3.7.0，2026-05</td>
+<td>想用 SubagentStop hook 自动跑 v3.6.7 的 Codex 审计，hook 的 payload 里没有阶段与交付物信息，而且审计脚本不许由产出会话调用</td>
+<td>砍掉，推迟到有阶段 / 交付物传递约定的版本；审计闸门仍在</td>
+<td><code>CHANGELOG.md:1401,1412</code></td>
+</tr>
+<tr>
+<td>审稿测量</td>
+<td>种子缺陷召回 1.00，严重度一致性回退到 0.607</td>
+<td>仍开 #648</td>
+<td><code>docs/STAGE_CAPABILITY_MATRIX.md:160-169</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="4-跑起来要什么">4. 跑起来要什么<a class="permalink" href="#4-跑起来要什么" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>必需还是可选</th>
+<th>实况</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claude Code</td>
+<td>必需</td>
+<td>最新版；插件安装要求较新版本，完整机制只在插件渠道</td>
+<td><code>README.md:55</code>、<code>docs/CONTROL_AVAILABILITY.md:19</code></td>
+</tr>
+<tr>
+<td>模型与登录</td>
+<td>必需</td>
+<td><code>ANTHROPIC_API_KEY</code> 或 <code>claude</code> 首次登录；作者推荐 Fable 5.1 / Opus 5.5 + Max 套餐</td>
+<td><code>README.md:56</code>、<code>docs/PERFORMANCE.md:3-5</code></td>
+</tr>
+<tr>
+<td>会话的搜索与读网页工具</td>
+<td>实际必需</td>
+<td>查文献、核引用都靠它</td>
+<td><code>academic-pipeline/agents/integrity_verification_agent.md:18</code></td>
+</tr>
+<tr>
+<td>真 Python 3</td>
+<td>作者标可选</td>
+<td>SETUP 说核心 skill 不要 Python，只有守卫与几项可选功能要；但提示词里有三十多支脚本给了运行方式，其中复审校验写明是 MANDATORY 运行时步骤、运行账本与 PDF 页数预检在默认流程里；依赖列在 <code>requirements-dev.txt</code>（pyyaml、ruamel.yaml、jsonschema、pypdf、defusedxml 等），无锁；<code>pdf-inspector==0.2.6</code> 单独可选；<code>bootstrap_timeline_yaml.py</code> 另要 requests</td>
+<td><code>docs/SETUP.md:17</code>、<code>academic-pipeline/agents/pipeline_orchestrator_agent.md:575,801,1389</code>、<code>requirements-dev.txt</code>、<code>requirements-pdf-content-classifier.txt</code>、<code>docs/DATA_FLOWS.md:66</code></td>
+</tr>
+<tr>
+<td>bash、curl、jq</td>
+<td>可选</td>
+<td>hook 启动器要 bash（Windows 要 Git Bash）；更新检查与交叉模型要 curl；交叉模型的来源过滤要 jq</td>
+<td><code>docs/CONTROL_AVAILABILITY.md:88-95,104-109</code>、<code>shared/cross_model_verification.md:456-460</code></td>
+</tr>
+<tr>
+<td>Pandoc、tectonic + 思源宋体繁中</td>
+<td>可选</td>
+<td>分别用于 DOCX 与 APA 7 PDF；没有就只出 Markdown</td>
+<td><code>README.md:57</code>、<code>docs/SETUP.md:65-97</code></td>
+</tr>
+<tr>
+<td>文献索引</td>
+<td>免 key</td>
+<td>Semantic Scholar、OpenAlex、Crossref、arXiv；<code>S2_API_KEY</code>、<code>OPENALEX_API_KEY</code> 可选，只提速</td>
+<td><code>docs/DATA_FLOWS.md:42-58</code></td>
+</tr>
+<tr>
+<td>第二模型</td>
+<td>可选</td>
+<td><code>OPENAI_API_KEY</code> 或 <code>GOOGLE_AI_API_KEY</code>，或 <code>ARS_OPENAI_COMPAT_API_KEY</code> + <code>ARS_OPENAI_COMPAT_BASE_URL</code>（兼容端点没有联网检索）；或 Codex CLI ≥ 0.147 以 ChatGPT 登录（只限引用核对）；估算每次全流程多花约 0.6–1.1 美元</td>
+<td><code>docs/SETUP.md:188-246</code>、<code>shared/cross_model_verification.md:95-130</code></td>
+</tr>
+<tr>
+<td>Codex CLI（v3.6.7 审计闸门）</td>
+<td>编排提示词写为不可跳过，用户文档没列</td>
+<td><code>run_codex_audit.sh</code> 要 Bash 4+（macOS 自带的 3.2 不够）、<code>codex</code> 与能跑 <code>gpt-6-astra</code> xhigh 的凭据，由人在会话外跑；SETUP 的最小配置、CONTROL_AVAILABILITY、PERFORMANCE 都没提；实跑时缺它是否真被拦，未验证</td>
+<td><code>academic-pipeline/agents/pipeline_orchestrator_agent.md:531-560</code>、<code>scripts/run_codex_audit.sh:4-8,41-46,802-810</code>、<code>docs/SETUP.md:7-13</code></td>
+</tr>
+<tr>
+<td>其它网络</td>
+<td>—</td>
+<td>每天至多一次到 raw.githubusercontent.com 查版本，<code>ARS_UPDATE_CHECK=0</code> 关</td>
+<td><code>docs/DATA_FLOWS.md:70</code></td>
+</tr>
+<tr>
+<td>算力</td>
+<td>无 GPU 要求</td>
+<td>全流程约 20 万+ 输入、10 万+ 输出 token；README 估 3–7 美元，按 2026-09 价格 Opus 5.5 约 2.8 美元、Fable 5.1 约 7 美元</td>
+<td><code>README.md:89</code>、<code>docs/PERFORMANCE.md:24,29</code></td>
+</tr>
+<tr>
+<td>本地存储</td>
+<td>—</td>
+<td><code>~/.cache/ars/</code> 下 SQLite 缓存与更新状态；账本在 Passport 旁</td>
+<td><code>docs/DATA_FLOWS.md:87-96</code></td>
+</tr>
+<tr>
+<td>操作系统</td>
+<td>—</td>
+<td>macOS、Linux 测过；CI 只有 Ubuntu；Windows 尽力而为，文件锁有 msvcrt 后备，分支账本在 Windows 上拒绝运行</td>
+<td><code>docs/SETUP.md:35</code></td>
+</tr>
+<tr>
+<td>语言</td>
+<td>—</td>
+<td>双语摘要的语言对注册表只有 <code>zh-tw-en</code> 一条，用户用中文写时默认繁体；README 说触发词只列英文与繁中，四个 SKILL.md 的 description 里实际还有韩文、西班牙文触发词</td>
+<td><code>shared/output_language_pair.md:20-24</code>、<code>README.md:235-241</code>、各 SKILL.md 第 3 行</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>不用</td>
+<td>仓库不带 MCP 配置，提示词不用 MCP 工具</td>
+<td>2.3 节</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="5-和平台对照">5. 和平台对照<a class="permalink" href="#5-和平台对照" title="本节链接">#</a></h2>
+<p>只列事实。平台一侧的依据：外层 <code>docs/architecture/README.md</code> 的 P-1、P-2、P-11、P-14、P-19、P-20、P-22、P-25，<code>platform/docs/add-a-skill.md</code>、<code>platform/docs/add-a-capability.md</code> 与对应代码。</p>
+<h3 id="51-三个阶段平台现在有什么ars-对应什么">5.1 三个阶段：平台现在有什么，ARS 对应什么<a class="permalink" href="#51-三个阶段平台现在有什么ars-对应什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>平台现在</th>
+<th>ARS 对应的</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文献</td>
+<td>主文件 <code>sources.md</code> 由助理手写（<code>ai4sci output new literature</code>），不是能力产的；skill 有 pdf（论文 PDF → <code>paper.md</code> + <code>images/</code> + <code>structured.json</code>）与 download（git 仓库、单文件、HF 仓库，留收据）；两层 agent 用 CLI 自带的 WebSearch / WebFetch</td>
+<td>deep-research 的 lit-review、three-way-scan、systematic-review（PRISMA，含偏倚风险与荟萃分析）、fact-check；检索策略与两轮筛选、证据分级、注释书目、综合与缺口分析（提示词）；四索引存在性库 + SQLite 缓存、撤稿与折磨短语脚本、Zotero / Obsidian / 文件夹导入器；中文文献客户端（未接线）</td>
+<td><code>platform/framework/capabilities/__init__.py:46-47</code>、<code>platform/docs/add-a-skill.md</code>「现在有的」表、<code>platform/backends/claude_code.py:40-42</code>、<code>deep-research/SKILL.md:142-160,363-367</code></td>
+</tr>
+<tr>
+<td>假设</td>
+<td>没有能力，<code>MAIN_FILES</code> 没有这一行；<code>add-a-capability.md</code> 定名举例用 <code>hypothesis.md</code>，未落地</td>
+<td>没有单独的「假设」产物；RQ Brief 里有一个可选字段 <code>hypothesis</code>（初步假设，适用时填）。最近的是 RQ Brief（FINER 打分、范围、子问题；schema 写 1–10 分，<code>research_question_agent</code> 提示词写 1–5 分，两处不一致）与方法蓝图（范式、方法、数据策略、效度），苏格拉底导师五层追问与魔鬼代言人检查点。苏格拉底模式默认不替研究者生成候选问题，研究者明确要求才退出该模式并标明 AI 生成；full 等模式里 <code>research_question_agent</code> 会从研究者给的题目生成 3–5 个候选研究问题</td>
+<td><code>platform/framework/capabilities/__init__.py:45-52</code>、<code>platform/docs/add-a-capability.md:36-52</code>、<code>shared/handoff_schemas.md:25-51</code>、<code>deep-research/agents/research_question_agent.md:31,55-59</code>、<code>POSITIONING.md:18-31</code></td>
+</tr>
+<tr>
+<td>写作</td>
+<td>没有能力、没有主文件；<code>add-a-capability.md</code> 用「论文初稿」<code>draft.md</code> 做例子，未落地</td>
+<td>academic-paper 11 个模式（full、plan、outline-only、revision、revision-coach、abstract-only、lit-review、format-convert、citation-check、disclosure、rebuttal-audit），reviewer 6 个模式，pipeline 全流程；出 MD / DOCX / LaTeX / PDF、双语摘要、AI 使用声明、模拟审稿与回复信；写作 agent 的草稿文件也叫 <code>draft.md</code></td>
+<td><code>platform/docs/add-a-capability.md:142-151</code>、<code>docs/ARCHITECTURE.md:436-443</code>、<code>academic-paper/references/writing_quality_check.md:162</code></td>
+</tr>
+<tr>
+<td>验证（参照）</td>
+<td><code>verify</code> 零模型核对分析稿里的数字与账本，写 <code>report.json</code></td>
+<td>不跑实验、不核对实验真伪；只核对论文论断与研究者声明的外部实验是否一致，且由模型判</td>
+<td><code>platform/framework/capabilities/verify/__init__.py:1-7</code>、<code>POSITIONING.md:47-51</code>、<code>README.md:110</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="52-重叠的部分">5.2 重叠的部分<a class="permalink" href="#52-重叠的部分" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>事项</th>
+<th>平台</th>
+<th>ARS</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>找文献</td>
+<td>助理用 WebSearch / WebFetch 找、手写 <code>sources.md</code></td>
+<td>同样靠会话的搜索工具，另给四个索引的 HTTP 协议文档与 Python 客户端</td>
+<td><code>docs/DATA_FLOWS.md:75-80</code></td>
+</tr>
+<tr>
+<td>读 PDF</td>
+<td>pdf skill 解析正文、表、图、参考文献</td>
+<td>不解析正文（会话自己读）；只做页数一致性预检，可选 <code>--classify-content</code> 交给 pdf-inspector 出内容分类提示</td>
+<td><code>platform/skills/pdf/SKILL.md:1-6</code>、<code>scripts/pdf_read_preflight.py:1-40</code></td>
+</tr>
+<tr>
+<td>人确认</td>
+<td><code>requirement.lock</code> 与产出目录里的 <code>signed.json</code>，助理会话里调签字一律被拒</td>
+<td>提示词检查点 +「只有用户回合算决定」+ 运行账本；作者注明是纪律不是运行时保证</td>
+<td>外层 <code>docs/architecture/README.md:169</code>、<code>academic-pipeline/agents/pipeline_orchestrator_agent.md:784-793</code></td>
+</tr>
+<tr>
+<td>判定</td>
+<td>能确定性判的用零模型代码</td>
+<td>大部分由模型判；确定性部分是存在性、格式、算术、补丁应用、账本</td>
+<td>外层 <code>docs/architecture/README.md:152</code>、1.3 节</td>
+</tr>
+<tr>
+<td>模型评审隔离</td>
+<td>P-2：要模型判断的由框架另起隔离会话、只给产物，「尚未实现」</td>
+<td>审稿面板默认同一会话 inline；逐席隔离派发只在维护者测量脚本里</td>
+<td>外层 <code>docs/architecture/README.md:152</code>、<code>docs/PERFORMANCE.md:55</code>、<code>scripts/dispatch_e4_panel.py:530-560</code></td>
+</tr>
+<tr>
+<td>产出与来源</td>
+<td><code>&lt;stage&gt;/&lt;n&gt;/</code> + <code>meta.yaml</code> 记谁产的、读了谁</td>
+<td><code>phaseN_*/</code> 目录 + Material Passport（<code>origin_skill</code>、<code>upstream_dependencies</code>、<code>content_hash</code>）</td>
+<td>外层 <code>docs/architecture/README.md:169-170</code>、<code>shared/handoff_schemas.md:710-730</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="53-接进来会碰到的平台规则">5.3 接进来会碰到的平台规则<a class="permalink" href="#53-接进来会碰到的平台规则" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>规则</th>
+<th>平台怎么定</th>
+<th>ARS 的实况</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P-1 执行层是唯一写代码与论文正文的</td>
+<td>框架不调模型；助理只可手写材料清单这类东西</td>
+<td>ARS 的 Python 除 Codex 两支（引用核对通道、v3.6.7 审计脚本）外不调模型，写正文的是会话模型；ARS 设计成在同一个交互会话里既问人、又派角色、又写正文</td>
+<td>外层 <code>docs/architecture/README.md:151</code>、2.3 节</td>
+</tr>
+<tr>
+<td>P-2 评审上下文隔离</td>
+<td>见上表</td>
+<td>见上表</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>P-11 指南只进协调层，领域 skill 只进执行层</td>
+<td>两层清单分开</td>
+<td>ARS 的 SKILL.md 同时是流程指南（何时停、问什么）和执行内容（怎么写）</td>
+<td>外层 <code>docs/architecture/README.md:161</code>、<code>academic-pipeline/SKILL.md:181-191</code></td>
+</tr>
+<tr>
+<td>P-14 CLI 主导</td>
+<td>助理只有 <code>ai4sci</code>；执行层 Bash 白名单只有 <code>ai4sci skill</code>；不裸跑 python</td>
+<td>提示词直接写 <code>python3 scripts/...</code>、<code>curl</code>、<code>jq</code>；3 条工具命令直接跑 python</td>
+<td>外层 <code>docs/architecture/README.md:164</code>、<code>platform/framework/skills/__init__.py:35-37</code>、<code>commands/ars-mark-read.md:15</code>、<code>shared/cross_model_verification.md:444</code></td>
+</tr>
+<tr>
+<td>P-19 只有人能确认，断点是产出要人签</td>
+<td>签字是 <code>signed.json</code>；执行层是一次性会话：<code>claude -p ... --output-format stream-json</code>、<code>codex exec --json</code></td>
+<td>检查点靠会话停下等用户下一回合；一次性执行层会话里没有用户回合</td>
+<td><code>platform/backends/claude_code.py:157</code>、<code>platform/backends/codex.py:1</code></td>
+</tr>
+<tr>
+<td>P-20 主文件归阶段、能力只写自己的 <code>&lt;stage&gt;/&lt;n&gt;/</code>、skill 不开产出目录</td>
+<td>假设、写作的主文件待第一个能力定名，定名照 P-13（角色名词）</td>
+<td>ARS 在工作目录下自建 <code>phaseN_*/</code>，还写 Passport、账本、<code>audit_artifacts/</code>、<code>~/.cache/ars/</code>；文件名按它自己的约定（<code>draft.md</code>、<code>paper.md</code> 等）</td>
+<td>外层 <code>docs/architecture/README.md:170</code>、<code>platform/docs/add-a-capability.md:36-52</code>、2.4 节</td>
+</tr>
+<tr>
+<td>P-22 skill 按开放规范写、框架注入、脚本自带依赖</td>
+<td>frontmatter 只认 <code>name</code>、<code>description</code>、<code>license</code>、<code>compatibility</code>、<code>metadata</code>，metadata 必须字符串到字符串；正文不超过 500 行；<code>scripts/*.py</code> 要 PEP 723 头 + 锁文件；加载不靠 agent 的原生机制</td>
+<td>用平台的 <code>load_skill</code> 直接校验四个目录，每个报两条：<code>metadata 要是字符串到字符串的映射</code>（<code>related_skills</code> 是列表）与正文超 500 行（627 / 583 / 524 / 761）；字段名都在范围内。脚本一项不报：四个 skill 目录里没有 <code>scripts/</code>，而平台的校验与 <code>ai4sci skill run</code> 都只看 skill 自己的 <code>scripts/*.py</code>；ARS 运行时要叫的脚本在仓库根 <code>scripts/</code>，没有一支带 PEP 723 头，且互相 import。每个 SKILL.md 还引用 16–29 个不重复的仓库内路径（<code>shared/</code>、<code>scripts/</code>、<code>docs/</code> 与其它 skill 的文件）；加载与分派靠 Claude Code 的 Skill、Agent 工具与插件机制</td>
+<td><code>platform/framework/skills/library.py:26,32,144-150,205-209,218-229</code>、<code>platform/framework/skills/run.py:45-58</code>、各 SKILL.md frontmatter、<sup id="fnref:agentskills"><a class="footnote-ref" href="#fn:agentskills">12</a></sup></td>
+</tr>
+<tr>
+<td>P-25 底座归人，模型与思考深度按人的设置、只有具体值</td>
+<td>执行层用哪家、什么模型由设置定</td>
+<td>13 条命令在 frontmatter 钉 <code>model: sonnet</code>；<code>ARS_MODEL_TIERING</code> 自己按角色换档；3 个插件子 agent <code>model: inherit</code></td>
+<td>外层 <code>docs/architecture/README.md:175</code>、2.3 节</td>
+</tr>
+<tr>
+<td>执行层隔离参数</td>
+<td>Claude Code 带 <code>--setting-sources ""</code>、<code>--strict-mcp-config</code>、<code>--disable-slash-commands</code>、<code>--no-session-persistence</code>，注释写明因此不继承本机的 CLAUDE.md、hook、plugin、自定义 agent；本机 Claude Code 2.1.283 的 <code>claude --help</code> 对 <code>--disable-slash-commands</code> 的说明是「Disable all skills」；Codex 用私有 <code>CODEX_HOME</code>，本机的 plugins、hooks、用户 skills 都不进</td>
+<td>ARS 的 hook、<code>/ars-*</code> 命令、插件子 agent 都靠插件机制加载，skill 靠 Skill 工具加载</td>
+<td><code>platform/backends/claude_code.py:36-39,46</code>、<code>platform/backends/codex.py:6-11</code></td>
+</tr>
+<tr>
+<td>执行层默认预算</td>
+<td><code>--max-turns 30</code>、<code>--max-budget-usd 2.0</code>，可用环境变量改</td>
+<td>全流程估算 20 万+ 输入、10 万+ 输出 token，2.8–7 美元</td>
+<td><code>platform/backends/claude_code.py:159-163</code>、<code>docs/PERFORMANCE.md:24,29</code></td>
+</tr>
+<tr>
+<td>单独的模型 key</td>
+<td>底座走研究者自己的 agent 登录</td>
+<td>交叉模型核对要另一家的 API key，或 Codex 订阅登录（只限引用）；v3.6.7 审计闸门要 Codex CLI 与能跑 <code>gpt-6-astra</code> 的凭据，由人在会话外跑</td>
+<td>外层 <code>docs/architecture/README.md:175</code>、4 节</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="6-成熟度">6. 成熟度<a class="permalink" href="#6-成熟度" title="本节链接">#</a></h2>
+<h3 id="61-发版与维护节奏">6.1 发版与维护节奏<a class="permalink" href="#61-发版与维护节奏" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>实况</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>年龄与提交</td>
+<td>2026-02-26 建仓，798 个提交</td>
+<td><sup id="fnref2:ghstats"><a class="footnote-ref" href="#fn:ghstats">10</a></sup></td>
+</tr>
+<tr>
+<td>发版</td>
+<td>45 个 GitHub release（47 个 tag），v2.8（2026-03-22）到 v3.22.2（2026-09-25）；最近三版间隔 2–7 天；SETUP 自述「大约 1–2 周一版」；发版前有版本一致性、CHANGELOG 覆盖合并等门禁，tag 后再复查</td>
+<td><sup id="fnref:releases"><a class="footnote-ref" href="#fn:releases">9</a></sup>、<code>docs/SETUP.md:288</code>、<code>GOVERNANCE.md:52-56</code></td>
+</tr>
+<tr>
+<td>活跃度</td>
+<td>近 26 周每周 3–168 次提交，最近 8 周每周 7–43 次；main 上最近的 CI 运行全绿（2026-09-24、09-25）</td>
+<td><sup id="fnref3:ghstats"><a class="footnote-ref" href="#fn:ghstats">10</a></sup></td>
+</tr>
+<tr>
+<td>人</td>
+<td>维护者 763 / 798 个提交（约 96%），其余约 19 人各 1–8 个；单人维护，没有共同维护者、没有 SLA，停更即视为终止</td>
+<td><sup id="fnref4:ghstats"><a class="footnote-ref" href="#fn:ghstats">10</a></sup>、<code>GOVERNANCE.md:15-27,59-66</code></td>
+</tr>
+<tr>
+<td>issue 与 PR</td>
+<td>358 个 issue（87 个非维护者提）、508 个 PR、33 个 open</td>
+<td><sup id="fnref5:ghstats"><a class="footnote-ref" href="#fn:ghstats">10</a></sup></td>
+</tr>
+<tr>
+<td>开发方式</td>
+<td>近期提交带 Claude Opus 5.5 的共同作者尾注；发版前做「dual-track」审查，CHANGELOG 里多写成一路 Claude Opus 子 agent 做安全审查、一路 Codex（GPT）审查；作者声明第二个模型不等于组织上的独立审查</td>
+<td><sup id="fnref6:ghstats"><a class="footnote-ref" href="#fn:ghstats">10</a></sup>、<code>GOVERNANCE.md:29-48</code>、CHANGELOG 中 <code>Dual-track pre-ship review (security opus subagent + codex …)</code> 各条</td>
+</tr>
+<tr>
+<td>关注度</td>
+<td>4.96 万 star、3835 fork；Codex 版 1.17 万 star，最后推送 2026-09-16</td>
+<td><sup id="fnref7:ghstats"><a class="footnote-ref" href="#fn:ghstats">10</a></sup>、<sup id="fnref3:codexrepo"><a class="footnote-ref" href="#fn:codexrepo">11</a></sup></td>
+</tr>
+<tr>
+<td>文档体量</td>
+<td>CHANGELOG 2513 行（77 万字节），README 381 行，docs 5 万行</td>
+<td><code>wc -l</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="62-测试ci-与评测">6.2 测试、CI 与评测<a class="permalink" href="#62-测试ci-与评测" title="本节链接">#</a></h3>
+<ul>
+<li><strong>CI</strong>：14 个 workflow，全部 <code>ubuntu-latest</code>；作者自己分类为 8 个至少在一种事件上阻断、2 个只告警、1 个只开 issue、3 个 tag 推送后才检测；有 <code>test-count-monotonic</code>（测试数不许下降）、<code>pr-closes-issue</code>（PR 必须引 issue）（<code>docs/ARCHITECTURE.md:284-322</code>）。没有 macOS、Windows 的 CI。</li>
+<li><strong>测试</strong>：<code>scripts/test_*</code> 217 个文件 + <code>tests/</code> 4 个顶层文件（另有 <code>tests/fixtures/</code>），约 7066 个 test 函数、13.5 万行。三类：运行时脚本的逻辑（夹具驱动，例如引用闸门的传输夹具、补丁应用、账本链）；104 个 <code>test_check_*</code> 对提示词文本 lint 做变异测试；整文件内容锁。全部离线：CI 不做任何真实索引或模型调用，workflow 里用到的 secret 只有 <code>GITHUB_TOKEN</code>，没有模型 key（<code>docs/DATA_FLOWS.md:83-85</code>、<code>.github/workflows/eval-harness.yml:131</code>）。</li>
+<li><strong>evals</strong>：<code>evals/gold/</code> 4 个金标集在 CI 里跑，入口都是确定性函数；引用抽取那一套测的是 reducer 自己的分类，能力矩阵说它不是幻觉捕获率的独立真值（<code>evals/gold/*/manifest.yaml</code>、<code>docs/STAGE_CAPABILITY_MATRIX.md:67</code>）。<code>evals/heldout/suite_registry.json</code> 注册了 12 个套件（目录下另有 3 个未注册的套件目录），只有 3 个有已提交的测量 JSON（revision_claim_drift 2 次、rq_framing_offlist 2 次、tortured_phrase_conformance 1 次），reviewer_seeded_defects 有原始运行记录；这些由维护者用指定模型离线跑（<code>evals/heldout/suite_registry.json</code>）。</li>
+<li><strong>plugin-evals</strong>：<code>claude plugin eval</code> 做有 / 无插件对照，三套合成用例共 18 个，本地跑、结果不入库；README 记录其中两例两组得分相同，说明基础模型本身就能处理（<code>plugin-evals/README.md:17-22,58,132</code>）。</li>
+<li>小结见 1.7 节：能力矩阵 16 行，行为证据 MEASURED 3、MIXED 1、DESIGNED 2、NOT_RUN 10，外部结果证据全无。</li>
+</ul>
+<h3 id="63-许可证条款要点">6.3 许可证条款要点<a class="permalink" href="#63-许可证条款要点" title="本节链接">#</a></h3>
+<ul>
+<li><strong>授权范围</strong>：CC BY-NC 4.0 全文在 <code>LICENSE</code>，版权人 Cheng-I Wu（<code>LICENSE:1-4</code>）。授权只限「为非商业目的」复制、分享，以及制作、分享改编作品（<code>LICENSE:156-165</code>）。NonCommercial 的定义是「主要目的不是商业利益或金钱报酬」（<code>LICENSE:126-132</code>）；Share 指向公众提供（<code>LICENSE:134-140</code>）。</li>
+<li><strong>覆盖代码</strong>：许可证覆盖整个仓库，包括 27 万行 Python；<code>plugin.json</code>、<code>package.json</code> 都写 CC-BY-NC-4.0，GitHub 识别为 NOASSERTION<sup id="fnref:ghstats"><a class="footnote-ref" href="#fn:ghstats">10</a></sup>。作者自称「source-available，不是开源许可」（<code>POSITIONING.md:7</code>）。CC 官方 FAQ 不建议把 CC 许可用于软件，理由之一是它不含源码分发条款、与主流软件许可不兼容<sup id="fnref:ccfaq"><a class="footnote-ref" href="#fn:ccfaq">13</a></sup>。</li>
+<li><strong>对「随平台分发」</strong>：平台仓或安装包里带上 ARS 文件或改过的版本，属于分享（改编）作品，要保留作者署名、版权声明、许可声明、免责声明与原链接，注明是否修改并保留修改记录，附许可正文或链接（<code>LICENSE:237-266</code>）；分享改编作品时所用许可不得妨碍接收者遵守 BY-NC（<code>LICENSE:279-281</code>），下游接收者对 ARS 原有内容直接从许可人处按 BY-NC 获得授权、不能被加限制（<code>LICENSE:187-200</code>），即 ARS 这部分对下游仍然只能非商业使用。作者列的禁止用途包括基于 ARS 的商业托管服务、打包收费、机构付费部署，并注明这是「policy intent」，法律以许可正文为准（<code>POSITIONING.md:66-73</code>）。平台自身的许可证与 ARS 部分怎么并存，未弄清。</li>
+<li><strong>对「课题组内部用」</strong>：作者把研究组、实验室、院系的非商业学术协作列为允许用途（<code>POSITIONING.md:53-58</code>）。CC 的解释是非商业看用途不看使用者身份，教育机构没有自动豁免<sup id="fnref:ccnc"><a class="footnote-ref" href="#fn:ccnc">14</a></sup>。组内使用不向公众提供时不构成 Share，但复制仍须出于非商业目的。有外部资助或企业委托的课题算不算非商业，未弄清。</li>
+<li><strong>仓库里的第三方内容</strong>：审稿标准来源快照里有一条记录「出版方页面没有再分发许可」，因此只存哈希、不镜像页面（<code>shared/review_criteria_sources/msr-2027-technical-papers.2026-08-24.json:43</code>）。</li>
+</ul>
+<h2 id="7-还没弄清的问题">7. 还没弄清的问题<a class="permalink" href="#7-还没弄清的问题" title="本节链接">#</a></h2>
+<ol>
+<li><strong>四索引闸门在运行时由谁调。</strong> 文档说它在 Stage 2.5 / 4.5 触发（<code>docs/DATA_FLOWS.md:44-45</code>），诚信 agent 的提示词只说「从 summary 上读这些字段」（<code>academic-pipeline/agents/integrity_verification_agent.md:119</code>），A0 仍让模型按协议自己查 S2；全部提示词里没有调用 <code>verify_passport.py</code> 的命令，而这个命令行默认拒绝输出、文件头把真正的对应推给「Stage 4→5 流水线或 formatter 批处理」（<code>scripts/verify_passport.py:11-18</code>），那条 Python 流水线没有生产调用方。实跑时 <code>citation_verification_summary[]</code> 到底由谁生成、是不是模型照 schema 手写，要看外层仓 #185 的运行记录。</li>
+<li><strong>模型怎么知道 <code>ARS_*</code> 开关开了。</strong> <code>ARS_CLAIM_AUDIT</code>、<code>ARS_MODEL_TIERING</code> 没有代码读，<code>ARS_PASSPORT_RESET</code> 只在 lint 里出现；提示词也没写读环境变量的命令；开关是被会话 <code>echo</code> 出来、还是靠用户在对话里说，未弄清。审计 agent 指向的 <code>claim_audit_config</code> 配置块在 SKILL.md 里不存在，<code>max_claims_per_paper</code>、<code>judge_model</code> 这些配置实际从哪来，也未弄清。</li>
+<li><strong>插件渠道下相对路径的脚本命令怎么找到插件根。</strong> 编排提示词写 <code>python scripts/...</code>，三条工具命令写 <code>python3 scripts/ars_mark_read.py</code>（<code>commands/ars-mark-read.md:15</code>），都没带 <code>${CLAUDE_PLUGIN_ROOT}</code>，而用户会话的工作目录是自己的项目。#857 修的是 13 条模式命令。是否依赖 Claude Code 给 skill 注入的基目录，未验证。</li>
+<li><strong>写入守卫实际覆盖多少。</strong> 清单里 23 个名字，其中只有 synthesis_agent、research_architect_agent 同时是插件注册的子 agent（report_compiler 属 Bucket B，不在清单）；其余 21 个默认 inline，没有 <code>agent_type</code>，守卫除了保护 ARS 自己的 hook / 守卫文件外一律放行。开 <code>ARS_MODEL_TIERING</code> 派子 agent 时 <code>agent_type</code> 是什么，未查。</li>
+<li><strong>审稿第一段「不看正文」在 inline 执行下成不成立。</strong> 协议把第一段、第二段写成两次独立调用（<code>academic-paper-reviewer/references/sprint_contract_protocol.md:30-34</code>）；同一会话已经读过论文时，第一段的盲性从何而来；<code>check_phase_conformance.py</code> 只查 12 词片段是否被抄进第一段输出。</li>
+<li><strong>放进平台执行层会怎样。</strong> 本机 Claude Code 2.1.283 的 <code>claude --help</code> 把 <code>--disable-slash-commands</code> 说成「Disable all skills」，另有 <code>--plugin-dir</code> 可以只为本次会话加载一个插件目录；这两条和平台的 <code>--setting-sources ""</code> 叠在一起时 ARS 能不能加载、Skill 工具还在不在，没跑过。<code>--allowedTools</code> 白名单里没有 Agent 工具时 dontAsk 模式下派子 agent 是否被拒；一次性会话遇到检查点是停下还是自己往下走；30 轮与 2 美元的默认上限能走到哪一步。这些都没跑过。</li>
+<li><strong>Codex 版与主仓的差距。</strong> Codex 版 <code>VERSION</code> 是 3.22.0，CHANGELOG 说它同步的是上游 v3.22.0，比本仓 v3.22.2 落后两个补丁版本（运行账本、缩写检查、#892 路由修复都在 v3.22.2 里）；它另钉了一个 experiment-agent v1.1.0，而本仓 POSITIONING 拒绝自主跑实验，两者关系没读；它的单 skill 结构、<code>CODEX_FULL_RUNTIME_ADAPTER.md</code>、脚本与 hook 的处理方式都没读<sup id="fnref2:codexrepo"><a class="footnote-ref" href="#fn:codexrepo">11</a></sup>。</li>
+<li><strong>许可证的两个边界。</strong> 平台以什么形式、在什么许可下带 ARS 内容；有外部资助的课题组使用是否算非商业。需要看法律意见，不是读代码能回答的。</li>
+<li><strong>真实效果。</strong> 作者自己的矩阵里没有外部结果证据，样例论文是 3 月的 v2.3。当前版本在真实稿件上的引用问题检出率、误报率、成本与耗时都没有数，留给外层仓 #185。</li>
+<li><strong>中文与简体。</strong> 语言对只注册了繁中—英文；中文文献客户端没接进闸门。对以简体中文和中文期刊为主的稿件会怎样，未测。</li>
+<li><strong>v3.6.7 审计闸门在默认运行里会不会拦。</strong> 编排提示词写 synthesis 等三个角色交付后没有 Codex 审计记录就 BLOCK、不可跳过，设计稿也写新用户会在第一个 synthesis 阶段被拦；但用户文档的最小配置只要 Claude Code，CONTROL_AVAILABILITY 的渠道矩阵也没有这一行。实跑时模型是否真的停在这里、是否只在插件子 agent 派发时才触发、没有 Codex 的用户怎么过这一关，未验证。</li>
+<li><strong>「Python 可选」与提示词里的必跑脚本怎么对上。</strong> SETUP 说核心 skill 不要 Python，编排提示词却把复审校验写成 MANDATORY 运行时步骤、把运行账本与 PDF 预检写进默认流程；没有 Python 时各步骤是跳过并声明、还是停下：缩写检查写了「跑不了就说没跑」（<code>academic-paper/references/writing_quality_check.md:182</code>），运行账本写了条件不满足时声明不记账本（<code>docs/CONTROL_AVAILABILITY.md:86-87</code>），其余未弄清。</li>
+</ol>
+<h2 id="8-调研方法">8. 调研方法<a class="permalink" href="#8-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>浅克隆到外层 <code>vendor/academic-research-skills</code>（提交 e79085d，只有一个提交，历史统计用 <code>gh api</code>：release 列表、tag、<code>stats/participation</code>、contributors、search issues、main 上最近 30 次 workflow 运行，2026-09-27 查）。不装依赖、不跑项目代码；只用本机 Python 读了四个 SKILL.md 的 frontmatter、金标集条数、能力矩阵 JSON 与 heldout 套件注册表；用内仓 venv 调了平台自己的 <code>framework.skills.library.load_skill</code> 校验四个 ARS skill 目录（只读，不写任何文件）；看了本机 <code>claude --help</code>（2.1.283）里几个隔离参数的说明。</li>
+<li>读的顺序：插件清单与 hooks → 四个 SKILL.md → 编排、诚信、论断核对三个 agent → 作者自己的 CONTROL_AVAILABILITY、DATA_FLOWS、STAGE_CAPABILITY_MATRIX（先看作者承认了什么）→ 对 README 每项能力 grep 代码，区分提示词、运行时脚本、库、lint。</li>
+<li>几个关键 grep：<code>ARS_CLAIM_AUDIT</code> 在 <code>*.py *.sh *.js *.json *.yml</code> 里零命中；<code>scripts/</code>、<code>hooks/</code> 下 <code>.py</code> / <code>.sh</code> 里出现的全部 <code>ARS_*</code> 变量名；<code>run_audit_pipeline</code>、<code>verify_passport</code>、<code>verification_gate</code> 的非测试调用方；<code>^# /// script</code> 在 <code>scripts/</code> 里零命中；提示词里 <code>python3? (-m )?scripts[/.]名字</code> 的写法去重得 27 支，加上「Run / pipe to / invoke <code>scripts/…</code>」写法去重约 37 支；<code>^model:</code> 在 <code>commands/*.md</code> 里 13 条 sonnet；<code>mcp</code> 在代码与提示词里的出现处。</li>
+<li>Codex 版只用 <code>gh api</code> 读了仓库元数据、根目录列表、<code>VERSION</code> 与 <code>CHANGELOG.md</code> 开头。</li>
+<li>平台一侧读了外层纲领的 P-1、P-2、P-11、P-14、P-19、P-20、P-22、P-25，<code>platform/docs/add-a-skill.md</code>、<code>add-a-capability.md</code>，<code>platform/framework/skills/library.py</code>、<code>framework/capabilities/__init__.py</code>、<code>backends/claude_code.py</code>、<code>backends/codex.py</code>，平台提交 de3d948。</li>
+<li>外部来源只查了三处：CC 官方 FAQ 与 NonCommercial 解释页、agentskills.io 规范页，都用于第 5、6 节的条款对照。</li>
+<li>2026-09-27 独立复查（另一个会话照 <code>文件:行</code> 逐条核对）：改掉「平台校验三处不过」（实为两处，脚本一项因 skill 目录里没有 <code>scripts/</code> 而不报）、「ARS 刻意不替研究者生成假设」（只在苏格拉底模式成立）、「运行时脚本全部不调模型」（Codex 两支例外）、「只有插件渠道各项都是 Active」（插件渠道有 5 项 Conditional）、「<code>run_codex_audit.sh</code> 是维护者脚本」（它是编排提示词里不可跳过的审计闸门的输入）、heldout 套件数（12 不是 13）、守卫放行的角色数（21 不是 20）、SKILL.md 行数与 scripts 分项统计、若干行号；补上 v3.6.7 审计闸门、<code>verify_passport.py</code> 默认拒绝输出、折磨短语表要用户自备、其它无代码读取的 <code>ARS_*</code> 开关、<code>claim_audit_config</code> 不存在、Codex 版的版本号。</li>
+</ul>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:i133">
+<p>Imbad0202/academic-research-skills #133「Phase 2+ agents can silently inflate scope and skip independent Phase 3/5 checkpoints」，2026-05-17，已关。<a href="https://github.com/Imbad0202/academic-research-skills/issues/133">https://github.com/Imbad0202/academic-research-skills/issues/133</a>&#160;<a class="footnote-backref" href="#fnref:i133" title="回到正文第 1 处">↩</a></p>
+</li>
+<li id="fn:i454">
+<h1 id="454ars_write_scope_guardpy-crashes-silently-with-exitcode-49-when-used-alongside-rtk-proxy2026-06-16已关httpsgithubcomimbad0202academic-research-skillsissues454">454「ars_write_scope_guard.py crashes silently with exitCode: 49 when used alongside RTK proxy」，2026-06-16，已关。<a href="https://github.com/Imbad0202/academic-research-skills/issues/454">https://github.com/Imbad0202/academic-research-skills/issues/454</a><a class="permalink" href="#454ars_write_scope_guardpy-crashes-silently-with-exitcode-49-when-used-alongside-rtk-proxy2026-06-16已关httpsgithubcomimbad0202academic-research-skillsissues454" title="本节链接">#</a></h1>
+<p><a class="footnote-backref" href="#fnref:i454" title="回到正文第 2 处">↩</a></p>
+</li>
+<li id="fn:i857">
+<h1 id="857command-stubs-reference-plugin-files-by-relative-path-and-never-invoke-the-skill2026-09-13已关httpsgithubcomimbad0202academic-research-skillsissues857">857「Command stubs reference plugin files by relative path and never invoke the skill」，2026-09-13，已关。<a href="https://github.com/Imbad0202/academic-research-skills/issues/857">https://github.com/Imbad0202/academic-research-skills/issues/857</a><a class="permalink" href="#857command-stubs-reference-plugin-files-by-relative-path-and-never-invoke-the-skill2026-09-13已关httpsgithubcomimbad0202academic-research-skillsissues857" title="本节链接">#</a></h1>
+<p><a class="footnote-backref" href="#fnref:i857" title="回到正文第 3 处">↩</a></p>
+</li>
+<li id="fn:i892">
+<h1 id="892routing-discipline-lives-only-in-claudeclaudemd-which-plugin-and-skills-copy-installs-do-not-load-static-finding2026-09-23仍开修复已随-v3222-发出httpsgithubcomimbad0202academic-research-skillsissues892">892「Routing discipline lives only in .claude/CLAUDE.md, which plugin and skills-copy installs do not load (static finding)」，2026-09-23，仍开（修复已随 v3.22.2 发出）。<a href="https://github.com/Imbad0202/academic-research-skills/issues/892">https://github.com/Imbad0202/academic-research-skills/issues/892</a><a class="permalink" href="#892routing-discipline-lives-only-in-claudeclaudemd-which-plugin-and-skills-copy-installs-do-not-load-static-finding2026-09-23仍开修复已随-v3222-发出httpsgithubcomimbad0202academic-research-skillsissues892" title="本节链接">#</a></h1>
+<p><a class="footnote-backref" href="#fnref:i892" title="回到正文第 4 处">↩</a></p>
+</li>
+<li id="fn:i887">
+<h1 id="887handoff-integrity-keep-pending-decisions-unfinished-work-and-actual-tool-outcomes-across-context-compaction-and-subagent-returns2026-09-23已关httpsgithubcomimbad0202academic-research-skillsissues887">887「Handoff integrity: keep pending decisions, unfinished work, and actual tool outcomes across context compaction and subagent returns」，2026-09-23，已关。<a href="https://github.com/Imbad0202/academic-research-skills/issues/887">https://github.com/Imbad0202/academic-research-skills/issues/887</a><a class="permalink" href="#887handoff-integrity-keep-pending-decisions-unfinished-work-and-actual-tool-outcomes-across-context-compaction-and-subagent-returns2026-09-23已关httpsgithubcomimbad0202academic-research-skillsissues887" title="本节链接">#</a></h1>
+<p><a class="footnote-backref" href="#fnref:i887" title="回到正文第 5 处">↩</a></p>
+</li>
+<li id="fn:i475">
+<h1 id="475upstream-claude-code-skillsubagent-dispatch-incorrectly-inherits-the-1m-context-tier仍开httpsgithubcomimbad0202academic-research-skillsissues475">475「Upstream: Claude Code skill/subagent dispatch incorrectly inherits the 1M context tier」，仍开。<a href="https://github.com/Imbad0202/academic-research-skills/issues/475">https://github.com/Imbad0202/academic-research-skills/issues/475</a><a class="permalink" href="#475upstream-claude-code-skillsubagent-dispatch-incorrectly-inherits-the-1m-context-tier仍开httpsgithubcomimbad0202academic-research-skillsissues475" title="本节链接">#</a></h1>
+<p><a class="footnote-backref" href="#fnref:i475" title="回到正文第 6 处">↩</a></p>
+</li>
+<li id="fn:i828">
+<h1 id="828reviewer-calibration-corpus-openreview-camera-ready-replacement-leaks-the-accept-label-blocks-653-first-scored-run仍开httpsgithubcomimbad0202academic-research-skillsissues828">828「Reviewer calibration corpus: OpenReview camera-ready replacement leaks the accept label (blocks #653 first scored run)」，仍开。<a href="https://github.com/Imbad0202/academic-research-skills/issues/828">https://github.com/Imbad0202/academic-research-skills/issues/828</a><a class="permalink" href="#828reviewer-calibration-corpus-openreview-camera-ready-replacement-leaks-the-accept-label-blocks-653-first-scored-run仍开httpsgithubcomimbad0202academic-research-skillsissues828" title="本节链接">#</a></h1>
+<p><a class="footnote-backref" href="#fnref:i828" title="回到正文第 7 处">↩</a><a class="footnote-backref" href="#fnref2:i828" title="回到正文第 7 处">↩</a></p>
+</li>
+<li id="fn:i595">
+<h1 id="595chinese-literature-citation-resolver-standalone-client--api-protocol-doc-gate-untouched2026-07-26已关httpsgithubcomimbad0202academic-research-skillsissues595">595「Chinese-literature citation resolver: standalone client + API protocol doc (gate untouched)」，2026-07-26，已关。<a href="https://github.com/Imbad0202/academic-research-skills/issues/595">https://github.com/Imbad0202/academic-research-skills/issues/595</a><a class="permalink" href="#595chinese-literature-citation-resolver-standalone-client--api-protocol-doc-gate-untouched2026-07-26已关httpsgithubcomimbad0202academic-research-skillsissues595" title="本节链接">#</a></h1>
+<p><a class="footnote-backref" href="#fnref:i595" title="回到正文第 8 处">↩</a></p>
+</li>
+<li id="fn:releases">
+<p>Release 列表，<a href="https://github.com/Imbad0202/academic-research-skills/releases">https://github.com/Imbad0202/academic-research-skills/releases</a>，2026-09-27 用 <code>gh api repos/Imbad0202/academic-research-skills/releases</code> 查得 45 个。&#160;<a class="footnote-backref" href="#fnref:releases" title="回到正文第 9 处">↩</a></p>
+</li>
+<li id="fn:ghstats">
+<p>2026-09-27 用 <code>gh api</code> 查 <a href="https://github.com/Imbad0202/academic-research-skills">https://github.com/Imbad0202/academic-research-skills</a>：仓库元数据（star、fork、license 字段为 NOASSERTION）、<code>commits</code> 分页总数 798、<code>contributors</code>、<code>stats/participation</code>、<code>search/issues</code>（issue 358、PR 508）、<code>actions/runs?branch=main</code>；共同作者尾注取自最近 5 个提交的提交信息。&#160;<a class="footnote-backref" href="#fnref:ghstats" title="回到正文第 10 处">↩</a><a class="footnote-backref" href="#fnref2:ghstats" title="回到正文第 10 处">↩</a><a class="footnote-backref" href="#fnref3:ghstats" title="回到正文第 10 处">↩</a><a class="footnote-backref" href="#fnref4:ghstats" title="回到正文第 10 处">↩</a><a class="footnote-backref" href="#fnref5:ghstats" title="回到正文第 10 处">↩</a><a class="footnote-backref" href="#fnref6:ghstats" title="回到正文第 10 处">↩</a><a class="footnote-backref" href="#fnref7:ghstats" title="回到正文第 10 处">↩</a></p>
+</li>
+<li id="fn:codexrepo">
+<p><a href="https://github.com/Imbad0202/academic-research-skills-codex">https://github.com/Imbad0202/academic-research-skills-codex</a>，2026-09-27 用 <code>gh api</code> 查了元数据（1.17 万 star，最后推送 2026-09-16，license 字段 NOASSERTION，描述「Codex-native Academic Research Skills suite for human-in-the-loop academic research workflows」）、根目录列表、<code>VERSION</code>（3.22.0）与 <code>CHANGELOG.md</code> 的 3.22.0 条目（2026-09-16，同步上游 v3.22.0 提交 3c546bc，另钉 experiment-agent v1.1.0），未读代码。&#160;<a class="footnote-backref" href="#fnref:codexrepo" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref2:codexrepo" title="回到正文第 11 处">↩</a><a class="footnote-backref" href="#fnref3:codexrepo" title="回到正文第 11 处">↩</a></p>
+</li>
+<li id="fn:agentskills">
+<p>Agent Skills 规范，<a href="https://agentskills.io/specification">https://agentskills.io/specification</a>：<code>metadata</code> 是「a map from string keys to string values」，建议 SKILL.md 不超过 500 行，文件引用用相对 skill 根的路径、只深一层。&#160;<a class="footnote-backref" href="#fnref:agentskills" title="回到正文第 12 处">↩</a></p>
+</li>
+<li id="fn:ccfaq">
+<p>Creative Commons FAQ，「Can I apply a Creative Commons license to software?」：「We recommend against using Creative Commons licenses for software.」<a href="https://creativecommons.org/faq/">https://creativecommons.org/faq/</a>&#160;<a class="footnote-backref" href="#fnref:ccfaq" title="回到正文第 13 处">↩</a></p>
+</li>
+<li id="fn:ccnc">
+<p>Creative Commons wiki，NonCommercial interpretation：「NonCommercial turns on the use, not the identity of the reuser.」<a href="https://wiki.creativecommons.org/wiki/NonCommercial_interpretation">https://wiki.creativecommons.org/wiki/NonCommercial_interpretation</a>&#160;<a class="footnote-backref" href="#fnref:ccnc" title="回到正文第 14 处">↩</a></p>
+</li>
+</ol>
+</div>
+  </main>
+  <footer class="doc">原始稿是同目录的 academic-research-skills.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>

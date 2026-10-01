@@ -48,6 +48,7 @@
 - **边界**：只调研这三个空阶段，不扩到全链；只提案不写代码。
 - **入口**：外层 `docs/architecture/README.md` P-18 P-20 P-22（阶段、主文件、步骤与 skill 两个 tag）、`workflow.md` §1；`research/README.md` 调研的写法。
 - **产出 / 验收**：一篇 `research/landscape/2026-MMDD-<slug>/` 调研（公开区）+ 一份能力包提案：每个候选写清进哪个阶段、做成步骤还是 skill、输入输出文件、成熟度与许可证；工程师能照提案接。
+- **进展**：2026-09-27 李瑞彬交回调研（6 类能力、18 个开源项目），主线 [#151](https://github.com/zephyr4123/TJU-AI4Science/issues/151)；原表与 13 个项目的代码级深读放在 `research/selection/2026-0927-scientific-ai-capabilities/`（逐个项目读代码属于 `research/README.md` 里的选型类）。
 
 ### 4. 评测与流程 benchmark（并入 Q-4）
 

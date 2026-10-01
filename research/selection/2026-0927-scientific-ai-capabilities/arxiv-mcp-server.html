@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>arxiv-mcp-server 代码级深读</title>
+<!--
+  阅读版模板：由 md2html.py 套在 README.md 的渲染结果外面。改样式改这里，改内容改 md。
+  设计：冷调纸面（实验室、仪器的气质，不用暖米色），宋体标题 + 黑体正文的学术配对，左侧粘性目录 + 正文阅读列。
+  字体全部走系统栈：html 要能双击离线读，网络字体在这种场景下只会静默回退。
+  明暗三态：裸 :root 是完整浅色；prefers-color-scheme: dark 只改 token 并让显式 light 优先；data-theme="dark" 再覆盖一次。
+-->
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --text: #1A2229;
+    --muted: #5B6873;
+    --rule: #D5DCE2;
+    --accent: #1E5A86;
+    --accent-soft: #E4EEF6;
+    --code-bg: #EEF2F5;
+    --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", "Sarasa Mono SC", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+      --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519; --surface: #161D23; --text: #E1E7EC; --muted: #94A2AD; --rule: #29343D;
+    --accent: #7FB8E3; --accent-soft: #1B2B38; --code-bg: #1B232A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    display: grid; grid-template-columns: 232px minmax(0, 44em); gap: 56px;
+    max-width: 1140px; margin: 0 auto; padding: 48px 24px 96px;
+  }
+  header.doc { grid-column: 2; }
+  .eyebrow { font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 2.25rem; line-height: 1.25;
+    margin: 0; text-wrap: balance; letter-spacing: .01em;
+  }
+  .subtitle { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); margin: 10px 0 0; text-wrap: balance; }
+  dl.meta { display: grid; gap: 6px 0; margin: 28px 0 0; padding: 18px 0 0; border-top: 1px solid var(--rule); }
+  .meta-row { display: grid; grid-template-columns: 6em 1fr; gap: 12px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: .85rem; letter-spacing: .06em; padding-top: .15em; }
+  dl.meta dd { margin: 0; font-size: .95rem; }
+
+  nav.toc { grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+  nav.toc summary { list-style: none; cursor: default; font-size: .8rem; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
+  nav.toc summary::-webkit-details-marker { display: none; }
+  nav.toc ul { list-style: none; margin: 0; padding: 0; }
+  nav.toc > details > ul > li { margin: 0 0 6px; }
+  nav.toc li li { margin: 2px 0 2px 14px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: .86rem; line-height: 1.45; padding: 2px 0; }
+  nav.toc > details > ul > li > a { color: var(--text); }
+  nav.toc a:hover { color: var(--accent); }
+
+  main { grid-column: 2; min-width: 0; }
+  main > h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 64px 0 16px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+  main > h2:first-child { margin-top: 32px; }
+  main h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; line-height: 1.35; margin: 40px 0 10px; text-wrap: balance; }
+  main h4 { font-size: 1rem; font-weight: 700; margin: 32px 0 8px; }
+  main h4 code { font-weight: 600; }
+  .permalink { opacity: 0; margin-left: .4em; font-weight: 400; text-decoration: none; color: var(--muted); }
+  h2:hover .permalink, h3:hover .permalink, h4:hover .permalink, .permalink:focus-visible { opacity: 1; }
+  p { margin: 0 0 1em; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 1em; }
+  li { margin: .25em 0; }
+  li > ul, li > ol { margin-bottom: 0; }
+  blockquote {
+    margin: 0 0 1.4em; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
+  code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: .82rem; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  sup { line-height: 0; }
+  a.footnote-ref { text-decoration: none; font-size: .75em; padding: 0 .15em; font-variant-numeric: tabular-nums; }
+  a.footnote-ref::before { content: "["; } a.footnote-ref::after { content: "]"; }
+  .footnote { margin-top: 8px; font-size: .92rem; color: var(--text); }
+  .footnote > hr { display: none; }
+  .footnote ol { padding-left: 1.6em; }
+  .footnote li { margin: .5em 0; padding: 2px 6px; border-radius: 4px; scroll-margin-top: 24px; }
+  .footnote li:target { background: var(--accent-soft); }
+  .footnote li p { margin: 0; display: inline; }
+  a.footnote-backref { text-decoration: none; margin-left: .3em; }
+  sup:target a, h2:target, h3:target, h4:target { background: var(--accent-soft); }
+  h2, h3, h4 { scroll-margin-top: 24px; }
+
+  footer.doc { grid-column: 2; margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .82rem; }
+
+  @media (max-width: 960px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 28px 18px 72px; }
+    header.doc, main, footer.doc { grid-column: 1; }
+    nav.toc { grid-column: 1; grid-row: auto; position: static; max-height: none; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+    nav.toc summary { cursor: pointer; margin-bottom: 0; }
+    nav.toc details[open] summary { margin-bottom: 10px; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">TJU AI FOR SCIENCE · 调研</p>
+    <h1>arxiv-mcp-server 代码级深读</h1>
+    <p class="subtitle">文献阶段候选 · 19 个 MCP 工具、零模型调用；按节读 LaTeX、BibTeX、主题订阅逐条对账</p>
+    <dl class="meta"><div class="meta-row"><dt>类型</dt><dd>开源项目选型深读（只读代码，不跑、不装依赖）</dd></div><div class="meta-row"><dt>调研截止</dt><dd>2026-09-27</dd></div><div class="meta-row"><dt>范围</dt><dd>仓库 https://github.com/blazickjp/arxiv-mcp-server，浅克隆到 vendor/arxiv-mcp-server，提交 42419c1（2026-08-26，v0.7.2 之后两天）；读了 src/ 全部 8016 行、tests/ 与 .github/ 的结构、CLAUDE.md、SKILL.md 与各份打包清单；issue、release、提交节奏、CI 结果用 gh api 查（2026-09-27）；文中 文件:行 均相对该仓库根；平台一侧的路径相对外层仓根，内仓 platform/ 在提交 de3d948；复查时另只读了 pymupdf4llm 0.2.9、pymupdf-layout 1.27.1 的 wheel 与 MCP Python SDK v1.27.0、PyMuPDF 1.27.1 的相关源码</dd></div><div class="meta-row"><dt>状态</dt><dd>第一版</dd></div></dl>
+  </header>
+  <nav class="toc" aria-label="目录">
+    <details open>
+      <summary>目录</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-是不是readme-的主张在代码里对应哪段">1. 是不是：README 的主张在代码里对应哪段</a><ul>
+<li><a href="#11-暴露了什么">1.1 暴露了什么</a></li>
+<li><a href="#12-readme-与代码逐条对账">1.2 README 与代码逐条对账</a></li>
+</ul>
+</li>
+<li><a href="#2-怎么做主流程">2. 怎么做：主流程</a><ul>
+<li><a href="#21-入口与分发">2.1 入口与分发</a></li>
+<li><a href="#22-外部接口与限流闸">2.2 外部接口与限流闸</a></li>
+<li><a href="#23-搜索">2.3 搜索</a></li>
+<li><a href="#24-全文html-优先pdf-兜底">2.4 全文：HTML 优先、PDF 兜底</a></li>
+<li><a href="#25-按节读-latex-原文">2.5 按节读 LaTeX 原文</a></li>
+<li><a href="#26-bibtex">2.6 BibTeX</a></li>
+<li><a href="#27-主题订阅">2.7 主题订阅</a></li>
+<li><a href="#28-引用图与语义检索">2.8 引用图与语义检索</a></li>
+<li><a href="#29-存盘目录">2.9 存盘目录</a></li>
+<li><a href="#210-有没有模型调用除了-mcp-还有什么形态">2.10 有没有模型调用；除了 MCP 还有什么形态</a></li>
+</ul>
+</li>
+<li><a href="#3-为什么设计动机与踩过的坑">3. 为什么：设计动机与踩过的坑</a></li>
+<li><a href="#4-跑起来要什么">4. 跑起来要什么</a></li>
+<li><a href="#5-和平台对照">5. 和平台对照</a><ul>
+<li><a href="#51-平台这个阶段现在有什么">5.1 平台这个阶段现在有什么</a></li>
+<li><a href="#52-多了什么重叠什么">5.2 多了什么、重叠什么</a></li>
+<li><a href="#53-接进来会碰到的现有规则">5.3 接进来会碰到的现有规则</a></li>
+</ul>
+</li>
+<li><a href="#6-成熟度">6. 成熟度</a></li>
+<li><a href="#7-还没弄清的问题">7. 还没弄清的问题</a></li>
+<li><a href="#8-调研方法">8. 调研方法</a></li>
+</ul>
+</div>
+
+    </details>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>结论先行</strong>：它是一个只管 arXiv 的本地 MCP 服务：19 个工具、7 个 MCP prompt，全仓零模型调用（<code>src/</code> 里 grep 不到任何模型 API），所有能力都是确定性代码——arXiv Atom API 检索、HTML 优先 PDF 兜底的全文抽取、e-print 源码包的安全解包与按节切分、从 arXiv 元数据拼 BibTeX、Semantic Scholar 引用图、存在一个 JSON 文件里的主题订阅。README 的主张在代码里大体有对应。<strong>厚</strong>的是三块：源码包的防御性解包（每条上限都在流式读取时卡）、所有正文输出默认有界（12,000 字符一页、带续读游标）、arXiv 限流与版本号边界。<strong>薄或与说法不符</strong>的有八处：HTML 路径产的是按行拼的纯文本而不是 markdown；LaTeX 分节只认 <code>\section</code> 三级，LaTeX 工具失败时不会自动退回 PDF；「主题订阅」是存下来的查询加游标，代码里没有任何定时或推送；BibTeX 一律 <code>@misc</code>，不带 arXiv 元数据里现成的 DOI 与期刊信息；语义检索只嵌摘要、按带版本号的 ID 存，建索引在事件循环上同步联网（违反仓库自己 <code>CLAUDE.md</code> 的规矩）；搜索与语义检索结果里的 <code>arxiv://</code> 资源 URI 服务端没有注册；限流软返回只做了三个工具，其余联网工具（<code>get_abstract</code>、<code>export_citations</code>、<code>download_paper</code>、三个 LaTeX 工具）遇到限流仍报错；两个配置项（<code>BATCH_SIZE</code>、低于 120 的 <code>REQUEST_TIMEOUT</code>）不起作用。</p>
+<p>和平台对照：文献阶段平台现在只有助理手写 <code>sources.md</code> 加 <code>pdf</code>、<code>download</code> 两个 skill。它多出来的是 LaTeX 分节读、BibTeX、引用图、订阅、本地论文缓存五样；重叠的是检索（助理自带的网页搜索）与 PDF 转文本（同一个库 pymupdf4llm，但版本与模式不同：本仓锁 0.2.9，按代码看不会进版面模式；<code>pdf</code> skill 锁 1.28.2、走版面模式）。它现在只有 MCP 服务一种形态，没有命令行（<code>arxiv-mcp-server</code> 只会起服务等 stdin），自带的 SKILL.md 是 26 行「怎么调这些 MCP 工具」的说明。平台两家适配器目前都把 MCP 清空了，P-14 只放行 <code>ai4sci</code>，P-22 要求 PEP 723 脚本，P-15 / P-20 要求产物落在工作区里：这些是接进来会碰到的现有规则，本文只列事实，不下接不接的结论（<a href="#5-和平台对照">第 5 节</a>）。</p>
+<p>成熟度：389 个测试函数、三个操作系统乘三个 Python 版本的 CI 矩阵、发版前跑测试加 wheel 冒烟并同步发到 PyPI 与官方 MCP Registry；但所有网络行为只在 mock 里测，CI 不装 <code>[pdf]</code> <code>[pro]</code> 两个 extra（只检查它们能从二进制 wheel 解析）。单人维护（217 个提交里 193 个出自作者），2026-03 曾有用户开 issue 说「没人维护」，4 月恢复，2026-08-21 到 23 日（UTC）作者一人开了 51 条 issue、62 个 PR 集中修，最后一次提交 2026-08-26，之后的外部 PR 在等批。<code>[pdf]</code> 锁定的 pymupdf-layout 1.27.1 在 PyPI 上标的是「PolyForm Noncommercial 或 Artifex 商业许可」，不是 AGPL（见<a href="#4-跑起来要什么">第 4 节</a>）。横向对比见同目录的 <a href="index.html">README.md</a>。</p>
+</blockquote>
+<h2 id="1-是不是readme-的主张在代码里对应哪段">1. 是不是：README 的主张在代码里对应哪段<a class="permalink" href="#1-是不是readme-的主张在代码里对应哪段" title="本节链接">#</a></h2>
+<h3 id="11-暴露了什么">1.1 暴露了什么<a class="permalink" href="#11-暴露了什么" title="本节链接">#</a></h3>
+<p><code>server.py</code> 注册 19 个工具，一条 <code>if/elif</code> 链分发（<code>src/arxiv_mcp_server/server.py:85-108,127-177</code>）；README 说 19 个（<code>README.md:182</code>），但仓库自己的 <code>CLAUDE.md</code> 还写「registers 16 tools」、漏了三个大纲工具（<code>CLAUDE.md:53-60</code>），是没跟上的文档。成功结果是一段 JSON 文本，部分错误路径返回以 <code>Error:</code> 开头的纯文本（如 <code>src/arxiv_mcp_server/tools/alerts.py:311</code>、<code>src/arxiv_mcp_server/tools/citation_graph.py:397-401</code>）；顶层 <code>status == "error"</code> 的 JSON 或以 <code>Error:</code> 开头的文本被 <code>call_tool</code> 改抛 <code>RuntimeError</code>（<code>src/arxiv_mcp_server/server.py:111-124,175-176</code>），MCP SDK 再把异常包成 <code>isError=true</code> 的结果<sup id="fnref:mcpsdk"><a class="footnote-ref" href="#fn:mcpsdk">12</a></sup>。限流只有三个工具软返回 <code>status: rate_limited</code>、不算错误：<code>search_papers</code>、<code>check_alerts</code>、<code>citation_graph</code>（<code>src/arxiv_mcp_server/tools/search.py:784-790</code>、<code>src/arxiv_mcp_server/tools/alerts.py:419-426</code>、<code>src/arxiv_mcp_server/tools/citation_graph.py:478-491</code>）；<code>get_abstract</code>、<code>export_citations</code>、<code>download_paper</code> 遇到限流仍报 <code>status: error</code>（<code>src/arxiv_mcp_server/tools/get_abstract.py:142-148</code>、<code>src/arxiv_mcp_server/tools/export_citations.py:326-327</code>、<code>src/arxiv_mcp_server/tools/download.py:1160-1175</code>）；三个 LaTeX 工具下载 e-print 不做退避，429 直接报 <code>HTTP 429</code>（<code>src/arxiv_mcp_server/tools/latex_archive.py:55-56</code>、<code>src/arxiv_mcp_server/tools/latex.py:366-373</code>）。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>组</th>
+<th>工具</th>
+<th>主要参数</th>
+<th>返回</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>检索</td>
+<td><code>search_papers</code></td>
+<td><code>query</code>（必填）、<code>max_results</code>（缺省 5，服务端上限 50）、<code>start</code>、<code>abstract_mode</code>（none / snippet / full，缺省 snippet 截 280 字）、<code>date_from</code> / <code>date_to</code>、<code>categories</code>、<code>sort_by</code>（relevance / date）</td>
+<td><code>papers[]</code>（id、versioned_id、title、authors、abstract、categories、published、url、resource_uri）、<code>total_results</code>、<code>returned</code>、<code>has_more</code>、<code>next_start</code>、<code>content_warning</code></td>
+<td><code>src/arxiv_mcp_server/tools/search.py:589-663,459-496,568-580</code></td>
+</tr>
+<tr>
+<td>检索</td>
+<td><code>get_abstract</code></td>
+<td><code>paper_id</code></td>
+<td>title、authors、abstract、categories、published、pdf_url</td>
+<td><code>src/arxiv_mcp_server/tools/get_abstract.py:18-38,122-140</code></td>
+</tr>
+<tr>
+<td>全文</td>
+<td><code>download_paper</code></td>
+<td><code>paper_id</code>、<code>start</code>、<code>max_chars</code>、<code>return_full_text</code>、<code>force</code></td>
+<td><code>source</code>（cache / html / pdf）、<code>arxiv_version</code>、分页正文（<code>content</code>、<code>content_length</code>、<code>next_start</code>、<code>is_truncated</code>）</td>
+<td><code>src/arxiv_mcp_server/tools/download.py:688-744,934-1131</code></td>
+</tr>
+<tr>
+<td>全文</td>
+<td><code>list_papers</code></td>
+<td><code>compact</code></td>
+<td>本地 sidecar 里的 id、title、authors、published、版本；不联网</td>
+<td><code>src/arxiv_mcp_server/tools/list_papers.py:28-53,315-346</code></td>
+</tr>
+<tr>
+<td>全文</td>
+<td><code>read_paper</code></td>
+<td><code>paper_id</code>、<code>start</code>、<code>max_chars</code>、<code>return_full_text</code></td>
+<td>本地缓存正文，分页</td>
+<td><code>src/arxiv_mcp_server/tools/read_paper.py:25-71,97-154</code></td>
+</tr>
+<tr>
+<td>全文大纲</td>
+<td><code>get_paper_outline</code> / <code>read_paper_section</code> / <code>search_paper_text</code></td>
+<td><code>paper_id</code>；分节用 <code>section_id</code>（大纲 ID 或唯一标题）；检索用 <code>query</code>（子串，≤ 200 字）、<code>max_passages</code>（≤ 25）、<code>passage_chars</code>（≤ 2000）</td>
+<td>标题层级与字符偏移；一节正文；带偏移与所在节的片段</td>
+<td><code>src/arxiv_mcp_server/tools/paper_outline.py:738-822,825-953</code></td>
+</tr>
+<tr>
+<td>LaTeX</td>
+<td><code>get_paper_latex</code></td>
+<td><code>paper_id</code>、<code>start</code>、<code>max_chars</code>（显式给时 ≤ 50,000）、<code>return_full_text</code>（为真时不设上限）</td>
+<td>主文件名、源文件数、展平后的 LaTeX 分页</td>
+<td><code>src/arxiv_mcp_server/tools/latex.py:146-157,273-286,345-378</code>、<code>src/arxiv_mcp_server/tools/content.py:59-62</code></td>
+</tr>
+<tr>
+<td>LaTeX</td>
+<td><code>list_paper_latex_sections</code></td>
+<td><code>paper_id</code>、<code>start</code>、<code>max_sections</code>（≤ 200）</td>
+<td><code>sections[]</code>（id、level、title）分页</td>
+<td><code>src/arxiv_mcp_server/tools/latex.py:288-311,381-429</code></td>
+</tr>
+<tr>
+<td>LaTeX</td>
+<td><code>get_paper_latex_section</code></td>
+<td><code>paper_id</code>、<code>section_id</code>（ID 或标题）</td>
+<td>一节的 LaTeX 原文，分页</td>
+<td><code>src/arxiv_mcp_server/tools/latex.py:313-331,432-479</code></td>
+</tr>
+<tr>
+<td>引用</td>
+<td><code>citation_graph</code></td>
+<td><code>paper_id</code>、<code>max_citations</code>（缺省 50，≤ 200）</td>
+<td>本文元数据、<code>citations[]</code>、<code>references[]</code>（各带 <code>arxiv_id</code>）、总数</td>
+<td><code>src/arxiv_mcp_server/tools/citation_graph.py:59-91,377-476</code></td>
+</tr>
+<tr>
+<td>引用</td>
+<td><code>export_citations</code></td>
+<td><code>paper_ids</code>（1 到 50 个）</td>
+<td>拼好的 <code>bibtex</code>、逐条 <code>results[]</code>、计数；整体 success / partial / error</td>
+<td><code>src/arxiv_mcp_server/tools/export_citations.py:189-216,219-330</code></td>
+</tr>
+<tr>
+<td>订阅</td>
+<td><code>watch_topic</code> / <code>list_watches</code> / <code>check_alerts</code> / <code>unwatch_topic</code></td>
+<td><code>topic</code>（arXiv 查询串）、<code>categories</code>、<code>max_results</code>（缺省 10）</td>
+<td>订阅记录；<code>check_alerts</code> 返回每个主题的新论文与 <code>has_more</code></td>
+<td><code>src/arxiv_mcp_server/tools/alerts.py:28-152,248-496</code></td>
+</tr>
+<tr>
+<td>语义（<code>[pro]</code>）</td>
+<td><code>semantic_search</code> / <code>reindex</code></td>
+<td><code>query</code> 或 <code>paper_id</code>、<code>max_results</code>；<code>clear_existing</code></td>
+<td>按余弦相似度排的本地论文</td>
+<td><code>src/arxiv_mcp_server/tools/semantic_search.py:46-98,341-453</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>另有 7 个 MCP prompt（research-discovery、deep-paper-analysis、summarize_paper、compare_papers、literature_review、literature-synthesis、research-question），<code>get_prompt</code> 只把参数拼进一段固定文字返回，不调模型、不存状态（<code>src/arxiv_mcp_server/prompts/prompts.py:9-117</code>、<code>src/arxiv_mcp_server/prompts/handlers.py:55-127</code>）。</p>
+<h3 id="12-readme-与代码逐条对账">1.2 README 与代码逐条对账<a class="permalink" href="#12-readme-与代码逐条对账" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>README 的说法</th>
+<th>代码里</th>
+<th>判断</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>「original-LaTeX section reads」是主要卖点（<code>README.md:19</code>）</td>
+<td>下载 e-print、流式解包、展平 <code>\input</code> 系列、按 <code>\section</code> / <code>\subsection</code> / <code>\subsubsection</code> 切分，全链路有上限与测试</td>
+<td>有，且厚；但只认三级标题，<code>\chapter</code>、<code>\paragraph</code>、附录编号、摘要环境都不认（详见 <a href="#25-按节读-latex-原文">2.5</a>）</td>
+<td><code>src/arxiv_mcp_server/tools/latex_flatten.py:26,373-408</code></td>
+</tr>
+<tr>
+<td><code>get_paper_latex_section</code>「macros expanded」（<code>src/arxiv_mcp_server/tools/latex.py:316</code>）</td>
+<td>返回的正文是展平后源文的切片，其中只展开了定义体里含 include / section 命令的宏（展平需要）；记号、公式缩写这类一般的宏原样保留；另外在列大纲与按标题匹配时展开标题里的简单宏（优先零参数的）</td>
+<td>半对：一般的宏不展开</td>
+<td><code>src/arxiv_mcp_server/tools/latex.py:453</code>、<code>src/arxiv_mcp_server/tools/latex_flatten.py:137-149,195-216</code></td>
+</tr>
+<tr>
+<td>「LaTeX archives are validated, size-limited, and cached locally」（<code>README.md:363</code>）</td>
+<td>缓存的是展平后的 <code>.tex</code> 文本（一个 JSON），原始压缩包不落盘</td>
+<td>说法不准</td>
+<td><code>src/arxiv_mcp_server/tools/latex.py:160-164,203-239</code>、<code>src/arxiv_mcp_server/tools/latex_archive.py:122-123</code></td>
+</tr>
+<tr>
+<td><code>download_paper</code>「convert a paper to local Markdown」（<code>README.md:188</code>）</td>
+<td>HTML 路径用标准库 <code>HTMLParser</code> 抽文本块、按 <code>\n</code> 拼接，不产生 <code>#</code> 标题；只有 PDF 路径是 pymupdf4llm 出的真 markdown</td>
+<td>HTML 路径名不副实；大纲工具为此另写了一套标题启发式（编号行、罗马数字、34 个常见节名）</td>
+<td><code>src/arxiv_mcp_server/tools/download.py:449-464</code>、<code>src/arxiv_mcp_server/tools/paper_outline.py:1-8,44-139</code></td>
+</tr>
+<tr>
+<td>BibTeX「from authoritative arXiv metadata」（<code>README.md:198</code>）</td>
+<td>一次 Atom 请求取元数据，渲染 <code>@misc</code>，字段只有 title、author、year、eprint、archivePrefix、primaryClass、url</td>
+<td>有；但 Atom 里现成的 <code>&lt;arxiv:doi&gt;</code>、<code>&lt;arxiv:journal_ref&gt;</code> 没解析<sup id="fnref2:manual"><a class="footnote-ref" href="#fn:manual">2</a></sup>，已正式发表的论文也只出 <code>@misc</code></td>
+<td><code>src/arxiv_mcp_server/tools/export_citations.py:125-146</code>、<code>src/arxiv_mcp_server/tools/search.py:499-586</code></td>
+</tr>
+<tr>
+<td>「topic watches」、「standing alert」（<code>README.md:19</code>、<code>src/arxiv_mcp_server/tools/alerts.py:34-36</code>）</td>
+<td>订阅是 <code>watched_topics.json</code> 里的一条记录；只有客户端调 <code>check_alerts</code> 才去查；<code>src/</code> 里没有定时器、后台循环或推送</td>
+<td>有，但是拉取式的</td>
+<td><code>src/arxiv_mcp_server/tools/alerts.py:155-175,314-418</code></td>
+</tr>
+<tr>
+<td><code>semantic_search</code>「Search downloaded papers by semantic similarity」（<code>README.md:203</code>）</td>
+<td>嵌的是从 arXiv API 取回的<strong>摘要</strong>，不是下载下来的全文；索引键取自 <code>get_short_id()</code>，即带版本号的 ID</td>
+<td>半对（见 <a href="#28-引用图与语义检索">2.8</a>）</td>
+<td><code>src/arxiv_mcp_server/tools/semantic_search.py:183,237-262</code></td>
+</tr>
+<tr>
+<td>搜索与语义检索结果带 <code>resource_uri: arxiv://&lt;id&gt;</code></td>
+<td>服务端没有注册 <code>list_resources</code> / <code>read_resource</code>；<code>resources/papers.py</code> 的 <code>PaperManager</code> 全仓（含测试）无调用，<code>CLAUDE.md</code> 自称「legacy … retained for compatibility」。初始化时传了 <code>NotificationOptions(resources_changed=True)</code>，但 MCP SDK 只在注册了 <code>list_resources</code> 处理函数时才声明 resources 能力<sup id="fnref3:mcpsdk"><a class="footnote-ref" href="#fn:mcpsdk">12</a></sup>，所以这个开关不起作用，客户端看到的能力里没有 resources</td>
+<td>URI 指向不存在的资源</td>
+<td><code>src/arxiv_mcp_server/tools/search.py:578</code>、<code>src/arxiv_mcp_server/tools/semantic_search.py:444</code>、<code>src/arxiv_mcp_server/resources/papers.py:18-112</code>、<code>src/arxiv_mcp_server/server.py:85-108,183-192</code>、<code>CLAUDE.md:46</code></td>
+</tr>
+<tr>
+<td><code>REQUEST_TIMEOUT</code> 缺省 60，「PDF fallback download timeout」（<code>README.md:461</code>）</td>
+<td>读超时取 <code>max(120.0, request_timeout)</code>，低于 120 的值不起作用</td>
+<td>配置项部分失效</td>
+<td><code>src/arxiv_mcp_server/arxiv_api.py:89-94</code>、<code>src/arxiv_mcp_server/tools/download.py:795</code></td>
+</tr>
+<tr>
+<td><code>Settings.BATCH_SIZE = 20</code>（README 与 <code>CLAUDE.md</code> 的配置表都没列它）</td>
+<td>全仓无读取点</td>
+<td>死配置</td>
+<td><code>src/arxiv_mcp_server/config.py:97</code>、<code>README.md:457-467</code></td>
+</tr>
+<tr>
+<td><code>CLAUDE.md</code>：「Use the shared arXiv request gate rather than creating an independent request path」（<code>CLAUDE.md:69</code>）</td>
+<td>HTML 正文（<code>arxiv.org/html/</code>）与 PDF 流式下载都绕过限流闸；HTML 请求也不带本仓统一的 User-Agent</td>
+<td>自己定的规矩没全守</td>
+<td><code>src/arxiv_mcp_server/tools/download.py:752-770,790-800,823-830</code></td>
+</tr>
+<tr>
+<td>依赖清单</td>
+<td><code>aiohttp</code>、<code>sse-starlette</code>、<code>python-dotenv</code>、<code>anyio</code> 声明了但 <code>src/</code> 里没有直接 import；<code>aiofiles</code> 只被未接线的 <code>PaperManager</code> 用；<code>requests</code> 被 <code>config.py</code> 直接 import 却没声明（靠 <code>arxiv</code> 4.0.0 传递进来，<code>uv.lock</code> 里 arxiv 的依赖是 lxml 与 requests）</td>
+<td>依赖清单与代码不一致</td>
+<td><code>pyproject.toml:30-44</code>、<code>src/arxiv_mcp_server/config.py:9</code>、<code>src/arxiv_mcp_server/resources/papers.py:7</code></td>
+</tr>
+<tr>
+<td><code>get_abstract</code> 报「not found」</td>
+<td>任何上游 HTTP 错误都报成 <code>Paper &lt;id&gt; not found on arXiv</code></td>
+<td>错报；外部用户 2026-09-20 开了 #278，到 2026-09-27 未修<sup id="fnref:i278"><a class="footnote-ref" href="#fn:i278">27</a></sup></td>
+<td><code>src/arxiv_mcp_server/tools/get_abstract.py:149-161</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>另外两处小毛病：<code>_optimize_query</code> 名为「优化」，实际原样返回、只打日志（<code>src/arxiv_mcp_server/tools/search.py:679-703</code>）；Atom 解析取短 ID 用 <code>paper_id.split("v")[0]</code>，旧式 ID 里带字母 v 的学科（<code>solv-int/…</code>）会被切坏（<code>src/arxiv_mcp_server/tools/search.py:513-515</code>，读代码推断，未跑）。</p>
+<h2 id="2-怎么做主流程">2. 怎么做：主流程<a class="permalink" href="#2-怎么做主流程" title="本节链接">#</a></h2>
+<h3 id="21-入口与分发">2.1 入口与分发<a class="permalink" href="#21-入口与分发" title="本节链接">#</a></h3>
+<pre><code>uvx arxiv-mcp-server [--storage-path DIR]
+  └─ arxiv_mcp_server:main → asyncio.run(server.main())        pyproject.toml:77-78、src/arxiv_mcp_server/__init__.py:9-11
+       ├─ TRANSPORT=stdio（缺省）：stdio_server → server.run      src/arxiv_mcp_server/server.py:231-234
+       └─ TRANSPORT=http：Starlette 挂 /mcp 与 /healthz，uvicorn    src/arxiv_mcp_server/server.py:237-272
+  tools/call → call_tool 的 if/elif 链 → tools/&lt;x&gt;.py 的 handle_&lt;x&gt;(arguments: dict)
+             → 返回 [TextContent(JSON)]；status=error 改抛 RuntimeError      src/arxiv_mcp_server/server.py:127-180
+</code></pre>
+<p><code>--storage-path</code> 不走 argparse，而是每次访问 <code>Settings.STORAGE_PATH</code> 时从 <code>sys.argv</code> 里找（<code>src/arxiv_mcp_server/config.py:107-156</code>）；每个工具模块在 import 时各建一个 <code>Settings()</code>（例如 <code>src/arxiv_mcp_server/tools/search.py:20</code>）。HTTP 模式缺省绑 <code>127.0.0.1</code>，开了 DNS rebinding 防护（<code>src/arxiv_mcp_server/server.py:200-228</code>）。</p>
+<h3 id="22-外部接口与限流闸">2.2 外部接口与限流闸<a class="permalink" href="#22-外部接口与限流闸" title="本节链接">#</a></h3>
+<p>全进程一个 <code>ArxivRateLimiter</code>（<code>threading.Lock</code> + 两次请求间至少 3 秒），同步与异步调用者共用；异步一侧每 10 毫秒轮询一次锁（<code>src/arxiv_mcp_server/arxiv_api.py:16-62</code>）。这对应 arXiv API 使用条款的「每三秒至多一次、单连接」<sup id="fnref:tou"><a class="footnote-ref" href="#fn:tou">1</a></sup>。闸是进程内单例，几个进程各起一个服务就各有一把闸（读代码推断）。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>外部端点</th>
+<th>谁用</th>
+<th>过不过闸</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>https://export.arxiv.org/api/query</code>（Atom，httpx 直接拼 URL）</td>
+<td><code>search_papers</code>、<code>get_abstract</code>、<code>export_citations</code>、<code>check_alerts</code>、下载前的存在性检查</td>
+<td>过；只对 429 / 503 指数退避，最多重试 5 次，超时另重试 1 次，<strong>退避与重试的 sleep 都在闸里</strong>，期间别的 arXiv 请求全排队；其他状态码直接抛（外部用户 2026-09-19 开的 #277 报的就是 406 被当成硬错误，未修）</td>
+<td><code>src/arxiv_mcp_server/tools/search.py:117-174,177-179</code>、<code>src/arxiv_mcp_server/tools/download.py:777-787</code><sup id="fnref:repo"><a class="footnote-ref" href="#fn:repo">4</a></sup></td>
+</tr>
+<tr>
+<td>同一 API，经 <code>arxiv</code> 包的 <code>arxiv.Client</code></td>
+<td>下载后补元数据、PDF 路径取元数据、语义索引取摘要</td>
+<td>过；进程里第一次用到 client 时给包里的 <code>requests.Session</code> 注入 (5, 30) 秒超时并关掉 keep-alive，防止一次挂死的连接永久卡住闸</td>
+<td><code>src/arxiv_mcp_server/config.py:32-76</code>、<code>src/arxiv_mcp_server/tools/download.py:878-888</code>、<code>src/arxiv_mcp_server/tools/semantic_search.py:220-234</code></td>
+</tr>
+<tr>
+<td><code>https://arxiv.org/html/&lt;id&gt;</code></td>
+<td><code>download_paper</code> 首选</td>
+<td>不过；也不带本仓的 User-Agent（<code>httpx.get</code> 缺省头）</td>
+<td><code>src/arxiv_mcp_server/tools/download.py:752-770</code></td>
+</tr>
+<tr>
+<td><code>https://arxiv.org/pdf/&lt;id&gt;.pdf</code></td>
+<td><code>download_paper</code> 兜底</td>
+<td>不过（只有取元数据那一步过）</td>
+<td><code>src/arxiv_mcp_server/arxiv_api.py:71-117</code>、<code>src/arxiv_mcp_server/tools/download.py:821-830</code></td>
+</tr>
+<tr>
+<td><code>https://arxiv.org/e-print/&lt;id&gt;</code></td>
+<td>三个 LaTeX 工具</td>
+<td>过，<strong>整个下载（读超时 120 秒、上限 50 MB）都持有闸</strong></td>
+<td><code>src/arxiv_mcp_server/tools/latex_archive.py:40-77</code></td>
+</tr>
+<tr>
+<td><code>https://api.semanticscholar.org/graph/v1/paper/ARXIV:&lt;id&gt;</code></td>
+<td><code>citation_graph</code></td>
+<td>另一套：429 退避重试 5 次，可带 <code>x-api-key</code></td>
+<td><code>src/arxiv_mcp_server/tools/citation_graph.py:122-133,308-322</code></td>
+</tr>
+<tr>
+<td>Hugging Face（<code>sentence-transformers/all-MiniLM-L6-v2</code>）</td>
+<td><code>[pro]</code> 首次加载模型</td>
+<td>与 arXiv 无关；下载由 sentence-transformers 库按缺省行为完成，本仓没设缓存目录</td>
+<td><code>src/arxiv_mcp_server/tools/semantic_search.py:27,154-160</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="23-搜索">2.3 搜索<a class="permalink" href="#23-搜索" title="本节链接">#</a></h3>
+<p><code>search_papers</code> 不用 <code>arxiv</code> 包，自己拼 URL 走 raw httpx，原因写在注释里：包会把日期区间里的 <code>+</code> 编成 <code>%2B</code>，<code>submittedDate:[… TO …]</code> 就坏了；同时要拿 OpenSearch 的 <code>totalResults</code>（<code>src/arxiv_mcp_server/tools/search.py:333-370,706-713</code>）。查询串的改写只有一处：用户没写任何字段前缀时，整串改成 <code>(ti:(q) OR abs:(q))</code>，不让裸词匹配到作者名（<code>src/arxiv_mcp_server/tools/search.py:231-244</code>）；分类过滤拼成 <code>(cat:a OR cat:b)</code>（<code>src/arxiv_mcp_server/tools/search.py:283-285</code>），只校验前缀在 20 个已知大类里，子类名不校验（<code>src/arxiv_mcp_server/tools/search.py:189-210,666-676</code>）；日期按天粒度（<code>src/arxiv_mcp_server/tools/search.py:247-268</code>）。只搜 arXiv，没有别的来源。</p>
+<h3 id="24-全文html-优先pdf-兜底">2.4 全文：HTML 优先、PDF 兜底<a class="permalink" href="#24-全文html-优先pdf-兜底" title="本节链接">#</a></h3>
+<p><code>download_paper</code> 的顺序（<code>src/arxiv_mcp_server/tools/download.py:934-1131</code>）：</p>
+<ol>
+<li>校验 ID（新旧两种格式，允许 <code>arxiv:</code> 前缀与 abs / pdf 链接，<code>src/arxiv_mcp_server/tools/arxiv_ids.py:15-61</code>）。不合法直接报错，这是修 #118 路径穿越之后加的<sup id="fnref:i118"><a class="footnote-ref" href="#fn:i118">21</a></sup>。</li>
+<li>缓存命中就直接返回：存盘一律用不带版本号的 ID，sidecar 里记版本与抽取器版本；抽取器版本升了（现在是 7）缓存自动作废；请求旧版本时拒绝覆盖更新的缓存，除非 <code>force</code>（<code>src/arxiv_mcp_server/tools/download.py:133-137,959-1026</code>）。</li>
+<li>取 <code>arxiv.org/html/&lt;id&gt;</code>，200 就用 <code>_ArticleTextExtractor</code> 抽文本：只取 <code>&lt;article&gt;</code>，跳过脚本、导航、作者注、ACM/IEEE 前言、脚注标记、许可声明、ICML 版式警告，公式优先留 <code>alttext</code>（没有 <code>alttext</code> 时留 MathML 的文本、去掉 TeX annotation），把被 HTML 拆开的引用号与「Fig. 2」拼回一行，最后按 <code>\n</code> 把文本块拼起来（<code>src/arxiv_mcp_server/tools/download.py:145-533</code>）。这 389 行代码本身不带 issue 号；每条规则对应的 issue 写在按 issue 分开的回归测试里（#158 #175 #177 #190 #239 #258 #260，见 <code>tests/tools/test_download_html.py:1</code>、<code>tests/tools/test_download_footnotemark.py:1</code>、<code>tests/tools/test_download_icml_style.py:1</code>、<code>tests/tools/test_download_html_frontmatter.py:1</code>、<code>tests/tools/test_download_html_title.py:1</code>、<code>tests/tools/test_download_html_switch_noise.py:1</code>）。</li>
+<li>HTML 请求返回任何非 200（不只 404）或网络出错，都静默转 PDF 路径（<code>src/arxiv_mcp_server/tools/download.py:760-770</code>）：先查 arXiv 上有没有这篇（区分「论文不存在」与「没装 <code>[pdf]</code>」），没装 <code>[pdf]</code> 就报错；装了就下 PDF 到存储目录、<code>pymupdf4llm.to_markdown(pdf_path, show_progress=False)</code> 转（不带任何版面参数，锁定的 0.2.9 版下走非版面模式，见 <a href="#210-有没有模型调用除了-mcp-还有什么形态">2.10</a>）、转完无论成败都删掉 PDF（<code>src/arxiv_mcp_server/tools/download.py:1066-1091,803-843</code>）。同一篇论文的 PDF 转换用 64 路锁条带串行（<code>src/arxiv_mcp_server/tools/download.py:63-64,846-850</code>）。</li>
+<li>写 <code>&lt;id&gt;.md</code> 与 <code>&lt;id&gt;.meta.json</code>；装了 <code>[pro]</code> 就在后台起一个索引任务（信号量 1，<code>src/arxiv_mcp_server/tools/download.py:58-117</code>）。</li>
+<li>返回第一页（缺省 12,000 字符），<code>content_warning</code> 只在第一页出现一次（<code>src/arxiv_mcp_server/tools/content.py:8-16,99-129</code>）。调用方显式给的 <code>max_chars</code> 没有硬上限（<code>src/arxiv_mcp_server/tools/content.py:65</code>）。</li>
+</ol>
+<p>大纲三件套在本地 <code>.md</code> 上做：认 ATX 标题、阿拉伯数字编号行、IEEE 罗马数字、34 个常见节名的独占行，遇到 References 就停，什么都认不出时整篇算一个合成节「1」（<code>src/arxiv_mcp_server/tools/paper_outline.py:44-139,430-518</code>）。<code>search_paper_text</code> 是大小写不敏感的子串查找，去掉重叠过半的片段、优先每节一条（<code>src/arxiv_mcp_server/tools/paper_outline.py:607-735</code>）。</p>
+<h3 id="25-按节读-latex-原文">2.5 按节读 LaTeX 原文<a class="permalink" href="#25-按节读-latex-原文" title="本节链接">#</a></h3>
+<p>三个 LaTeX 工具共用一个 <code>_load_source</code>：先看 <code>&lt;storage&gt;/.latex/&lt;id&gt;.json</code> 缓存，没有就下载、解包、展平、原子写缓存；同一篇用 64 路锁条带串行；缓存键就是调用方给的 ID，带版本号与不带版本号各存一份（<code>src/arxiv_mcp_server/tools/latex.py:71,160-239</code>）。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>做法</th>
+<th>上限 / 规则</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>下载</td>
+<td><code>GET https://arxiv.org/e-print/&lt;id&gt;</code> 流式读，声明长度与实收长度都卡</td>
+<td>压缩后 50 MB</td>
+<td><code>src/arxiv_mcp_server/tools/latex_archive.py:18,40-77</code></td>
+</tr>
+<tr>
+<td>解包</td>
+<td><code>tarfile</code> 流模式 <code>r|*</code>（自动识别 gz / bz2 / xz），逐个成员检查，<strong>只把 <code>.tex</code> 读进内存，从不写盘</strong>；不是 tar 就当单文件 gzip，要求里面有 <code>\documentclass</code> 或 <code>\documentstyle</code></td>
+<td>成员 ≤ 2000、路径 ≤ 512 字节且深度 ≤ 20、拒绝软硬链接与特殊文件与重名、单个 <code>.tex</code> ≤ 10 MB、<code>.tex</code> ≤ 500 个、展开总量 ≤ 100 MB、<code>.tex</code> 总量 ≤ 50 MB；按 UTF-8 解码，坏字节替换</td>
+<td><code>src/arxiv_mcp_server/tools/latex_archive.py:18-25,80-205</code></td>
+</tr>
+<tr>
+<td>选主文件</td>
+<td>打分：有 <code>\documentclass</code> +100、有 <code>\begin{document}</code> +50、文件名是 main / paper / article / manuscript +20，平手比长度</td>
+<td>—</td>
+<td><code>src/arxiv_mcp_server/tools/latex_archive.py:208-216</code></td>
+</tr>
+<tr>
+<td>展平</td>
+<td>递归内联 <code>\input</code> <code>\include</code> <code>\import</code> <code>\subimport</code> 等 8 种写法；先遮掉注释与宏定义体；只展开「定义体里有 include 或 section 命令」的宏；环引用与越界路径不跟；没解析上的命令记进 <code>unmatched_includes</code></td>
+<td>深度 ≤ 20、展平后 ≤ 50 MB、宏展开 ≤ 8 轮</td>
+<td><code>src/arxiv_mcp_server/tools/latex_flatten.py:15-25,195-216,315-370</code></td>
+</tr>
+<tr>
+<td>切节</td>
+<td>正则找 <code>\section</code> <code>\subsection</code> <code>\subsubsection</code>（带星号的也算），花括号配平取标题，<code>\texorpdfstring</code> 取第二参数，标题里的简单宏展开（优先零参数的）、样式命令剥掉；ID 是层级计数 <code>1</code>、<code>1.2</code>、<code>1.2.3</code>；一节到下一个同级或更高级标题为止，最后一节到文件末尾</td>
+<td>节数 ≤ 10,000、标题 ≤ 200 字</td>
+<td><code>src/arxiv_mcp_server/tools/latex_flatten.py:17-18,26-30,152-169,373-408</code></td>
+</tr>
+<tr>
+<td>定位</td>
+<td>按 ID，或按大小写与空白归一后的标题（原样与宏展开后两种都试）</td>
+<td><code>section_id</code> ≤ 200 字</td>
+<td><code>src/arxiv_mcp_server/tools/latex_flatten.py:411-433</code>、<code>src/arxiv_mcp_server/tools/latex.py:66,441-442</code></td>
+</tr>
+<tr>
+<td>返回</td>
+<td>展平源文的切片，分页</td>
+<td>缺省 12,000；显式 <code>max_chars</code> 最多 50,000；<code>return_full_text=true</code> 时不设上限</td>
+<td><code>src/arxiv_mcp_server/tools/latex.py:62-69,146-157,453</code>、<code>src/arxiv_mcp_server/tools/content.py:59-62</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>失败时怎么办——不会自动退回 PDF。</strong> <code>get_paper_latex</code> 遇到 403 / 404 报「LaTeX source is unavailable for this paper」，另外两个 LaTeX 工具报「arXiv source request failed with HTTP 404」这类原始状态；解包或上限失败报对应的 <code>LatexSourceError</code> 文本（<code>src/arxiv_mcp_server/tools/latex.py:366-378,420-426,470-476</code>）；<code>list_paper_latex_sections</code> 大纲为空时报「Use read_paper or HTML instead」并列出没解析上的 include 命令（<code>src/arxiv_mcp_server/tools/latex.py:334-342,389-391</code>）。退回 HTML / PDF 是调用方 agent 自己换工具（<code>download_paper</code>）的事，代码里两条链路互不调用。只提交了 PDF 的论文，e-print 端点返回的不是 tar 也不是 gzip，会落到「arXiv response is not a supported source archive」（<code>src/arxiv_mcp_server/tools/latex_archive.py:104-111</code>；arXiv 对这类论文返回什么，未实测）。</p>
+<p>从代码能看出的边界：只认三级标题，<code>\chapter</code>、<code>\paragraph</code> 不进大纲；<code>\appendix</code> 之后的节接着前面的编号数，带星号的节也占编号，所以 ID 可能对不上论文印出来的节号（<code>src/arxiv_mcp_server/tools/latex_flatten.py:26,393-397</code>，读代码推断）；<code>\begin{abstract}</code> 不是节，标题与摘要只能从 <code>get_paper_latex</code> 的第一页读；只收 <code>.tex</code> 成员，<code>.bbl</code> 不进来，参考文献条目多半读不到（<code>src/arxiv_mcp_server/tools/latex_archive.py:171-172</code>）。</p>
+<h3 id="26-bibtex">2.6 BibTeX<a class="permalink" href="#26-bibtex" title="本节链接">#</a></h3>
+<p><code>export_citations</code>（<code>src/arxiv_mcp_server/tools/export_citations.py:219-330</code>）：</p>
+<ul>
+<li>逐个规范化 ID，非法的记一条错误；合法的<strong>一次</strong> Atom 请求取回（<code>id_list=a,b,c</code>），按带版本号的 ID 建表，裸 ID 映射到返回里最新的那个版本（<code>:149-178</code>）。</li>
+<li>同一篇的裸 ID 与带版本 ID 同时出现只留带版本的；完全相同的 ID 去重；请求的版本与返回的不一致就判「not found」，不拿别的版本顶（<code>:238-288</code>）。</li>
+<li>键 = 第一作者姓（按空格切的最后一段）+ 年 + 标题第一个词，全部折成小写 ASCII，撞了按 a、b、…、aa 追加后缀（<code>:84-122</code>）。</li>
+<li>条目一律 <code>@misc</code>，字段 title、author（<code>and</code> 连接）、year、eprint（保留调用方给的版本号）、archivePrefix、primaryClass（第一个分类）、url（<code>:125-146</code>）；<code>&amp; % $ # _ { } ~ ^ \</code> 全部转义（<code>:38-58</code>）。</li>
+<li>year 取 Atom 的 <code>&lt;published&gt;</code>，按 arXiv 的定义是 <strong>v1 的提交日期</strong><sup id="fnref:manual"><a class="footnote-ref" href="#fn:manual">2</a></sup>，请求 v7 也是 v1 那年（<code>:79-81</code>）。</li>
+<li>不取 <code>&lt;arxiv:doi&gt;</code>、<code>&lt;arxiv:journal_ref&gt;</code>（<code>src/arxiv_mcp_server/tools/search.py:499-586</code> 里没有这两个字段）；标题只用单层花括号，没有大小写保护；标题里的 <code>$…$</code> 数学被转义成字面的 <code>\$</code>。</li>
+<li>只支持 BibTeX，RIS / CSL-JSON 的 PR #142 自 2026-07-26 开着未合。</li>
+</ul>
+<h3 id="27-主题订阅">2.7 主题订阅<a class="permalink" href="#27-主题订阅" title="本节链接">#</a></h3>
+<p>存储：<code>&lt;storage&gt;/watched_topics.json</code>，一个 <code>{"topics": [...]}</code>，每条记 topic（原样的 arXiv 查询串）、categories、max_results、last_checked、created_at、updated_at，翻页时多两个游标字段 drain_from、check_start（<code>src/arxiv_mcp_server/tools/alerts.py:26,155-175,276-291,384-387</code>）。</p>
+<p>触发：只有调用 <code>check_alerts</code> 才查，代码里没有定时、没有后台任务、没有推送（<code>src/</code> 里唯一的 <code>create_task</code> 是语义索引，<code>src/arxiv_mcp_server/tools/download.py:111</code>）。每次查询：对每个主题发一次 <code>sort_by=date</code>、<strong>升序</strong>、<code>date_from = drain_from 或 last_checked</code> 的搜索，<code>start = check_start</code>；按 <code>published &gt; last_checked</code> 过滤出新论文；页满了就推进游标、<code>last_checked</code> 记到本页最新一篇，页没满就把 <code>last_checked</code> 设成现在、清游标（<code>src/arxiv_mcp_server/tools/alerts.py:339-411</code>）。新建订阅时 <code>last_checked</code> 预设为当前时刻，第一次查不会倒出历史论文（<code>src/arxiv_mcp_server/tools/alerts.py:272-289</code>，#227）。</p>
+<p>由此可知的事实：比的是 <code>&lt;published&gt;</code>（v1 日期），所以只抓新投稿，老论文发新版本不算新；日期过滤按天，所以要靠游标翻页；文件是直接 <code>write_text</code> 覆盖，没有原子写也没有文件锁，JSON 坏了读成空列表、下次保存会把它覆盖掉（<code>src/arxiv_mcp_server/tools/alerts.py:160-175</code>）；多主题时中途任何一个主题抛异常（限流也算），整轮的游标都不保存、已查到的结果也不返回，因为保存在循环之后、异常在循环外接（<code>src/arxiv_mcp_server/tools/alerts.py:339-411,419-429</code>）。</p>
+<h3 id="28-引用图与语义检索">2.8 引用图与语义检索<a class="permalink" href="#28-引用图与语义检索" title="本节链接">#</a></h3>
+<p><code>citation_graph</code>：把 vN 去掉，对 S2 发<strong>一次</strong> <code>paper/ARXIV:&lt;id&gt;?fields=…,citations.…,references.…</code>（嵌套字段不能分页，注释说 S2「通常」每项最多给 1000 条，本仓再切到 <code>max_citations</code>）；成功结果缓存 7 天、被限流的结果缓存 5 分钟，文件名 <code>&lt;id&gt;__limit_&lt;n&gt;.json</code>，取缓存时找 limit ≥ 请求值里最小的那份（<code>src/arxiv_mcp_server/tools/citation_graph.py:29-57,175-292,377-476</code>）。邻居带 <code>arxiv_id</code>，能直接接下一跳（<code>:98-119</code>）。被限流时返回 <code>status: rate_limited</code> 加一句醒目的「This is NOT an empty graph」（<code>:40-50,148-172</code>）。</p>
+<p><code>semantic_search</code>（<code>[pro]</code>）：模型写死 <code>all-MiniLM-L6-v2</code>（可配置的 issue #147 与 PR #150 都开着<sup id="fnref:i147"><a class="footnote-ref" href="#fn:i147">25</a></sup>），向量存 <code>&lt;storage&gt;/semantic_index.db</code> 的一张 SQLite 表，排序是全表载入后矩阵乘（<code>src/arxiv_mcp_server/tools/semantic_search.py:27-28,133-151,268-324</code>）。嵌入对象是摘要（<code>:183</code>），摘要从 arXiv API 重新取（<code>:220-234</code>）。索引键来自 <code>arxiv.Result.get_short_id()</code>（<code>:240</code>），这个方法返回带版本号的 ID（如 <code>2107.05580v1</code>）<sup id="fnref:shortid"><a class="footnote-ref" href="#fn:shortid">3</a></sup>；而按 <code>paper_id</code> 找相似论文时拿用户给的原串去查（<code>:406-421</code>），给裸 ID 时会查不到、补索引后仍查不到，这时 <code>query_vector</code> 是 <code>None</code>，接下来的矩阵乘会抛异常，结果是一条 <code>Error:</code>（<code>:419,430,451-453</code>）；排除「自己」也按原串比（<code>:421</code>）。测试里是直接用裸 ID 插记录、mock 的 <code>get_short_id</code> 也返回裸 ID（<code>tests/tools/test_semantic_search.py:77-125</code>、<code>tests/conftest.py:25</code>），所以测试覆盖不到这条路径。这一条是读代码推断，未跑。</p>
+<p><code>reindex</code> 与 <code>semantic_search</code> 都在事件循环线程上同步干活：<code>reindex</code> 对每篇本地论文同步调 <code>index_paper_by_id</code>，每篇都要过一次 arXiv 闸（<code>run_sync</code> 里是阻塞的 <code>time.sleep</code>）再算嵌入；<code>semantic_search</code> 补索引与算查询向量也是同步的（<code>:341-381,412,425</code>，<code>src/arxiv_mcp_server/arxiv_api.py:39-46</code>）。这与 <code>CLAUDE.md:73</code>「Avoid blocking network or filesystem work on the event loop」不一致。进一步从代码推断（未跑）：MCP SDK 对每个请求起一个并发任务<sup id="fnref2:mcpsdk"><a class="footnote-ref" href="#fn:mcpsdk">12</a></sup>，若此时另一个请求正通过 <code>run_async</code> 持有闸（<code>threading.Lock</code>，在事件循环线程上 <code>await</code> HTTP），<code>reindex</code> 在同一线程上阻塞地抢这把锁，持锁的协程再也得不到调度，进程会卡死。</p>
+<h3 id="29-存盘目录">2.9 存盘目录<a class="permalink" href="#29-存盘目录" title="本节链接">#</a></h3>
+<pre><code>&lt;storage&gt;/                       缺省 ~/.arxiv-mcp-server/papers，--storage-path 改（进程级，不能按调用改）
+├── &lt;id&gt;.md                      download_paper 的正文；旧式 ID 的 / 换成 __（hep-th__9901001.md）
+├── &lt;id&gt;.meta.json               sidecar：id、title、authors、published、extractor_version、arxiv_version
+├── &lt;id&gt;.pdf                     只在 PDF 转换期间存在，转完即删
+├── .latex/&lt;id&gt;.json             LaTeX 展平结果：cache_format、content、main_file、source_files、unmatched_includes
+├── citation_graphs/&lt;id&gt;__limit_&lt;n&gt;.json    S2 结果 + cached_at；这里的 / 不换，旧式 ID 写缓存会失败、只记 warning
+├── watched_topics.json          主题订阅
+└── semantic_index.db            [pro] 向量索引
+</code></pre>
+<p>证据：<code>src/arxiv_mcp_server/config.py:107-120</code>、<code>src/arxiv_mcp_server/tools/download.py:541-552,829-843</code>、<code>src/arxiv_mcp_server/tools/arxiv_ids.py:85-93</code>、<code>src/arxiv_mcp_server/tools/list_papers.py:215-242</code>、<code>src/arxiv_mcp_server/tools/latex.py:160-164,203-226</code>、<code>src/arxiv_mcp_server/tools/citation_graph.py:175-186,279-292</code>、<code>src/arxiv_mcp_server/tools/alerts.py:155-157</code>、<code>src/arxiv_mcp_server/tools/semantic_search.py:128-130</code>。目录是扁平的，按论文 ID 当文件名，没有按项目或课题分；一个服务进程只服务一个目录。</p>
+<h3 id="210-有没有模型调用除了-mcp-还有什么形态">2.10 有没有模型调用；除了 MCP 还有什么形态<a class="permalink" href="#210-有没有模型调用除了-mcp-还有什么形态" title="本节链接">#</a></h3>
+<ul>
+<li><strong>模型调用：没有。</strong> <code>src/</code> 里 grep 不到 openai、anthropic、completion 这类名字；唯一的「模型」是 <code>[pro]</code> 的本地句向量模型；<code>[pdf]</code> 还装进来 pymupdf-layout 自带的 ONNX 版面模型（连带 onnxruntime、numpy、networkx），但按代码看本仓用不上它：锁定的 pymupdf4llm 0.2.9 只在 <code>pymupdf._get_layout</code> 非空时走版面分析，这个钩子只有 <code>import pymupdf.layout</code> 才会装上<sup id="fnref:p4l"><a class="footnote-ref" href="#fn:p4l">11</a></sup>，本仓 <code>src/</code> 里只 <code>import fitz</code> 与 <code>import pymupdf4llm</code>（<code>src/arxiv_mcp_server/tools/download.py:37-53</code>），没有任何地方 import <code>pymupdf.layout</code>（读代码推断，未跑）。两者都不是生成式调用。MCP 的 sampling（让客户端代调模型）也没用。7 个 MCP prompt 只返回文字，由客户端的 agent 自己去执行（<code>README.md:408</code> 也这么写）。</li>
+<li><strong>命令行：没有。</strong> 入口 <code>main</code> 直接起服务（<code>src/arxiv_mcp_server/__init__.py:9-11</code>），<code>CLAUDE.md:37</code> 明说「It is not an interactive CLI」；除了 <code>--storage-path</code> 不解析任何参数，<code>--help</code> 也会起服务等 stdin（读代码推断）。</li>
+<li><strong>skill：有一份，但依赖 MCP。</strong> <code>skills/arxiv-mcp-server/SKILL.md</code> 共 26 行，frontmatter 只有 name、description，正文是「先搜、再看摘要、LaTeX 先列节再取节」的调用顺序，没有 <code>scripts/</code>；它随 Claude Code 插件（<code>.claude-plugin/</code>）与 Codex 插件（<code>.codex-plugin/plugin.json:13-14</code>）一起装，前提是 MCP 服务已接上。Kiro 用 <code>POWER.md</code> 装同一套。</li>
+<li><strong>当库用：代码形状上可以，但没有为此设计。</strong> 每个工具是 <code>async def handle_x(arguments: dict) -&gt; list[TextContent]</code>，测试就是直接 import 这些函数调的（如 <code>tests/tools/test_semantic_search.py:92</code>）；但存储目录只能从 <code>sys.argv</code> 读，测试靠 monkeypatch <code>_get_storage_path_from_args</code>（<code>tests/tools/test_semantic_search.py:63-67</code>）；返回值是 MCP 的 <code>TextContent</code>，要自己拆 JSON。</li>
+<li><strong>其他打包</strong>：PyPI wheel、官方 MCP Registry 条目（<code>server.json</code>）、Claude Desktop 的 <code>.mcpb</code> 包（只出 macOS 两个架构、要 CPython 3.11，<code>manifest.json:44-49</code>）、Dockerfile（不装任何 extra，<code>Dockerfile:14,20</code>）。</li>
+</ul>
+<h2 id="3-为什么设计动机与踩过的坑">3. 为什么：设计动机与踩过的坑<a class="permalink" href="#3-为什么设计动机与踩过的坑" title="本节链接">#</a></h2>
+<p>仓库没有 CHANGELOG 文件，变更说明在 GitHub Release 与 issue 里。下表是代码里能对上动机的设计。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>设计</th>
+<th>解决什么</th>
+<th>出处</th>
+<th>代码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>做成 MCP 服务，stdio 缺省、<code>uvx</code> 一行装、同时出 Claude Code / Codex / Kiro 插件与 <code>.mcpb</code></td>
+<td>一份代码给所有 MCP 客户端用；README 前 180 行几乎都是各家客户端的安装法</td>
+<td><code>README.md:21-178</code></td>
+<td><code>.claude-plugin/</code>、<code>.codex-plugin/</code>、<code>manifest.json</code>、<code>server.json</code></td>
+</tr>
+<tr>
+<td>所有正文默认 12,000 字符一页、搜索缺省 5 条加摘要截断、大纲 + 分节 + 片段检索、工具描述瘦身</td>
+<td>作者实测一次不带参数的 <code>read_paper</code> 回了 111,305 字符（约 27,800 token）<sup id="fnref:i127"><a class="footnote-ref" href="#fn:i127">22</a></sup>；工具 schema 本身常驻上下文，瘦身前约 2,500 token<sup id="fnref:i131"><a class="footnote-ref" href="#fn:i131">23</a></sup>；测试把 <code>tools/list</code> 整体钉在 18,000 字符以内</td>
+<td>#127 #128 #129 #131</td>
+<td><code>src/arxiv_mcp_server/tools/content.py:47-96</code>、<code>tests/test_tool_schemas.py:128-157</code></td>
+</tr>
+<tr>
+<td>下载改成同步返回、不再有「converting」状态</td>
+<td>早期异步转换让 agent 说「等的时候我还能做什么」然后忘了回来读，工作流断掉<sup id="fnref:i19"><a class="footnote-ref" href="#fn:i19">15</a></sup></td>
+<td>#19 #54</td>
+<td><code>src/arxiv_mcp_server/tools/download.py:934-935</code></td>
+</tr>
+<tr>
+<td>HTML 优先、PDF 兜底，另加抽取器版本号让旧缓存自动作废</td>
+<td>arXiv 的 HTML（LaTeXML 生成）比 PDF 转出来干净；但页面杂质多，8 月连修十几条（站点横幅、重复公式、作者脚注、ICML 版式警告、装饰性标题拆字……），每改一次规则就得让旧缓存失效</td>
+<td>#158 #175 #177 #190 #239 #258 #260</td>
+<td><code>src/arxiv_mcp_server/tools/download.py:133-137,145-533</code></td>
+</tr>
+<tr>
+<td>按节读 LaTeX 原文</td>
+<td>用户指出另一个项目（arxiv-latex-mcp）只给 LaTeX 源码，认为这样比下载再转 markdown 更快、更轻，数学也准得多（原文「way more accurate with respect to math」）<sup id="fnref:i88"><a class="footnote-ref" href="#fn:i88">20</a></sup></td>
+<td>#23 #88 → PR #132</td>
+<td><code>src/arxiv_mcp_server/tools/latex.py</code> 全文</td>
+</tr>
+<tr>
+<td>源码包按敌意输入处理，上限在流式读取中途就卡</td>
+<td>解压炸弹、路径穿越、链接逃逸；v0.6.0 连着三个 PR（#132 加工具、#133 加固清单、#134 限处理量）</td>
+<td><code>SECURITY.md:33-35</code></td>
+<td><code>src/arxiv_mcp_server/tools/latex_archive.py:80-205</code></td>
+</tr>
+<tr>
+<td>ID 严格校验，存盘用扁平文件名</td>
+<td>曾经可以用 <code>../outside-secret</code> 读到存储目录外的 <code>.md</code><sup id="fnref2:i118"><a class="footnote-ref" href="#fn:i118">21</a></sup>；旧式 ID 带 <code>/</code> 会建不存在的子目录崩掉（#254）</td>
+<td>#118 #254</td>
+<td><code>src/arxiv_mcp_server/tools/arxiv_ids.py:15-61,85-93</code></td>
+</tr>
+<tr>
+<td>全进程一把 3 秒的闸 + raw httpx + 超时 + 429 退避</td>
+<td>arXiv 条款要求<sup id="fnref2:tou"><a class="footnote-ref" href="#fn:tou">1</a></sup>；<code>arxiv</code> 包把日期区间编坏<sup id="fnref:i53"><a class="footnote-ref" href="#fn:i53">17</a></sup>；一条对端不再响应的连接曾在锁里永久挂住所有搜索<sup id="fnref:i155"><a class="footnote-ref" href="#fn:i155">26</a></sup>；8 月补上 429 退避与 <code>rate_limited</code> 软返回</td>
+<td>#53 #125 #155 #238</td>
+<td><code>src/arxiv_mcp_server/arxiv_api.py:16-62</code>、<code>src/arxiv_mcp_server/config.py:45-73</code>、<code>src/arxiv_mcp_server/tools/search.py:117-174</code></td>
+</tr>
+<tr>
+<td>裸词只搜标题与摘要</td>
+<td>按日期排序加 <code>OR</code> 时，短词（如 MoE）匹配到作者名碎片，结果退化成「这几个分类里最新的论文」</td>
+<td>#159</td>
+<td><code>src/arxiv_mcp_server/tools/search.py:231-244</code></td>
+</tr>
+<tr>
+<td>BibTeX 只从 arXiv 元数据生成</td>
+<td>提需求的人原话是让 agent 导出引用「while ensuring the agent does not make up on its own」<sup id="fnref:i41"><a class="footnote-ref" href="#fn:i41">16</a></sup></td>
+<td>#41 → PR #135</td>
+<td><code>src/arxiv_mcp_server/tools/export_citations.py:1-9</code></td>
+</tr>
+<tr>
+<td>引用图一次调用 + 磁盘缓存 + 醒目的限流提示</td>
+<td>不带 key 的 S2 共享配额很快 429：#160 报工具直接吐原始 429 错误，#226 报加了退避后仍然硬失败；#274 从三次请求减到一次、加缓存，并写明目标是「Clients cannot mistake rate limits for empty success graphs」（这个 PR 的正文带 Cursor agent 的标记）</td>
+<td>#160 #169 #226 #274<sup id="fnref:i274"><a class="footnote-ref" href="#fn:i274">14</a></sup></td>
+<td><code>src/arxiv_mcp_server/tools/citation_graph.py:40-57,417-434</code></td>
+</tr>
+<tr>
+<td>存盘用裸 ID、sidecar 记版本、拒绝静默降级</td>
+<td>带版本号下载后按裸 ID 读不到；下载旧版本会悄悄覆盖新版本</td>
+<td>#202 #206</td>
+<td><code>src/arxiv_mcp_server/tools/download.py:636-659,995-1026</code></td>
+</tr>
+<tr>
+<td>订阅新建时 <code>last_checked = now</code>、翻页用游标</td>
+<td>第一次查把历史论文全当新的倒出来；按天粒度的日期过滤在页满时会卡在边界上</td>
+<td>#217 #219 #227</td>
+<td><code>src/arxiv_mcp_server/tools/alerts.py:272-289,346-396</code></td>
+</tr>
+<tr>
+<td>语义索引串行（信号量 1）</td>
+<td>用户报告并行调用把 GPU 压到关机<sup id="fnref:i68"><a class="footnote-ref" href="#fn:i68">19</a></sup></td>
+<td>#68</td>
+<td><code>src/arxiv_mcp_server/tools/download.py:58-72</code></td>
+</tr>
+<tr>
+<td>未信任内容标记改成每次响应一次、不插进正文</td>
+<td>外部用户在 #70 提出论文内容有提示注入风险，于是加了横幅；之后每段都插长横幅既费 token 又让分页拼不回原文，#215 #230 #244 改成首页一个短字段</td>
+<td>#70 #215 #230 #244</td>
+<td><code>src/arxiv_mcp_server/tools/content.py:10-16,99-129</code></td>
+</tr>
+<tr>
+<td><code>mcp</code> 依赖钉在 <code>&lt;2.0.0</code></td>
+<td>mcp 2.0.0 改了模块名，导入直接坏<sup id="fnref:i144"><a class="footnote-ref" href="#fn:i144">24</a></sup></td>
+<td>#144</td>
+<td><code>pyproject.toml:35</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>维护史上的一个坑：2026-03-04 有用户开 issue 标题就是「NOT WORKING AND NOT MAINTAINED ANYMORE, SKIP」<sup id="fnref:i65"><a class="footnote-ref" href="#fn:i65">18</a></sup>，当时 2025-08 到 2026-03 只有十几个提交；作者 4 月回来连发 0.4.x（4 月 3 日一天 10 个版本号）<sup id="fnref:pypi"><a class="footnote-ref" href="#fn:pypi">5</a></sup>，之后的大修集中在 7、8 月。8 月那一轮是作者自己试用发现、自己开 issue、自己修（2026-08-21 到 23 日 UTC 开的 51 条 issue、62 个 PR 全出自作者<sup id="fnref:aug"><a class="footnote-ref" href="#fn:aug">13</a></sup>），Release 说明写的就是「Patch release after dogfood」<sup id="fnref:rel072"><a class="footnote-ref" href="#fn:rel072">8</a></sup>；提交里能看到 Cursor 分支名（<code>cursor/citation-graph-cache-5e91</code>）与署名 Claude 的提交，作者在用 coding agent 维护。</p>
+<h2 id="4-跑起来要什么">4. 跑起来要什么<a class="permalink" href="#4-跑起来要什么" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>基础安装</th>
+<th><code>[pdf]</code></th>
+<th><code>[pro]</code></th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>≥ 3.11</td>
+<td>同</td>
+<td>同</td>
+<td><code>pyproject.toml:10</code></td>
+</tr>
+<tr>
+<td>直接依赖</td>
+<td>13 个（arxiv、httpx、mcp &lt; 2、pydantic、uvicorn、starlette 等）</td>
+<td>+ pymupdf4llm、pymupdf-layout</td>
+<td>+ sentence-transformers、numpy</td>
+<td><code>pyproject.toml:30-69</code></td>
+</tr>
+<tr>
+<td>锁文件里的传递闭包</td>
+<td>43 个包</td>
+<td>56 个（多出的 13 个里有 pymupdf-layout 带进来的 onnxruntime、numpy、networkx、sympy、protobuf）</td>
+<td>93 个（含 torch 2.10.0）</td>
+<td><code>uv.lock</code>，用 tomllib 静态算的闭包（含只在某些平台装的包）</td>
+</tr>
+<tr>
+<td>模型与 key</td>
+<td>不要任何 key；不调模型</td>
+<td>同</td>
+<td>首次运行从 Hugging Face 拉 MiniLM</td>
+<td><code>src/arxiv_mcp_server/tools/semantic_search.py:27,154-160</code>、<code>SECURITY.md:43</code></td>
+</tr>
+<tr>
+<td>可选 key</td>
+<td><code>SEMANTIC_SCHOLAR_API_KEY</code>：代码里只是有值就加 <code>x-api-key</code> 头；「免费申请、不填也能用到共享配额耗尽」是 README 自述</td>
+<td></td>
+<td></td>
+<td><code>src/arxiv_mcp_server/tools/citation_graph.py:122-133</code>、<code>README.md:467</code></td>
+</tr>
+<tr>
+<td>外部服务</td>
+<td>export.arxiv.org、arxiv.org（html / pdf / e-print）、api.semanticscholar.org；不联网的只有本地读、三个大纲工具、<code>list_papers</code>、订阅的增删查，以及 <code>download_paper</code>、三个 LaTeX 工具、<code>citation_graph</code> 命中缓存时</td>
+<td>同</td>
+<td>+ huggingface.co</td>
+<td>第 <a href="#22-外部接口与限流闸">2.2</a> 节</td>
+</tr>
+<tr>
+<td>算力</td>
+<td>纯 CPU、I/O 为主</td>
+<td>PDF 转换在 CPU 上</td>
+<td>句向量模型，CPU / GPU 都行</td>
+<td>#68<sup id="fnref2:i68"><a class="footnote-ref" href="#fn:i68">19</a></sup></td>
+</tr>
+<tr>
+<td>操作系统</td>
+<td>CI 覆盖 Linux / Windows / macOS × 3.11 / 3.12 / 3.13，每个组合都检查 <code>[pdf]</code> <code>[pro]</code> 能从二进制 wheel 解析（不安装、不测）；<code>.mcpb</code> 只有 macOS；Docker 镜像不含 extra</td>
+<td></td>
+<td></td>
+<td><code>.github/workflows/tests.yml:15-19,35-42</code>、<code>manifest.json:44-49</code>、<code>Dockerfile:14,20</code></td>
+</tr>
+<tr>
+<td>客户端</td>
+<td>一个能说 MCP 的客户端（stdio JSON-RPC，或 Streamable HTTP）</td>
+<td></td>
+<td></td>
+<td><code>src/arxiv_mcp_server/server.py:275-289</code></td>
+</tr>
+<tr>
+<td>磁盘</td>
+<td>存储目录（缺省在用户家目录）</td>
+<td>转换期间临时存 PDF</td>
+<td>一个 SQLite 文件</td>
+<td>第 <a href="#29-存盘目录">2.9</a> 节</td>
+</tr>
+</tbody>
+</table></div>
+<p>许可证方面要注意 <code>[pdf]</code> 的依赖，而且要按版本看。本仓 <code>uv.lock</code> 锁的是 pymupdf 1.27.1、pymupdf4llm 0.2.9、pymupdf-layout 1.27.1：前两个在 PyPI 上标「AGPL-3.0 或 Artifex 商业许可」；pymupdf-layout 1.27.1 标的是「PolyForm Noncommercial 或 Artifex 商业许可」，wheel 里的 COPYING 也是这句。pymupdf-layout 的许可随版本变过：1.26.6 标「Commercial license」，1.27.1、1.27.2、1.28.0 是 PolyForm Noncommercial 或商业，1.28.2 改成 AGPL-3.0 或商业<sup id="fnref:plic"><a class="footnote-ref" href="#fn:plic">10</a></sup>。<code>pyproject.toml</code> 只写了下限（<code>pymupdf-layout&gt;=1.26.6</code>、<code>pymupdf4llm&gt;=0.0.17</code>，<code>pyproject.toml:52-55</code>），用 README 的 <code>uvx --from 'arxiv-mcp-server[pdf]'</code> 装时拿到哪一版、按哪份许可，取决于装的那天 PyPI 上的版本（未实测）。其余：<code>arxiv</code>、<code>mcp</code> 是 MIT，sentence-transformers 是 Apache-2.0<sup id="fnref:deplic"><a class="footnote-ref" href="#fn:deplic">9</a></sup>。平台的 <code>pdf</code> skill 锁的是 pymupdf4llm、pymupdf、pymupdf-layout 都为 1.28.2（<code>platform/skills/pdf/scripts/extract.py:1-6</code>、<code>platform/skills/pdf/scripts/extract.py.lock:183-222</code>）。</p>
+<h2 id="5-和平台对照">5. 和平台对照<a class="permalink" href="#5-和平台对照" title="本节链接">#</a></h2>
+<p>只列事实，不下接不接的结论。</p>
+<h3 id="51-平台这个阶段现在有什么">5.1 平台这个阶段现在有什么<a class="permalink" href="#51-平台这个阶段现在有什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>平台现状</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文献阶段没有「步骤」能力；主文件 <code>sources.md</code> 由助理手写（<code>ai4sci output new literature</code>），框架只认文件名、写法不限</td>
+<td><code>platform/framework/capabilities/__init__.py:45-52</code>、<code>platform/coordinator/README.md:120</code>、<code>docs/architecture/README.md:170</code></td>
+</tr>
+<tr>
+<td>找材料靠两层 CLI 自带的联网搜索与网页读取（Claude Code 的 WebSearch / WebFetch、Codex 的 web_search），适配器必须放行</td>
+<td><code>platform/backends/claude_code.py:40-42</code>、<code>platform/backends/codex.py:114</code>、<code>docs/architecture/README.md:164</code></td>
+</tr>
+<tr>
+<td><code>pdf</code> skill：PDF（本地或链接）→ <code>paper.md</code> + <code>images/</code> + <code>structured.json</code>（分节、表格、图注、参考文献、题目作者年份 DOI），后端 pymupdf4llm 版面模式，锁 1.28.2</td>
+<td><code>platform/skills/pdf/SKILL.md:1-7,38-44</code>、<code>platform/skills/pdf/scripts/extract.py:1-6</code></td>
+</tr>
+<tr>
+<td><code>download</code> skill：git 仓库、单个文件、Hugging Face 仓库拉进工作区 <code>materials/</code>，留收据</td>
+<td><code>platform/skills/download/SKILL.md:1-6</code></td>
+</tr>
+<tr>
+<td>假设、写作两个阶段也没有步骤能力，主文件待第一个能力定名</td>
+<td><code>docs/architecture/README.md:170</code>、<code>platform/coordinator/README.md:64</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="52-多了什么重叠什么">5.2 多了什么、重叠什么<a class="permalink" href="#52-多了什么重叠什么" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>平台现在</th>
+<th>arxiv-mcp-server</th>
+<th>关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>检索论文</td>
+<td>助理用 CLI 自带网页搜索，来源不限</td>
+<td>只搜 arXiv；Atom API、分类与日期过滤、分页、总数、限流</td>
+<td>重叠（范围更窄、结构化更强）</td>
+</tr>
+<tr>
+<td>读 PDF</td>
+<td><code>pdf</code> skill，pymupdf4llm 1.28.2 版面模式，出 <code>structured.json</code>（表格、参考文献、图）</td>
+<td>只在 HTML 拿不到时走 PDF；用锁定的 pymupdf4llm 0.2.9 的 <code>to_markdown</code>，按代码看是非版面模式；只出一个 <code>.md</code>，不出结构化字段、不存图</td>
+<td>重叠（同一个库，版本与模式不同）</td>
+</tr>
+<tr>
+<td>读 arXiv HTML</td>
+<td>助理可以 WebFetch 网页</td>
+<td>专门的 HTML 抽取器 + 标题启发式 + 分页</td>
+<td>部分重叠</td>
+</tr>
+<tr>
+<td>按节读 LaTeX 原文</td>
+<td>没有</td>
+<td>有</td>
+<td>多出</td>
+</tr>
+<tr>
+<td>BibTeX</td>
+<td>没有</td>
+<td><code>@misc</code>，只来自 arXiv 元数据</td>
+<td>多出（与写作阶段相关）</td>
+</tr>
+<tr>
+<td>引用图</td>
+<td>没有</td>
+<td>S2 一跳，带 <code>arxiv_id</code> 可继续跳</td>
+<td>多出（需要 S2 联网）</td>
+</tr>
+<tr>
+<td>主题订阅</td>
+<td>没有</td>
+<td>拉取式，存一个 JSON</td>
+<td>多出</td>
+</tr>
+<tr>
+<td>本地论文缓存与语义检索</td>
+<td>原件放工作区 <code>materials/</code></td>
+<td>放自己的存储目录；<code>[pro]</code> 只嵌摘要</td>
+<td>多出，但存放位置不同</td>
+</tr>
+<tr>
+<td>材料清单 <code>sources.md</code></td>
+<td>助理手写</td>
+<td>不产</td>
+<td>无对应</td>
+</tr>
+<tr>
+<td>拉代码、数据、权重</td>
+<td><code>download</code> skill</td>
+<td>不做</td>
+<td>无对应</td>
+</tr>
+<tr>
+<td>假设、写作</td>
+<td>无能力</td>
+<td>只有 <code>research-question</code>、<code>literature_review</code>、<code>literature-synthesis</code> 几段 prompt 文字，没有代码</td>
+<td>仅文字层面</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="53-接进来会碰到的现有规则">5.3 接进来会碰到的现有规则<a class="permalink" href="#53-接进来会碰到的现有规则" title="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>规则</th>
+<th>平台怎么定的</th>
+<th>arxiv-mcp-server 的相关事实</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P-1 执行层是唯一写代码的，框架不调模型</td>
+<td>框架零模型调用；skill 脚本是确定性工具</td>
+<td>本身零模型调用</td>
+<td><code>docs/architecture/README.md:151</code>；本文 <a href="#210-有没有模型调用除了-mcp-还有什么形态">2.10</a></td>
+</tr>
+<tr>
+<td>P-11 两层 agent 不继承本机的插件与配置</td>
+<td>Claude Code 适配器 <code>--setting-sources ""</code> + <code>--strict-mcp-config</code> + <code>--disable-slash-commands</code>；Codex 用私有 <code>CODEX_HOME</code>、<code>mcp_servers={}</code></td>
+<td>README 给的装法都是往客户端的 MCP 配置里登记：缺省是一段 <code>mcpServers</code> JSON（<code>uvx arxiv-mcp-server</code>），Claude Code / Codex 另给 <code>mcp add</code> 一行命令与插件（插件同时装 MCP 连接与自带 SKILL.md）</td>
+<td><code>platform/backends/claude_code.py:3-11,39</code>、<code>platform/backends/codex.py:7-13,118</code>、<code>README.md:21-43,58-90</code></td>
+</tr>
+<tr>
+<td>P-14 助理面前只有 <code>ai4sci</code>；联网只用 CLI 自带工具</td>
+<td>Claude Code 的 <code>--allowedTools</code> 白名单只放 <code>Bash(ai4sci …)</code>、读写指定路径与两件联网工具</td>
+<td>它的能力只以 MCP 工具的形式暴露，自己发 HTTP；没有命令行</td>
+<td><code>docs/architecture/README.md:164</code>、<code>platform/backends/claude_code.py:146-166</code></td>
+</tr>
+<tr>
+<td>P-15 需求与产出只在 <code>projects/&lt;p&gt;/workspaces/&lt;id&gt;/</code> 里</td>
+<td>项目整个打包能交给同事</td>
+<td>缺省存储在 <code>~/.arxiv-mcp-server/papers</code>，按论文 ID 扁平存放，一个进程一个目录</td>
+<td><code>docs/architecture/README.md:165</code>、<code>src/arxiv_mcp_server/config.py:107-120</code></td>
+</tr>
+<tr>
+<td>P-20 文献主文件是 <code>sources.md</code>；skill 不开产出目录，写哪里由调用者定</td>
+<td>下游只认阶段主文件</td>
+<td>不产 <code>sources.md</code>；写到哪里由服务启动参数定，不由每次调用定</td>
+<td><code>docs/architecture/README.md:170</code>、<code>platform/docs/add-a-skill.md:17,56</code></td>
+</tr>
+<tr>
+<td>P-22 skill 按 agentskills.io 写，脚本 PEP 723 自带依赖、<code>uv run --locked --offline</code> 起，框架自己把清单拼进 prompt、不靠 agent 的原生加载</td>
+<td><code>make skills</code> 预热依赖是唯一联网的一步</td>
+<td>自带 SKILL.md 格式上是 agentskills.io 形状，但没有脚本、内容依赖 MCP 工具；本体是带 13 个直接依赖的 Python 包；运行时每次调用都联网（平台 <code>download</code> skill 也是运行时联网）</td>
+<td><code>docs/architecture/README.md:172</code>、<code>platform/docs/add-a-skill.md:57-65</code>、<code>skills/arxiv-mcp-server/SKILL.md:1-26</code></td>
+</tr>
+<tr>
+<td>P-7 / P-8 fail-closed、不许吞异常</td>
+<td>验证不过就停，不静默降级</td>
+<td>几处软失败：元数据写失败只记 warning（<code>src/arxiv_mcp_server/tools/download.py:925-926</code>）；后台索引失败在 <code>semantic_search.py</code> 里记 error 后返回 <code>False</code>，调用方不看返回值，逃出来的异常在 <code>download.py:98-102</code> 被取走、不记日志（<code>src/arxiv_mcp_server/tools/semantic_search.py:227-232,263-265</code>）；HTML 请求非 200 静默转 PDF（<code>src/arxiv_mcp_server/tools/download.py:760-770</code>）；订阅文件坏了重置为空（<code>src/arxiv_mcp_server/tools/alerts.py:166-170</code>）；<code>get_abstract</code> 把任何 HTTP 错误报成「不存在」（<code>src/arxiv_mcp_server/tools/get_abstract.py:149-161</code>）；三个工具的限流以 <code>rate_limited</code> 正常返回</td>
+<td><code>docs/architecture/README.md:157-158</code></td>
+</tr>
+<tr>
+<td>P-9 上下文有界</td>
+<td>进执行层的是有界的账本与笔记</td>
+<td>所有正文默认有界、带续读游标</td>
+<td><code>docs/architecture/README.md:159</code>、<code>src/arxiv_mcp_server/tools/content.py:47-96</code></td>
+</tr>
+<tr>
+<td>P-10 框架没有「下一步」，每条命令跑完即退</td>
+<td>串起来的是协调层</td>
+<td>订阅不会自己跑，要有人或 agent 调 <code>check_alerts</code></td>
+<td><code>docs/architecture/README.md:160</code>、<code>src/arxiv_mcp_server/tools/alerts.py:314-418</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="6-成熟度">6. 成熟度<a class="permalink" href="#6-成熟度" title="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>实况</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>规模</td>
+<td><code>src/</code> 31 个文件 8016 行 Python；<code>tests/</code> 40 个文件 10,422 行、389 个测试函数；受版本管理的文件合计约 1.27 MB（<code>git ls-files</code> 字节数），浅克隆目录连 <code>.git</code> 1.9 MB</td>
+<td>本地 <code>wc</code> / <code>du</code> 统计</td>
+</tr>
+<tr>
+<td>测试写法</td>
+<td>全部单元测试加协议层测试，网络一律 mock（<code>mocker</code> / <code>aioresponses</code>），没有打真 arXiv 的测试；源码包的敌意输入（穿越、链接、重名、超限、环引用）有专门用例；CI 环境只装 <code>test</code> extra，锁文件闭包里没有 numpy / pymupdf / torch，依赖 numpy 的语义检索用例会 <code>importorskip</code> 跳过、PDF 转换用 mock</td>
+<td><code>tests/tools/test_latex.py:36-323,410-430</code>、<code>.github/workflows/tests.yml:35-45</code>、<code>tests/tools/test_semantic_search.py:44,62</code></td>
+</tr>
+<tr>
+<td>CI</td>
+<td>Lint（black）；测试矩阵 3 OS × 3 Python，跑完构建 wheel 并在隔离 venv 里经 MCP 冒烟（只调 <code>list_tools</code>、<code>list_prompts</code>、<code>get_prompt</code>、<code>list_papers</code>，不联网）；Docker 构建冒烟</td>
+<td><code>.github/workflows/tests.yml:1-64</code>、<code>.github/workflows/lint.yml</code>、<code>scripts/smoke_installed_wheel.py</code></td>
+</tr>
+<tr>
+<td>最近 CI</td>
+<td>main 在 42419c1 上 Lint 与测试都绿；2026-09-05、09-09 两个外部 PR 的运行状态是 action_required（等维护者批准才跑）</td>
+<td><sup id="fnref:ci"><a class="footnote-ref" href="#fn:ci">7</a></sup></td>
+</tr>
+<tr>
+<td>发版</td>
+<td>发 GitHub Release 触发：校验 tag 等于版本号 → black + pytest → 构建 → twine check → wheel 冒烟 → PyPI + 官方 MCP Registry；另一条流水线出 macOS 两个架构的 <code>.mcpb</code></td>
+<td><code>.github/workflows/publish.yml:1-80</code>、<code>.github/workflows/build-mcpb.yml</code></td>
+</tr>
+<tr>
+<td>版本线</td>
+<td>PyPI 37 个版本，0.1.0（2024-12-03）到 0.7.2（2026-08-24）；0.7.0 / 0.7.1 / 0.7.2 连续三天；没有 CHANGELOG 文件，GitHub Release 只从 v0.4.12 开始有</td>
+<td><sup id="fnref2:pypi"><a class="footnote-ref" href="#fn:pypi">5</a></sup></td>
+</tr>
+<tr>
+<td>提交节奏</td>
+<td>217 个提交：2024-11 到 2025-04 共 68；2025-06 到 2026-02 共 20；2026-04 37；2026-05 8；2026-07 18；2026-08 66；最后一次 2026-08-26，到 2026-09-27 一个月没有提交</td>
+<td><sup id="fnref:commits"><a class="footnote-ref" href="#fn:commits">6</a></sup></td>
+</tr>
+<tr>
+<td>人</td>
+<td>作者 193 个提交，其余 17 个身份合计 24 个（含 github-actions 3 个、署名 claude 1 个、未关联 GitHub 账号的 2 个）；2026-08-21 到 23 日（UTC）的 51 条 issue、62 个 PR（#158–#270）全出自作者</td>
+<td><sup id="fnref2:commits"><a class="footnote-ref" href="#fn:commits">6</a></sup> <sup id="fnref2:aug"><a class="footnote-ref" href="#fn:aug">13</a></sup></td>
+</tr>
+<tr>
+<td>社区</td>
+<td>3175 star、258 fork；开着的 issue 5 条（#147 #149 #276 #277 #278，均为外部用户所开），开着的 PR 6 个（最早 2026-07-22）</td>
+<td><sup id="fnref2:repo"><a class="footnote-ref" href="#fn:repo">4</a></sup></td>
+</tr>
+<tr>
+<td>依赖风险</td>
+<td><code>mcp</code> 钉在 <code>&lt; 2.0.0</code>，PyPI 上 mcp 已到 2.2.0<sup id="fnref2:deplic"><a class="footnote-ref" href="#fn:deplic">9</a></sup>；外部用户 2026-08-07 开的 #149 报它与 MCP 2026-07-28 版规范有三处不符（<code>tools/list</code> 顺序不定、没有 <code>server/discover</code>、缺缓存提示），未处理</td>
+<td><code>pyproject.toml:35</code>、<sup id="fnref3:repo"><a class="footnote-ref" href="#fn:repo">4</a></sup></td>
+</tr>
+<tr>
+<td>许可证</td>
+<td>Apache-2.0（Copyright 2024 Joseph Blazick）：允许商用、修改、再分发，含专利授权；再分发要附许可证文本、改过的文件要标明；仓库没有 NOTICE 文件。可选依赖 <code>[pdf]</code> 锁定的版本里，pymupdf 与 pymupdf4llm 是 AGPL-3.0 或商业，pymupdf-layout 1.27.1 是 PolyForm Noncommercial 或商业（见第 4 节）</td>
+<td><code>LICENSE:1-3,189</code>、<code>pyproject.toml:11-12</code></td>
+</tr>
+<tr>
+<td>安全</td>
+<td><code>SECURITY.md</code> 写了威胁模型（论文内容当不可信输入、源码包当敌意输入、HTTP 只绑回环）；报告走邮件、无 SLA</td>
+<td><code>SECURITY.md:1-43</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="7-还没弄清的问题">7. 还没弄清的问题<a class="permalink" href="#7-还没弄清的问题" title="本节链接">#</a></h2>
+<ol>
+<li><strong>真实论文上的抽取质量。</strong> HTML 抽取器的规则是对着 ML 论文（Transformer、Switch Transformers、ICML 模板）调出来的；课题组领域的论文 HTML 覆盖率、抽出来的文本与平台 <code>pdf</code> skill 的 <code>paper.md</code> 谁更好，要在本平台仓的 #166 拿真材料比。</li>
+<li><strong>LaTeX 分节在真源码上的成功率</strong>：多文件工程、自定义分节命令、<code>\chapter</code> 体例的学位论文，大纲为空或 ID 对不上印刷节号的比例；只交 PDF 的论文走 e-print 端点到底返回什么（第 <a href="#25-按节读-latex-原文">2.5</a> 节的推断未实测）。</li>
+<li><strong>语义检索的 <code>paper_id</code> 模式</strong>是否真如第 <a href="#28-引用图与语义检索">2.8</a> 节推断那样查不到（索引键带版本号）、最后报矩阵乘的错，要装 <code>[pro]</code> 跑一次。</li>
+<li><strong>能不能不经 MCP 用它</strong>：handler 在代码形状上可 import，但存储目录只从 <code>sys.argv</code> 读、每个模块 import 时各建一个 <code>Settings()</code>；在 PEP 723 脚本里 <code>uv run --locked --offline</code> 调这些函数行不行、要绕几道，没有试。</li>
+<li><strong>多进程时的限流</strong>：闸是进程内的；平台每个执行层会话是新进程，若各自起一个服务，彼此之间没有协调。实验室出口 IP 上几个会话并发时 arXiv 会不会 429，未测。</li>
+<li><strong>网络可达性</strong>：实验室与平台所在机器到 arxiv.org、export.arxiv.org、api.semanticscholar.org、huggingface.co 的连通性与速度，未测。</li>
+<li><strong>S2 返回哪些引用</strong>：嵌套字段不分页，本仓只取前 <code>max_citations</code> 条；S2 返回的顺序是什么（按时间、按影响力还是无序），代码注释里的「通常最多 1000 条」是否属实，未查 S2 文档。S2 API 许可对本地缓存 7 天有没有限制，也没读。</li>
+<li><strong>PDF 兜底实际走不走版面模式</strong>：读了 pymupdf4llm 0.2.9 与 pymupdf-layout 1.27.1 的 wheel 源码，推断不走（见 <a href="#210-有没有模型调用除了-mcp-还有什么形态">2.10</a>），也就是 <code>[pdf]</code> 装进来的 onnxruntime 与版面模型用不上；没有装包实跑确认。若不走，PDF 路径出来的 markdown 与平台 <code>pdf</code> skill（版面模式）差多少，要拿同一篇论文比。</li>
+<li><strong>维护会不会继续</strong>：2026-08-26 之后没有提交、外部 PR 等批；<code>mcp</code> 2.x 的迁移计划没见到。</li>
+<li><strong>BibTeX 的 year 取 v1 日期、只出 <code>@misc</code></strong>：这是事实，平台写作阶段对引用条目有什么要求还没定，本文不评。</li>
+<li><strong>事件循环上的同步调用会不会卡死进程</strong>：第 <a href="#28-引用图与语义检索">2.8</a> 节从代码推断，<code>reindex</code> 或补索引时恰逢另一个请求持有 arXiv 闸，进程会卡住；需要并发发两个请求实测。</li>
+<li><strong><code>[pdf]</code> 实际装到哪一版、按哪份许可</strong>：锁文件是 pymupdf-layout 1.27.1（PolyForm Noncommercial 或商业），不经锁文件装时按 PyPI 当天版本（2026-09-27 是 1.28.2，AGPL 或商业）；README 推荐的 <code>uvx --from 'arxiv-mcp-server[pdf]'</code> 会不会读仓库的 <code>uv.lock</code>，未实测。</li>
+</ol>
+<h2 id="8-调研方法">8. 调研方法<a class="permalink" href="#8-调研方法" title="本节链接">#</a></h2>
+<ul>
+<li>浅克隆到外层仓 <code>vendor/arxiv-mcp-server</code>（gitignore 挡住），提交 42419c1。逐文件读完 <code>src/</code> 全部 31 个 Python 文件；<code>tests/</code> 看结构、mock 方式、覆盖到的边界，用 grep 核对具体断言；没有装依赖、没有跑任何代码。</li>
+<li>依赖闭包用 Python 标准库 <code>tomllib</code> 读 <code>uv.lock</code> 静态计算；依赖许可证查 PyPI JSON，按锁定版本与最新版分别查。</li>
+<li>复查时另外只读了三处外部源码：pymupdf4llm 0.2.9 与 pymupdf-layout 1.27.1 的 wheel（下载到临时目录解包，不安装），MCP Python SDK v1.27.0 的 <code>src/mcp/server/lowlevel/server.py</code>（<code>get_capabilities</code> 与请求分发），PyMuPDF 1.27.1 的 <code>src/__init__.py</code>（<code>_get_layout</code> 钩子）。</li>
+<li>issue、PR、release、提交按月计数、CI 结果用 <code>gh api</code> / <code>gh issue</code> / <code>gh run list</code> 查，2026-09-27。</li>
+<li>标了「读代码推断」「未实测」的条目，留给本平台仓 #166 实测时验证。</li>
+</ul>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:tou">
+<p>arXiv, Terms of Use for arXiv APIs, <a href="https://info.arxiv.org/help/api/tou.html">https://info.arxiv.org/help/api/tou.html</a>（2026-09-27 读）：legacy API（含 arXiv API、OAI-PMH、RSS）每三秒至多一次请求、单连接；描述性元数据按 CC0；e-print 内容可为个人或研究目的存储使用。&#160;<a class="footnote-backref" href="#fnref:tou" title="回到正文第 1 处">↩</a><a class="footnote-backref" href="#fnref2:tou" title="回到正文第 1 处">↩</a></p>
+</li>
+<li id="fn:manual">
+<p>arXiv, arXiv API User's Manual §3.3.2, <a href="https://info.arxiv.org/help/api/user-manual.html">https://info.arxiv.org/help/api/user-manual.html</a>：<code>&lt;published&gt;</code> 是 v1 的提交日期，<code>&lt;updated&gt;</code> 是所取版本的提交日期；作者提供过的话，条目里有 <code>&lt;arxiv:journal_ref&gt;</code> 与 <code>&lt;arxiv:doi&gt;</code>。&#160;<a class="footnote-backref" href="#fnref:manual" title="回到正文第 2 处">↩</a><a class="footnote-backref" href="#fnref2:manual" title="回到正文第 2 处">↩</a></p>
+</li>
+<li id="fn:shortid">
+<p><code>arxiv</code> 包 <code>Result.get_short_id()</code> 的文档字符串：URL 为 <code>https://arxiv.org/abs/2107.05580v1</code> 时返回 <code>2107.05580v1</code>，<a href="https://github.com/lukasschwab/arxiv.py/blob/master/arxiv/__init__.py">https://github.com/lukasschwab/arxiv.py/blob/master/arxiv/__init__.py</a>（2026-09-27 读）。本仓 <code>src/arxiv_mcp_server/tools/download.py:598-606</code> 也依赖这一点从中取版本号。&#160;<a class="footnote-backref" href="#fnref:shortid" title="回到正文第 3 处">↩</a></p>
+</li>
+<li id="fn:repo">
+<p>GitHub API <code>repos/blazickjp/arxiv-mcp-server</code> 与 <code>gh issue list</code> / <code>gh pr list</code>（2026-09-27 查）：创建于 2024-11-29，3175 star、258 fork，未归档；开着的 issue 为 #147（2026-08-03）、#149「MCP 2026-07-28: non-deterministic tools/list order, no server/discover, missing cache hints」（2026-08-07）、#276（2026-09-13）、#277「search_papers: arXiv HTTP 406 is surfaced as a hard error instead of being handled as throttling (429/503 parity)」（2026-09-19）、#278（2026-09-20），全部由外部用户开；开着的 PR 为 #136 #142 #146 #148 #150 #275。&#160;<a class="footnote-backref" href="#fnref:repo" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref2:repo" title="回到正文第 4 处">↩</a><a class="footnote-backref" href="#fnref3:repo" title="回到正文第 4 处">↩</a></p>
+</li>
+<li id="fn:pypi">
+<p>PyPI <code>arxiv-mcp-server</code> 的发版记录，<a href="https://pypi.org/project/arxiv-mcp-server/#history">https://pypi.org/project/arxiv-mcp-server/#history</a>（2026-09-27 查）。&#160;<a class="footnote-backref" href="#fnref:pypi" title="回到正文第 5 处">↩</a><a class="footnote-backref" href="#fnref2:pypi" title="回到正文第 5 处">↩</a></p>
+</li>
+<li id="fn:commits">
+<p>GitHub commits API 全量分页按月计数（2026-09-27 查）：2024-11 5、2024-12 21、2025-01 15、2025-03 6、2025-04 21、2025-06 3、2025-08 6、2025-12 2、2026-01 5、2026-02 4、2026-04 37、2026-05 8、2026-07 18、2026-08 66，合计 217；按提交作者分：blazickjp 193，其余 17 个身份 24 个（calclavia 4、github-actions[bot] 3、未关联账号 2、gldanoob 2、其余 13 个各 1，含 claude 1）。&#160;<a class="footnote-backref" href="#fnref:commits" title="回到正文第 6 处">↩</a><a class="footnote-backref" href="#fnref2:commits" title="回到正文第 6 处">↩</a></p>
+</li>
+<li id="fn:ci">
+<p><code>gh run list -R blazickjp/arxiv-mcp-server</code>（2026-09-27 查）。&#160;<a class="footnote-backref" href="#fnref:ci" title="回到正文第 7 处">↩</a></p>
+</li>
+<li id="fn:rel072">
+<p>Release v0.7.2，<a href="https://github.com/blazickjp/arxiv-mcp-server/releases/tag/v0.7.2">https://github.com/blazickjp/arxiv-mcp-server/releases/tag/v0.7.2</a>：「Patch release after dogfood #238–#245 and #254–#260」。&#160;<a class="footnote-backref" href="#fnref:rel072" title="回到正文第 8 处">↩</a></p>
+</li>
+<li id="fn:deplic">
+<p>PyPI JSON 元数据（2026-09-27 查）：最新版 pymupdf、pymupdf4llm、pymupdf-layout 1.28.2 均为「Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License」；arxiv 4.0.1 MIT；mcp 2.2.0 MIT；sentence-transformers 6.1.0 Apache-2.0。本仓锁定的是 arxiv 4.0.0、mcp 1.27.0、pymupdf 1.27.1（AGPL 或商业）、pymupdf4llm 0.2.9（AGPL 或商业）、pymupdf-layout 1.27.1（PolyForm Noncommercial 或商业）、sentence-transformers 5.2.2（<code>uv.lock</code>）。&#160;<a class="footnote-backref" href="#fnref:deplic" title="回到正文第 9 处">↩</a><a class="footnote-backref" href="#fnref2:deplic" title="回到正文第 9 处">↩</a></p>
+</li>
+<li id="fn:plic">
+<p>PyPI JSON 按版本查 pymupdf-layout 的 <code>license</code> 字段（2026-09-27）：1.26.6「Commercial license. See artifex.com for details.」；1.27.1、1.27.2、1.28.0「Dual Licensed - Polyform Noncommercial or Artifex Commercial License」；1.28.2「Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License」。1.27.1 的 wheel 里 <code>METADATA</code> 与 <code>COPYING</code> 也写「Polyform Noncommercial or Artifex Commercial License」。1.27.2.2、1.27.2.3 没查。&#160;<a class="footnote-backref" href="#fnref:plic" title="回到正文第 10 处">↩</a></p>
+</li>
+<li id="fn:p4l">
+<p>pymupdf4llm 0.2.9 wheel 的 <code>pymupdf4llm/__init__.py:14-26</code>：<code>pymupdf._get_layout is None</code> 时用 <code>helpers/pymupdf_rag.py</code> 的 <code>to_markdown</code>（非版面，<code>write_images</code> 缺省为假），否则走 <code>helpers/document_layout.py</code>；PyMuPDF 1.27.1 <code>src/__init__.py:336</code> 把 <code>_get_layout</code> 初值设为 <code>None</code>；pymupdf-layout 1.27.1 wheel 的 <code>pymupdf/layout/__init__.py:10-25</code> 在被 import 时才给 <code>pymupdf._get_layout</code> 赋值，wheel 里没有自动加载的 <code>.pth</code> 文件。&#160;<a class="footnote-backref" href="#fnref:p4l" title="回到正文第 11 处">↩</a></p>
+</li>
+<li id="fn:mcpsdk">
+<p>MCP Python SDK v1.27.0（本仓锁定版本）<code>src/mcp/server/lowlevel/server.py</code>：<code>get_capabilities</code> 在第 209-213 行只有注册了 <code>ListResourcesRequest</code> 处理函数时才生成 resources 能力、才用到 <code>resources_changed</code>；<code>call_tool</code> 处理函数抛出的异常在第 583-584 行被包成 <code>isError=True</code> 的结果；<code>run</code> 在第 673-679 行对每条消息 <code>tg.start_soon(self._handle_message, …)</code>，请求并发处理。<a href="https://github.com/modelcontextprotocol/python-sdk/blob/v1.27.0/src/mcp/server/lowlevel/server.py">https://github.com/modelcontextprotocol/python-sdk/blob/v1.27.0/src/mcp/server/lowlevel/server.py</a>（2026-09-27 读）。&#160;<a class="footnote-backref" href="#fnref:mcpsdk" title="回到正文第 12 处">↩</a><a class="footnote-backref" href="#fnref2:mcpsdk" title="回到正文第 12 处">↩</a><a class="footnote-backref" href="#fnref3:mcpsdk" title="回到正文第 12 处">↩</a></p>
+</li>
+<li id="fn:aug">
+<p>GitHub issues API，<code>state=all&amp;since=2026-08-01</code>，按 <code>created_at</code> 取 2026-08-20 到 2026-08-24（UTC）：共 113 条，最早 #158（2026-08-21 00:32Z）、最晚 #270（2026-08-23 23:58Z），51 条 issue、62 个 PR，作者全是 blazickjp（2026-09-27 查）。&#160;<a class="footnote-backref" href="#fnref:aug" title="回到正文第 13 处">↩</a><a class="footnote-backref" href="#fnref2:aug" title="回到正文第 13 处">↩</a></p>
+</li>
+<li id="fn:i274">
+<p>PR #274「feat: citation_graph fewer S2 calls, disk cache, unmistakable 429」，2026-08-26，<a href="https://github.com/blazickjp/arxiv-mcp-server/pull/274">https://github.com/blazickjp/arxiv-mcp-server/pull/274</a>；正文以 <code>CURSOR_AGENT_PR_BODY_BEGIN</code> 开头。#160（2026-08-21）正文贴的是原始「Client error '429 '」，#226（2026-08-22）写的是「hard-fails under Semantic Scholar rate limits」。&#160;<a class="footnote-backref" href="#fnref:i274" title="回到正文第 14 处">↩</a></p>
+</li>
+<li id="fn:i19">
+<p>Issue #19「Remove "converting" status from download_paper to avoid workflow disruption」，2025-03-26，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/19">https://github.com/blazickjp/arxiv-mcp-server/issues/19</a>；同类 #54（2025-12-15）。&#160;<a class="footnote-backref" href="#fnref:i19" title="回到正文第 15 处">↩</a></p>
+</li>
+<li id="fn:i41">
+<p>Issue #41「Export citations」，2025-08-05，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/41">https://github.com/blazickjp/arxiv-mcp-server/issues/41</a>。&#160;<a class="footnote-backref" href="#fnref:i41" title="回到正文第 16 处">↩</a></p>
+</li>
+<li id="fn:i53">
+<p>Issue #53「Date filtering broken in paper search - URL encoding issue with submittedDate syntax」，2025-12-14，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/53">https://github.com/blazickjp/arxiv-mcp-server/issues/53</a>。&#160;<a class="footnote-backref" href="#fnref:i53" title="回到正文第 17 处">↩</a></p>
+</li>
+<li id="fn:i65">
+<p>Issue #65「NOT WORKING AND NOT MAINTAINED ANYMORE, SKIP」，2026-03-04 开、2026-04-02 关，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/65">https://github.com/blazickjp/arxiv-mcp-server/issues/65</a>。&#160;<a class="footnote-backref" href="#fnref:i65" title="回到正文第 18 处">↩</a></p>
+</li>
+<li id="fn:i68">
+<p>Issue #68「Parallel tool invocations can DDoS the GPU, causing it to shut off」，2026-03-12，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/68">https://github.com/blazickjp/arxiv-mcp-server/issues/68</a>。&#160;<a class="footnote-backref" href="#fnref:i68" title="回到正文第 19 处">↩</a><a class="footnote-backref" href="#fnref2:i68" title="回到正文第 19 处">↩</a></p>
+</li>
+<li id="fn:i88">
+<p>Issue #88「Add tools to load LaTeX source only」，2026-04-24，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/88">https://github.com/blazickjp/arxiv-mcp-server/issues/88</a>；更早的 #23（2025-04-05）要的是同一件事。&#160;<a class="footnote-backref" href="#fnref:i88" title="回到正文第 20 处">↩</a></p>
+</li>
+<li id="fn:i118">
+<p>Issue #118「Path traversal in <code>download_paper</code> allows arbitrary out-of-bounds Markdown file read」，2026-06-29，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/118">https://github.com/blazickjp/arxiv-mcp-server/issues/118</a>。&#160;<a class="footnote-backref" href="#fnref:i118" title="回到正文第 21 处">↩</a><a class="footnote-backref" href="#fnref2:i118" title="回到正文第 21 处">↩</a></p>
+</li>
+<li id="fn:i127">
+<p>Issue #127「Bound paper content responses by default」，2026-07-21，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/127">https://github.com/blazickjp/arxiv-mcp-server/issues/127</a>：「A live MCP stdio benchmark returned 111,305 response characters—approximately 27,800 tokens」。&#160;<a class="footnote-backref" href="#fnref:i127" title="回到正文第 22 处">↩</a></p>
+</li>
+<li id="fn:i131">
+<p>Issue #131「Reduce MCP tool-schema token overhead」，2026-07-21，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/131">https://github.com/blazickjp/arxiv-mcp-server/issues/131</a>：「approximately 10,000 characters / 2,500 tokens before any research begins」。&#160;<a class="footnote-backref" href="#fnref:i131" title="回到正文第 23 处">↩</a></p>
+</li>
+<li id="fn:i144">
+<p>Issue #144「mcp 2.0.0 breaks imports: FastMCP renamed to MCPServer, module moved」，2026-07-28，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/144">https://github.com/blazickjp/arxiv-mcp-server/issues/144</a>。&#160;<a class="footnote-backref" href="#fnref:i144" title="回到正文第 24 处">↩</a></p>
+</li>
+<li id="fn:i147">
+<p>Issue #147「make the semantic_search embedding model configurable」，2026-08-03，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/147">https://github.com/blazickjp/arxiv-mcp-server/issues/147</a>；对应 PR #150 未合。&#160;<a class="footnote-backref" href="#fnref:i147" title="回到正文第 25 处">↩</a></p>
+</li>
+<li id="fn:i155">
+<p>Issue #155「search_papers permanently hangs after a hanging connection」，2026-08-17，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/155">https://github.com/blazickjp/arxiv-mcp-server/issues/155</a>；由 PR #156 修。&#160;<a class="footnote-backref" href="#fnref:i155" title="回到正文第 26 处">↩</a></p>
+</li>
+<li id="fn:i278">
+<p>Issue #278「get_abstract: any upstream HTTP error is reported as "Paper <id> not found on arXiv"」，2026-09-20，外部用户 jackiectl2 开，<a href="https://github.com/blazickjp/arxiv-mcp-server/issues/278">https://github.com/blazickjp/arxiv-mcp-server/issues/278</a>。&#160;<a class="footnote-backref" href="#fnref:i278" title="回到正文第 27 处">↩</a></p>
+</li>
+</ol>
+</div>
+  </main>
+  <footer class="doc">原始稿是同目录的 arxiv-mcp-server.md，本页由 md2html 生成；改内容改 md，再 <code>make html</code>。</footer>
+</div>
+</body>
+</html>
