@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>公众号稿示意图</title>
+<!-- 公众号稿（#193）的示意图源。一张图一个 .fig，id 就是出图的文件名（fig-xxx → figures/fig-xxx.png）。
+     配色照平台 docs/DESIGN.md：靛 = AI 与可点的东西，琥珀 = 人确认（断点），铜绿 = 通过。改内容先看 sources.md。 -->
+<style>
+  :root {
+    --paper: #F5F6F8; --ink: #1C2230; --muted: #5B6270; --line: #D5D9E0; --card: #FFFFFF;
+    --primary: #2F4BC9; --primary-soft: #DCE2F8; --primary-faint: #EEF1FC;
+    --ok: #1F7A6D; --ok-soft: #DDEFEC; --wait: #B8741A; --wait-soft: #F7ECDC;
+    --serif: "Songti SC", "Noto Serif SC", serif;
+    --sans: "PingFang SC", "Hiragino Sans GB", sans-serif;
+    --mono: "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #E4E7EC; font-family: var(--sans); color: var(--ink); font-size: 19px; line-height: 1.55; }
+  .fig { width: 720px; margin: 28px auto; padding: 36px 34px 38px; background: #FFFFFF; }  /* 白底：公众号正文是白底，图不带自己的底色 */
+  h2 { font-family: var(--serif); font-weight: 900; font-size: 30px; line-height: 1.3; margin: 0 0 6px; }
+  .sub { color: var(--muted); font-size: 17px; margin: 0 0 26px; }
+  .ic { width: 1em; height: 1em; vertical-align: -0.14em; flex: none; }
+  .card { background: #F7F8FA; border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(28,34,48,.06), 0 0 0 1px rgba(28,34,48,.07); }
+  .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; line-height: 1.4; padding: 3px 11px; border-radius: 999px; background: var(--primary-faint); color: var(--primary); white-space: nowrap; }
+  .tag.skill { background: var(--card); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+  .tag.bp { background: var(--wait-soft); color: var(--wait); }
+  .tag.ok { background: var(--ok-soft); color: var(--ok); }
+  .muted { color: var(--muted); }
+  .small { font-size: 16px; }
+  .mono { font-family: var(--mono); font-size: 15px; }
+  .note { margin-top: 22px; font-size: 16.5px; color: var(--muted); }
+  .note b { color: var(--ink); font-weight: 600; }
+  .arrow-down { text-align: center; color: var(--muted); font-size: 22px; line-height: 1; margin: 10px 0; }
+  .stage { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+  .stage .ic { color: var(--primary); }
+
+  /* 横幅：一行横排，标在左、字在右，高度压到正文一屏的五分之一左右 */
+  #fig-logo { padding: 0; position: relative; height: 210px; overflow: hidden; background: #EEF0F4; }
+  #fig-logo .bg { position: absolute; inset: 0; background: url("https://media.zephyrxiang.com/ai4science/v1/image/studio-dawn-2000.jpg") center 70% / cover; }
+  #fig-logo .veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(245,246,248,.94) 0%, rgba(245,246,248,.86) 60%, rgba(245,246,248,.55) 100%); }
+  #fig-logo .in { position: relative; height: 100%; display: flex; align-items: center; gap: 26px; padding: 0 48px; }
+  #fig-logo .logo { width: 88px; height: 88px; color: var(--primary); flex: none; }
+  #fig-logo .name { font-family: var(--serif); font-weight: 900; font-size: 34px; letter-spacing: .5px; line-height: 1.2; }
+  #fig-logo .fullname { font-size: 13.5px; color: var(--primary); letter-spacing: 1px; margin-top: 2px; }
+  #fig-logo .tagline { font-size: 18px; color: var(--ink); margin-top: 6px; letter-spacing: .5px; }
+  #fig-logo .lab { font-size: 14.5px; color: var(--muted); margin-top: 10px; letter-spacing: .5px; }
+
+  /* 表 */
+  table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 1px rgba(28,34,48,.07); font-size: 16.5px; line-height: 1.5; }
+  th { text-align: left; font-weight: 600; font-size: 15px; color: var(--muted); background: #EEF0F4; padding: 12px 14px; }
+  td { vertical-align: top; padding: 14px; border-top: 1px solid #ECEEF2; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  td .who { display: block; font-weight: 400; color: var(--muted); font-size: 14px; }
+  td.to { color: var(--primary); }
+  td.same .ic { color: var(--ok); }
+
+  /* 七阶段一排 */
+  .stages7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 20px; }
+  .stages7 .s { background: var(--card); border-radius: 12px; padding: 10px 0 8px; text-align: center; font-size: 16px; font-weight: 600; box-shadow: 0 0 0 1px rgba(28,34,48,.07); }
+  .stages7 .s .ic { display: block; margin: 0 auto 4px; width: 26px; height: 26px; color: var(--primary); }
+  .stages7 .s.on { box-shadow: 0 0 0 2px var(--primary); }
+  .five { display: grid; grid-template-columns: 96px 1fr; gap: 10px 14px; font-size: 16.5px; line-height: 1.55; }
+  .five dt { font-weight: 600; color: var(--primary); }
+  .five dd { margin: 0; }
+
+  /* 产品结构 */
+  .product { display: grid; grid-template-columns: 1.25fr 1fr; gap: 16px; align-items: start; }
+  .box { border-radius: 14px; padding: 14px 16px; }
+  .box h3 { margin: 0 0 6px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+  .box h3 .ic { color: var(--primary); }
+  .box p { margin: 0; font-size: 16px; color: var(--muted); line-height: 1.5; }
+  .lvl1 { background: #E9ECF2; }
+  .lvl2 { background: var(--card); margin-top: 12px; box-shadow: 0 0 0 1px rgba(28,34,48,.07); }
+  .lvl3 { background: var(--primary-faint); margin-top: 12px; }
+  .lvl3 + .lvl3 { opacity: .55; margin-top: 8px; padding: 8px 16px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .take { display: flex; align-items: center; gap: 8px; margin: 10px 0; color: var(--primary); font-size: 16px; font-weight: 600; }
+
+  /* 流程竖链 */
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .flow h3 { margin: 0 0 4px; font-family: var(--serif); font-size: 21px; }
+  .flow .fname { font-family: var(--mono); font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+  .step { background: var(--card); border-radius: 12px; padding: 10px 14px; box-shadow: 0 0 0 1px rgba(28,34,48,.07); }
+  .step .stage { font-size: 17px; }
+  .step .chips { margin-top: 6px; }
+  .link { width: 2px; height: 14px; background: var(--line); margin: 0 auto; }
+  .bpstep { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--wait); font-weight: 600; font-size: 16px; padding: 6px 0; }
+
+  /* CLI */
+  .callers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .caller { background: var(--card); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 0 0 1px rgba(28,34,48,.07); }
+  .caller b { display: block; font-size: 17px; margin-bottom: 6px; }
+  .caller .mono { color: var(--primary); display: block; line-height: 1.6; }
+  .cli { background: var(--primary); color: #fff; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .cli .big { font-family: var(--mono); font-size: 24px; font-weight: 700; }
+  .cli .small { color: #DCE2F8; }
+  .side { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+  .adapters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .adapters .card { padding: 12px 14px; }
+  .adapters b { font-size: 16.5px; }
+  .term { margin-top: 18px; background: #1C2230; color: #E6E8EE; border-radius: 14px; padding: 16px 18px; font-family: var(--mono); font-size: 14px; line-height: 1.7; }
+  .term .p { color: #8FA3F5; }
+  .term .c { color: #9AA1AE; }
+  .term .k { display: inline-block; width: 86px; color: #E6E8EE; }
+
+  /* 三层 */
+  .layer { border-radius: 16px; padding: 16px 18px; }
+  .layer h3 { margin: 0 0 8px; font-size: 19px; display: flex; align-items: center; gap: 8px; }
+  .layer.top { background: var(--primary); color: #fff; }
+  .layer h3 .logo { width: 1.1em; height: 1.1em; flex: none; }
+  .layer.top .chips .tag { background: rgba(255,255,255,.16); color: #fff; }
+  .layer.mid { background: var(--card); box-shadow: 0 0 0 1px rgba(28,34,48,.08); }
+  .layer.bot { background: #E9ECF2; }
+  .ports { display: flex; justify-content: center; gap: 12px; margin: 10px 0; }
+  .port { font-family: var(--mono); font-size: 14.5px; background: var(--paper); border: 1.5px dashed var(--primary); color: var(--primary); border-radius: 999px; padding: 3px 14px; }
+  .agents { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .agent { border-radius: 12px; padding: 10px 12px; background: var(--paper); font-weight: 600; font-size: 16.5px; text-align: center; }
+  .agent.plan { background: none; border: 1.5px dashed var(--line); color: var(--muted); font-weight: 400; font-size: 15px; }
+  .aside { margin-top: 16px; display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; font-size: 16px; }
+  .aside .card { padding: 12px 14px; }
+
+  /* 拆 autoresearch */
+  .before .loop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+  .before .loop span { font-size: 16px; }
+  .before .loop .ar { color: var(--muted); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .split .card h3 { margin: 0 0 8px; font-size: 18px; display: flex; gap: 8px; align-items: center; }
+  .split .card h3 .ic { color: var(--primary); }
+  .who2 { font-size: 15.5px; line-height: 1.6; }
+  .who2 .w { display: inline-block; font-size: 13.5px; padding: 1px 8px; border-radius: 6px; margin-right: 6px; }
+  .w.ai { background: var(--primary-faint); color: var(--primary); }
+  .w.fw { background: var(--ok-soft); color: var(--ok); }
+  .w.hu { background: var(--wait-soft); color: var(--wait); }
+  .strip { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 16px; font-size: 16px; }
+  .strip .x { padding: 4px 11px; border-radius: 999px; background: var(--card); box-shadow: 0 0 0 1px rgba(28,34,48,.08); }
+  .strip .x.hi { background: var(--primary); color: #fff; box-shadow: none; }
+  .strip .x.b { background: var(--wait-soft); color: var(--wait); box-shadow: none; }
+  .strip .ar { color: var(--muted); }
+
+  /* 自由度 */
+  .row { margin-bottom: 14px; }
+  .row .lbl { font-weight: 600; font-size: 17px; margin-bottom: 6px; }
+  .row .lbl span { font-weight: 400; color: var(--muted); font-size: 15px; margin-left: 6px; }
+  .row .strip { justify-content: flex-start; margin-top: 0; }
+
+  /* 领域包 */
+  .tree { background: #1C2230; color: #E6E8EE; border-radius: 14px; padding: 16px 18px; font-family: var(--mono); font-size: 14.5px; line-height: 1.8; white-space: pre; }
+  .tree .c { color: #9AA1AE; }
+  .fields { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+  .fields .tag { font-size: 16px; padding: 5px 14px; }
+
+  /* 覆盖 */
+  .cov { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; }
+  .cov .c { border-radius: 12px; padding: 10px 6px; text-align: center; background: var(--card); box-shadow: 0 0 0 1px rgba(28,34,48,.07); min-height: 188px; }
+  .cov .c .ic { width: 24px; height: 24px; color: var(--primary); }
+  .cov .c b { display: block; font-size: 16px; margin: 2px 0 6px; }
+  .cov .c .n { font-size: 13.5px; line-height: 1.45; color: var(--ink); }
+  .cov .c .n div { margin-bottom: 4px; }
+  .cov .c.todo { background: none; box-shadow: none; border: 1.5px dashed var(--wait); }
+  .cov .c.todo .ic { color: var(--wait); }
+  .cov .c.todo .t { color: var(--wait); font-size: 14px; font-weight: 600; }
+  .map { margin-top: 18px; }
+  .map .m { display: grid; grid-template-columns: 1fr auto 70px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid #E6E8EC; font-size: 16px; }
+  .map .m:first-child { border-top: none; }
+  .map .m .to { color: var(--wait); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- 文章头：平台的标 + 名字 -->
+<section class="fig" id="fig-logo">
+  <div class="bg"></div><div class="veil"></div>
+  <div class="in">
+    {{logo}}
+    <div>
+      <div class="name">AAAI4S</div>
+      <div class="fullname">Automated Alignment AI4S</div>
+      <div class="tagline">可编排、可追溯的 AI 自动化科研平台</div>
+      <div class="lab">天津大学记忆与推理课题组 · v1.0</div>
+    </div>
+  </div>
+</section>
+
+<!-- 一：借了什么 -->
+<section class="fig" id="fig-borrow">
+  <h2>站在前人的肩膀上</h2>
+  <p class="sub">逐行阅读代码之后各取所长，融入本平台</p>
+  <table>
+    <tr><th style="width:150px">项目</th><th>它做得好的</th><th style="width:245px">在本平台中</th></tr>
+    <tr><td>InternAgent</td><td>任务目录清楚：需求、代码、启动脚本、每次运行的结果各有位置</td><td class="to">工作区按阶段分目录，每次产出一个编号目录</td></tr>
+    <tr><td>autoresearch<span class="who">Karpathy</span></td><td>棘轮循环：状态保存在 git 中，改善则保留、变差则回退；5 分钟内结束的固定评测</td><td class="to">实验阶段的 AutoResearch 能力；评测移至设计阶段，以 SHA256 封装</td></tr>
+    <tr><td>AutoResearchClaw</td><td>任务契约与验证层：评分规则写成文件，数字对账与引用校验</td><td class="to">评分契约 <span class="mono">scoring.yaml</span> 与数字核对能力</td></tr>
+    <tr><td>DeepSeek Harness</td><td>一切能力皆为插件：模型适配、工具注册、agent 循环均可替换</td><td class="to">上移一层：整个 coding agent 即为一个插件</td></tr>
+  </table>
+</section>
+
+<!-- 一：边界 -->
+<section class="fig" id="fig-stages">
+  <h2>首先，把科研的边界划分清楚</h2>
+  <p class="sub">七个阶段；每个能力须写明五项内容，缺一项平台即报错</p>
+  <div class="stages7">
+    <div class="s">{{i:Books}}文献</div><div class="s">{{i:Lightbulb}}假设</div><div class="s on">{{i:PencilRuler}}设计</div>
+    <div class="s">{{i:Flask}}实验</div><div class="s">{{i:ChartLineUp}}分析</div><div class="s">{{i:PenNib}}写作</div><div class="s">{{i:SealCheck}}验证</div>
+  </div>
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:12px">例：设计阶段的能力「原码复现基线」</div>
+    <dl class="five">
+      <dt>职责</dt><dd>导入论文的代码，启动执行层会话编写评分契约与评分脚本；平台封装脚本，在选定的机器上原样运行，论文值与复现值并列</dd>
+      <dt>边界</dt><dd>不判定是否对上（由研究者按需求签字）；不编写训练代码、不修改评测定义；不检索、不下载材料</dd>
+      <dt>输入</dt><dd>已确认的需求；论文的代码与数据；环境清单；文献阶段的材料来源（可选）</dd>
+      <dt>产出</dt><dd><span class="mono">scoring.yaml</span>、封好的评分脚本与 <span class="mono">SHA256SUMS</span>、上游代码与改动记录、复现的成绩</dd>
+      <dt>终止条件</dt><dd>执行层改动了越界的目录或校验未通过：暂停，等待修改意见；脚本无法运行：暂停并说明原因</dd>
+    </dl>
+  </div>
+  <p class="note">每个阶段只向下游交付<b>一个主文件</b>：文献 <span class="mono">sources.md</span> · 设计 <span class="mono">scoring.yaml</span> · 实验 <span class="mono">ledger.tsv</span> + <span class="mono">results.json</span> · 分析 <span class="mono">analysis.md</span> · 验证 <span class="mono">report.json</span></p>
+</section>
+
+<!-- 二：产品 -->
+<section class="fig" id="fig-product">
+  <h2>平台的构成</h2>
+  <p class="sub">人确定方向，AI 执行工作，平台组织科研并记录每一步</p>
+  <div class="product">
+    <div class="box lvl1">
+      <h3>{{i:House}}首页 · 项目墙</h3>
+      <div class="box lvl2">
+        <h3>{{i:FolderSimple}}项目</h3>
+        <p>对应一个课题，配备一位研究助理，掌握课题的来龙去脉</p>
+        <div class="box lvl3">
+          <h3>{{i:Stack}}工作区</h3>
+          <p>对应一项需求 · 从一条 workflow 开始 · 各步骤产出按阶段存档，读取的上游、运行的机器、使用的 AI 均有记录</p>
+        </div>
+        <div class="box lvl3"><p>工作区 …</p></div>
+      </div>
+    </div>
+    <div>
+      <div class="box lvl2" style="margin-top:0">
+        <h3>{{i:FlowArrow}}编辑台</h3>
+        <p>流程库：内置 + 用户自存</p>
+        <p>能力库：步骤 · skill</p>
+        <p>流程助理：通过对话组合出新的 workflow</p>
+      </div>
+      <div class="take">{{i:ArrowLeft}}取用 workflow 进入工作区</div>
+      <div class="box lvl2">
+        <h3>{{i:GearSix}}设置</h3>
+        <p>AI：Claude Code · Codex</p>
+        <p>计算资源：本机 · 经 SSH 接入的服务器或租用 GPU</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 二：两条出厂 workflow -->
+<section class="fig" id="fig-workflows">
+  <h2>流程库中的两条内置 workflow</h2>
+  <p class="sub">蓝色为步骤，白色为 skill，橙色为断点（暂停等待人工签字）</p>
+  <div class="two">
+    <div class="flow">
+      <h3>论文复现</h3><div class="fname">reproduce</div>
+      <div class="step"><span class="stage">{{i:Books}}文献</span><div class="chips"><span class="tag skill">{{i:Toolbox}}pdf</span><span class="tag skill">{{i:Toolbox}}download</span></div></div>
+      <div class="link"></div>
+      <div class="step"><span class="stage">{{i:PencilRuler}}设计</span><div class="chips"><span class="tag">原码复现基线</span></div></div>
+      <div class="bpstep">{{i:Signature}}复现结果核对</div>
+      <div class="step"><span class="stage">{{i:ChartLineUp}}分析</span><div class="chips"><span class="tag">复现性分析</span></div></div>
+      <div class="link"></div>
+      <div class="step"><span class="stage">{{i:SealCheck}}验证</span><div class="chips"><span class="tag">数字核对</span></div></div>
+      <div class="bpstep">{{i:Signature}}验收</div>
+    </div>
+    <div class="flow">
+      <h3>从设计到验证</h3><div class="fname">research</div>
+      <div class="step"><span class="stage">{{i:PencilRuler}}设计</span><div class="chips"><span class="tag">评分脚本与基线</span></div></div>
+      <div class="bpstep">{{i:Signature}}评分指标核对</div>
+      <div class="step"><span class="stage">{{i:Flask}}实验</span><div class="chips"><span class="tag">AutoResearch · 最多 3 轮</span></div></div>
+      <div class="link"></div>
+      <div class="step"><span class="stage">{{i:ChartLineUp}}分析</span><div class="chips"><span class="tag">分析初稿</span></div></div>
+      <div class="link"></div>
+      <div class="step"><span class="stage">{{i:SealCheck}}验证</span><div class="chips"><span class="tag">数字核对</span></div></div>
+      <div class="bpstep">{{i:Signature}}验收</div>
+    </div>
+  </div>
+</section>
+
+<!-- 三 1：CLI -->
+<section class="fig" id="fig-cli">
+  <h2>CLI：给 AI 装上手</h2>
+  <p class="sub">平台的每个动作都是 <span class="mono">ai4sci</span> 的一条子命令；命令前缀同时也是权限边界</p>
+  <div class="callers">
+    <div class="caller"><b>研究助理</b><span class="mono">ai4sci</span><span class="small muted">全部命令</span></div>
+    <div class="caller"><b>流程助理</b><span class="mono">ai4sci show<br>ai4sci workflow</span></div>
+    <div class="caller"><b>执行层 agent</b><span class="mono">ai4sci skill</span><span class="small muted">仅限工具包</span></div>
+  </div>
+  <div class="arrow-down">↓</div>
+  <div class="cli"><span class="big">ai4sci</span><span class="small">一层很薄的 CLI · 每个能力是一个 Python 函数</span></div>
+  <div class="side"><span class="tag skill">网页后端直接调用同一函数</span><span class="tag skill">测试直接调用同一函数</span></div>
+  <div class="arrow-down">↓ 使用什么资源，由配置决定</div>
+  <div class="adapters">
+    <div class="card"><b>{{i:Cpu}} agents.yaml</b><div class="small muted">使用哪家 AI、何种模型与推理深度</div><div class="chips"><span class="tag">Claude Code</span><span class="tag">Codex</span></div></div>
+    <div class="card"><b>{{i:HardDrives}} computes.yaml</b><div class="small muted">可用的机器，仅支持 SSH 密钥登录</div><div class="chips"><span class="tag">本机</span><span class="tag">SSH 服务器 / 租用 GPU</span></div></div>
+  </div>
+  <div class="term">
+    <div><span class="p">$</span> ai4sci --help</div>
+    <div><span class="k">cap</span><span class="c">按名字跑一个能力，跑完即退</span></div>
+    <div><span class="k">show</span><span class="c">只读查询：项目、工作区、产出、作业、流程、能力清单</span></div>
+    <div><span class="k">flow</span><span class="c">流程实例：把库里的流程取到一个工作区</span></div>
+    <div><span class="k">sign</span><span class="c">人的确认：给一次产出签字</span></div>
+    <div><span class="k">env</span><span class="c">研究者的环境：隔离新建、用现成的、往现成的里补包</span></div>
+    <div><span class="k">compute</span><span class="c">算力：接一台机器、探一遍、清单、删、设缺省</span></div>
+    <div><span class="k">skill</span><span class="c">工具包：清单、读一个、起它的脚本</span></div>
+    <div class="c">…… 共 17 条子命令</div>
+  </div>
+</section>
+
+<!-- 三 2：三层 -->
+<section class="fig" id="fig-layers">
+  <h2>三层：站在巨人的肩膀上</h2>
+  <p class="sub">代码编写交由成熟的 coding agent，本平台专注于最上层</p>
+  <div class="layer top">
+    <h3>{{logo}}科研层 · AAAI4S</h3>
+    <div class="chips"><span class="tag">七个阶段</span><span class="tag">能力库</span><span class="tag">workflow 编排</span><span class="tag">断点与签字</span><span class="tag">数字核对</span><span class="tag">全程记录</span></div>
+  </div>
+  <div class="ports"><span class="port">Runner 端口 · 执行</span><span class="port">Chat 端口 · 对话</span></div>
+  <div class="layer mid">
+    <h3>{{i:Plug}}agent harness 层 · 每家一个适配器</h3>
+    <div class="agents"><div class="agent">Claude Code</div><div class="agent">Codex</div><div class="agent plan">更多 agent<br>计划接入</div></div>
+  </div>
+  <div class="arrow-down">↓</div>
+  <div class="layer bot">
+    <h3>{{i:Brain}}模型层</h3>
+    <div class="small muted">各家 agent 自带的大模型；平台的框架本身不调用任何模型</div>
+  </div>
+  <div class="aside">
+    <div class="card"><b>DeepSeek Harness</b><div class="small muted">把 agent 的内部拆成插件</div></div>
+    <div class="muted">{{i:ArrowRight}}</div>
+    <div class="card"><b>本平台上移一层</b><div class="small muted">整个 agent 即为一个插件，切换只需修改一行配置</div></div>
+  </div>
+</section>
+
+<!-- 三 3：拆 autoresearch -->
+<section class="fig" id="fig-autoresearch">
+  <h2>把 autoresearch 拆成两块积木</h2>
+  <p class="sub">拆分之后，既可与其他阶段组合，也可被替换</p>
+  <div class="card before">
+    <div style="font-weight:600">原项目：一个循环，全部由 agent 自行完成</div>
+    <div class="small muted">固定评测 <span class="mono">prepare.py</span>：跑 5 分钟，只看一个指标 <span class="mono">val_bpb</span></div>
+    <div class="loop"><span class="tag">改代码</span><span class="ar">→</span><span class="tag">跑实验</span><span class="ar">→</span><span class="tag">比大小</span><span class="ar">→</span><span class="tag">git reset</span><span class="ar">→</span><span class="tag">记账</span><span class="ar">↺</span></div>
+  </div>
+  <div class="arrow-down">↓ 在本平台中</div>
+  <div class="split">
+    <div class="card">
+      <h3>{{i:PencilRuler}}设计阶段</h3>
+      <div class="who2">
+        <div><span class="w ai">AI</span>编写启动脚本与评测脚本</div>
+        <div><span class="w fw">平台</span>以 SHA256 封装为只读 harness</div>
+        <div><span class="w hu">人</span>签字确认评分标准</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>{{i:Flask}}实验阶段 · AutoResearch</h3>
+      <div class="who2">
+        <div><span class="w ai">AI</span>仅修改代码</div>
+        <div><span class="w fw">平台</span>运行实验、统计门限判定</div>
+        <div><span class="w fw">平台</span>保留或回退、记录账本</div>
+      </div>
+    </div>
+  </div>
+  <div class="strip">
+    <span class="x">文献</span><span class="ar">→</span><span class="x hi">设计</span><span class="x b">签字</span><span class="ar">→</span><span class="x hi">实验</span><span class="ar">→</span><span class="x">分析</span><span class="ar">→</span><span class="x">验证</span>
+  </div>
+</section>
+
+<!-- 三 4：自由度 -->
+<section class="fig" id="fig-freedom">
+  <h2>自由度由 workflow 决定</h2>
+  <p class="sub">同一组阶段，断点的数量与位置由用户在编辑台上决定</p>
+  <div class="row"><div class="lbl">全自动<span>不设断点</span></div>
+    <div class="strip"><span class="x">设计</span><span class="ar">→</span><span class="x">实验</span><span class="ar">→</span><span class="x">分析</span><span class="ar">→</span><span class="x">验证</span><span class="ar">→</span><span class="x hi">完成</span></div></div>
+  <div class="row"><div class="lbl">关键节点暂停<span>内置的「从设计到验证」</span></div>
+    <div class="strip"><span class="x">设计</span><span class="x b">评分指标核对</span><span class="ar">→</span><span class="x">实验</span><span class="ar">→</span><span class="x">分析</span><span class="ar">→</span><span class="x">验证</span><span class="x b">验收</span></div></div>
+  <div class="row"><div class="lbl">逐步审阅<span>适用于需要逐步把关的场景</span></div>
+    <div class="strip"><span class="x">设计</span><span class="x b">签</span><span class="ar">→</span><span class="x">实验</span><span class="x b">签</span><span class="ar">→</span><span class="x">分析</span><span class="x b">签</span><span class="ar">→</span><span class="x">验证</span><span class="x b">签</span></div></div>
+  <p class="note">开工前人确认一次需求以明确方向，此后如何推进由 workflow 决定。<b>流程可随时暂停</b>：状态均保存在磁盘上，会话关闭或进程中断后，重启即可继续。</p>
+</section>
+
+<!-- 三 5：全学科 -->
+<section class="fig" id="fig-domains">
+  <h2>全学科适配：加一个领域包，不改框架</h2>
+  <p class="sub">平台关注问题的形态，例如“九个参数，最小化一个标量”；学科信息写在需求中</p>
+  <div class="two" style="align-items:start">
+    <div class="tree">domains/&lt;领域包&gt;/
+├── profile.yaml   <span class="c"># 名字</span>
+├── prompts/
+│   └── experiment.md
+│       <span class="c"># 领域约定</span>
+└── skills/&lt;名字&gt;/
+    <span class="c"># 领域 skill</span></div>
+    <div>
+      <div class="card" style="padding:14px 16px">
+        <div style="font-weight:600;margin-bottom:6px">出厂的领域包</div>
+        <div class="small"><span class="mono">generic</span> 通用，适用于任何课题</div>
+        <div class="small" style="margin-top:4px"><span class="mono">petab</span> PEtab 参数估计：pyPESTO · petab · libroadrunner</div>
+      </div>
+      <div class="card" style="padding:14px 16px;margin-top:10px">
+        <div style="font-weight:600;margin-bottom:6px">需求模板</div>
+        <div class="chips" style="margin-top:0"><span class="tag skill">通用</span><span class="tag skill">AI</span><span class="tag skill">计算机</span><span class="tag skill">材料</span><span class="tag skill">论文复现</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="fields"><span class="tag">化学</span><span class="tag">化工</span><span class="tag">材料</span><span class="tag">物理</span><span class="tag">生物</span><span class="tag">……</span></div>
+  <p class="note" style="text-align:center;margin-top:10px">同一个平台，同一套流程</p>
+</section>
+
+<!-- 四：答案卷 -->
+<section class="fig" id="fig-answer">
+  <h2>助理独立得出的结论与答案卷一致</h2>
+  <p class="sub">答案卷由三个 AI 读者事先核实，未向助理提供</p>
+  <table>
+    <tr><th style="width:118px">项</th><th>答案卷</th><th>助理独立得出</th></tr>
+    <tr><td>代码仓库</td><td>JingXiao10/GUA<br><span class="muted small">MIT，数据随仓库</span></td><td class="same">{{i:CheckCircle}} 由摘要中的链接找到，拉取至 commit <span class="mono">8bbbcd5</span></td></tr>
+    <tr><td>要复现的数</td><td>表 8 · Burgers · 2-loss<br>1.74e-3 / 6.50e-4</td><td class="same">{{i:CheckCircle}} 同一行，并说明理由：只训 3 万轮、ConFIG 是主基线</td></tr>
+    <tr><td>运行命令</td><td><span class="mono">trainer.py --equation burgers --method config …</span></td><td class="same">{{i:CheckCircle}} 启动脚本原样运行两个变体</td></tr>
+    <tr><td>结果文件</td><td><span class="mono">formal_metrics.json</span> 里的 <span class="mono">relative_l2</span></td><td class="same">{{i:CheckCircle}} 评测脚本读取该文件，不采信屏幕输出</td></tr>
+    <tr><td>坑：种子波动</td><td>单个种子波动可达 19%，需给出误差带或跑满 5 个种子</td><td class="same">{{i:CheckCircle}} 以 ±2σ 为标准，跑满 5 个种子，时间不足时减至 3 个</td></tr>
+    <tr><td>坑：版本差</td><td>论文指定 torch 2.12，镜像为 2.8；使用镜像版本即可</td><td class="same">{{i:CheckCircle}} 使用镜像版本，将版本差异写入需求并在分析中归因</td></tr>
+  </table>
+</section>
+
+<!-- 六：能力覆盖 -->
+<section class="fig" id="fig-coverage">
+  <h2>七个阶段的能力覆盖与待补方向</h2>
+  <p class="sub">1.0 版本包含 6 个步骤能力与 3 个 skill；文献、假设、写作三个阶段有待补充</p>
+  <div class="cov">
+    <div class="c todo">{{i:Books}}<b>文献</b><div class="n"><div class="muted">skill：pdf、download</div></div><div class="t">待补步骤</div></div>
+    <div class="c todo">{{i:Lightbulb}}<b>假设</b><div class="t">待补</div></div>
+    <div class="c">{{i:PencilRuler}}<b>设计</b><div class="n"><div>评分脚本与基线</div><div>原码复现基线</div></div></div>
+    <div class="c">{{i:Flask}}<b>实验</b><div class="n"><div>AutoResearch</div></div></div>
+    <div class="c">{{i:ChartLineUp}}<b>分析</b><div class="n"><div>分析初稿</div><div>复现性分析</div></div></div>
+    <div class="c todo">{{i:PenNib}}<b>写作</b><div class="t">待补</div></div>
+    <div class="c">{{i:SealCheck}}<b>验证</b><div class="n"><div>数字核对</div></div></div>
+  </div>
+  <div class="card map">
+    <div style="font-weight:600;margin-bottom:4px">已调研 18 个开源科研 AI 项目，代码级深读 13 个</div>
+    <div class="m"><span>论文阅读 · 文献检索 · 文献综述</span><span class="muted">→</span><span class="to">文献</span></div>
+    <div class="m"><span>研究创意 · 假设生成与评估</span><span class="muted">→</span><span class="to">假设</span></div>
+    <div class="m"><span>论文写作</span><span class="muted">→</span><span class="to">写作</span></div>
+  </div>
+</section>
+
+</body>
+</html>

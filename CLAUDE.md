@@ -52,5 +52,5 @@
 
 ## 版本
 
-- 从 1.0.0 起承诺兼容：冻结的契约清单、MAJOR / MINOR / PATCH 的判据、弃用周期在 `CONTRIBUTING.md`「版本与发布」（ADR-0004）。外仓与内仓各自一条版本线，大版本同日对齐；spec 与 milestone 只用产品版本、带 `platform` 前缀。
+- 从 1.0.0 起承诺兼容：冻结的契约清单、MAJOR / MINOR / PATCH 的判据、弃用周期在 `CONTRIBUTING.md`「版本与发布」（ADR-0004）；内测期不兼容也走 MINOR、不留兼容层，例外的条件也写在那里。外仓与内仓各自一条版本线，大版本同日对齐；spec 与 milestone 只用产品版本、带 `platform` 前缀。
 - tag 形如 `vX.Y.Z`（预发布 `vX.Y.Z-rc.N`，在 `release/X.Y` 上打）；推送 tag 即触发 `.github/workflows/release.yml` 建 Release（外层只出 Release Notes，内仓的流水线出 wheel），rc 自动标 pre-release。

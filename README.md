@@ -72,7 +72,7 @@ cd tju-ai4science
 ./repos clone all      # 按 repos.json 把内仓 clone 到位（幂等）
 ./repos status         # 各仓分支 / 领先落后 / 脏文件 / 线上分支漂移
 make check             # 本地门禁，与 CI 完全相同
-cd platform && make up # 内仓一行起服务：.venv → 页面 → skill 预热 → 自检 → ai4sci serve
+cd platform && make up # 内仓一行起服务：.venv → 页面 → skill 门禁与预热 → 自检 → ai4sci serve
 ```
 
 clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all` 解引用。
@@ -86,13 +86,14 @@ clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all`
 | 知道规矩 | [`CLAUDE.md`](CLAUDE.md) | 拓扑、红线、issue driven 的纪律、写代码与验收的标准（给人也给 agent） |
 | 怎么协作：分支、PR、发版 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | 分支模型、一件事的生命周期、1.x 版本策略与冻结的契约、CHANGELOG 写法 |
 | 知道产品为什么这样 | [`docs/vision.md`](docs/vision.md) | 目标、给谁用、凭什么、定位、不做什么、今天离它多远 |
-| 知道产品的边界与原则 | [`docs/architecture/README.md`](docs/architecture/README.md) | 纲领：四层、项目与工作区、可替换性、P-1 到 P-25 每条规则 + 机器判据 |
+| 知道产品的边界与原则 | [`docs/architecture/README.md`](docs/architecture/README.md) | 纲领：四层、项目与工作区、可替换性、P-1 到 P-27 每条规则 + 机器判据 |
 | 知道流程、内环、适配怎么定的 | [`docs/architecture/workflow.md`](docs/architecture/workflow.md) | 细则：三层与流程、磁盘布局、契约、skill、实验内环、判定与验证、人在环、算力 / 删除 / 设置 / 执行层 / 协调层 / 界面适配、词表 |
 | 知道还没定什么 | [`docs/architecture/open-questions.md`](docs/architecture/open-questions.md) | 真未决的五项 |
 | 看真实课题怎么跑的、坑在哪 | [`docs/cases/`](docs/cases/README.md) | 案例卡与三轮演练记录（按日期封存） |
 | 知道仓库基础设施为什么这么定 | [`docs/adr/`](docs/adr/README.md) | 拓扑、版本与发布、追踪范围 |
 | 学怎么和 agent 一起干活 | [`docs/handbook/`](docs/handbook/README.md) | 协作手册：issue driven、派活怎么写、门禁、取证、先搜再答、派读者、文档即上下文、重构、gh、三轮演练 |
 | 看已发版本当时定了什么 | [`docs/specs/`](docs/specs/) | 每版一份 PRD，发了就封存 |
+| 看对外文章 | [`docs/articles/`](docs/articles/) | 公众号等对外稿件，一篇一个目录：正文 `README.md` + 事实出处 `sources.md` + 配图清单 `figures.json`（图在 COS，不进仓库） |
 | 看调研依据 | [`research/`](research/README.md) | 行业调研、选型深读、演练评测；公开区 |
 | **改代码** | 内仓 [`platform/CLAUDE.md`](https://github.com/zephyr4123/TJU-AI4Science-Platform/blob/main/CLAUDE.md) | 开发红线、编码标准、质量纪律、「改哪层先读哪份」；内仓 README 是代码侧的地图 |
 
@@ -108,7 +109,7 @@ tju-ai4science/
 ├── CHANGELOG.md      变更日志
 ├── CLAUDE.md         规矩；AGENTS.md 是它的符号链接（Codex 的入口）
 ├── CONTRIBUTING.md   流程：分支、PR、发版、CHANGELOG
-├── docs/             vision、architecture/（纲领、细则、未决项）、handbook/（协作手册）、specs/（每版一份 PRD）、adr/（仓库基础设施决定）、meetings/（纪要）
+├── docs/             vision、architecture/（纲领、细则、未决项）、handbook/（协作手册）、specs/（每版一份 PRD）、adr/（仓库基础设施决定）、meetings/（纪要）、articles/（对外文章）
 │                     cases/（真实科研案例与演练：案例卡 + 学长原文 + 小证据，原件在 materials/）
 ├── research/         调研：landscape/ selection/ literature/ domain/ evals/ —— 公开区，自动发布到 GitHub Pages
 ├── scripts/          外部脚本与一次性工具 —— 生产代码禁止依赖这里
