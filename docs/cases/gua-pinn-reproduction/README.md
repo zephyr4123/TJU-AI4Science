@@ -102,7 +102,7 @@
 | `baseline/` | 五个种子的结果与 σ |
 | `analysis.md` | 复现性分析（第四版，过核对与通读的那份） |
 | `report.json` | 数字核对报告（PASS，14 个值） |
-| `transcript.md` | 整段对话：研究者的每句话、助理的每轮回话（工具调用在项目的 `.ai4sci/chats/<cid>/turn-N/trace.jsonl` 里，没抄） |
+| `transcript.md` | 整段对话：研究者的每句话、助理的每轮回话（工具调用在项目的 `.ai4sci/chats/<cid>/turn-N/trace.jsonl` 里，没抄）。人那一行开头的「（平台提示：…）」是 1.0.x 的旧行为：指南中途变了框架把它拼在人话前面；1.1 起另存 `turn-N/guide-update.md`、页面不再显示（#200），这里是当时的原样记录，不改 |
 
 主机名、端口、本机路径按红线抹成 `<autodl-host>`、`<port>`、`<workspace>`。原件不进 git：
 

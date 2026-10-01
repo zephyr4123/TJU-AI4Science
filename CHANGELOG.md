@@ -11,6 +11,15 @@
 ### 新增
 - 公开区加 `research/selection/2026-0927-scientific-ai-capabilities/`：李瑞彬调研的 18 个科研 AI 开源项目（文献 / 假设 / 写作三个阶段），原表归档，选 13 个做代码级深读并经独立复查，按 6 类能力横向比较；接不接待讨论（#151）
 
+### 变更
+- 纲领 P-22 与 workflow.md：skill 三处库一种摆法 `<架>/<tag>/<name>/`，架是七个阶段加「通用」、架下分子 tag，台账不再记阶段；词表加「通用」（#205）
+
+## [1.1.0] - 2026-10-01
+
+### 新增
+- 纲领加 P-26 能力按项目装载（只装本项目流程实例上挂的加平台自带的）、P-27 一个 key 都不要；P-15 加流程命名与血缘，P-11 P-22 跟着改；workflow.md 同步（#195 #196 #197 #199 #200）
+- 对外文章 `docs/articles/2026-0929-first-release/`：公众号稿，写平台第一次发版（≤1.0.1），正文、事实出处与 27 张配图（真实界面、数据图、示意图，放腾讯云 COS 经 CDN 引用，不进仓库）；出图与上传脚本在 `scripts/articles/`（#193）
+
 ## [1.0.1] - 2026-09-23
 
 ### 修复
@@ -83,7 +92,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.3.0...v1.0.0
 [0.3.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v0.2.0...v0.3.0
