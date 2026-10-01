@@ -86,7 +86,7 @@ clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all`
 | 知道规矩 | [`CLAUDE.md`](CLAUDE.md) | 拓扑、红线、issue driven 的纪律、写代码与验收的标准（给人也给 agent） |
 | 怎么协作：分支、PR、发版 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | 分支模型、一件事的生命周期、1.x 版本策略与冻结的契约、CHANGELOG 写法 |
 | 知道产品为什么这样 | [`docs/vision.md`](docs/vision.md) | 目标、给谁用、凭什么、定位、不做什么、今天离它多远 |
-| 知道产品的边界与原则 | [`docs/architecture/README.md`](docs/architecture/README.md) | 纲领：四层、项目与工作区、可替换性、P-1 到 P-25 每条规则 + 机器判据 |
+| 知道产品的边界与原则 | [`docs/architecture/README.md`](docs/architecture/README.md) | 纲领：四层、项目与工作区、可替换性、P-1 到 P-27 每条规则 + 机器判据 |
 | 知道流程、内环、适配怎么定的 | [`docs/architecture/workflow.md`](docs/architecture/workflow.md) | 细则：三层与流程、磁盘布局、契约、skill、实验内环、判定与验证、人在环、算力 / 删除 / 设置 / 执行层 / 协调层 / 界面适配、词表 |
 | 知道还没定什么 | [`docs/architecture/open-questions.md`](docs/architecture/open-questions.md) | 真未决的五项 |
 | 看真实课题怎么跑的、坑在哪 | [`docs/cases/`](docs/cases/README.md) | 案例卡与三轮演练记录（按日期封存） |
