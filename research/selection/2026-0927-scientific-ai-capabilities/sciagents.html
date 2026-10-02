@@ -94,6 +94,8 @@
   blockquote p:last-child { margin-bottom: 0; }
   hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0; }
   code { font-family: var(--font-mono); font-size: .875em; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  /* 正文里的长路径、长链接在手机宽度上要能折行，否则整页横向滚动；表格自带横向滚动，不折 */
+  main p, main li, main blockquote, dl.meta dd { overflow-wrap: anywhere; }
   pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; overflow-x: auto; margin: 0 0 1.4em; line-height: 1.5; }
   pre code { background: none; padding: 0; font-size: .82rem; }
 
