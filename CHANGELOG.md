@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-02
+
 ### 新增
 - 公开区加 `research/selection/2026-1002-bootloops/`：BootLoops（Schwartz 2026-10-01 开源的定量科学工具包与 12 个工作协议 skill）调研，读三个仓库的文档与 12 个 skill、本机实跑自检，对照平台收录门槛；结论不收录、存档备查（#208）
 
@@ -100,7 +102,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.0...v1.0.1
