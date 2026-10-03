@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### 新增
+- `docs/specs/windows-adaptation.md`：Windows 适配的移交说明，写明范围、完成标准、路线判断（原生 + Git for Windows）、13 类要改的地方（带文件与行号、改法、验证）与顺序；分工纪要方向 2 指向它（#210）
+
 ## [1.2.1] - 2026-10-02
 
 ### 新增
