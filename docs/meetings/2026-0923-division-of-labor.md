@@ -41,6 +41,7 @@
 - **边界**：三个口子——本机进程控制（`backends/_procs.py`、`workspace/jobs.py`）、传输（`compute/ssh.py` 的 rsync）、`~/.config` 路径（`paths.py` `computes.py` `agents.py` `backends/codex.py`）；先定原生 + Git Bash 还是 WSL（倾向原生）。
 - **入口**：`platform/framework/README.md` §1 §5；CI 加 windows-latest 作业先允许失败，把红的列成清单。
 - **前提**：借到一台 Windows 机、开好 OpenSSH 服务端，从 mac ssh 过去做。
+- **2026-10-03 更新**：改为移交给另一位工程师，不再从 mac ssh 过去做。范围、完成标准、要改的地方与顺序见 [Windows 适配 · 移交说明](../specs/windows-adaptation.md)（[#210](https://github.com/zephyr4123/TJU-AI4Science/issues/210)）。
 
 ### 3. 调研成熟的科研 AI 能力
 
