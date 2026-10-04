@@ -18,7 +18,7 @@
     . ~/.secrets/loader.sh
     withkey openalex platform/.venv/bin/python scripts/evals/literature_recall.py \
         <工作区目录> <综述 W 号> <claude_code|codex> <最多跳数> <每跳筛选数> <停止下限> \
-        [--seeds <固定的 seeds.md>] [--cache <目录>] [--no-cutoff]
+        [--seeds <固定的 seeds.md>] [--cache <目录>] [--no-cutoff] [--no-screen]
 
 工作区要先建好、需求确认过、流程实例上挂了 literature-search（报告 §7.1 有一份示例需求）；
 AI4SCI_HOME 指到实测用的数据根，别拿正式数据根跑。
@@ -97,6 +97,8 @@ def main() -> None:
                     help="固定的 seeds.md：不起种子会话，比较参数时少一处随机")
     ap.add_argument("--cache", type=Path, default=Path.home() / ".cache" / "ai4sci-literature-eval")
     ap.add_argument("--no-cutoff", action="store_true", help="不按综述发表日截断（截断以前的口径）")
+    ap.add_argument("--no-screen", action="store_true",
+                    help="不筛全收：不起筛选会话，每跳挑出来的全收（外层 #217 的实验）")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
 
@@ -130,7 +132,7 @@ def main() -> None:
 
     line = loop.search(out, Inputs(ws.root), get_backend(args.backend),
                        loop.Limits(args.max_hops, args.per_hop, args.min_new), fulltext=False,
-                       client=client, excluded=frozenset({args.review}))
+                       screen=not args.no_screen, client=client, excluded=frozenset({args.review}))
     rows = [json.loads(x) for x in (out / "candidates.jsonl").read_text().splitlines()]
     screened = {r["paper"]["key"] for r in rows}
     included = {r["paper"]["key"] for r in rows if r["verdict"] == "收"}
@@ -145,8 +147,8 @@ def main() -> None:
         h["included"] += took
         h["gold_in"] += took and key in gold
         h["core_in"] += took and key in core
-    result = {"review": args.review, "until": until, "gold": len(gold),
-              "gold_resolvable": len(resolvable), "gold_core": len(core),
+    result = {"review": args.review, "until": until, "screen": not args.no_screen,
+              "gold": len(gold), "gold_resolvable": len(resolvable), "gold_core": len(core),
               "backend": args.backend,
               "limits": [args.max_hops, args.per_hop, args.min_new], "line": line,
               "screened": len(screened), "included": len(included),
