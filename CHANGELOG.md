@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-10-04
+
 ### 新增
 - 筛选重放脚本 `scripts/evals/literature_rescreen.py`：只改筛选（清单写法、模型、思考深度、理由写法）时，把跑过的检索每跳的清单再判一遍对评分，不用从头跑（#219）
 
@@ -123,7 +125,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.1.0...v1.2.0
