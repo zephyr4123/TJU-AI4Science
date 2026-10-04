@@ -9,9 +9,6 @@
 论文不进候选池，等于在综述发表那天跑这个工具，`--no-cutoff` 关掉。eval.json 里另按第一版的旧口径
 （收录了几成综述参考文献）量一遍，只作对照。
 
-`--screen` 选筛选方式，`--crossref-results` 定每条检索词从 Crossref 取几篇（#217 的消融实验：
-对照组照旧版给 10）。
-
 依赖内仓的代码（`framework.capabilities.literature_search`），用内仓的 venv 跑；内仓的生产代码
 不依赖这里。OpenAlex 的回答按 URL 存在 --cache 目录里复用：同一道题换参数重跑不重复扣额度。
 
@@ -19,7 +16,7 @@
     . ~/.secrets/loader.sh
     withkey openalex platform/.venv/bin/python scripts/evals/literature_recall.py \
         <工作区目录> <题目文件> <claude_code|codex> <最多跳数> <每跳筛选数> <停止下限> \
-        [--screen each|final|none] [--crossref-results N] [--seeds <seeds.md>] [--no-cutoff]
+        [--seeds <seeds.md>] [--no-cutoff]
 
 工作区要先建好：requirement.md 是题里「需求」一节的原文、确认过，流程实例上挂了 literature-search
 （报告 §11）；AI4SCI_HOME 指到评测用的数据根，别拿正式数据根跑。
@@ -36,7 +33,7 @@ from pathlib import Path
 
 import literature_question
 from backends import get_backend
-from framework.capabilities.literature_search import gather, loop
+from framework.capabilities.literature_search import loop
 from framework.capabilities.literature_search.exchange import parse_seeds
 from framework.capabilities.literature_search.openalex import BASE_URL, OpenAlex, api_key
 from framework.capabilities.literature_search.papers import from_openalex, work_key
@@ -98,10 +95,6 @@ def main() -> None:
     ap.add_argument("max_hops", type=int)
     ap.add_argument("per_hop", type=int)
     ap.add_argument("min_new", type=int)
-    ap.add_argument("--screen", default="each", choices=loop.SCREEN_MODES,
-                    help="筛选方式：每跳筛、扩完最后统一筛、不筛全收（外层 #217）")
-    ap.add_argument("--crossref-results", type=int,
-                    help="每条检索词从 Crossref 取几篇；不给用步骤里的（#217 起是 5，以前是 10）")
     ap.add_argument("--seeds", type=Path,
                     help="固定的 seeds.md：不起种子会话，比较参数时少一处随机")
     ap.add_argument("--cache", type=Path, default=Path.home() / ".cache" / "ai4sci-literature-eval")
@@ -113,8 +106,6 @@ def main() -> None:
     ws = load(args.workspace)
     assert requirement.read(ws.root).strip() == question.requirement.strip(), (
         f"{args.workspace} 的 requirement.md 和题 {question.name} 的需求对不上")
-    if args.crossref_results is not None:
-        gather.SOURCE_RESULTS["Crossref"] = args.crossref_results
     web = Web(get=cached(args.cache))
     plain = OpenAlex(web, key=api_key())
     gold: set[str] = set()
@@ -151,7 +142,7 @@ def main() -> None:
     excluded = frozenset({question.review}) if question.review else frozenset()
     line = loop.search(out, Inputs(ws.root), get_backend(args.backend),
                        loop.Limits(args.max_hops, args.per_hop, args.min_new), fulltext=False,
-                       screen=args.screen, client=client, excluded=excluded)
+                       client=client, excluded=excluded)
     rows = [json.loads(x) for x in (out / "candidates.jsonl").read_text().splitlines()]
     screened = {r["paper"]["key"] for r in rows}
     included = {r["paper"]["key"] for r in rows if r["verdict"] == "收"}
@@ -167,9 +158,7 @@ def main() -> None:
         h["gold_in"] += took and key in gold
         h["core_in"] += took and key in core
     result = {"question": question.name, "kind": question.kind, "review": question.review,
-              "until": until, "screen": args.screen,
-              "crossref_results": gather.SOURCE_RESULTS.get("Crossref", gather.QUERY_RESULTS),
-              "abstract_max": loop.ABSTRACT_MAX,
+              "until": until, "abstract_max": loop.ABSTRACT_MAX,
               "gold": len(gold), "gold_resolvable": len(resolvable), "gold_core": len(core),
               "backend": args.backend,
               "limits": [args.max_hops, args.per_hop, args.min_new], "line": line,

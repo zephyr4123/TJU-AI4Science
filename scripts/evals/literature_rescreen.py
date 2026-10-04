@@ -11,8 +11,11 @@
 
 用法（在外层仓根）：
     AI4SCI_HOME=<评测的 home> platform/.venv/bin/python scripts/evals/literature_rescreen.py \
-        <重放目录> <产出目录…> [--model sonnet --effort medium --abstract-max 1500 --short-found]
-        [--reasons all|included|none]
+        <重放目录> <产出目录…> [--model sonnet --effort medium --abstract-max 500]
+        [--short-found] [--reasons all|included|none]
+
+`--abstract-max` 缺省是步骤现在的 500 字；`--short-found` 把 1.3.0 写法的清单（「怎么找到的」列出
+每条检索词与父论文题目）压成现在的只数个数，现在写法的清单原样不动。
 
 每批的结果写在 <重放目录>/<工作区>-<次>/hop-<跳>/result.json（收不收、理由、花费、token）；
 已有 result.json 的批跳过，中断了重跑接着来。
@@ -58,7 +61,7 @@ FORMATS = {
              "拿不准的收（这一步宁可多收，后面还有人看）。"),
 }
 SHORT_LINE_RE = re.compile(r"^\W*(W\d+)\s*\|\s*(收|不收)\s*(?:\|\s*(.*?))?\s*$")
-# 「怎么找到的」一行的四种说法（pool.describe）：压缩时只数每种几条，不列父论文题目
+# 1.3.0 清单里「怎么找到的」一行的四种说法（pool.describe）：压缩时只数每种几条，不列父论文题目
 FOUND_KINDS = (("种子（", "种子"), ("检索词「", "检索词 {n} 条"),
                ("被收录的《", "被 {n} 篇已收录的引用"), ("引用了收录的《", "引用了 {n} 篇已收录的"))
 
@@ -76,7 +79,8 @@ def rewrite(block: str, abstract_max: int, short_found: bool) -> str:
             text = line.removeprefix(ABSTRACT_PREFIX).removesuffix("…")
             cut = len(text) > abstract_max or line.endswith("…")
             line = ABSTRACT_PREFIX + text[:abstract_max] + ("…" if cut else "")
-        elif short_found and line.startswith(FOUND_PREFIX):
+        elif (short_found and line.startswith(FOUND_PREFIX)
+              and any(mark in line for mark, _ in FOUND_KINDS)):
             line = FOUND_PREFIX + "；".join(say.format(n=line.count(mark))
                                             for mark, say in FOUND_KINDS if mark in line)
         lines.append(line)
@@ -103,13 +107,15 @@ def parse_short(text: str, expected: list[str]) -> tuple[dict, list]:
 def ask(runner, tuning: Tuning, batch_dir: Path, run_dir: Path, need: str, criteria: str,
         hop: str, entries: list[tuple[str, str]], reasons: str, suffix: str = ""
         ) -> tuple[dict, list, dict]:
-    """交给筛选判一次：照检索步骤的 _ask 拼提示，只是结论写在重放目录。返回结论、问题、花费。"""
+    """交给筛选判一次：照检索步骤的 _ask 拼提示（结论文件同样给绝对路径），只是结论写在重放目录。
+    返回结论、问题、花费。"""
     listing = "\n\n".join(b for _, b in entries)
     decisions = DECISIONS.replace(".md", f"{suffix}.md")
     (batch_dir / f"candidates{suffix}.md").write_text(listing + "\n", encoding="utf-8")
     prompt = prompting.build_prompt(
-        loop.SCREEN_PROMPT, {"batch": f"第 {hop} 跳", "count": len(entries), "requirement": need,
-                             "criteria": criteria, "candidates": listing, "decisions": decisions},
+        loop.SCREEN_PROMPT, {"hop": hop, "count": len(entries), "requirement": need,
+                             "criteria": criteria, "candidates": listing,
+                             "decisions": str(batch_dir / decisions)},
         loadout=loadout.around(run_dir))
     if reasons != "all":
         fmt, unsure = FORMATS[reasons]

@@ -344,8 +344,7 @@ def score(run: Path, ev: dict, rows: list[dict], relevant: set[str], gold: set[s
     branch_recall = {b: round(len(included & ks) / len(ks), 3) for b, ks in by_branch.items()
                      if ks and b != OTHER_BRANCH}
     return {
-        "run": str(run), "screen": ev.get("screen"),
-        "crossref_results": ev.get("crossref_results"), "line": ev["line"],
+        "run": str(run), "line": ev["line"],
         "screened": len(screened), "included": len(included),
         "relevant_included": len(included & relevant),
         "precision": round(len(included & relevant) / len(included), 3) if included else None,
