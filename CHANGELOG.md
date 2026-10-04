@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-04
+
 ### 变更
 - 纲领 P-27 从「一个 key 都不要」改成「不要 key 也能用，有 key 用得更多」：可选的 key 只做量上的加法、只走环境变量，现在只有文献检索的 `OPENALEX_API_KEY`；skill 仍一律不要 key（#212）
 
@@ -110,7 +112,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.0.1...v1.1.0
