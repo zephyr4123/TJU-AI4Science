@@ -169,6 +169,7 @@ def main() -> None:
     result = {"question": question.name, "kind": question.kind, "review": question.review,
               "until": until, "screen": args.screen,
               "crossref_results": gather.SOURCE_RESULTS.get("Crossref", gather.QUERY_RESULTS),
+              "abstract_max": loop.ABSTRACT_MAX,
               "gold": len(gold), "gold_resolvable": len(resolvable), "gold_core": len(core),
               "backend": args.backend,
               "limits": [args.max_hops, args.per_hop, args.min_new], "line": line,
