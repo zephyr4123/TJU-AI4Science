@@ -1,11 +1,13 @@
-"""文献检索步骤的召回实测（外层 #212，报告见 docs/specs/literature-search.md §7）。
+"""文献检索步骤的评测，第一步：照一道题跑一次检索（外层 #212 #215，报告 §6）。
 
-拿一篇综述的参考文献当标准答案，跑一次文献检索（把这篇综述挡在池外，否则向后一跳就把答案全抄
-回来），量答案有几篇被看过摘要、被收录、在线索里出现过，按跳拆开。结果写在产出目录的 eval.json，
-并打一行汇总。
+一道题 = 一篇圈定范围的综述 + 照它的范围写的需求。跑一次文献检索，候选池里挡掉综述本身（否则向后
+一跳就把答案全抄回来），记下看过、收录的每篇（candidates.jsonl），并按旧口径（综述参考文献当答案）
+量一遍，按跳拆开，写在产出目录的 eval.json。打分是第二步 literature_judge.py：评分模型判切不切题，
+算准不准、名额用得准不准、全不全；这里的数只作对照。
 
-默认只认综述发表日（含）以前的论文（外层 #215）：综述之后发表的不可能在答案里，工具找到了不算分，
-还占每跳的名额，召回就被低估了。`--no-cutoff` 关掉，复现报告 §7.2 里截断以前的数字。
+综述本身的任何版本都挡在外面（预印本、会议版的 W 号各不相同，按题目认）；默认只认综述发表日
+（含）以前的论文（外层 #215）：综述之后发表的不可能在答案里，工具找到了不算分，
+还占每跳的名额，分数就被低估了。`--no-cutoff` 关掉，复现第一版口径的数字。
 分母两个：OpenAlex 取得到的答案（有的参考文献是坏记录，谁都取不到）与其中的核心答案（题目或摘要
 提到 physics-informed / PINN / physics-guided / physics-constrained，排掉背景引用）。
 
@@ -59,18 +61,28 @@ def cached(cache: Path):
 CORE_RE = re.compile(r"physics[- ](informed|guided|constrained)|\bPINNs?\b", re.IGNORECASE)
 
 
-class Before(OpenAlex):
-    """只取 until（含）以前发表的论文：每个请求的 filter 加一条 to_publication_date。检索命中、
+def same_title(a: str, b: str) -> bool:
+    return re.sub(r"\W+", "", a.lower()) == re.sub(r"\W+", "", b.lower())
+
+
+class Blind(OpenAlex):
+    """评测用的 OpenAlex：综述本身的任何版本（预印本、会议版，W 号各不相同，按题目认）都取不到；
+    给了 until 时只取那天（含）以前发表的，每个请求的 filter 加一条 to_publication_date。检索命中、
     种子、参考文献、谁引用了它，元数据都从这里取，取不到的就进不了候选池。"""
 
-    def __init__(self, web: Web, key: str | None, until: str) -> None:
+    def __init__(self, web: Web, key: str | None, title: str, until: str | None) -> None:
         super().__init__(web, key=key)
-        self.until = until
+        self.title, self.until = title, until
 
     def _page(self, params: dict[str, str]) -> dict:
-        cut = f"to_publication_date:{self.until}"
-        return super()._page({**params, "filter": f"{params['filter']},{cut}"
-                              if "filter" in params else cut})
+        if self.until is not None:
+            cut = f"to_publication_date:{self.until}"
+            params = {**params, "filter": f"{params['filter']},{cut}" if "filter" in params
+                      else cut}
+        doc = super()._page(params)
+        doc["results"] = [w for w in doc["results"]
+                          if not same_title(w.get("display_name") or "", self.title)]
+        return doc
 
 
 def main() -> None:
@@ -81,7 +93,8 @@ def main() -> None:
     ap.add_argument("max_hops", type=int)
     ap.add_argument("per_hop", type=int)
     ap.add_argument("min_new", type=int)
-    ap.add_argument("--seeds", type=Path, help="固定的 seeds.md：不起种子会话，比较参数时少一处随机")
+    ap.add_argument("--seeds", type=Path,
+                    help="固定的 seeds.md：不起种子会话，比较参数时少一处随机")
     ap.add_argument("--cache", type=Path, default=Path.home() / ".cache" / "ai4sci-literature-eval")
     ap.add_argument("--no-cutoff", action="store_true", help="不按综述发表日截断（截断以前的口径）")
     args = ap.parse_args()
@@ -96,7 +109,7 @@ def main() -> None:
     # 单篇取不扣积分；SELECT 里没有发表日，单独取一次
     until = None if args.no_cutoff else json.loads(
         web.get(f"{BASE_URL}/{args.review}?select=publication_date")[0])["publication_date"]
-    client = plain if until is None else Before(web, api_key(), until)
+    client = Blind(web, api_key(), doc["display_name"], until)
     ws = load(args.workspace)
     out, _ = outputs.open_output(ws, "literature", title=f"召回实测 {args.review}",
                                  by="literature-search", inputs=[], params={}, flow=None,
@@ -140,6 +153,9 @@ def main() -> None:
               "gold_screened": len(gold & screened), "gold_included": len(gold & included),
               "core_included": len(core & included),
               "gold_reached": len(gold & reached), "by_hop": by_hop,
+              # 防泄漏的事后核对：候选里不该有题目和综述相同的（Blind 已挡，这里再数一遍）
+              "leaked": [r["paper"]["key"] for r in rows
+                         if same_title(r["paper"]["title"], doc["display_name"])],
               "gold_keys_reached": sorted(gold & reached),
               "openalex_requests": client.requests, "openalex_remaining": client.remaining}
     (out / "eval.json").write_text(json.dumps(result, ensure_ascii=False, indent=2))
