@@ -19,7 +19,7 @@
         [--seeds <seeds.md>] [--no-cutoff]
 
 工作区要先建好：requirement.md 是题里「需求」一节的原文、确认过，流程实例上挂了 literature-search
-（报告 §11）；AI4SCI_HOME 指到评测用的数据根，别拿正式数据根跑。
+（报告 §12）；AI4SCI_HOME 指到评测用的数据根，别拿正式数据根跑。
 """
 
 from __future__ import annotations
