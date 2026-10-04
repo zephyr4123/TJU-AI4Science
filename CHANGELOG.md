@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### 变更
+- 纲领 P-27 从「一个 key 都不要」改成「不要 key 也能用，有 key 用得更多」：可选的 key 只做量上的加法、只走环境变量，现在只有文献检索的 `OPENALEX_API_KEY`；skill 仍一律不要 key（#212）
+
 ### 新增
 - workflow.md 与 open-questions Q-1：文献阶段有了第一个步骤 `literature-search`（文献检索），步骤清单与「哪几个阶段还没有步骤」跟着改（#212）
 - `docs/specs/windows-adaptation.md`：Windows 适配的移交说明，写明范围、完成标准、路线判断（原生 + Git for Windows）、13 类要改的地方（带文件与行号、改法、验证）与顺序；分工纪要方向 2 指向它（#210）
