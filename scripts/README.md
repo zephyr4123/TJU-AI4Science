@@ -7,5 +7,6 @@
 | `external/` | 第三方拿来的脚本，每个带 `SOURCE.md` 记来源、版本与许可 |
 | `oneoff/` | 一次性的数据处理、爬取、转换 |
 | `articles/` | 对外文章的出图脚本，一篇一个目录，与 `docs/articles/` 同名；图的出处写在那篇的 `sources.md` |
+| `evals/` | 给平台的步骤做实测的脚本（依赖内仓代码、用内仓 venv 跑，内仓不依赖它们）：`literature_recall.py` 文献检索召回实测（[#212](https://github.com/zephyr4123/TJU-AI4Science/issues/212)，报告 `docs/specs/literature-search.md`） |
 
 仓库自身的工具脚本（changelog、release、hygiene、md2html）在 `.github/scripts/`，不在这里。
