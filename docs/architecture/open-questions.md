@@ -4,7 +4,7 @@
 
 | 编号 | 问题 | 状态 |
 |---|---|---|
-| Q-1 | 首版提供哪几个能力 | 已定：六个步骤（设计 `design` `reproduction`、实验 `auto-research`、分析 `analysis` `reproducibility`、验证 `verify`）+ 平台自带的两个 skill（`pdf` `download`）+ 收录的社区 skill（`skills-curated/`，挂上才装载，P-26）；顺序不由框架定（P-10、P-18） |
+| Q-1 | 首版提供哪几个能力 | 已定：七个步骤（文献 `literature-search`、设计 `design` `reproduction`、实验 `auto-research`、分析 `analysis` `reproducibility`、验证 `verify`）+ 平台自带的两个 skill（`pdf` `download`）+ 收录的社区 skill（`skills-curated/`，挂上才装载，P-26）；顺序不由框架定（P-10、P-18） |
 | Q-2 | 执行层 skill 怎么注入 | 已定（P-22）：框架拼清单注入 + `ai4sci skill`，不走原生机制 |
 | Q-3 | 验收怎么定义 | **未决**，见下；[#10](https://github.com/zephyr4123/TJU-AI4Science/issues/10) |
 | Q-4 | 评测怎么做 | **未决**，见下；[#11](https://github.com/zephyr4123/TJU-AI4Science/issues/11) |

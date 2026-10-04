@@ -25,7 +25,7 @@
 - **阶段之间没有显式的输入输出接口，机器不做数据流校验。** 能力开工时 `from` 里没有它要的文件就报错说清缺哪个阶段的哪个文件（P-7）；流程的检查只查形状：阶段名、点名的能力在不在那个阶段、参数名与类型、断点位置。文件仍是产物的载体（P-13），但不是拼流程的接口。
 - **每个能力一次执行层调用，新会话。** 上下文从磁盘来，不靠上一个能力的会话（P-1、P-3）。失败就停，不模板兜底（P-7）。回退是协调层的决定：重做一个阶段就是这个阶段下多一个产出目录，旧的原样留着。并行 0.x 不做。
 
-现在有的步骤（清单以 `ai4sci show caps` 为准，这里只作示意）：设计阶段 `design`（评分脚本与基线）与 `reproduction`（原码复现基线，P-24）；实验阶段 `auto-research`（AutoResearch）；分析阶段 `analysis`（分析初稿）与 `reproducibility`（复现性分析）；验证阶段 `verify`（数字核对，零模型）。文献、假设、写作三个阶段还没有步骤：流程里排了这些阶段，助理自己开产出目录写（`ai4sci output new`）。skill 有 `pdf`（解析论文）、`download`（拉材料）、领域包里的 `petab`。
+现在有的步骤（清单以 `ai4sci show caps` 为准，这里只作示意）：文献阶段 `literature-search`（文献检索：执行层写检索词与纳入标准、找种子，框架查 OpenAlex 顺着引用扩几跳，每跳执行层看摘要筛，[#212](https://github.com/zephyr4123/TJU-AI4Science/issues/212)）；设计阶段 `design`（评分脚本与基线）与 `reproduction`（原码复现基线，P-24）；实验阶段 `auto-research`（AutoResearch）；分析阶段 `analysis`（分析初稿）与 `reproducibility`（复现性分析）；验证阶段 `verify`（数字核对，零模型）。假设、写作两个阶段还没有步骤：流程里排了这些阶段，助理自己开产出目录写（`ai4sci output new`）。skill 有 `pdf`（解析论文）、`download`（拉材料）、领域包里的 `petab`。
 
 ### 流程：经过几个阶段
 
@@ -86,7 +86,7 @@ experiment/2/                  一个产出目录
 - **产出的 id 就是路径**：`experiment/2`、`analysis/1`；`title` 是给人看的标签。
 - **接口 = `from` + 文件名。** 不把上游整包抄进自己目录；执行层要的合成工作树在自己那次产出里（`experiment/<n>/work/`），是实现细节。
 - **冻结**：产出和需求同一条规则——没被 `from` 引用、没被签之前随便改；一旦被引用或被签就冻住，改了框架按 hash 查得出并拒读。需求确认之后再改，页面显示 diff、人再确认成下一版，旧版存 `.ai4sci/requirement/`。
-- **助理不经能力也能产出**：`ai4sci output new <stage> --title … --from …` 建目录写 meta，然后直接写文件。文献格的主文件 `sources.md`（材料来源）就是这么写的（P-24）。
+- **助理不经能力也能产出**：`ai4sci output new <stage> --title … --from …` 建目录写 meta，然后直接写文件。复现那条流程里文献格的 `sources.md`（材料来源）就是这么写的（P-24）：复现要的是一篇论文的代码、数据与权重，`literature-search` 找的是一个题目下的论文，管不了。
 - **跨工作区引用只限同一项目**：`--from <ws>:<stage>/<n>`，`meta.yaml` 原样记，冻结照旧按 hash。
 
 ### 契约
