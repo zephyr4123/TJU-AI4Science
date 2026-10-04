@@ -56,6 +56,7 @@ from literature_recall import CORE_RE, cached
 LOGGER = logging.getLogger("literature_judge")
 RELEVANT, IRRELEVANT = "切题", "不切题"
 OTHER_BRANCH, NO_BRANCH = "其他", "-"
+REFUSED = "拒判"  # 评分会话正常结束却没写结论，拆到一篇还这样（不计分，单列）
 _CELL = r"\s*\|\s*"
 LINE_RE = re.compile(rf"^\s*(W\d+){_CELL}({IRRELEVANT}|{RELEVANT}){_CELL}(.+?)\s*$")
 BRANCH_LINE_RE = re.compile(
@@ -166,6 +167,8 @@ def judge_batch(runner, tuning: Tuning, question: Question, batch_dir: Path, pap
     漏写一两行（实测 Opus 漏过一篇），只把漏的再起一个会话判，在这批的 rest/ 里。"""
     keys = [p.key for p in papers]
     out = batch_dir / OUT_NAME
+    if (batch_dir / "part-1").is_dir():
+        return _split(runner, tuning, question, batch_dir, papers)
     if not out.is_file():
         batch_dir.mkdir(parents=True, exist_ok=True)
         prompt = prompt_for(question, papers)
@@ -177,6 +180,16 @@ def judge_batch(runner, tuning: Tuning, question: Question, batch_dir: Path, pap
         (batch_dir / "usage.json").write_text(json.dumps(usage(result), ensure_ascii=False))
         outside = [f for f in result.changed_files
                    if f != OUT_NAME and not f.startswith("executor/")]
+        if not (outside or result.timed_out or result.exit_code != 0 or out.is_file()):
+            # 会话正常结束却没写结论：实测是 Claude 的安全分类器拦了写入（扩散模型那道题，一批里有
+            # 蛋白质设计的论文，会话自述「写这个文件的那次回复被安全分类器拦下了」）。拦不拦不固定：
+            # 九批里两批第一次被拦，整批再判就过了。所以对半拆开重判（等于重试），
+            # 拆到一篇还拦就记拒判
+            LOGGER.warning("judge_blocked batch=%s papers=%d report=%s", batch_dir, len(papers),
+                           result.report[:200])
+            if len(papers) == 1:
+                return {papers[0].key: (REFUSED, NO_BRANCH, result.report[:200])}
+            return _split(runner, tuning, question, batch_dir, papers)
         if outside or result.timed_out or result.exit_code != 0 or not out.is_file():
             raise RuntimeError(f"{batch_dir} 评分会话没走完：exit={result.exit_code} "
                                f"timed_out={result.timed_out} 越界={outside} "
@@ -189,6 +202,13 @@ def judge_batch(runner, tuning: Tuning, question: Question, batch_dir: Path, pap
         got |= judge_batch(runner, tuning, question, batch_dir / REST_DIRNAME,
                            [p for p in papers if p.key not in got])
     return got
+
+
+def _split(runner, tuning: Tuning, question: Question, batch_dir: Path, papers: list[Paper]
+           ) -> dict[str, Verdict]:
+    mid = len(papers) // 2
+    return (judge_batch(runner, tuning, question, batch_dir / "part-1", papers[:mid])
+            | judge_batch(runner, tuning, question, batch_dir / "part-2", papers[mid:]))
 
 
 def usage(result) -> dict:
@@ -216,7 +236,8 @@ def prior_verdicts(out: Path, branches: dict[str, str]) -> dict[str, Verdict]:
 def agreement(verdicts: dict[str, Verdict], other_json: Path) -> dict:
     """两家评分模型判同一批论文的一致率与 Cohen's kappa（扣掉碰巧一致的部分）。"""
     other = {k: v["verdict"] for k, v in json.loads(other_json.read_text())["verdicts"].items()}
-    keys = sorted(set(verdicts) & set(other))
+    keys = sorted(k for k in set(verdicts) & set(other)
+                  if verdicts[k][0] != REFUSED and other[k] != REFUSED)
     mine = [verdicts[k][0] == RELEVANT for k in keys]
     theirs = [other[k] == RELEVANT for k in keys]
     n = len(keys)
@@ -303,6 +324,7 @@ def main() -> None:
                         "background_relevant": rate(sorted(set(gold) - core), RELEVANT)
                         if gold else None,
                         "negatives_irrelevant": rate(neg_probe, IRRELEVANT)},
+        "refused": sorted(k for k, v in verdicts.items() if v[0] == REFUSED),
         "agreement": agreement(verdicts, args.against) if args.against else None,
         "runs": scores,
         "judge_sessions": spent,
