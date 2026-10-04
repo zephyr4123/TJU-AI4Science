@@ -4,6 +4,11 @@
 回来），量答案有几篇被看过摘要、被收录、在线索里出现过，按跳拆开。结果写在产出目录的 eval.json，
 并打一行汇总。
 
+默认只认综述发表日（含）以前的论文（外层 #215）：综述之后发表的不可能在答案里，工具找到了不算分，
+还占每跳的名额，召回就被低估了。`--no-cutoff` 关掉，复现报告 §7.2 里截断以前的数字。
+分母两个：OpenAlex 取得到的答案（有的参考文献是坏记录，谁都取不到）与其中的核心答案（题目或摘要
+提到 physics-informed / PINN / physics-guided / physics-constrained，排掉背景引用）。
+
 依赖内仓的代码（`framework.capabilities.literature_search`），用内仓的 venv 跑；内仓的生产代码
 不依赖这里。OpenAlex 的回答按 URL 存在 --cache 目录里复用：同一道题换参数重跑不重复扣额度。
 
@@ -11,7 +16,7 @@
     . ~/.secrets/loader.sh
     withkey openalex platform/.venv/bin/python scripts/evals/literature_recall.py \
         <工作区目录> <综述 W 号> <claude_code|codex> <最多跳数> <每跳筛选数> <停止下限> \
-        [--seeds <固定的 seeds.md>] [--cache <目录>]
+        [--seeds <固定的 seeds.md>] [--cache <目录>] [--no-cutoff]
 
 工作区要先建好、需求确认过、流程实例上挂了 literature-search（报告 §7.1 有一份示例需求）；
 AI4SCI_HOME 指到实测用的数据根，别拿正式数据根跑。
@@ -23,13 +28,14 @@ import argparse
 import hashlib
 import json
 import logging
+import re
 from pathlib import Path
 
 from backends import get_backend
 from framework.capabilities.literature_search import loop
 from framework.capabilities.literature_search.exchange import parse_seeds
-from framework.capabilities.literature_search.openalex import OpenAlex, api_key
-from framework.capabilities.literature_search.papers import work_key
+from framework.capabilities.literature_search.openalex import BASE_URL, OpenAlex, api_key
+from framework.capabilities.literature_search.papers import from_openalex, work_key
 from framework.capabilities.literature_search.web import Web, http_get
 from framework.contracts.capability import Inputs
 from framework.workspace import outputs
@@ -50,6 +56,23 @@ def cached(cache: Path):
     return get
 
 
+CORE_RE = re.compile(r"physics[- ](informed|guided|constrained)|\bPINNs?\b", re.IGNORECASE)
+
+
+class Before(OpenAlex):
+    """只取 until（含）以前发表的论文：每个请求的 filter 加一条 to_publication_date。检索命中、
+    种子、参考文献、谁引用了它，元数据都从这里取，取不到的就进不了候选池。"""
+
+    def __init__(self, web: Web, key: str | None, until: str) -> None:
+        super().__init__(web, key=key)
+        self.until = until
+
+    def _page(self, params: dict[str, str]) -> dict:
+        cut = f"to_publication_date:{self.until}"
+        return super()._page({**params, "filter": f"{params['filter']},{cut}"
+                              if "filter" in params else cut})
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("workspace", type=Path)
@@ -60,12 +83,20 @@ def main() -> None:
     ap.add_argument("min_new", type=int)
     ap.add_argument("--seeds", type=Path, help="固定的 seeds.md：不起种子会话，比较参数时少一处随机")
     ap.add_argument("--cache", type=Path, default=Path.home() / ".cache" / "ai4sci-literature-eval")
+    ap.add_argument("--no-cutoff", action="store_true", help="不按综述发表日截断（截断以前的口径）")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
 
-    client = OpenAlex(Web(get=cached(args.cache)), key=api_key())
-    [doc] = client.by_keys([args.review])
+    web = Web(get=cached(args.cache))
+    plain = OpenAlex(web, key=api_key())
+    [doc] = plain.by_keys([args.review])
     gold = {work_key(r) for r in doc["referenced_works"]}
+    resolvable = {p.key: p for p in map(from_openalex, plain.by_keys(sorted(gold)))}
+    core = {k for k, p in resolvable.items() if CORE_RE.search(f"{p.title} {p.abstract}")}
+    # 单篇取不扣积分；SELECT 里没有发表日，单独取一次
+    until = None if args.no_cutoff else json.loads(
+        web.get(f"{BASE_URL}/{args.review}?select=publication_date")[0])["publication_date"]
+    client = plain if until is None else Before(web, api_key(), until)
     ws = load(args.workspace)
     out, _ = outputs.open_output(ws, "literature", title=f"召回实测 {args.review}",
                                  by="literature-search", inputs=[], params={}, flow=None,
@@ -93,15 +124,21 @@ def main() -> None:
     reached = screened | (set(pools[-1].leads) if pools else set())
     by_hop: dict[int, dict[str, int]] = {}
     for r in rows:
-        h = by_hop.setdefault(r["hop"], {"screened": 0, "gold": 0, "included": 0, "gold_in": 0})
+        h = by_hop.setdefault(r["hop"], {"screened": 0, "gold": 0, "included": 0, "gold_in": 0,
+                                         "core_in": 0})
+        key, took = r["paper"]["key"], r["verdict"] == "收"
         h["screened"] += 1
-        h["gold"] += r["paper"]["key"] in gold
-        h["included"] += r["verdict"] == "收"
-        h["gold_in"] += r["verdict"] == "收" and r["paper"]["key"] in gold
-    result = {"review": args.review, "gold": len(gold), "backend": args.backend,
+        h["gold"] += key in gold
+        h["included"] += took
+        h["gold_in"] += took and key in gold
+        h["core_in"] += took and key in core
+    result = {"review": args.review, "until": until, "gold": len(gold),
+              "gold_resolvable": len(resolvable), "gold_core": len(core),
+              "backend": args.backend,
               "limits": [args.max_hops, args.per_hop, args.min_new], "line": line,
               "screened": len(screened), "included": len(included),
               "gold_screened": len(gold & screened), "gold_included": len(gold & included),
+              "core_included": len(core & included),
               "gold_reached": len(gold & reached), "by_hop": by_hop,
               "gold_keys_reached": sorted(gold & reached),
               "openalex_requests": client.requests, "openalex_remaining": client.remaining}
