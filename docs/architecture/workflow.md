@@ -239,7 +239,7 @@ harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各�
 一个 `Runner` 协议，每家 CLI 一个适配器；形状以 `backends/__init__.py` 为准（`run(prompt, cwd, timeout_s, allowed_paths, bash_rules, tuning, max_turns, max_budget_usd) -> RunResult{exit_code, events, changed_files, cost_usd, duration_s, timed_out, stdout_tail, report}`），每家的实测清单只记在适配器文件头。
 
 - **非交互 + 结构化输出**：Claude Code 走 `claude -p … --output-format stream-json`，Codex 走 `codex exec --json`。
-- **隔离**（P-11）：Claude Code 的承重位是 `--setting-sources ""`（不带它项目 CLAUDE.md、plugin、hook 全进上下文），再加 `--strict-mcp-config` 与 `--disable-slash-commands`；Codex 的承重位是私有 `CODEX_HOME`（`auth.json` 软链到真的、凭据不复制；本机的 skills 逐个关），`ai4sci` 在沙箱外跑、其余命令留在沙箱里（execpolicy 的 `prefix_rule`）。
+- **隔离**（P-11）：Claude Code 的承重位是 `--setting-sources ""`（不带它项目 CLAUDE.md、plugin、hook 全进上下文），再加 `--strict-mcp-config` 与 `--disable-slash-commands`，CLI 的自动记忆不归设置源管、用 `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` 关（不关时会话所在仓库的 MEMORY.md 整段进上下文，#222）；Codex 的承重位是私有 `CODEX_HOME`（`auth.json` 软链到真的、凭据不复制；本机的 skills 逐个关），`ai4sci` 在沙箱外跑、其余命令留在沙箱里（execpolicy 的 `prefix_rule`）。
 - **权限**：Claude Code `--permission-mode dontAsk` + `--allowedTools` 白名单，只放行 `allowed_paths` 内的 Edit / Write，绝对路径规则写 `//`；命令前缀由框架按会话给（执行层只有 `ai4sci skill`）；不用 `--dangerously-skip-permissions`。这是第一道门，真正的门是事后拿 `changed_files` 判：`code/` 之外有改动就判 `readonly_violated` 回滚（P-7）。
 - **联网只用 CLI 自带的工具**：两层适配器都必须放行这家 CLI 自带的联网搜索与网页读取（Claude Code 是 WebSearch / WebFetch，Codex 是 `web_search`），prompt 写清什么时候查、只用自带工具、查到的带来源。执行层子进程的环境与协调层同一份（`build_env`：venv 的 bin 进 PATH、关后台、Bash 超时对齐本轮）。
 - **changed_files 不采信 CLI 自报**：调用前后对 cwd 做快照 diff（`backends/_snapshot.py`）。
