@@ -25,11 +25,11 @@
 - **阶段之间没有显式的输入输出接口，机器不做数据流校验。** 能力开工时 `from` 里没有它要的文件就报错说清缺哪个阶段的哪个文件（P-7）；流程的检查只查形状：阶段名、点名的能力在不在那个阶段、参数名与类型、断点位置。文件仍是产物的载体（P-13），但不是拼流程的接口。
 - **每个能力一次执行层调用，新会话。** 上下文从磁盘来，不靠上一个能力的会话（P-1、P-3）。失败就停，不模板兜底（P-7）。回退是协调层的决定：重做一个阶段就是这个阶段下多一个产出目录，旧的原样留着。并行 0.x 不做。
 
-现在有的步骤（清单以 `ai4sci show caps` 为准，这里只作示意）：文献阶段 `literature-search`（文献检索：执行层写检索词与纳入标准、找种子，框架查 OpenAlex 顺着引用扩几跳，每跳执行层看摘要筛，[#212](https://github.com/zephyr4123/TJU-AI4Science/issues/212)）；设计阶段 `design`（评分脚本与基线）与 `reproduction`（原码复现基线，P-24）；实验阶段 `auto-research`（AutoResearch）；分析阶段 `analysis`（分析初稿）与 `reproducibility`（复现性分析）；验证阶段 `verify`（数字核对，零模型）。假设、写作两个阶段还没有步骤：流程里排了这些阶段，助理自己开产出目录写（`ai4sci output new`）。skill 有 `pdf`（解析论文）、`download`（拉材料）、领域包里的 `petab`。
+现在有的步骤（清单以 `ai4sci show caps` 为准，这里只作示意）：文献阶段 `literature-search`（文献检索：执行层写检索词与纳入标准、找种子，框架查 OpenAlex 顺着引用扩几跳，每跳执行层看摘要筛，[#212](https://github.com/zephyr4123/TJU-AI4Science/issues/212)）与 `literature-read`（文献精读：有原文的逐篇起执行层会话读，每篇一份带原句的笔记，框架核原句，[#233](https://github.com/zephyr4123/TJU-AI4Science/issues/233)）；设计阶段 `design`（评分脚本与基线）与 `reproduction`（原码复现基线，P-24）；实验阶段 `auto-research`（AutoResearch）；分析阶段 `analysis`（分析初稿）与 `reproducibility`（复现性分析）；验证阶段 `verify`（数字核对，零模型）。假设、写作两个阶段还没有步骤：流程里排了这些阶段，助理自己开产出目录写（`ai4sci output new`）。skill 有 `pdf`（解析论文）、`download`（拉材料）、领域包里的 `petab`。
 
 ### 流程：经过几个阶段
 
-一条流程一个 YAML（`workflows/*.yaml`，形状与检查在 `framework/contracts/workflows.py` 文件头）。出厂两条，原文以库里的文件为准：
+一条流程一个 YAML（`workflows/*.yaml`，形状与检查在 `framework/contracts/workflows.py` 文件头）。出厂三条，原文以库里的文件为准：
 
 ```yaml
 name: research                # 等于文件名
@@ -46,10 +46,12 @@ stages:
 
 `reproduce`（论文复现）：文献（挂 skill `pdf`、`download`）→ 设计 `reproduction` → 断点「复现结果核对」→ 分析 `reproducibility` → 验证 → 断点「验收」。skill 挂在格子上的写法是 `- 文献: [pdf, download]`：这一步推荐用的工具，哪个阶段都能挂、不带参数、不是门。
 
+`literature-survey`（文献调研）：一格 `- 文献: [literature-search, literature-read]`，先检索、再精读，产出到精读的 `sources.md` 为止，研究助理照笔记在对话里回答；不排写作，综述之后单独设计（[#239](https://github.com/zephyr4123/TJU-AI4Science/issues/239)）。
+
 - **子集也是流程、任何顺序都是流程。** 只想根据实验结果写综述就是两行——等写作阶段有了那个能力就能挂。
 - **流程分两层：库、实例**（P-15）。库通用、不依附课题，本身又分出厂的（`workflows/`，随代码走、只读）与人在编辑台存的（数据根 `studio/workflows/`，流程助理只写这里）两层，读库的地方两层一起读、名字全库唯一；实例在工作区 `flows/`，几条都行，研究助理 `ai4sci flow take <name>` 从库里取来，按这份需求改阶段、能力参数、断点。选流程在需求确认之后、与需求独立：一份需求会走多条流程。
 - **名字是机器名，平台起；血缘记在 `from`。** 人只写 `title`。流程助理 `ai4sci workflow new --from <name>` 从一条派生：平台复制它、记 `from: {name, hash}`（直接父流程与它当时的内容 hash），名字起成 `<家族名>-<序号>`（家族名是顺着 `from` 走到底的那条，`reproduce` → `reproduce-2`、`reproduce-3`；序号取最大加一，删掉过的名字不再发——工作区实例的 `from` 还指着它）；`ai4sci workflow new <name>` 从零起一条，名字由助理起、平台查重，`<库里已有的名字>-<数字>` 留给派生不许用。页面保存载入的出厂流程就是派生，名字后端起；页面上从零拼的由平台按标题里的英文词起（没有就 `flow`），撞了加 `-b`、`-c`，数字序号留给派生。`flow take` 取到工作区的实例也记 `from`。差异不进名字：阶段、挂的能力、参数、断点的增删由平台现算（`show workflows` 与编辑台的流程库都显示），父流程在派生之后改过要提示。库里与已有某条结构完全一样的拒：比的是阶段、点名的能力与参数、断点位置；标题、说明、断点那句话、画布坐标不算。
-- **进度不另存**：每个产出的 `meta.yaml` 记它是在哪条流程的第几项下产的，「这条流程走到哪」沿 `from` 链算出来；「在等谁」也现算：作业在跑 → 等作业；这一项的产出还没签而流程说要签 → 等人；下一项是阶段 → 轮到助理；走完 → 完成。
+- **进度不另存**：每个产出的 `meta.yaml` 记它是在哪条流程的第几项下产的（输入那一项之后第一个对得上的项；一格里点了几个步骤、后一个读前一个的产出，记在同一格，这一格后面的断点等整格做完再管，[#237](https://github.com/zephyr4123/TJU-AI4Science/issues/237)），「这条流程走到哪」沿 `from` 链算出来；「在等谁」也现算：作业在跑 → 等作业；这一项的产出还没签而流程说要签 → 等人；下一项是阶段 → 轮到助理；走完 → 完成。
 - **编排工作台的意义是立规矩，不是做数据流校验。** 研究者要的是三样：看得见接下来会发生什么、在关键处能拦一手、下次能照做。
 
 ### 磁盘布局
