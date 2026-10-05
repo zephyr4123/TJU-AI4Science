@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-10-06
+
 ### 变更
 - workflow.md 词表与页面的形状：首页从「项目墙」改叫「项目清单」，一行一个项目（#249）
 
@@ -144,7 +146,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.0...v1.3.1
