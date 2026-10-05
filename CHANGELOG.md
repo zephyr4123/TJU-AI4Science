@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-05
+
 ### 变更
 - 纲领 Q-1 与 workflow.md 的步骤清单加上文献精读 `literature-read`（#233）
 - 文献检索文档 §3.2 补上起始年份：推到每一家检索、候选池兜底、年份不详照常交、只认四位年份（#227）
@@ -134,7 +136,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.0...v1.2.1
