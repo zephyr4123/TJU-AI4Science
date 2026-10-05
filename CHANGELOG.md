@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-05
+
 ### 变更
 - workflow.md 词表加「进度面板」，页面的形状写上产出窗的进度面板与对话底部的「运行中」、产出点开是居中的悬浮窗；文案的等宽字例外去掉「产出文件清单」（#242）
 
@@ -139,7 +141,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.2.1...v1.3.0
