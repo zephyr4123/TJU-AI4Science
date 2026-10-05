@@ -29,7 +29,7 @@
 
 ### 流程：经过几个阶段
 
-一条流程一个 YAML（`workflows/*.yaml`，形状与检查在 `framework/contracts/workflows.py` 文件头）。出厂两条，原文以库里的文件为准：
+一条流程一个 YAML（`workflows/*.yaml`，形状与检查在 `framework/contracts/workflows.py` 文件头）。出厂三条，原文以库里的文件为准：
 
 ```yaml
 name: research                # 等于文件名
@@ -45,6 +45,8 @@ stages:
 ```
 
 `reproduce`（论文复现）：文献（挂 skill `pdf`、`download`）→ 设计 `reproduction` → 断点「复现结果核对」→ 分析 `reproducibility` → 验证 → 断点「验收」。skill 挂在格子上的写法是 `- 文献: [pdf, download]`：这一步推荐用的工具，哪个阶段都能挂、不带参数、不是门。
+
+`literature-survey`（文献调研）：一格 `- 文献: [literature-search, literature-read]`，先检索、再精读，产出到精读的 `sources.md` 为止，研究助理照笔记在对话里回答；不排写作，综述之后单独设计（[#239](https://github.com/zephyr4123/TJU-AI4Science/issues/239)）。
 
 - **子集也是流程、任何顺序都是流程。** 只想根据实验结果写综述就是两行——等写作阶段有了那个能力就能挂。
 - **流程分两层：库、实例**（P-15）。库通用、不依附课题，本身又分出厂的（`workflows/`，随代码走、只读）与人在编辑台存的（数据根 `studio/workflows/`，流程助理只写这里）两层，读库的地方两层一起读、名字全库唯一；实例在工作区 `flows/`，几条都行，研究助理 `ai4sci flow take <name>` 从库里取来，按这份需求改阶段、能力参数、断点。选流程在需求确认之后、与需求独立：一份需求会走多条流程。
