@@ -10,6 +10,7 @@
 
 ### 新增
 - 一次性脚本 scripts/oneoff/migrate-to-home-263.py：旧数据根、~/.config/ai4sci 的两份清单、Codex 私有目录、平台对话的 Claude 会话记录搬进平台的家（#264）
+- 脚本 scripts/sync-provider-prices.py：从 cc-switch 同步模型价目到内仓 backends/catalog/prices.json，加模型带 --add（#266）
 
 ## [1.6.1] - 2026-10-06
 
