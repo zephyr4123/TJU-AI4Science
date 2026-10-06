@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-10-06
+
 ### 变更
 - spec 与 workflow.md：联网搜索在供应商的服务端跑，按 CLI × 供应商一格一格登记、没有缺省值，四格结论与出处写全（#271）
 
@@ -177,7 +179,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.1...v1.6.0
