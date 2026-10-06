@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-10-06
+
 ### 新增
 - 一次性脚本 scripts/oneoff/fix-unknown-chat-cost-256.py：对话 meta 里报不出美元的花费从 0.0 改成 null（#256）
 
@@ -155,7 +157,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.1...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.1...v1.6.0
 [1.5.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.3.1...v1.4.0
