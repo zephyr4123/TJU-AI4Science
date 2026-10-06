@@ -207,7 +207,7 @@ sequenceDiagram
 
 harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各自一个端口、各自一组适配器；端口的形状以 `compute/__init__.py` 为准（put / sync / submit / wait / cancel / cancel_under / get / run / remove_dir / check、远端目录映射、远端怎么起 uv）。执行层 agent 永远在本机，远端只跑 harness。
 
-**算力归人（P-23）**：`~/.config/ai4sci/computes.yaml`（`AI4SCI_COMPUTES` 可指向别处；读写点只在 `framework/computes.py`；不进 git、不进工作区、不进数据根），出厂自带 `local`；一条记录只有主机 / 端口 / 用户 / 密钥路径 / 远端根，没有密码字段，密钥留在 `~/.ssh`。
+**算力归人（P-23）**：平台的家（`~/.ai4sci`，`AI4SCI_HOME` 可改）里的 `computes.yaml`（读写点只在 `framework/computes.py`；不进 git、不进工作区），出厂自带 `local`；一条记录只有主机 / 端口 / 用户 / 密钥路径 / 远端根，没有密码字段，密钥留在 `~/.ssh`。
 
 - **接机器是对话里的事**：助理跑 `ai4sci compute add <名字> --ssh user@host:port --key <路径> [--root]`，人只给 ssh 那一行与密钥路径；`add` 写进文件并就地探测（连得上、Python、uv 缺就装、GPU、磁盘、rsync、盘点已有的 Python 环境），一行一项报告，探测不过也只是报告。不设的坎：加机器不用人确认、不做白名单、不限助理改这份文件。AutoDL 关机重开端口会变：`compute check` 报连不上，`compute add` 同名覆盖。
 - **agent 按名字选**：`ai4sci show computes` 看名字、种类、GPU、可不可用；`--compute <名字>` 记进产出 meta 的 `compute`；不给就用文件里的 `default:`；要的机器不可用就报错，绝不静默退回本机（P-7）。
@@ -234,7 +234,7 @@ harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各�
 
 ### 设置与自检
 
-底座照算力办（P-25）：`~/.config/ai4sci/agents.yaml`（读取点只在 `framework/agents.py`）记两层各用哪家、每家新对话用的模型与思考深度（一律具体值，必须在那家 `knobs()` 的清单上）、上次自检。三层就近生效：这一轮实际用什么 = 这段对话 meta 里记的 ← 开新对话时从 `agents.yaml` 抄进去 ← 冷启动时清单第一项；改设置只影响之后开的对话。执行层：`agents.yaml` 的缺省 ← `ai4sci cap --backend` 覆盖，用了谁记进产出 meta 的 `agent`。`probe()` 是每家适配器的模块级函数，形状以 `backends/__init__.py` 的 `AgentProbe` 为准；`ai4sci check` 三项同一种形状「探测 → 报告 → 写 `last_check`」，一项不过退出码非零；`GET /health` 带 `checks_ok`。端点 `GET /settings`、`POST /settings/agents | check | computes`。环境变量：`AI4SCI_COORDINATOR_MODEL` `_EFFORT`、`AI4SCI_EXECUTOR_MODEL` 已退役；留下的只有位置与两份清单的指向，以及能力级的轮数 / 预算 / 超时。
+底座照算力办（P-25）：平台的家里的 `agents.yaml`（读取点只在 `framework/agents.py`）记两层各用哪家、每家用谁的模型（供应商，那家适配器的 `PROVIDERS` 里的名字或 `custom`，自定义另记地址与模型名）、新对话用的模型与思考深度（一律具体值，必须在那家那个供应商的清单上）、上次自检；换供应商模型与深度回到它的起点、上次自检清掉。每个供应商能不能让这家 CLI 联网搜索照官方文档登记（`Provider.web_search`；Codex 接 DeepSeek 不能，写 `web_search="disabled"`），设置里标「不能联网」、只提醒不拦（P-14）。供应商要的 key 在 `keys.yaml`（`framework/keys.py`），框架只在起 CLI 时交给它要的那一把：Claude Code 走 `--settings` 的 apiKeyHelper（读家里一份只有本人能读的文件），Codex 走自定义 provider 的 `env_key` 并在 `shell_environment_policy` 里排除，两家 agent 跑的命令都看不见。三层就近生效：这一轮实际用什么 = 这段对话 meta 里记的（含供应商）← 开新对话时从 `agents.yaml` 抄进去 ← 冷启动时清单第一项；改设置只影响之后开的对话。执行层：`agents.yaml` 的缺省 ← `ai4sci cap --backend` 覆盖，用了谁记进产出 meta 的 `agent`。`probe()` 是每家适配器的模块级函数，形状以 `backends/__init__.py` 的 `AgentProbe` 为准；`ai4sci check` 三项同一种形状「探测 → 报告 → 写 `last_check`」，一项不过退出码非零；`GET /health` 带 `checks_ok`。端点 `GET /settings`（几十毫秒，不含家里每块多大）、`GET /settings/storage`（每块多大，走遍整棵树）、`POST /settings/agents | check | computes | keys | reset`。环境变量：`AI4SCI_COORDINATOR_MODEL` `_EFFORT`、`AI4SCI_EXECUTOR_MODEL`、`AI4SCI_AGENTS` `AI4SCI_COMPUTES` `AI4SCI_CODEX_HOME`、`OPENALEX_API_KEY` 已退役；留下的只有家的位置 `AI4SCI_HOME`，以及能力级的轮数 / 预算 / 超时。
 
 ### 执行层适配
 
@@ -295,12 +295,12 @@ harness 在哪跑，和执行层 agent 在哪跑，是两根正交的轴，各�
   | 按钮 | 页面上的动作：保存、另存、排列、确认、停止、打开对话、新建项目、新建（文档里的 UI 元件叫按钮；不用来指能力） | 整理、提交、键 |
   | 收件箱 | 一段对话里排队等念的作业结果 | 叫醒 |
   | 进度面板 | 产出悬浮窗最上面那块图：能力边跑边写的 `progress.jsonl` 画成的，每个能力一块 | 仪表盘、监控、进度条 |
-  | 设置 | 按人的 `~/.config/ai4sci/` 两个文件加外观，地方栏里的一个地方 | 配置、偏好、系统 |
+  | 设置 | 平台的家里的两份清单与 key 加外观，地方栏底下那个键弹的窗 | 配置、偏好、系统 |
   | AI | 设置里「助理用哪家、执行层用哪家」那一段；每一家写产品名（Claude Code、Codex） | 底座、后端、backend |
   | 算力 | 设置里按人的机器清单；一台一块 | 集群、服务器（那是种类） |
 
 - **文案**（P-21）：标签、列名、状态、节点名是两到四字名词；动词只在按钮上；句子只进解释层，一句为限，工程语言不口语。机器的名字不上屏，翻译在源头（描述符 `title` `brief`、参数 `label`、流程 `title`、阶段名、阶段主文件的中文名）；例外只有内容本身是命令或路径的地方（文件镜头、对话里的工具行、需求 diff）。
-- **页面的形状**：地方栏三个键（首页、编辑台、设置）；首页左半边是项目清单、右半边是「待你确认」「运行中」两张小卡与一张「花费」（近几天的折算成本或 token，按天的柱子，项目 / 模型 / 会话 / 定价四张表；Codex 不报成本，照定价表折算），两边一样高，右上角一行同步（立即同步、自动刷新），左上一行门牌（AAAI4S 字标 + 口号，前端的名字；后端仍叫 ai4sci，#258），页底一行页脚；门口那一屏一句话起项目；项目页正中是对话入口（一个项目一位助理，入口只有这一个）+ 工作区清单；工作区页「看板 / 文件」两个镜头，看板铺满、对话是右边一块板，看板按需求确认与否分两个状态（需求文档就是页面 / 工作区标题下一行需求、一条流程一条竖向时间线：阶段与断点是轨上的节点，产出挂在阶段下一行一条、名说全，没按流程单独跑的产出在最底下「单独运行」，产出点开是居中的悬浮窗）；产出悬浮窗最上面是产它的能力自己的进度面板（每个能力一块定制的、不做通用面板，数据是能力边跑边写进产出目录的 `progress.jsonl`，[#242](https://github.com/zephyr4123/TJU-AI4Science/issues/242)），有作业在跑时对话输入框上方挂「运行中 N」，点一行去看那次产出；编辑台「流程 / 能力」两个镜头，画布铺满、对话板浮在右边；设置是地方栏里的一个地方、整页铺在底图上，四块 AI / 算力 / 存放 / 外观横纵结合摆；哪家、模型、思考深度只在这里改，对话框里没有（#257）。细节与每处的理由在内仓 `docs/DESIGN.md`。
+- **页面的形状**：地方栏三个键（首页、编辑台、设置）；首页左半边是项目清单、右半边是「待你确认」「运行中」两张小卡与一张「花费」（近几天的折算成本或 token，按天的柱子，项目 / 模型 / 会话 / 定价四张表；Codex 不报成本，照定价表折算），两边一样高，右上角一行同步（立即同步、自动刷新），左上一行门牌（AAAI4S 字标 + 口号，前端的名字；后端仍叫 ai4sci，#258），页底一行页脚；门口那一屏一句话起项目；项目页正中是对话入口（一个项目一位助理，入口只有这一个）+ 工作区清单；工作区页「看板 / 文件」两个镜头，看板铺满、对话是右边一块板，看板按需求确认与否分两个状态（需求文档就是页面 / 工作区标题下一行需求、一条流程一条竖向时间线：阶段与断点是轨上的节点，产出挂在阶段下一行一条、名说全，没按流程单独跑的产出在最底下「单独运行」，产出点开是居中的悬浮窗）；产出悬浮窗最上面是产它的能力自己的进度面板（每个能力一块定制的、不做通用面板，数据是能力边跑边写进产出目录的 `progress.jsonl`，[#242](https://github.com/zephyr4123/TJU-AI4Science/issues/242)），有作业在跑时对话输入框上方挂「运行中 N」，点一行去看那次产出；编辑台「流程 / 能力」两个镜头，画布铺满、对话板浮在右边；设置是地方栏底下那个键弹的窗（照 Claude 应用：左栏分类——常规、AI 下每家、能力下文献检索、平台下算力与存放——右边那一页按小标题分节、一项一行，#268）；哪家、用谁的模型、模型、思考深度只在这里改，对话框里没有（#257 #266）。细节与每处的理由在内仓 `docs/DESIGN.md`。
 - **`ui/tui/`**：留位置没建。
 
 ## 变更记录
