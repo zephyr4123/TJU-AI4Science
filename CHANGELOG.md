@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-10-06
+
 ### 变更
 - 平台的标换成三股交织的「A」（靛、紫、天蓝三色），替换 #139 的锥形瓶；页面与浏览器标签页同步换（内仓 806e03f）（#261）
 
@@ -160,7 +162,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.1...HEAD
+[1.6.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.1...v1.6.0
 [1.5.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.4.0...v1.5.0
