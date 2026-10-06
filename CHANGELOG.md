@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-10-06
+
 ### 新增
 - 一次性脚本 scripts/oneoff/migrate-to-home-263.py：旧数据根、~/.config/ai4sci 的两份清单、Codex 私有目录、平台对话的 Claude 会话记录搬进平台的家（#264）
 - 脚本 scripts/sync-provider-prices.py：从 cc-switch 同步模型价目到内仓 backends/catalog/prices.json，加模型带 --add（#266）
@@ -172,7 +174,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.1...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.1...v1.6.0
 [1.5.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.5.0...v1.5.1
