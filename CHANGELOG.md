@@ -8,6 +8,16 @@
 
 ## [Unreleased]
 
+### 新增
+- 一次性脚本 scripts/oneoff/migrate-to-home-263.py：旧数据根、~/.config/ai4sci 的两份清单、Codex 私有目录、平台对话的 Claude 会话记录搬进平台的家（#264）
+- 脚本 scripts/sync-provider-prices.py：从 cc-switch 同步模型价目到内仓 backends/catalog/prices.json，加模型带 --add（#266）
+
+### 变更
+- 纲领 P-23 / P-25 / P-27 改到平台的家 ~/.ai4sci：两份清单与 key 都在家里、不走环境变量，平台不写 ~/.claude ~/.codex、一键清除；P-25 加供应商（#263 #264 #265 #266）
+- spec：思考深度不从 cc-switch 搬，照各家官方文档一档对一档、起点照官方缺省（#266）
+- 纲领 P-14 加例外：供应商的接口不支持联网搜索的（Codex 接 DeepSeek）照实关掉、设置里标「不能联网」只提醒不拦；spec 与 workflow.md 同步（#266）
+- workflow.md：设置是地方栏底下那个键弹的窗（照 Claude 应用，左栏分类、右边一页分节一项一行），端点与退役的环境变量同步（#268）
+
 ## [1.6.1] - 2026-10-06
 
 ### 变更

@@ -66,7 +66,7 @@ agent（Claude Code、Codex）参与也走同一套：它开的分支、提的 P
 | 工作区与项目的目录布局 | `framework/workspace/` |
 | HTTP 端点与响应体 | `framework/chat/server.py` 文件头、`boards.py` |
 | SKILL.md 的格式（agentskills.io）与 `ai4sci skill` 三个子命令 | `framework/skills/` |
-| 两份按人的清单（`agents.yaml`、`computes.yaml`）的字段 | `framework/agents.py`、`framework/computes.py` |
+| 平台的家里的两份清单（`agents.yaml`、`computes.yaml`）的字段 | `framework/agents.py`、`framework/computes.py` |
 | 端口 `Runner` / `Chat` / `Compute` 的形状 | `backends/__init__.py`、`compute/__init__.py` |
 
 - **MAJOR**：上面任何一样不兼容地变了（删命令、改字段含义、改目录布局）。
