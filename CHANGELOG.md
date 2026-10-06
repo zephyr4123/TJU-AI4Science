@@ -12,6 +12,10 @@
 - 一次性脚本 scripts/oneoff/migrate-to-home-263.py：旧数据根、~/.config/ai4sci 的两份清单、Codex 私有目录、平台对话的 Claude 会话记录搬进平台的家（#264）
 - 脚本 scripts/sync-provider-prices.py：从 cc-switch 同步模型价目到内仓 backends/catalog/prices.json，加模型带 --add（#266）
 
+### 变更
+- 纲领 P-23 / P-25 / P-27 改到平台的家 ~/.ai4sci：两份清单与 key 都在家里、不走环境变量，平台不写 ~/.claude ~/.codex、一键清除；P-25 加供应商（#263 #264 #265 #266）
+- workflow.md：设置是地方栏底下那个键弹的窗（照 Claude 应用，左栏分类、右边一页分节一项一行），端点与退役的环境变量同步（#268）
+
 ## [1.6.1] - 2026-10-06
 
 ### 变更
