@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### 新增
+- 一次性脚本 scripts/oneoff/migrate-to-home-263.py：旧数据根、~/.config/ai4sci 的两份清单、Codex 私有目录、平台对话的 Claude 会话记录搬进平台的家（#264）
+
 ## [1.6.1] - 2026-10-06
 
 ### 变更

@@ -25,15 +25,15 @@
   keys.yaml                 key：只有本人能读（0600）
   projects/<项目>/           项目、工作区、产出、项目里的对话
   studio/                   编辑台的流程与对话
-  claude/                   Claude Code 的配置目录（CLAUDE_CONFIG_DIR）：会话记录、平台自己的登录
+  claude_code/              Claude Code 的配置目录（CLAUDE_CONFIG_DIR）：会话记录、平台自己的登录
   codex/                    Codex 的 CODEX_HOME：会话记录、登录、放行规则；执行层在 codex/executor/
   cache/uv/                 skill 与实验环境的依赖缓存（UV_CACHE_DIR）
 ```
 
 - **一个读取点**：家在哪只在 `framework/paths.py`；下面每样东西的路径也由它给。源码跑与装包跑都是 `~/.ai4sci`，不再有「源码跑时数据根是仓库」。仓库根下的样例项目随之删掉。
 - **两家 CLI 的私有目录在家里**：适配器不再自己定路径（删 `AI4SCI_CODEX_HOME`、`~/.config/ai4sci/codex-home`），由框架交给它。
-- **官方订阅在平台里单独登录**：`CLAUDE_CONFIG_DIR` 指到私有目录后，CLI 不认用户本机的登录（2026-10-06 实测 `loggedIn:false`）。这正是隔离要的：平台的登录归平台，清除时一起清掉。Codex 同理，不再软链用户的 `~/.codex/auth.json`。登录走 CLI 自己的流程（浏览器授权），设置页一个键起它；命令行 `ai4sci agent login <家>`。
-- **清除**：`ai4sci reset` 与设置页「清除全部数据」做同一件事：先让两家 CLI 在平台的目录里登出（Claude 的登录在系统钥匙串里，不登出会留下），再删整个家。家里有一个标记文件，没有标记的目录不删（防 `AI4SCI_HOME` 指错删了别的）；有作业在跑时拒绝。
+- **官方订阅在平台里单独登录**（主人 2026-10-06 又定：平台上开发与测试一律 Claude Code + DeepSeek，官方登录只留终端命令 `ai4sci agent login <家>`，页面不做浏览器授权——服务端起 `claude auth login` 会直接弹 Safari、还要把页面给的码贴回 CLI）：`CLAUDE_CONFIG_DIR` 指到私有目录后，CLI 不认用户本机的登录（2026-10-06 实测 `loggedIn:false`）。这正是隔离要的：平台的登录归平台，清除时一起清掉。Codex 同理，不再软链用户的 `~/.codex/auth.json`。登录走 CLI 自己的流程（浏览器授权），设置页一个键起它；命令行 `ai4sci agent login <家>`。
+- **清除**：`ai4sci reset` 与设置页「清除全部数据」做同一件事：先让两家 CLI 在平台的目录里登出（Claude 的登录在系统钥匙串里，不登出会留下），再清空整个家、留一个只有标记的空家（回到刚装好的样子）。家里有一个标记文件，没有标记的目录不删（防 `AI4SCI_HOME` 指错删了别的）；有作业在跑时拒绝。命令只给人：要终端、要敲「清除」两个字；页面按住确认。
 - **删掉的**：`~/.config/ai4sci/`、`AI4SCI_AGENTS`、`AI4SCI_COMPUTES`、`AI4SCI_CODEX_HOME`、源码模式的数据根缺省、Codex 的凭据软链、仓库根的 `projects/` 样例。
 
 ## 2. key
