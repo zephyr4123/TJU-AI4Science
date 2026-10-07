@@ -91,6 +91,8 @@ agent（Claude Code、Codex）参与也走同一套：它开的分支、提的 P
 
 `make release` 只在本地做事、不 push；推送是出分支的动作，由发版人执行。
 
+发版流水线要的 secrets 都在内仓：COS 与 CDN 的子账号（`TENCENTCLOUD_*`）、更新器的签名 key（`TAURI_SIGNING_*`，也签 `platform.json`，丢了已装的外壳再也收不到更新）、Mac 的 Developer ID 与公证 API key（`APPLE_*`）；CDN 证书剩不到 30 天流水线就不发。哪个 publish 作业失败了直接 Re-run：带版本号的同一份跳过、签名清单用桶里那份，最新的那几份不往回换。细节在 [desktop.md](docs/specs/desktop.md) §7。
+
 ### CHANGELOG 怎么写
 
 - 每个 PR 在 `## [Unreleased]` 下加**一行**：`- 用户看得见的变化，一句话（#issue）`；分类只用 新增 / 变更 / 修复 / 移除 / 安全。细节在 issue 与 commit 里，不在这里。

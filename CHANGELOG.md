@@ -14,6 +14,7 @@
 
 ### 变更
 - 外层 README「只用平台」加桌面 App 与 Windows 一行命令；纲领界面适配加 `ui/desktop/`，服务只认本机来源的请求（#282 #283）
+- 桌面 App 的 spec 跟上实现与合并后的七路审查：Mac 包签名并公证、uv 进签名链、Windows 起安装脚本改走 `-Command`、发版签名与上传分两步、「助理还不能说话」只对 DeepSeek 与没登录过的订阅弹；CONTRIBUTING 写发版要的 secrets 与 publish 作业能直接重跑（#282）
 
 ## [1.8.0] - 2026-10-07
 

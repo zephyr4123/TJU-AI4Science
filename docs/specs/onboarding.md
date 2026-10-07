@@ -118,10 +118,12 @@ ai4science/dist/
   install.ps1                      Windows 的槽位
   <版本>/install.sh                钉版本装
   <版本>/ai4sci-<版本>-py3-none-any.whl  + .sha256      不可变、长缓存
-  uv/<uv 版本>/uv-<平台>.tar.gz     uv 官方发布包的原样副本（Windows 是 .zip）
+  uv/<uv 版本>/uv-<平台>.tar.gz     uv 官方发布包的原样副本（Windows 是 .zip）；每个平台的 sha256 发版时写进两份脚本
 ```
 
-- **发版流水线顺手传**：内仓 `release.yml` 出完 wheel 后跑 `.github/scripts/cdn.py` 把上面这些传上去、刷新 `install.sh` 的缓存；`--prefix` 可以先传到测试目录真验。凭据是只能写这个前缀、只能刷这个域名缓存的 CAM 子账号，密钥只在内仓 GitHub Actions secrets（主人 2026-10-07 定；建好当场正反例验过：写 `dist/` 成功、写别的前缀被拒）。
+桌面 App 另要的（签名的 `platform.json`、每一版的 `<版本>/platform.json`、`desktop/`）见 [desktop.md](desktop.md) §7。
+
+- **发版流水线顺手传**：内仓 `release.yml` 出完 wheel 后跑 `.github/scripts/cdn.py sign <tag> --work <目录>`（备齐、签 `platform.json`，只带更新器的 key）再 `cdn.py wheel <tag> --work <同一个目录>`（只带 COS 的凭据）把上面这些传上去、刷新最新那几份的缓存；`--prefix` 可以先传到测试目录真验。凭据是只能写这个前缀、只能刷这个域名缓存的 CAM 子账号，密钥只在内仓 GitHub Actions secrets（主人 2026-10-07 定；建好当场正反例验过：写 `dist/` 成功、写别的前缀被拒）。
 - **referer 白名单**已允许空 referer，`curl` 能下（上线前匿名 HEAD 验一次）。
 - **证书 2026-11-22 到期**（免费证 90 天）：到期一行命令就断，这一轮把续期写进待办，之后再看要不要自动化。
 

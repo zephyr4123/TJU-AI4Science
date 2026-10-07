@@ -1,6 +1,6 @@
 # 桌面 App：Tauri 薄包
 
-- 状态：实现中（platform 1.9.0）
+- 状态：实现中（platform 1.9.0）；实现合进分支后又过了一轮七路对抗审查，36 条全修，改动见 §11
 - 锚：母 issue [#276](https://github.com/zephyr4123/TJU-AI4Science/issues/276)；叶子 [#282](https://github.com/zephyr4123/TJU-AI4Science/issues/282)（这一份）；摸底时实测出的后端 bug [#283](https://github.com/zephyr4123/TJU-AI4Science/issues/283)（服务不查请求来源）、[#284](https://github.com/zephyr4123/TJU-AI4Science/issues/284)（Windows 后台作业跳不出 Job）、[#285](https://github.com/zephyr4123/TJU-AI4Science/issues/285)（服务退出留孤儿）、[#286](https://github.com/zephyr4123/TJU-AI4Science/issues/286)（家外面的 `~/.codex/tmp`）
 - 日期：2026-10-07（主人与 Claude 对齐；动手前四路对抗审查过一遍，改动见 §11）
 - 相关：[onboarding.md](onboarding.md)（一行命令安装，桌面第一次打开做的是同一件事）、[windows-adaptation.md](windows-adaptation.md)、[ADR-0005](../adr/0005-desktop-release.md)（桌面包的版本与发版产物）；纲领「界面也是适配器」、P-17
@@ -17,7 +17,7 @@
 4. **退出 App**：停服务和正在回复的那一轮，不留孤儿进程；后台实验照跑，跑完自己叫醒助理，下次打开看结果。与网页版关掉终端一致，Mac 与 Windows 一样。
 5. **版本**：同一个 tag 出桌面包，版本号与平台一致；只有外壳改过才往已装的人推外壳更新（ADR-0005）。
 6. **Mac 出一个通用包**（Apple 芯片与 Intel 共用）；Windows 出按用户安装的 NSIS 安装包。
-7. Apple 证书正式对外发布时再配，之前出 ad-hoc 签名的包；Windows 暂无代码签名证书。
+7. Mac 包用主人个人的 Developer ID 签名、过苹果公证（.app 与 dmg 都钉上票据）；Windows 暂无代码签名证书。
 
 **顺序**：后端配合与页面先行（它们让四种装法都受益），外壳与发版流水线并行，最后 Mac 本机、Windows 测试机端到端。
 
@@ -38,15 +38,15 @@
 └──────────────────────────────────────────────┘
 装好以后窗口换成平台的页面；助理那家缺 key，就弹：
 
-  ┌ 助理还不能说话 ────────────────────────┐
-  │ 填 DeepSeek 的 key（platform.deepseek.com 申请）│
-  │ [••••••••••••••••••••]                      │
-  │                           [跳过] [试通] │
-  └──────────────────────────────────────┘
+  ┌ 助理还不能说话 ──────────────────────────────────────┐
+  │ 填一把 DeepSeek 的 key 就能用，助理与执行层都会换成 DeepSeek │
+  │ [••••••••••••••••••••]                                    │
+  │ platform.deepseek.com 申请                  [跳过] [试通] │
+  └────────────────────────────────────────────────────┘
 ```
 
 - 以后每次打开：直接起服务进页面，一两秒。平台有新版本就先升级，进度同样画在这一屏。
-- 只有「没有能跑的平台」时才停在这一屏：说一句为什么、给「重试」和「打开日志」。git、CLI 没装上照样进页面，设置里的红点说缺什么，下次打开再补装。
+- 只有「没有能跑的平台」时才停在这一屏：说一句为什么、给「重试」和「打开日志」。装平台、setup 连着 5 分钟一行输出都没有（连接还在、数据不来）也算没装上，同样给「重试」。git、CLI 没装上照样进页面，设置里的红点说缺什么，下次打开再补装。
 - 关窗口：Mac 上只是收起（App 还在 Dock 里，服务照开，点 Dock 图标回来），Cmd+Q 才退出；Windows 上关窗口就是退出。助理这一轮还没回完时，退出前先问一句「退出会打断它」。
 
 ## 2. 分层
@@ -76,20 +76,21 @@
 |---|---|
 | 用哪个 `ai4sci` | 设了 `AI4SCI_DESKTOP_CLI` 就用它（源码桌面：仓里 `.venv` 的 `ai4sci`），不装不升级；否则用家里的 `bin/ai4sci`（Windows `bin\ai4sci.exe`）。家 = `AI4SCI_HOME`，缺省 `~/.ai4sci` |
 | 版本写法 | `ai4sci --version` 输出 `ai4sci <版本>`，版本是 PEP 440（rc 写成 `1.9.0rc1`）；tag 与外壳用 SemVer（`1.9.0-rc.1`）。外壳只有一个版本解析函数，两种写法都认；同号的 rc 算满足这个号的下限 |
-| 最新是哪一版 | `<DIST>/platform.json` 与 `platform.json.sig`（用更新器那把 key 签，外壳用内置公钥验，验不过当作取不到）：`{"version", "min_desktop", "sha256": {"install.sh", "install.ps1", "wheel"}}`。只在正式版发布时改写。`DIST` = `AI4SCI_DIST`，缺省 `https://media.zephyrxiang.com/ai4science/dist`，release 构建只认 https |
-| 装与升级 | 下载带版本号的 `<DIST>/<ver>/install.sh`（Windows `install.ps1`），按签名清单核 sha256 后照跑，环境带 `AI4SCI_NO_SETUP=1` 与 `AI4SCI_WHEEL_SHA256`（脚本用它核 wheel，不再信 CDN 上的 `.sha256`）。Windows：外壳把脚本存成带 UTF-8 BOM 的文件，用 `%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File <路径>` 起；脚本在这种模式下第一句把输出设成 UTF-8。退出码：`0` 装好；`75` 平台还开着（有进程在用家里的平台：网页版服务、后台实验），没动；其余是失败。升级先装进暂存目录（下载都在这一步，旧的那份不动），成了再离线换进去；中途失败或被打断，原来那份照样能用。uv 的 sidecar 所在目录放在 PATH 最前；PATH 上的 uv 低于脚本钉的版本就当没有 |
-| setup | `ai4sci setup --no-serve --no-input`：不问 key、不探模型、不开浏览器、不起服务；不认 PATH 上的 Claude Code / Codex，一律装进家里（外壳拿到的 PATH 不稳定）；Mac 没装命令行工具时弹一次苹果的安装框、打 `!`、不算失败（git 只在跑实验时要）。输出一行一项 `  ✓ / ✗ / ! 标签 说明`；不接终端时下载先打 `  … 标签 下载中`、之后每 5 秒 `  ↓ 标签 已下 N MB / 共 M MB`。退出码 `0` 全过，其余是没装好 |
-| serve | `ai4sci serve --host 127.0.0.1 --port <N> --until-stdin-closes`；listen 之后 stdout 打且只打一行，以 `ok http://127.0.0.1:<N>` 开头、Tab 分隔的字段只加不改；日志全走 stderr。端口用不了（被占、Windows 的保留端口段）一句话退出，退出码 `3`。标准输入关了、Ctrl-C、SIGTERM 走同一条退出：先停掉在跑的那几轮（`procs` 登记的不脱离的进程树，逐个 `kill_tree`），再退出；后台作业不碰 |
-| 在跑什么 | `GET /health` 加 `turns`：此刻在跑的对话轮数（外壳退出前要不要问一句） |
+| 最新是哪一版 | `<DIST>/platform.json` 与 `platform.json.sig`（用更新器那把 key 签，外壳用内置公钥验，验不过当作取不到）：`{"version", "min_desktop", "sha256": {"install.sh", "install.ps1", "wheel"}}`。只在正式版发布时改写。每一版（rc 也算）另有一份带版本号的 `<DIST>/<ver>/platform.json(.sig)`，预发布的外壳装自己那一版时照它核脚本。签名只说明是我们签的、不说明是最新的：外壳不收预发布的「最新」，也不收比它在这个 `DIST` 上见过的旧的（能写桶的人把旧清单拷成最新的，验签照样过）。`<ver>` 是 PEP 440 写法。`DIST` = `AI4SCI_DIST`，缺省 `https://media.zephyrxiang.com/ai4science/dist`，release 构建只认 https |
+| 装与升级 | 下载带版本号的 `<DIST>/<ver>/install.sh`（Windows `install.ps1`），按签名清单核 sha256 后照跑，环境带 `AI4SCI_NO_SETUP=1` 与 `AI4SCI_WHEEL_SHA256`（脚本用它核 wheel，不再信 CDN 上的 `.sha256`）。Windows：外壳把脚本存成文件、路径放在 `AI4SCI_INSTALL_SCRIPT`，用 `%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -Command <contract.rs 的 PS1_COMMAND>` 起：按 UTF-8 读成字符串交给脚本块，与 `irm | iex` 一样不受执行策略管（组策略设了 AllSigned 的机器上 `-File` 起不来，测试机上实测过）；脚本在这种模式下第一句把输出设成 UTF-8，自己 `exit` 退出码。退出码：`0` 装好；`75` 平台还开着（有进程在用家里的平台：网页版服务、后台实验），没动；其余是失败。升级先装进暂存目录（下载都在这一步，旧的那份不动），成了再离线换进去；中途失败或被打断，原来那份照样能用。uv 的 sidecar 所在目录放在 PATH 最前；PATH 上的 uv 低于脚本钉的版本就当没有，从 CDN 取钉的那一版，照脚本里写好的每个平台的 sha256 核（发版时写进去，脚本由签名清单盖着，uv 也就在签名链里），不信 CDN 上旁边那份 `.sha256`。脚本里的下载连不上 15 秒、连着 60 秒不到 1 KB/s 就停。「平台还开着」只认程序本身（命令行以家里的平台开头，或一个 python 跑家里的平台；Mac 上加环境里的 `__PYVENV_LAUNCHER__`），参数里提到家里文件的（tail、编辑器）不算 |
+| setup | `ai4sci setup --no-serve --no-input`：不问 key、不探模型、不开浏览器、不起服务；不认 PATH 上的 Claude Code / Codex，一律装进家里（外壳拿到的 PATH 不稳定）；Mac 没装命令行工具时弹一次苹果的安装框、打 `!`、不算失败（git 只在跑实验时要）。输出一行一项 `  ✓ / ✗ / ! 标签 说明`（标签补到 14 列）；不接终端时下载先打 `  … 标签 下载中`、之后每 5 秒 `  ↓ 标签 已下 N MB / 共 M MB`。退出码 `0` 全过，其余是没装好 |
+| serve | `ai4sci serve --host 127.0.0.1 --port <N> --until-stdin-closes`；listen 之后 stdout 打且只打一行，以 `ok http://127.0.0.1:<N>` 开头、Tab 分隔的字段只加不改；日志全走 stderr。端口用不了（被占、Windows 的保留端口段）一句话退出，退出码 `3`。标准输入关了、Ctrl-C、SIGTERM、关掉终端窗口（SIGHUP；Windows 上关窗口、注销、关机的控制台事件，在处理函数里就收拾）走同一条退出：先停掉在跑的那几轮（`procs` 登记的不脱离的进程树，逐个 `kill_tree`），再退出；后台作业不碰。守着标准输入时 0 号换成一根读到头的空管道、守望线程读复制出来的那份：之后起的子进程不继承外壳那根管道（Windows 上 Python 子进程碰到正被同步读着的管道会卡死） |
+| 在跑什么 | `GET /health` 加 `turns`：此刻在跑的对话轮数（外壳退出前要不要问一句）。页面断开对话流，这一轮照样跑完、记下，跑着就一直算在里面 |
 | 版本互相要求 | 外壳写死 `MIN_PLATFORM`，装着的低于它就必须升级；`platform.json` 的 `min_desktop` 是后端要求的最低外壳版本（值在内仓一处常量），外壳低于它就先更新外壳、不升后端 |
 | 也冻结 | `bundle.identifier` = `com.zephyrxiang.aaai4s`、更新器公钥、`dist/platform.json`、`dist/<ver>/install.*`、`dist/desktop/latest.json` 这几个路径 |
 
 **外壳给子进程的环境**：在继承的环境上叠加，不清空（Windows 要 `SystemRoot`、`ComSpec`）。
 
-- PATH：外壳实际起的那个 `ai4sci` 所在目录在最前（装好的是家里的 `bin/`，源码桌面是仓里 `.venv` 的 bin）；Mac 上再接用户登录 shell 的 PATH：`$SHELL -ilc` 只打印两个标记之间的 `$PATH`，3 秒超时，取到就记在外壳的配置目录，超时用上次记下的、都没有用系统缺省；原始输出永远不写日志（用户 rc 里常 export 各种 key）。安装时 uv 的 sidecar 目录放最前。
+- PATH：外壳实际起的那个 `ai4sci` 所在目录在最前（装好的是家里的 `bin/`，源码桌面是仓里 `.venv` 的 bin）；Mac 上再接用户登录 shell 的 PATH：`$SHELL -ilc` 只打印两个标记之间的 `$PATH`，3 秒超时，取到就记在外壳的配置目录，超时用上次记下的、都没有用系统缺省；原始输出永远不写日志（用户 rc 里常 export 各种 key）。装平台那一次换成 uv 的 sidecar 目录在最前、不放 `ai4sci` 的目录（install.sh 看见 PATH 里已经有家里的 bin 就不往 shell 配置写那一行，终端里就找不到 `ai4sci`）。
 - 设 `PYTHONUTF8=1`、`PYTHONUNBUFFERED=1`、`NO_COLOR=1`、`UV_NO_PROGRESS=1`；Mac 上没有 `LANG` 就设 `en_US.UTF-8`。
 - 去掉 `AI4SCI_JOB_ID`、`AI4SCI_CHAT_ID`、`AI4SCI_PROJECT`、`PYTHONHOME`、`PYTHONPATH`、`VIRTUAL_ENV`、`CONDA_PREFIX`。`AI4SCI_HOME`、`AI4SCI_DIST` 原样传下去（测试靠它们隔离）。外壳不记录传给子进程的环境。
 - 工作目录用外壳的临时目录（`uv python find` 会读当前目录的 `.venv`）；标准输入一律接管道（Windows 上接 NUL 时 `isatty()` 是真，`getpass` 会卡死）。
+- 被外壳收拾掉的子进程一律不报退出码（Windows 上 `TerminateJobObject` 给根进程一个 1，看着像它自己失败了）。
 
 ## 4. 外壳怎么守进程
 
@@ -97,20 +98,20 @@
 
 1. 单实例：第二次打开只把已有窗口拉到前面。Mac 上 App 从 DMG 里或隔离的只读路径（`/Volumes/`、`AppTranslocation`）跑，就停在启动页：「先把 AAAI4S 拖进『应用程序』再打开」。Windows 上 WebView2 低于 111（页面要的下限）也停在这里，给微软的安装地址。
 2. 窗口先显示启动页，显示已用时间。
-3. 取签名的 `platform.json`（4 秒超时）。外壳低于 `min_desktop`：先更新外壳，后端不动。
+3. 取签名的 `platform.json`（4 秒超时；取到才记「查过版本」的时刻）。外壳低于 `min_desktop`：先更新外壳，后端不动。
 4. 源码桌面直接到第 7 步。
 5. 没有能跑的平台（`--version` 跑不通）或低于 `MIN_PLATFORM`：必须装（目标版本：外壳自己是预发布就用自己的版本，否则用 `platform.json` 的；都取不到就停在启动页）。脚本退 75：停在启动页「平台在后台还开着（网页版服务或实验）：关掉网页版服务的窗口，或等实验跑完再点重试」。低于 `platform.json`：照样升级，退 75 或失败就这次不升，照用旧版。
-6. 这一版平台还没成功跑过 setup（外壳在配置目录记着哪一版跑通过），就跑一次；没跑通照样往下走，下次打开再跑。
+6. 这个家、这一版平台还没成功跑过 setup（外壳在配置目录记着「版本 + 家」），或者这次刚装过平台（删掉家重装同一版，记下的一样、CLI 与 Git 却没了），就跑一次；没跑通照样往下走，下次打开再跑。
 7. 起 serve：端口优先用上次记下的（页面的主题等存在 localStorage，按端口分）；serve 退 3 就让系统给一个空闲端口只用这一次，记下的不改。读到 `ok http://` 那一行（60 秒超时）就把窗口导航过去。
-8. serve 起来以后再查外壳更新（签名的 `latest.json`），有就弹系统对话框「桌面 App 有新版本 X：现在更新？」。装、升级的过程中不弹。
+8. serve 起来以后再查外壳更新（签名的 `latest.json`），有就弹系统对话框「桌面 App 有新版本 X：现在更新？」。装、升级的过程中不弹。下载完、装之前过退出那一问（下载的几分钟里可能又开了一轮），点了「等它回完」就等这一轮回完再装；安装器没起来（被杀毒软件拦下这类）把藏起的窗口拿回来、重起服务。
 9. serve 中途退出：窗口回到启动页显示出错，给「重试」。重试前先收掉上一个 serve 留下的一切（Windows 结束整个 Job 再新建；Mac 由下一个 serve 启动时按 #285 记在盘上的登记清掉死掉的 serve 留下的轮次）。
-10. Mac 上收起再点 Dock 回来（`RunEvent::Reopen`），距上次查版本超过一天、又没有在跑的轮次，走一遍第 3–7 步。
+10. Mac 上收起再点 Dock 回来（`RunEvent::Reopen`），距上次查版本超过一天、又没有在跑的轮次，取到清单、停 serve 前再问一次轮次，走一遍第 3–7 步。
 
 **守进程树**：
 
-- 外壳起的每个子进程（安装脚本、setup、`--version`、serve）：Windows 上都放进外壳握着的一个 Job（只设 `KILL_ON_JOB_CLOSE`，不许 breakaway；用 process-wrap 的「挂起、放进 Job、再恢复」，不留竞态），外壳怎么死内核都会关掉句柄、杀掉 Job 里的一切；外壳自己不进这个 Job（更新器拉起的安装器、重启出的新实例会被连带杀掉）。Mac 上各自一个进程组。
+- 外壳起的每个子进程（安装脚本、setup、`--version`、serve）：Windows 上各放进外壳握着的一个 Job（每个子进程一个，只设 `KILL_ON_JOB_CLOSE`，不许 breakaway；用 process-wrap 的「挂起、放进 Job、再恢复」，不留竞态），外壳怎么死内核都会关掉句柄、杀掉 Job 里的一切；外壳自己不进这些 Job（更新器拉起的安装器、重启出的新实例会被连带杀掉）。Mac 上各自一个进程组。
 - 后台作业怎么活过 App（#284，两个系统都改）：
-  - Windows：Git for Windows 的 bash 只要所在 Job 允许 breakaway，就给它起的**每个**子进程都带 `CREATE_BREAKAWAY_FROM_JOB`，所以不能靠 breakaway 区分「后台作业」与「一轮里的普通命令」——打开 breakaway，一轮里的命令、harness 起的 python 都会跳出所有 Job 成孤儿。改成：每棵树的 Job 照旧不许 breakaway；`--detach` 起作业时用 `PROC_THREAD_ATTRIBUTE_PARENT_PROCESS` 把父进程指定成当前会话的 explorer（`GetShellWindow`），作业生来就不在任何 Job 里、不是任何人的后代；作业的日志由作业自己按路径打开（指定父进程后句柄从 explorer 继承，传不过去）。没有 explorer（SSH 会话、服务）就照旧起、打 WARNING。
+  - Windows：Git for Windows 的 bash 只要所在 Job 允许 breakaway，就给它起的**每个**子进程都带 `CREATE_BREAKAWAY_FROM_JOB`，所以不能靠 breakaway 区分「后台作业」与「一轮里的普通命令」——打开 breakaway，一轮里的命令、harness 起的 python 都会跳出所有 Job 成孤儿。改成：每棵树的 Job 照旧不许 breakaway；`--detach` 起作业时用 `PROC_THREAD_ATTRIBUTE_PARENT_PROCESS` 把父进程指定成当前会话的 explorer（`GetShellWindow`），作业生来就不在任何 Job 里、不是任何人的后代；作业的日志由作业自己按路径打开（指定父进程后句柄从 explorer 继承，传不过去）。没有 explorer（SSH 会话、服务），或 explorer 与自己不是同一用户、同一权限（管理员窗口里起的），就照旧起、打 WARNING、在作业日志里记一句。
   - Mac：`--detach` 经一个中间进程起作业、中间进程马上退出，作业生来就归 launchd，不再是那条 `ai4sci cap` 的后代（不然那 20 秒里退出 App，顺后代往下杀会杀到它）。
 - 子进程的 stdout、stderr 一直读（不读会把 serve 顶住），写进外壳的日志文件。
 
@@ -123,7 +124,7 @@
 
 **外壳替页面做的事**：
 
-- 导航只放行后端来源；`target=_blank`、`window.open` 与导航到别处：只有 `http`、`https`、`mailto` 交给系统浏览器，`file:`、`data:`、`blob:`、`javascript:` 与一切自定义协议直接拒（日志只记协议名）。所以 Windows 上把文件拖进窗口（WebView2 缺省会导航到 `file:`）什么都不会运行。
+- 导航只放行后端来源；`target=_blank`、`window.open` 与导航到别处：只有 `http`、`https`、`mailto` 交给系统浏览器，`file:`、`data:`、`blob:`、`javascript:` 与一切自定义协议直接拒（日志只记协议名）。所以 Windows 上把文件拖进窗口（WebView2 缺省会导航到 `file:`）什么都不会运行。外壳自己的来源（Windows 上是 `http://tauri.localhost`）除了外壳带回启动页的那一次一律拒，不交给浏览器（启动页上按 F5、页面上后退）。
 - 下载落到「下载」目录、下完在访达 / 资源管理器里显示。
 - Windows 上关掉 Tauri 自己的拖放处理（不然编辑台的 HTML5 拖放失效）。
 - Mac 保留系统菜单的「编辑」（不然 Cmd+V 粘贴不了 key）；`Info.plist` 写桌面、文稿、下载、本地网络四条中文用途说明。
@@ -133,7 +134,7 @@
 
 | 改什么 | 为什么 | issue |
 |---|---|---|
-| 所有请求查 `Host`（主机名只认 `127.0.0.1`、`localhost`，端口不限）；带 `Origin` 就必须等于 `http://` + 这次的 `Host`，`Origin: null` 拒；POST 只收 `application/json`；所有响应 `X-Frame-Options: DENY` 与 `frame-ancestors 'none'`；`/raw` 加 `nosniff` 与 `sandbox` | 任何网页都能对本机服务发简单请求（存 key、清空家、让助理动手），DNS rebinding 能读走对话与文件，页面能被别的网站嵌进去诱导点击。Vite 开发代理、SSH 隧道照常能用 | #283 |
+| 所有请求查 `Host`（主机名只认 `127.0.0.1`、`localhost` 与 `--host` 写的那个，端口不限；`--host 0.0.0.0` 启动时说一句只收本机、别的机器怎么连）；带 `Origin` 就必须等于 `http://` + 这次的 `Host`，`Origin: null` 拒；POST 只收 `application/json`；所有响应 `X-Frame-Options: DENY` 与 `frame-ancestors 'none'`；`/raw` 加 `nosniff` 与 `sandbox` | 任何网页都能对本机服务发简单请求（存 key、清空家、让助理动手），DNS rebinding 能读走对话与文件，页面能被别的网站嵌进去诱导点击。Vite 开发代理、SSH 隧道照常能用 | #283 |
 | `procs` 登记不脱离的进程树并记到盘上；serve 退出时逐个收拾，启动时清掉死掉的 serve 留下的；`--until-stdin-closes` | 退出服务会把对话里 CLI 的子孙留成孤儿继续花 token；外壳崩溃、serve 自己崩溃也要能收尾 | #285 |
 | Windows：`--detach` 以 explorer 为父进程起作业；Mac：经中间进程起作业 | 后台作业跳不出那一轮的 Job（一轮超时就被连带杀掉）；Mac 上起作业后 20 秒内退出会杀到它 | #284 |
 | 凡跑 codex 都带平台的 `CODEX_HOME` | setup 在家外面建了 `~/.codex/tmp` | #286 |
@@ -141,7 +142,7 @@
 | 安装脚本：`AI4SCI_NO_SETUP`、`AI4SCI_WHEEL_SHA256`、退出码 75、升级先暂存、uv 版本下限；install.sh 补「平台还开着」；rc 的版本从 wheel 文件名取 | 外壳自己起服务、要分清「被拒」与「失败」；升级中途断网不能把能用的平台弄没；rc 从没走通过 | #282 |
 | `dist/platform.json(.sig)`、`dist/<ver>/install.ps1`；`.dmg` `.exe` `.json` 的 Content-Type | 外壳查后端新版本、核安装脚本；下载页不能把安装包当文本发 | #282 |
 | 适配器起 CLI 前先查它在不在，不在说一句人话（不再是 500 加英文 errno） | 外壳拿到的 PATH 与终端不一样 | #282 |
-| `/settings` 给出助理那家的状态 `ready / needs_key / cannot_talk / unchecked` 与一句原因；页面只在 `needs_key` 时弹「填 DeepSeek 的 key」（`cannot_talk` 只显示原因：余额不足去充值、连不上就是网络），`unchecked` 时页面后台探一次；「跳过」记在页面本地、下一次自检结果出来才再弹；`POST /settings/quickstart {key}` 与 setup 问 key 共用一段代码：存 key、两家都切到 DeepSeek、问一句 | 问 key 从终端挪到页面；不能把算力自检失败、余额不足当成缺 key；一行命令装、回车跳过 key 的人也受益 | #282 |
+| `/settings` 给出助理那家的状态 `ready / needs_key / cannot_talk / unchecked` 与一句原因。`needs_key` 只给填一把 DeepSeek 的 key 就能好的情形：助理用 DeepSeek 而 key 没填、被拒，或官方订阅还没登录过（第一次打开）；Kimi 这类别的要 key 的被拒、官方订阅登录过期、余额不足、连不上是 `cannot_talk`，原因说去哪改。要 key 的供应商 key 不在不等自检就是缺 key；换 key、删 key、改自定义地址时用它的那几家上次自检作废。页面只在 `needs_key` 时弹「填 DeepSeek 的 key」，`unchecked` 时后台探一次（不锁设置里的键）；「跳过」记在页面本地、下一次自检结果出来才再弹，Esc、点窗外只关这一次页面加载；设置里缺 key 的红字旁有「填 key」。`POST /settings/quickstart {key}` 与 setup 问 key 共用一段代码：存 key、两家都切到 DeepSeek、问一句 | 问 key 从终端挪到页面；不能把算力自检失败、余额不足当成缺 key，也不能让 Kimi、官方订阅的用户填了 DeepSeek 的 key 被悄悄换走供应商；一行命令装、回车跳过 key 的人也受益 | #282 |
 | 页面：玻璃组件不靠 UA 里的 `Safari` 判断 WebKit；中文输入法用回车选词时不发出 | WKWebView 的 UA 没有 `Safari`；WebKit 选词那次 keydown 的 `isComposing` 是假 | #282 |
 
 ## 6. 目录与命令
@@ -150,12 +151,15 @@
 platform/ui/desktop/
   README.md            这一层的规矩
   package.json         @tauri-apps/cli（钉在 package-lock.json）与 dev / check / build 三条脚本（跨平台的真入口）
-  scripts/             准备构建输入：从品牌标 SVG 生成图标、放 uv sidecar
+  scripts/             prepare.mjs（从品牌标 SVG 生成图标、放 uv sidecar：缺省拷仓里 .venv 的，发版照 uv.lock 的版本下、Mac 合成通用包）
+                       run.mjs（dev / check / build 的跨平台入口）
   splash/              启动页：index.html + 一个 css + 一个 js，不打包
   src-tauri/
     Cargo.toml  Cargo.lock  build.rs  tauri.conf.json  Info.plist
     capabilities/      只给启动页
     src/               contract.rs（§3 的常量，唯一一处）与守进程、安装、环境、导航各一个模块
+    tests/             supervise.rs（真起进程：假的 ai4sci 与仓里 .venv 的真后端）、splash.rs（启动页的标、只设文字、全在本地）
+    examples/          fake_ai4sci.rs（集成测试用的假 ai4sci）
     icons/  binaries/  构建时生成，不进 git（P-17）
 ```
 
@@ -174,6 +178,7 @@ platform/ui/desktop/
 ```
 ai4science/dist/
   platform.json  platform.json.sig            最新平台版本与安装件的 sha256（签名，短缓存，只在正式版改）
+  <ver>/platform.json(.sig)                   这一版自己那份（每一版都有，rc 也有；<ver> 是 PEP 440 写法）
   <ver>/install.ps1                           带版本号的一份（新增，与 install.sh 对齐）
   desktop/
     <ver>/AAAI4S_<ver>_universal.dmg            给人下载
@@ -184,11 +189,15 @@ ai4science/dist/
 ```
 
 - **外壳改没改**：基准是 CDN 上当前 `desktop/latest.json` 的版本（404 才算第一次，别的错误让作业失败），`git diff v<基准> <tag> -- ui/desktop ui/web/public/favicon.svg ':!ui/desktop/README.md'`，路径清单只写在这一处；判定与理由写进作业摘要。
-- **重跑不出错**：`desktop/<ver>/` 只写一次；已经在桶里就不再传，`latest.json` 用桶里那份的 `.sig` 生成。不可变对象按 sha256 判断是否已在，同名不同内容让作业失败。`latest.json` 最后传，传之前校验：键齐、每个地址 HEAD 是 200 且长度对、用公钥验签、签名里的版本等于清单的版本（更新器开了 `requireSignedVersion`）。
+- **重跑不出错**：`desktop/<ver>/` 只写一次；已经在桶里就不再传，`latest.json` 用桶里那份的 `.sig` 生成。不可变对象按 sha256 判断是否已在，同名不同内容让作业失败。`<ver>/platform.json` 已在桶里（同一份）就用桶里那份签名（tauri 每次签都带新的时间戳，重签的与桶里的不一样）。`latest.json` 最后传，传之前校验：键齐、每个地址 HEAD 是 200 且长度对、用公钥验签、签名里的版本等于清单的版本（更新器开了 `requireSignedVersion`）。
+- **最新的那几份不往回换**：回头重跑旧版的作业，CDN 上已经是更新的一版，就不动最新的安装脚本、`platform.json`、`latest.json` 与固定下载地址，只补带版本号的。
+- **等外壳**：这一版要的外壳（`min_desktop`）CDN 上还没有（抬了 `min_desktop`、或第一次发外壳），publish-wheel 先不换最新的 `platform.json`，publish-desktop 传完外壳再换；不然从官网下的旧外壳卡在「先更新桌面 App」，又没有新的可更新。
+- **密钥分步**：`cdn.py sign` 在一个目录里备齐要传的、签 `platform.json`，这一步只有更新器的 key；`cdn.py wheel` 用同一个目录、只带 COS 的凭据传。`cdn.py` 的依赖锁在 `cdn.py.lock`（`uv run --locked`），Release 的写权限只给两个 publish 作业。
 - rc 只传带版本号的那些，不碰 `platform.json`、`latest.json` 与固定下载地址。
+- CI 的 desktop 作业在 PR 上就照发版那样准备 sidecar（照 `uv.lock` 的版本下 uv、Mac 合成通用包、Windows 在 Git Bash 里解 zip——那里 PATH 最前是不认 zip 的 GNU tar，所以点名用系统的 bsdtar），Mac 那格顺带跑安装脚本的测试（「平台还开着」要连进程的环境一起看，Linux 上的 check 作业跑不到）。
 - 发布作业第一步查 CDN 证书剩余天数，少于 30 天就失败（证书 2026-11-22 到期，过期了安装与更新都会断）。
 - 更新器的签名密钥：私钥在内仓 secrets（`TAURI_SIGNING_PRIVATE_KEY`、`…_PASSWORD`）并在本机备份；丢了已装的外壳就再也收不到更新。同一把也签 `platform.json`。
-- 以后加 Apple 签名与公证只加 secrets（`APPLE_CERTIFICATE` 等），配置结构不动；没有这些 secrets 时照样出 ad-hoc 签名的包。
+- Apple 签名与公证只靠 secrets：`APPLE_CERTIFICATE`（Developer ID 的 p12，base64）、`APPLE_CERTIFICATE_PASSWORD`、`APPLE_SIGNING_IDENTITY`，公证用 App Store Connect 的 API key（`APPLE_API_ISSUER`、`APPLE_API_KEY`、`APPLE_API_PRIVATE_KEY` 是 .p8 的内容，作业里落成文件把路径给 tauri）。tauri 公证、钉票据的是 .app，dmg 另外公证、钉票据（Gatekeeper 查最外面那层，离线也认）。没配这些 secrets 时照样出 ad-hoc 签名的包。
 
 ## 8. 装到哪、卸载
 
@@ -196,7 +205,7 @@ ai4science/dist/
 - 外壳：Mac 在「应用程序」里；Windows 在 `%LOCALAPPDATA%\AAAI4S`（按用户装，不要管理员）。外壳自己的配置、日志、WebView 缓存在系统给 App 的目录里（标识 `com.zephyrxiang.aaai4s`）。
 - 卸载 App 不碰 `~/.ai4sci`（别的装法还在用）；要连平台一起删，照 onboarding 的卸载段。
 
-**没签名时的放行**：Mac 15 起 ad-hoc 签名的 App 第一次打开会被拦，要去「系统设置 → 隐私与安全性」点「仍要打开」（一小时内有效）并输入密码；一定要先拖进「应用程序」。Windows 弹 SmartScreen 时点「更多信息 → 仍要运行」；Win11 开着「智能应用控制」时没有这个选项（平台的 python 也没签名，一行命令同样受影响）。正式对外前先配 Apple 证书与公证。
+**签名与放行**：Mac 包签了名、过了公证，拖进「应用程序」直接打开（不拖进去会停在启动页让人先拖）。没配签名的包（本机 `make desktop-build`、fork 出的包）第一次打开会被拦，要去「系统设置 → 隐私与安全性」点「仍要打开」（一小时内有效）并输入密码。Windows 暂无代码签名证书：弹 SmartScreen 时点「更多信息 → 仍要运行」；Win11 开着「智能应用控制」时没有这个选项（平台的 python 也没签名，一行命令同样受影响）。
 
 ## 9. 验收
 
@@ -216,7 +225,7 @@ Windows 上只在计划任务那一次启动的环境里设 `WEBVIEW2_ADDITIONAL
 
 ## 10. 这一轮不做
 
-- Apple 证书、公证与 Windows 代码签名（发布时再配）。
+- Windows 代码签名（要买证书，正式对外前再配）。
 - 胖包、App Store、Linux 桌面包。
 - 托盘、开机自启、阻止睡眠。
 - 代理设置（GUI 拿不到终端里设的 `HTTPS_PROXY`，只影响官方订阅与海外供应商，DeepSeek 不受影响）。
@@ -234,6 +243,14 @@ Windows 上只在计划任务那一次启动的环境里设 `WEBVIEW2_ADDITIONAL
 - Mac 关窗口后点 Dock 要处理 `Reopen`；退出前有在跑的轮次先问一句（§4）。
 - rc 的版本有 PEP 440 与 SemVer 两种写法，cdn.py 与安装脚本的 rc 一直是坏的，一并修（§3、§5）。
 - 外链只放行 `http`、`https`、`mailto`；Windows 拖进窗口的文件不会被运行（§4）。
+
+**合进分支后的七路对抗审查**（外壳的生命周期与安全、后端的进程与门禁、安装脚本、发版流水线、页面；每路再派一个推翻者核 blocker / major）：36 条全修，其中「守着 stdin 时子进程卡死」推翻者判不成立，到 Windows 测试机上实测，原生程序确实不卡、Python 子进程会卡死，照修。改动最大的几条：
+
+- uv 不在签名链里：外壳带的 uv 变老时脚本从 CDN 取 uv、只对 CDN 上旁边那份 `.sha256`。改成发版时把每个平台 uv 的 sha256 写进签过名的脚本（§3）。
+- 删掉家重装同一版不再跑 setup，CLI 与 Git 装不回来；Mac 上桌面装的平台不往 shell 配置写 PATH；Windows 组策略设了 AllSigned 的机器上 `-File` 起不来安装脚本（§3、§4）。
+- 发版重跑必挂（重签的 `.sig` 与桶里不可变的那份不一样）、Windows 构建在 Git Bash 里解不开 uv 的 zip、抬 `min_desktop` 那一版新用户卡在启动页、回头重跑旧版会把最新的换回去（§7）。
+- 关掉终端窗口不收拾轮次；页面断开对话流后 CLI 的输出管道写满卡住、这段对话一直锁着（§3）。
+- 「助理还不能说话」对 Kimi、官方订阅也弹，试通悄悄把两家换成 DeepSeek；点窗外就再也不弹；自己弹出来抢走正在打字的焦点（§5）。
 
 ## 参考
 
