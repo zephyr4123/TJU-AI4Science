@@ -8,6 +8,13 @@
 
 ## [Unreleased]
 
+### 新增
+- onboarding 的 spec `docs/specs/onboarding.md`：一行命令装好平台、全程国内源、装过就跳过，Mac 先做、Windows（#210）留槽；母 issue #276（#277）
+- 一次性脚本 `scripts/oneoff/relock-to-tuna-277.py`：skill 锁文件的地址换成清华镜像，先核对每个文件清华上都有（#277）
+
+### 变更
+- 外层 README「只用平台」改成一行命令（#277）
+
 ## [1.7.2] - 2026-10-07
 
 ### 变更

@@ -16,7 +16,7 @@ Windows 上的研究者能装上平台、用页面走完一条研究流，结果
 
 做：
 
-- **使用者这条路**：装 GitHub Release 里的 wheel（`uv tool install`）→ `ai4sci check` → `ai4sci serve` → 在页面上跑完出厂流程 `research` 或 `reproduce`。
+- **使用者这条路**：一行命令 `irm https://media.zephyrxiang.com/ai4science/dist/install.ps1 | iex`（#277 留的槽：与 `install.sh` 同样装 uv、装平台，交给 `ai4sci setup` 装两家 CLI、问 key、起服务；`setup` 里按系统分的只有 CLI 的平台名与 git 怎么补，见 [onboarding.md](onboarding.md)）→ 在页面上跑完出厂流程 `research` 或 `reproduce`。
 - **两家 agent**：先做 Claude Code，再做 Codex。Codex 要处理的问题更多，见 3.7。
 - **两种算力**：本机；用 SSH 连远端 Linux 机器（AutoDL 这类）。
 
