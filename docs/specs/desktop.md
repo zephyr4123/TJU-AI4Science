@@ -103,7 +103,7 @@
 5. 没有能跑的平台（`--version` 跑不通）或低于 `MIN_PLATFORM`：必须装（目标版本：外壳自己是预发布就用自己的版本，否则用 `platform.json` 的；都取不到就停在启动页）。脚本退 75：停在启动页「平台在后台还开着（网页版服务或实验）：关掉网页版服务的窗口，或等实验跑完再点重试」。低于 `platform.json`：照样升级，退 75 或失败就这次不升，照用旧版。
 6. 这个家、这一版平台还没成功跑过 setup（外壳在配置目录记着「版本 + 家」），或者这次刚装过平台（删掉家重装同一版，记下的一样、CLI 与 Git 却没了），就跑一次；没跑通照样往下走，下次打开再跑。
 7. 起 serve：端口优先用上次记下的（页面的主题等存在 localStorage，按端口分）；serve 退 3 就让系统给一个空闲端口只用这一次，记下的不改。读到 `ok http://` 那一行（60 秒超时）就把窗口导航过去。
-8. serve 起来以后再查外壳更新（签名的 `latest.json`），有就弹系统对话框「桌面 App 有新版本 X：现在更新？」。装、升级的过程中不弹。下载完、装之前过退出那一问（下载的几分钟里可能又开了一轮），点了「等它回完」就等这一轮回完再装；安装器没起来（被杀毒软件拦下这类）把藏起的窗口拿回来、重起服务。
+8. serve 起来以后再查外壳更新（签名的 `latest.json`），有就弹系统对话框「桌面 App 有新版本 X：现在更新？」。装、升级的过程中不弹。下载失败分两种说：包与签名对不上（改过、换过 key、签的不是这一版）说「新版的包与签名对不上，没有装，先照旧用这一版」，不说「下次再更新」——下次还是同一个包；断网这类才说「没下载完，下次打开再更新」（端到端：两种篡改原来都说成没下载完）。下载完、装之前过退出那一问（下载的几分钟里可能又开了一轮），点了「等它回完」就等这一轮回完再装；安装器没起来（被杀毒软件拦下这类）把藏起的窗口拿回来、重起服务。
 9. serve 中途退出：窗口回到启动页显示出错，给「重试」。重试前先收掉上一个 serve 留下的一切（Windows 结束整个 Job 再新建；Mac 由下一个 serve 启动时按 #285 记在盘上的登记清掉死掉的 serve 留下的轮次）。
 10. Mac 上收起再点 Dock 回来（`RunEvent::Reopen`），距上次查版本超过一天、又没有在跑的轮次，取到清单、停 serve 前再问一次轮次，走一遍第 3–7 步。
 
@@ -111,13 +111,13 @@
 
 - 外壳起的每个子进程（安装脚本、setup、`--version`、serve）：Windows 上各放进外壳握着的一个 Job（每个子进程一个，只设 `KILL_ON_JOB_CLOSE`，不许 breakaway；用 process-wrap 的「挂起、放进 Job、再恢复」，不留竞态），外壳怎么死内核都会关掉句柄、杀掉 Job 里的一切；外壳自己不进这些 Job（更新器拉起的安装器、重启出的新实例会被连带杀掉）。Mac 上各自一个进程组。
 - 后台作业怎么活过 App（#284，两个系统都改）：
-  - Windows：Git for Windows 的 bash 只要所在 Job 允许 breakaway，就给它起的**每个**子进程都带 `CREATE_BREAKAWAY_FROM_JOB`，所以不能靠 breakaway 区分「后台作业」与「一轮里的普通命令」——打开 breakaway，一轮里的命令、harness 起的 python 都会跳出所有 Job 成孤儿。改成：每棵树的 Job 照旧不许 breakaway；`--detach` 起作业时用 `PROC_THREAD_ATTRIBUTE_PARENT_PROCESS` 把父进程指定成当前会话的 explorer（`GetShellWindow`），作业生来就不在任何 Job 里、不是任何人的后代；作业的日志由作业自己按路径打开（指定父进程后句柄从 explorer 继承，传不过去）。没有 explorer（SSH 会话、服务），或 explorer 与自己不是同一用户、同一权限（管理员窗口里起的），就照旧起、打 WARNING、在作业日志里记一句。
+  - Windows：Git for Windows 的 bash 只要所在 Job 允许 breakaway，就给它起的**每个**子进程都带 `CREATE_BREAKAWAY_FROM_JOB`，所以不能靠 breakaway 区分「后台作业」与「一轮里的普通命令」——打开 breakaway，一轮里的命令、harness 起的 python 都会跳出所有 Job 成孤儿。改成：每棵树的 Job 照旧不许 breakaway；`--detach` 起作业时用 `PROC_THREAD_ATTRIBUTE_PARENT_PROCESS` 把父进程指定成当前会话的 explorer（`GetShellWindow`），Job 从 explorer 继承：Windows 11 的 explorer 自己就在一个许脱离的 Job 里（它起应用都带脱离的标志），所以起作业也带 `CREATE_BREAKAWAY_FROM_JOB`，作业生来就不在任何 Job 里、不是任何人的后代（端到端真机：只看到「explorer 在 Job 里」就不借，作业落回外壳的 Job，App 一退作业就没了）；作业的日志由作业自己按路径打开（指定父进程后句柄从 explorer 继承，传不过去）。没有 explorer（SSH 会话、服务），或 explorer 与自己不是同一用户、同一权限（管理员窗口里起的），就照旧起、打 WARNING、在作业日志里记一句。
   - Mac：`--detach` 经一个中间进程起作业、中间进程马上退出，作业生来就归 launchd，不再是那条 `ai4sci cap` 的后代（不然那 20 秒里退出 App，顺后代往下杀会杀到它）。
 - 子进程的 stdout、stderr 一直读（不读会把 serve 顶住），写进外壳的日志文件。
 
 **退出**（Mac 的 Cmd+Q 与「退出」菜单、Windows 关窗口、更新器装新版前都走这里；Mac 的「退出」换成自定义菜单项、保留 Cmd+Q，挂在 `RunEvent::Exit` 与更新器的 `on_before_exit` 上）：
 
-1. `GET /health` 的 `turns` 不为 0：先问「助理这一轮还没回完，退出会打断它」，按钮「等它回完」「仍然退出」（只防误触，不改退出语义）。
+1. `GET /health` 的 `turns` 不为 0：先问「助理这一轮还没回完，退出会打断它」，按钮「仍然退出」（确定键，回车）「等它回完」（取消键：Esc、关掉对话框都是它；反过来放，按 Esc 就打断了那一轮，端到端在 Windows 上撞到）（只防误触，不改退出语义）。外壳的系统对话框都挂在主窗口上（Mac 是窗口上的 sheet，Windows 是它的模态框），窗口收起着先拿回来：不挂的话 Mac 上是系统的 UserNotificationCenter 另起的浮窗，跟窗口脱节。
 2. 关掉 serve 的标准输入，serve 自己停掉在跑的轮次后退出；同时收掉还在跑的安装脚本、setup。
 3. 5 秒还没退：Windows 结束整个 Job；Mac 趁 serve 还活着先找出它的后代逐个 SIGKILL，再 SIGKILL 整个进程组。
 4. 后台作业不受影响。
@@ -142,7 +142,7 @@
 | 安装脚本：`AI4SCI_NO_SETUP`、`AI4SCI_WHEEL_SHA256`、退出码 75、升级先暂存、uv 版本下限；install.sh 补「平台还开着」；rc 的版本从 wheel 文件名取 | 外壳自己起服务、要分清「被拒」与「失败」；升级中途断网不能把能用的平台弄没；rc 从没走通过 | #282 |
 | `dist/platform.json(.sig)`、`dist/<ver>/install.ps1`；`.dmg` `.exe` `.json` 的 Content-Type | 外壳查后端新版本、核安装脚本；下载页不能把安装包当文本发 | #282 |
 | 适配器起 CLI 前先查它在不在，不在说一句人话（不再是 500 加英文 errno） | 外壳拿到的 PATH 与终端不一样 | #282 |
-| `/settings` 给出助理那家的状态 `ready / needs_key / cannot_talk / unchecked` 与一句原因。`needs_key` 只给填一把 DeepSeek 的 key 就能好的情形：助理用 DeepSeek 而 key 没填、被拒，或官方订阅还没登录过（第一次打开）；Kimi 这类别的要 key 的被拒、官方订阅登录过期、余额不足、连不上是 `cannot_talk`，原因说去哪改。要 key 的供应商 key 不在不等自检就是缺 key；换 key、删 key、改自定义地址时用它的那几家上次自检作废。页面只在 `needs_key` 时弹「填 DeepSeek 的 key」，`unchecked` 时后台探一次（不锁设置里的键）；「跳过」记在页面本地、下一次自检结果出来才再弹，Esc、点窗外只关这一次页面加载；设置里缺 key 的红字旁有「填 key」。`POST /settings/quickstart {key}` 与 setup 问 key 共用一段代码：存 key、两家都切到 DeepSeek、问一句 | 问 key 从终端挪到页面；不能把算力自检失败、余额不足当成缺 key，也不能让 Kimi、官方订阅的用户填了 DeepSeek 的 key 被悄悄换走供应商；一行命令装、回车跳过 key 的人也受益 | #282 |
+| `/settings` 给出助理那家的状态 `ready / needs_key / cannot_talk / unchecked` 与一句原因。`needs_key` 只给填一把 DeepSeek 的 key 就能好的情形：助理用 DeepSeek 而 key 没填、被拒，或官方订阅还没登录过（第一次打开）；Kimi 这类别的要 key 的被拒、官方订阅登录过期、余额不足、连不上是 `cannot_talk`，原因说去哪改。要 key 的供应商 key 不在不等自检就是缺 key；换 key、删 key、改自定义地址时用它的那几家上次自检作废。页面只在 `needs_key` 时弹「填 DeepSeek 的 key」，`unchecked` 时后台探一次（不锁设置里的键）；「跳过」记在页面本地、下一次自检结果出来才再弹，Esc、点窗外只关这一次页面加载；切回窗口时页面重读 `/settings`，key 在终端或别的页面里填好了窗自己关；设置里缺 key 的红字旁有「填 key」。`POST /settings/quickstart {key}` 与 setup 问 key 共用一段代码：存 key、两家都切到 DeepSeek、问一句 | 问 key 从终端挪到页面；不能把算力自检失败、余额不足当成缺 key，也不能让 Kimi、官方订阅的用户填了 DeepSeek 的 key 被悄悄换走供应商；一行命令装、回车跳过 key 的人也受益 | #282 |
 | 页面：玻璃组件不靠 UA 里的 `Safari` 判断 WebKit；中文输入法用回车选词时不发出 | WKWebView 的 UA 没有 `Safari`；WebKit 选词那次 keydown 的 `isComposing` 是假 | #282 |
 
 ## 6. 目录与命令
@@ -221,7 +221,7 @@ Mac 本机与 Windows 测试机各走一遍，启动都要像用户一样（Mac 
 8. 外壳更新：用测试密钥签两个版本，从旧版更新到新版；改一个字节的包与换一把公钥都被拒。
 9. 门禁：`make desktop-check` 在 CI 的 Mac 与 Windows 上都过。
 
-Windows 上只在计划任务那一次启动的环境里设 `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=…`（不写注册表、只开在回环地址上），用 SSH 隧道接到 Mac，Playwright 直接驱动 App 里的页面（Windows 复盘「SSH 隧道 + Playwright」的延伸），补上 Windows 复盘留下的「浏览器渲染没验」；测完删掉计划任务。
+Windows 上只在计划任务那一次启动的环境里设 `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=…`（不写注册表、只开在回环地址上）；App 要经 explorer 打开启动脚本、以普通权限起——计划任务直接起的进程是完整的管理员令牌，WebView2 对提权的宿主不认 `WEBVIEW2_*` 环境变量，而且用户本来就不以管理员身份跑它，用 SSH 隧道接到 Mac，Playwright 直接驱动 App 里的页面（Windows 复盘「SSH 隧道 + Playwright」的延伸），补上 Windows 复盘留下的「浏览器渲染没验」；测完删掉计划任务。
 
 ## 10. 这一轮不做
 
