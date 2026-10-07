@@ -1,4 +1,4 @@
-# 10 三轮演练与一次文档盘点
+# 10 几件真事：三轮演练、文档盘点与 Windows 适配
 
 前九章的做法不是先想好再执行的，是这几件真事里踩出来的。每件事按「目的 / 怎么派 / 撞到什么 / 沉淀在哪 / 用了哪几章」写。案例卡里有全部细节（时间线、对话、账本），这里只讲做法。
 
@@ -42,6 +42,14 @@
 - **沉淀**：两仓 `CLAUDE.md` 装下纲领、各层 README 装细则（#140）；两仓 README 做成地图（#141）；`CONTRIBUTING.md`、分支模型、ruleset、`-rc.N`、内仓转公开（#142）；本手册（[#145](https://github.com/zephyr4123/TJU-AI4Science/issues/145)）。写手册当天又从 PR 门禁上抓到 CI 已经红了三次没人看见（[#144](https://github.com/zephyr4123/TJU-AI4Science/issues/144)）。
 - **用了**：全部九章。
 
+## Windows 适配：agent 经 SSH 远程操作真机（[#210](https://github.com/zephyr4123/TJU-AI4Science/issues/210)，2026-10-07）
+
+- **目的**：平台原生支持 Windows，研究者一行命令装好、在页面上走完一条流程。原本写了移交说明打算交给另一位工程师，后来决定直接做。
+- **怎么派**：人只在 Windows 上开 OpenSSH、输一次密码、加一条防火墙规则，其余都是 agent 经 SSH 做的：先在真机上跑全量测试拿基线、按根因归类排顺序；每条差异先写会失败的测试，Mac 与 Windows 两边都跑；最后用 SSH 隧道把 Windows 上的服务接到 Mac 的浏览器，agent 用 Playwright 替用户点完一条研究流。
+- **撞到什么**：单元测试全绿之后，端到端又撞出 6 个问题（其中「装出来的包里没有 ruff」「单流程省了 `--flow` 时作业没挂到流程上」Mac 上也有）；GitHub 的 Windows runner 第一次跑又撞出 2 个（其中一个是 key 文件管理员也能读）。
+- **沉淀**：复盘写成公开的阅读版（[`research/retros/2026-1007-windows-adaptation/`](../../research/retros/2026-1007-windows-adaptation/README.md)），每条怎么做的在 spec（[`docs/specs/windows-adaptation.md`](../specs/windows-adaptation.md)）第 0 节，与 Windows 无关的发现单开 [#278](https://github.com/zephyr4123/TJU-AI4Science/issues/278)。
+- **用了**：[06](06-survey-before-acting.md)（先拿基线再动手）、[03](03-small-steps-and-gates.md)（机器能查的进门禁）、[04](04-evidence-not-claims.md)（停作业前后拍进程树）。
+
 ## 共同的形状
 
-四件事的做法是一样的：**先写清用户是谁与验收是什么 → 让 agent 干、人只签字 → 撞到的每个坑先取证再修根因 → 坑、债、决定当天写进 issue 与案例卡 → 下一轮从上一轮的案例卡接。** 演练不是测试，是产品需求的来源；文档盘点不是打扫，是让下一个人（与下一个 agent）能接手的前提。
+这几件事的做法是一样的：**先写清用户是谁与验收是什么 → 让 agent 干、人只签字 → 撞到的每个坑先取证再修根因 → 坑、债、决定当天写进 issue 与案例卡 → 下一轮从上一轮的案例卡接。** 演练不是测试，是产品需求的来源；文档盘点不是打扫，是让下一个人（与下一个 agent）能接手的前提。

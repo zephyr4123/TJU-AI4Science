@@ -1,10 +1,49 @@
-# Windows 适配 · 移交说明
+# Windows 适配
 
-- 状态：**待认领**。2026-10-03 起由另一位工程师接手；负责人：待定（认领后改这一行与 issue 的 assignee）
-- 锚 issue：[#210](https://github.com/zephyr4123/TJU-AI4Science/issues/210)。两个仓的 commit 都引它
-- 代码位置以内仓 `release/1.3` 的 `29dcf1d`（等于 v1.2.0）为准，行号会随代码漂移，找不到时按文件名与函数名找
-- 这份是起点，不是定论：标了「需实测」的是没在 Windows 上验证过的判断，以实测为准；实测推翻了哪条，回来改这份文档
+- 状态：**已做，真机端到端走通**（2026-10-07）；远端 Linux 算力未在真机上测。主人定这一轮不移交，主人 + Claude 一次做完，连同 Windows 上的 onboarding（`install.ps1` + `ai4sci setup`）；与 onboarding（#277）一起合并、发 1.8.0
+- 锚 issue：[#210](https://github.com/zephyr4123/TJU-AI4Science/issues/210)。两个仓的 commit 都引它；内仓分支 `feat/210-windows`
+- 真机：主人的 Win11 专业版 26200（AMD64、PowerShell 5.1、ACP 936、执行策略 Restricted、长路径没开），Mac 经 SSH 连过去；连法记在会话记忆里，不进仓
+- 第 3 节是动手前的分析，留着说明为什么；每条实际怎么做的、实测推翻了哪条，见第 0 节
+- 复盘（怎么开 SSH、怎么用隧道加 Playwright 在真机上走端到端、撞到的坑与 Mac 的差异）：[research/retros/2026-1007-windows-adaptation/](../../research/retros/2026-1007-windows-adaptation/README.md)，公网阅读版 <https://zephyr4123.github.io/TJU-AI4Science/retros/2026-1007-windows-adaptation/>
 - 纲领：[architecture/](../architecture/README.md)（P-7 失败就停、P-14 agent 面前只有 `ai4sci`）；流程：[CONTRIBUTING.md](../../CONTRIBUTING.md)
+
+## 0. 做成什么样（2026-10-07）
+
+**测试**：内仓全量 pytest 在 Win11 真机上 546 过 / 152 失败 / 24 报错（基线）→ **747 过 / 0 失败 / 12 跳**（端到端修完之后，2026-10-07 傍晚）；Mac 上 `make check` 全绿，pytest 747 过 12 跳。CI 加了 `windows-latest` 作业（checkout 前关 autocrlf，跑全量 pytest），要设成合并的必过检查由负责人改 ruleset。
+
+| spec | 做法 | 实测 |
+|---|---|---|
+| 3.4 编码 | 26 处子进程补 `encoding="utf-8", errors="replace"`；测试里 37 处读写补 encoding；`main()` 把标准输入输出换成 UTF-8、给子进程设 `PYTHONUTF8=1`；`tests/test_encoding.py` 用 ast 扫两类，各带反例 | 基线约 25 条栽在 GBK 上，全过 |
+| 3.1–3.3 进程 | 两份杀树收成最底层的 `procs/`：POSIX 照旧；Windows 起进程先挂起、放进按根 pid 命名的 Job Object、把 Job 句柄递给根自己握着、再放行（名字只在有人握着句柄时查得到，真机实测），杀就是结束整个 Job，查存活用 OpenProcess；作业另给看不见的控制台与单独的 Ctrl+C 组、能脱离起它的 Job 就脱离 | `tests/test_procs.py` 两边同一套：问存活不打断、中间层先退的孤儿、另起一组的孙子都杀得掉（venv 的 python.exe 是启动器，两层进程都在 Job 里） |
+| 3.5 命令行长度 | 正文一律走 stdin；Claude Code 的指南走 `--append-system-prompt-file`（私有目录里按内容命名的文件）；Codex 的写进私有 CODEX_HOME 的 profile、`-p` 叠上去——`--ignore-user-config` 连 profile 也不读（0.160 实测），改成平台自己把私有 `config.toml` 写成空的 | Mac 上 40044 字的指南两家都答出口令 |
+| 3.6 Claude Code 权限 | 规则里的绝对路径写 `//c/Users/...`（官方：Windows 上先换成 POSIX 形式再匹配）；关 PowerShell 工具（`CLAUDE_CODE_USE_POWERSHELL_TOOL=0`），显式给 `CLAUDE_CODE_GIT_BASH_PATH`；自检多一项 Git Bash。**实测新发现**：CLI 在 Windows 上用 cmd.exe 跑 `apiKeyHelper`，`cat` 不存在——改成 `type "…"` | 真机：助理用 Bash 跑 `ai4sci`、用 Read / Write 读写 `C:\` 路径都放行 |
+| 3.7 Codex | 执行层的 `auth.json` 在 Windows 上是根上那份的**硬链接**（不要管理员；Codex 刷新 token 是原地截断重写，`FileAuthStorage::save`），每次核对是不是同一个文件；指南走 profile（同 3.5）；npm 装的 `.cmd` 壳认作不够用，setup 装原生 exe | 真机自检：Codex 0.160.1 + DeepSeek pong |
+| 3.8 bash | 算力端口加 `bash` 属性：本机 Windows 是从 PATH 上的 git（找不到再看注册表登记的安装位置）推出的 Git Bash，远端照旧 `bash` | harness 在 Git Bash 里跑，Windows 路径的解释器、CRLF 的脚本都没问题 |
+| 3.9 解释器路径 | `env.venv_python` 按环境建在哪台机器上选，Windows 本机 `Scripts\python.exe`；给 harness 的 `AI4SCI_PYTHON` 一律正斜杠（bash 与 JSON 都认）；`env/interpreter`、`env use` 认盘符 | 基线约 110 条栽在这，全过 |
+| 3.10 换行 | 实验仓的每条 git 带 `-c core.autocrlf=false -c core.eol=lf`；`.gitattributes` 加 `*.sh text eol=lf` | 测试用开着 autocrlf 的全局配置，Mac 上就复现，修前红修后绿 |
+| 3.11 rsync | 本机没有 rsync 就打 tar 走 ssh：推过去先删远端多出来的（排除的不碰），拉回来不删本地的；远端目录 `C:\x` 映射成 `<根>/c/x` | 「远端」换成本机 bash 走真命令，两边都测；真远端未测（没有开着的 Linux 算力） |
+| 3.12 路径与显示 | 给人看与给 agent 的路径写斜杠（ruff、env、台账、download 收据）；照抄的命令：uv 在 Windows 上把入口**复制**进 bin（逐字节相同），内容一样算同一份安装，带空格的路径写成 PowerShell 的 `& "…"` | |
+| 3.13 文件被占用 | `files.write_atomic` 与新加的 `files.read_text` 撞上 PermissionError 有限次重试，试够照抛；git 的只读对象文件 `files.remove_tree` 删得掉；key 文件按 SID 设只给本人的 ACL | 「作业记录读不到半截」那条在真机上先红后绿 |
+| onboarding | `install.ps1`：与 install.sh 同一件事、同一份事实（测试对账）；整段包进脚本块，出错不 exit；用户 Path 按原样读写（REG_EXPAND_SZ）并广播；Python 不登记注册表（`UV_PYTHON_INSTALL_REGISTRY=0`，平台起 uv 也设）。`ai4sci setup` 在 Windows 上缺 Git 就从 npmmirror 装 PortableGit（钉 v2.56.0.windows.2、对 GitHub 的 sha256）进 `tools/git/`，平台入口把它放进本进程 PATH；没开长路径给一行管理员命令 | 真机从 CDN 测试目录粘一行：33 秒装完、问 key、问一句通了（DeepSeek 1.6 秒）、起服务；家外面只多用户 Path 一项 |
+
+**真机端到端**（1.3 第 2 条，2026-10-07 下午）：执行层用 Claude Code + DeepSeek（开发测试一律用它，不用订阅），从 CDN 测试目录装的快照。在页面上走完出厂 `research` 流：需求确认 → 设计（基线 0.0125723、σ=0）→ 签「评分指标核对」→ AutoResearch 3 轮（最好 0.0086745）→ 分析 → 数字核对 PASS（4 项）→ 签「验收」，流程 `done`。全程助理的裸命令都被拦下，只用 `ai4sci`。撞出的问题当场修了：
+
+| 撞到的 | 根因 | 修 |
+|---|---|---|
+| 设计作业 `No module named ruff` | ruff 只在 dev 组，装的包里没有（Mac 一样，1.7.x 发布的包都缺）；报错还指向一个不存在的 requirements.lock，把助理带去建议 `pip install ruff` | ruff 进运行时依赖；门禁扫框架里所有 `python -m <模块>`，要求都在依赖里 |
+| 服务开着时重跑一行命令升级，安装被删坏 | Windows 上在跑的 exe 换不掉，uv 先删了 site-packages，删到 `Scripts\` 才被拒 | install.ps1 动文件前查有没有进程在用这份安装，有就停下、说先关服务 |
+| 上面那条的检查一开始不生效 | `$tools`（`uv tool list` 的输出）和 `$TOOLS`（家里 tools 目录）在 PowerShell 里是同一个变量 | 改名；门禁查 install.ps1 里只差大小写的变量名 |
+| 装坏了重跑修不好 | 坏掉的那份问版本时往 stderr 写 traceback，5.1 在 Stop 下当异常抛 | 问版本时放宽，坏了就当没装 |
+| stderr 被并进来的宿主里，装完报「没装完」、服务被掐断 | setup 起的服务往 stderr 写日志，5.1 在 Stop 下把第一行当异常 | 交给 setup 前放宽；ps1 的测试一律在 `2>&1` 下跑 |
+| 实验在跑，页面却说「轮到助理」、没有停止 | 单流程工作区省了 `--flow` 时，产出会推断流程，作业记录只认显式的 `--flow`（Mac 一样） | 作业的流程在开产出时照产出回写 |
+
+停作业与重启服务（1.3 第 2 条后两项）：
+- 实验在执行层写代码时用 `ai4sci job stop` 停：这个作业的整棵进程树（venv 启动器 python → python → `claude.exe`，各带一个 conhost）全部结束，只剩服务自己的两个 python。作业记 `stopped`，产出记失败，原因写「人停的」。账本里那一轮记 `interrupted`，`--resume` 对账后回到最好那版。
+- 页面上的「停止」和命令行调的是同一个 `jobs.stop`。修了上面最后一条之后，流程能显示「等作业」并给出停止，但后面几个作业都在半分钟内跑完，没赶上在页面上点一次。
+- 服务关掉再从计划任务起来后，停掉的作业、失败的产出、流程「轮到助理」都显示对了。
+- 家外面：`%APPDATA%\uv` 没再出现；只多了用户 Path 一项。
+
+另外撞到一个和 Windows 无关的问题：流程实例里写的能力参数（`with`）校验能过、页面上也显示，可跑能力时没用上（这次 `patience: 1` 没生效）。要先定语义，单开 [#278](https://github.com/zephyr4123/TJU-AI4Science/issues/278)。
 
 ## 1. 要做什么
 
@@ -16,7 +55,7 @@ Windows 上的研究者能装上平台、用页面走完一条研究流，结果
 
 做：
 
-- **使用者这条路**：装 GitHub Release 里的 wheel（`uv tool install`）→ `ai4sci check` → `ai4sci serve` → 在页面上跑完出厂流程 `research` 或 `reproduce`。
+- **使用者这条路**：一行命令 `irm https://media.zephyrxiang.com/ai4science/dist/install.ps1 | iex`（#277 留的槽：与 `install.sh` 同样装 uv、装平台，交给 `ai4sci setup` 装两家 CLI、问 key、起服务；`setup` 里按系统分的只有 CLI 的平台名与 git 怎么补，见 [onboarding.md](onboarding.md)）→ 在页面上跑完出厂流程 `research` 或 `reproduce`。
 - **两家 agent**：先做 Claude Code，再做 Codex。Codex 要处理的问题更多，见 3.7。
 - **两种算力**：本机；用 SSH 连远端 Linux 机器（AutoDL 这类）。
 

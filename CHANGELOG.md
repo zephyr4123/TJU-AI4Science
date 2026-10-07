@@ -8,6 +8,15 @@
 
 ## [Unreleased]
 
+### 新增
+- onboarding 的 spec `docs/specs/onboarding.md`：一行命令装好平台、全程国内源、装过就跳过，Mac 先做、Windows（#210）留槽；母 issue #276（#277）
+- 一次性脚本 `scripts/oneoff/relock-to-tuna-277.py`：skill 锁文件的地址换成清华镜像，先核对每个文件清华上都有（#277）
+- 公开区加 `research/retros/`（工程复盘），第一篇是 Windows 适配复盘：怎么开 SSH、用隧道加 Playwright 在真机上走端到端、撞到的坑与 Mac 的差异（#210）
+
+### 变更
+- 外层 README「只用平台」改成一行命令（#277）
+- Windows 适配的 spec 写成做出来的样子：每条怎么做的、真机端到端结果与撞出的问题（#210）
+
 ## [1.7.2] - 2026-10-07
 
 ### 变更

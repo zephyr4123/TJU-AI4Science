@@ -62,7 +62,7 @@ flowchart LR
 
 两种人两条路（[#138](https://github.com/zephyr4123/TJU-AI4Science/issues/138)）：
 
-**只用平台**：不用 clone 这里。装 uv 和你要用的那家 coding agent CLI（claude 或 codex），到内仓的 Release 装 wheel，`ai4sci serve` 一行起，浏览器打开。1.7 起登录在平台里做（你自己终端里登的账号平台不认），从旧版本升级要重新登录、旧数据一行搬过来；步骤都在内仓 README「怎么跑 · 只用」。
+**只用平台**：不用 clone 这里，什么都不用先装，粘一行（全程国内源，Mac / Linux；Windows 在做，#210）：`curl -fsSL https://media.zephyrxiang.com/ai4science/dist/install.sh | sh`。它装好平台、Claude Code 与 Codex，在终端里问 DeepSeek 的 key，然后起服务、开浏览器；重跑就是升级。登录、清除、卸载、从旧版本升级的细节在内仓 README「怎么跑 · 只用」，设计在 `docs/specs/onboarding.md`（#277）。
 
 **共同维护**（前提：git、uv、node 22）：
 
