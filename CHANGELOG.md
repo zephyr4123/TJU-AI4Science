@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.7.2] - 2026-10-07
+
 ### 变更
 - 外层 README「只用平台」与 Windows 适配 spec 的现状跟上 1.7：登录在平台里做、升级要重新登录与搬旧数据，配置与缓存都在平台的家（#274）
 
@@ -182,7 +184,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.2...HEAD
+[1.7.2]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.0...v1.6.1
