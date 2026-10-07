@@ -132,6 +132,7 @@ ai4science/dist/
 - 镜像地址只在一处（`framework/mirrors.py`）；`install.sh` 里那几个地址由测试对账，不一致就红。
 - 平台起 uv 时带上 `UV_DEFAULT_INDEX`、`UV_PYTHON_INSTALL_MIRROR`、`UV_PYTHON_INSTALL_DIR`、`HF_ENDPOINT`；用户 shell 里自己设了的，用他的。
 - 平台起 Claude Code 一律关自动更新（`DISABLE_AUTOUPDATER=1`）：它会去国外的存储桶取新版本；版本由 `ai4sci setup` 管。
+- **skill 的锁文件对着清华锁**：uv 照锁文件装依赖时用锁文件里写的地址（原来是 `files.pythonhosted.org/...`），不看 `UV_DEFAULT_INDEX`，uv 0.12.18 也没有换地址的开关（2026-10-07 查二进制与文档）。清华的路径与 pythonhosted 一一对应（`/pypi/web/packages/<同一段>`），所以 149 份锁文件只换前缀，包名、版本、哈希一字不改（主人 2026-10-07：「改，全面调整」）；门禁（`make skills`）查锁文件里不许出现官方 PyPI 的地址，新锁照 `docs/add-a-skill.md` 对着清华锁。一次性脚本 `scripts/oneoff/relock-to-tuna-277.py`。代价：国外的人（CI、海外用户）也从清华下；清华同步有延迟，刚发布的包要等一会儿才能锁。
 
 ## 7. 验收
 
