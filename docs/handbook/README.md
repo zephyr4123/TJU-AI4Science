@@ -17,7 +17,7 @@
 | [07 文档即上下文](07-docs-are-context.md) | 会话会压缩、聊天会丢；issue、README、CLAUDE.md 才是 agent 用得上的记忆 | 每次开新会话 |
 | [08 重构要干净](08-refactor-clean.md) | 不光加不删，旧入口逐个删干净，文档与测试同一轮跟上 | 动结构的时候 |
 | [09 gh：GitHub CLI](09-gh-cli.md) | 为什么 agent 用它、我们流程里每一步对应哪条命令、agent 的守则 | 装好 git 之后 |
-| [10 三轮演练与一次文档盘点](10-worked-examples.md) | 真事从头到尾：怎么派、撞到什么、沉淀在哪、用了哪几章 | 想看全貌 |
+| [10 几件真事：三轮演练、文档盘点与 Windows 适配](10-worked-examples.md) | 真事从头到尾：怎么派、撞到什么、沉淀在哪、用了哪几章 | 想看全貌 |
 
 ## 怎么读
 

@@ -13,6 +13,7 @@
 | `literature/` | 文献综述，按主题一目录，附 `refs.bib` |
 | `domain/` | 课题组学科的领域知识 |
 | `evals/` | 方案评测、benchmark 结论 |
+| `retros/` | 工程复盘：一件事怎么做成的、撞了哪些坑、带得走的做法 |
 | `reports/` | 阶段汇报页：单文件 HTML 直接放、不经 md 渲染。[2026-09-23 平台现状、方法与分工](reports/2026-0923-platform-status.html) |
 
 ## 一篇调研长什么样
@@ -54,3 +55,4 @@ md 是原始稿，html 是构建产物（唯一例外：`evals/2026-0921-gua-rep
 | 2026-09-21 | 平台第一次完整跑通的论文复现（arXiv 2609.01558，PINN，一级复现，验收已签） | 已验收 | [README](evals/2026-0921-gua-reproduction/README.md) · [完整记录页](evals/2026-0921-gua-reproduction/report.html) | <https://zephyr4123.github.io/TJU-AI4Science/evals/2026-0921-gua-reproduction/> · <https://zephyr4123.github.io/TJU-AI4Science/evals/2026-0921-gua-reproduction/report.html> |
 | 2026-09-27 | 科研 AI 能力选型：文献、假设、写作三个阶段（李瑞彬调研的 18 个开源项目，13 个代码级深读） | 第一版：代码读完，接不接待讨论 | [README](selection/2026-0927-scientific-ai-capabilities/README.md) | <https://zephyr4123.github.io/TJU-AI4Science/selection/2026-0927-scientific-ai-capabilities/> |
 | 2026-10-02 | BootLoops 调研：工具包、工作协议与公开说法（读三个仓库的文档与 12 个 skill、本机实跑自检，对照平台收录门槛逐条核对） | 已结论：不收录，存档备查 | [README](selection/2026-1002-bootloops/README.md) | <https://zephyr4123.github.io/TJU-AI4Science/selection/2026-1002-bootloops/> |
+| 2026-10-07 | Windows 适配复盘：一个下午，从开 SSH 到真机端到端（SSH 远程操作 Windows、SSH 隧道加 Playwright 替用户点页面、与 Mac 的差异和撞到的坑） | 已完成，随 1.8.0 发布 | [README](retros/2026-1007-windows-adaptation/README.md) | <https://zephyr4123.github.io/TJU-AI4Science/retros/2026-1007-windows-adaptation/> |
