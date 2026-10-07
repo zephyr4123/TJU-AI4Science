@@ -4,6 +4,7 @@
 - 锚 issue：[#210](https://github.com/zephyr4123/TJU-AI4Science/issues/210)。两个仓的 commit 都引它；内仓分支 `feat/210-windows`
 - 真机：主人的 Win11 专业版 26200（AMD64、PowerShell 5.1、ACP 936、执行策略 Restricted、长路径没开），Mac 经 SSH 连过去；连法记在会话记忆里，不进仓
 - 第 3 节是动手前的分析，留着说明为什么；每条实际怎么做的、实测推翻了哪条，见第 0 节
+- 复盘（怎么开 SSH、怎么用隧道加 Playwright 在真机上走端到端、撞到的坑与 Mac 的差异）：[research/retros/2026-1007-windows-adaptation/](../../research/retros/2026-1007-windows-adaptation/README.md)，公网阅读版 <https://zephyr4123.github.io/TJU-AI4Science/retros/2026-1007-windows-adaptation/>
 - 纲领：[architecture/](../architecture/README.md)（P-7 失败就停、P-14 agent 面前只有 `ai4sci`）；流程：[CONTRIBUTING.md](../../CONTRIBUTING.md)
 
 ## 0. 做成什么样（2026-10-07）
