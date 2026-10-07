@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-10-07
+
 ### 新增
 - onboarding 的 spec `docs/specs/onboarding.md`：一行命令装好平台、全程国内源、装过就跳过，Mac 先做、Windows（#210）留槽；母 issue #276（#277）
 - 一次性脚本 `scripts/oneoff/relock-to-tuna-277.py`：skill 锁文件的地址换成清华镜像，先核对每个文件清华上都有（#277）
@@ -193,7 +195,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.2...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.2...v1.8.0
 [1.7.2]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.6.1...v1.7.0
