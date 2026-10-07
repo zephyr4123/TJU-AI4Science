@@ -77,7 +77,9 @@ agent（Claude Code、Codex）参与也走同一套：它开的分支、提的 P
 
 **内测期例外**（主人 2026-10-01 定，1.1.0 起）：只有课题组内部在用的这段时间，上面冻结的东西不兼容地变了也走 MINOR，不走弃用周期、不留兼容层——重构了就不留历史遗留。代价由两条兜住：CHANGELOG「变更」「移除」里每条不兼容的写清迁移办法；数据布局或已有数据受影响的，照样带一次性迁移脚本，并在本机的数据上跑过。内测结束由主人宣布，之后恢复上面的规矩。
 
-两个仓各自一条版本线：内仓的 tag 就是产品版本（`platform 1.x`，wheel 从它出）；本仓的 tag 是文档版本，跟着产品大版本走（1.0.0 与内仓同日发），小版本按需。milestone 与 spec 只用产品版本、带 `platform` 前缀。
+**外壳与后端的约定**（桌面 App，[ADR-0005](docs/adr/0005-desktop-release.md)）单独冻结，**只加不改，不适用内测期例外**：已装的外壳跟不上 wheel，改了就是让一批人打不开 App。清单在 [`docs/specs/desktop.md`](docs/specs/desktop.md) §3（`AI4SCI_DESKTOP_CLI`、`--version` 的写法、`platform.json(.sig)`、安装脚本的 `AI4SCI_NO_SETUP` 与退出码、`setup --no-serve --no-input`、`serve --until-stdin-closes` 与 `ok` 那一行、`/health` 的 `turns`、`bundle.identifier`、更新器公钥与 CDN 上的几个路径）；外壳里集中在 `ui/desktop/src-tauri/src/contract.rs`，内仓 `make check` 有一条测试对账。要改走弃用周期并抬 `platform.json` 的 `min_desktop`。
+
+两个仓各自一条版本线：内仓的 tag 就是产品版本（`platform 1.x`，wheel 与桌面包从它出，桌面包只在外壳改过时才推给已装的人，ADR-0005）；本仓的 tag 是文档版本，跟着产品大版本走（1.0.0 与内仓同日发），小版本按需。milestone 与 spec 只用产品版本、带 `platform` 前缀。
 
 ### 发一个版本
 
