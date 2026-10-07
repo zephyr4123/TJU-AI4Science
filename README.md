@@ -62,7 +62,7 @@ flowchart LR
 
 两种人两条路（[#138](https://github.com/zephyr4123/TJU-AI4Science/issues/138)）：
 
-**只用平台**：不用 clone 这里。装 uv 和你要用的那家 coding agent CLI（claude 或 codex，登录好），到内仓的 Release 装 wheel（v0.2.0 的附件还只有源码包，下一版起有 wheel），`ai4sci serve` 一行起，浏览器打开；步骤在内仓 README「怎么跑 · 只用」。
+**只用平台**：不用 clone 这里。装 uv 和你要用的那家 coding agent CLI（claude 或 codex），到内仓的 Release 装 wheel，`ai4sci serve` 一行起，浏览器打开。1.7 起登录在平台里做（你自己终端里登的账号平台不认），从旧版本升级要重新登录、旧数据一行搬过来；步骤都在内仓 README「怎么跑 · 只用」。
 
 **共同维护**（前提：git、uv、node 22）：
 

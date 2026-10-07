@@ -149,7 +149,7 @@ Windows 上的研究者能装上平台、用页面走完一条研究流，结果
 ### 3.7 【严重，需实测】Codex 的三处问题
 
 1. **登录共享靠软链**：
-   - 现状：私有 `CODEX_HOME` 里的 `auth.json` 是一个软链，指向 `~/.codex/auth.json`（`backends/codex.py:177-181`）。
+   - 现状（1.7 起，#263）：平台自己登录，`auth.json` 在平台的家里 Codex 私有目录的根上；执行层用的 `executor/` 子目录里的 `auth.json` 是软链，指向根上那份（`backends/codex.py` 文件头）。不再软链用户的 `~/.codex`，但软链还在。
    - 问题：Windows 默认不允许普通用户建软链，要开开发者模式或者有管理员权限，否则会抛 `OSError`。
    - 也不能改成复制：文件头写明了「凭据不复制」，而且 token 刷新时要写回原文件。
    - 可选方向：要求用户开开发者模式，对研究者不友好；或者设 Codex 的 `cli_auth_credentials_store = "keyring"`，把凭据放进 Windows 凭据管理器，再看私有 home 下能不能读到（需实测）。
@@ -205,10 +205,10 @@ Windows 上的研究者能装上平台、用页面走完一条研究流，结果
 ### 3.12 【低】路径与显示
 
 - **配置目录**：
-  - 现状：按人的配置在 `~/.config/ai4sci/`（`framework/paths.py:49`、`framework/computes.py:28`、`framework/agents.py:37`），数据根缺省在 `~/ai4sci`（`paths.py:48`）。
+  - 现状（1.7 起，#263）：设置、key、项目、两家 CLI 的私有目录都在平台的家 `~/.ai4sci`（`AI4SCI_HOME` 可改，位置只在 `framework/paths.py`）；`~/.config/ai4sci/` 与 `~/ai4sci` 已不用。
   - 判断：Windows 上 `Path.home()` 工作正常，这些路径都能用，只是不太合 Windows 的习惯，一般会放在 `%APPDATA%`。
   - 建议：保持不变，所有平台一个位置，文档好写，在 README 里写明即可。
-- **uv 缓存显示错位置**：缺省值 `~/.cache/uv`（`paths.py:51`）只用于页面设置和 `ai4sci check` 的显示（`framework/chat/settings.py:76`、`framework/cli/check.py:51`）。但 uv 在 Windows 上实际的缺省位置是 `%LOCALAPPDATA%\uv\cache`，所以显示的会是错的位置。
+- **uv 缓存显示错位置**：1.7 起不再是问题——缓存在家里的 `cache/uv/`，平台起 uv 时显式设 `UV_CACHE_DIR`（`paths.uv_cache_dir`），显示的就是实际位置。
 - **遗留的放行前缀**：`framework/chat/guide.py:31` 的放行前缀里还有 `.venv/bin/ai4sci`，Windows 上没有这个路径。按第 50 行的注释，它是给老对话兼容用的，可以顺手确认还要不要留。
 
 ### 3.13 【低，需实测】替换文件时文件正被占用
