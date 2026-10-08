@@ -62,7 +62,11 @@ flowchart LR
 
 两种人两条路（[#138](https://github.com/zephyr4123/TJU-AI4Science/issues/138)）：
 
-**只用平台**：不用 clone 这里，什么都不用先装，粘一行（全程国内源，Mac / Linux；Windows 在做，#210）：`curl -fsSL https://media.zephyrxiang.com/ai4science/dist/install.sh | sh`。它装好平台、Claude Code 与 Codex，在终端里问 DeepSeek 的 key，然后起服务、开浏览器；重跑就是升级。登录、清除、卸载、从旧版本升级的细节在内仓 README「怎么跑 · 只用」，设计在 `docs/specs/onboarding.md`（#277）。
+**只用平台**：不用 clone 这里，什么都不用先装。三种装法共用同一份平台（都在 `~/.ai4sci`）：
+
+- **桌面 App**：下载 [Mac 通用包](https://media.zephyrxiang.com/ai4science/dist/desktop/AAAI4S.dmg) 或 [Windows 安装包](https://media.zephyrxiang.com/ai4science/dist/desktop/AAAI4S-setup.exe)，第一次打开自己装好平台、在页面里问 DeepSeek 的 key；平台随 wheel 自动升级。设计在 `docs/specs/desktop.md`（#282）。
+- **一行命令**（全程国内源）：Mac / Linux `curl -fsSL https://media.zephyrxiang.com/ai4science/dist/install.sh | sh`，Windows PowerShell `irm https://media.zephyrxiang.com/ai4science/dist/install.ps1 | iex`。它装好平台、Claude Code 与 Codex，在终端里问 key，然后起服务、开浏览器；重跑就是升级。设计在 `docs/specs/onboarding.md`（#277）。
+- 登录、清除、卸载、从旧版本升级的细节在内仓 README「怎么跑 · 只用」。
 
 **共同维护**（前提：git、uv、node 22）：
 
@@ -136,4 +140,4 @@ tju-ai4science/
 
 - 从 1.0.0 起承诺兼容；两仓各自一条版本线，大版本同日对齐。冻结的契约与发版流程在 [`CONTRIBUTING.md`](CONTRIBUTING.md)，为什么在 [ADR-0004](docs/adr/0004-branching-versioning-1.0.md)。
 - 每个 PR 在 `CHANGELOG.md` 的 Unreleased 加一行；`make release` 把它轮转成版本小节并打 tag；`release/X.Y` 上打 `-rc.N` 出预发布。
-- 推送 tag 即触发 GitHub Release，Release Notes 直接取自 CHANGELOG；外层只出 Release Notes，内仓的流水线出 wheel（[ADR-0003](docs/adr/0003-tracking-scope-and-release-artifacts.md)）。
+- 推送 tag 即触发 GitHub Release，Release Notes 直接取自 CHANGELOG；外层只出 Release Notes，内仓的流水线出 wheel 与桌面包（[ADR-0003](docs/adr/0003-tracking-scope-and-release-artifacts.md)、[ADR-0005](docs/adr/0005-desktop-release.md)）。

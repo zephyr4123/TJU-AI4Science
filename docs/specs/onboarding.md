@@ -17,7 +17,7 @@
 
 **做什么**：一行命令，从我们自己的腾讯云 CDN 取安装脚本，装好 uv、Python、平台、Claude Code、Codex，问 key、当场试通、起服务开浏览器。
 
-**顺序**：先做 Mac（这一份），再做 Windows（#210，主人另一台 Windows 机开 OpenSSH 端到端验），再打桌面包（Mac 开发者账号审核中，下来后出 DMG）。CDN 是三者共用的底：一行命令、DMG、Windows 安装包都从它取同一份东西，上面的装法各自定义。
+**顺序**：先做 Mac（这一份），再做 Windows（#210，主人另一台 Windows 机开 OpenSSH 端到端验），再打桌面包（[desktop.md](desktop.md)，#282）。CDN 是三者共用的底：一行命令、DMG、Windows 安装包都从它取同一份东西，上面的装法各自定义。
 
 ## 1. 用户看到的
 
@@ -100,10 +100,10 @@ install.sh（Mac / Linux）     install.ps1（Windows，#210 的槽位）
          ai4sci setup（Python，一份，能测）
    查 git → 装 Claude Code / Codex → 问 key → 试通 → 起服务开浏览器
                  ▲                    ▲
-          make up（源码跑的）      DMG 第一次打开（之后）
+          make up（源码跑的）      桌面 App 第一次打开（desktop.md）
 ```
 
-- **脚本越薄越好**：脚本要按系统写两份，只放 Python 还没有时非做不可的事；其余都在 `ai4sci setup` 里，Mac、Windows、源码、DMG 共用。
+- **脚本越薄越好**：脚本要按系统写两份，只放 Python 还没有时非做不可的事；其余都在 `ai4sci setup` 里，Mac、Windows、源码、桌面 App 共用。
 - **按系统分的只有一处**：CLI 的平台名（`darwin-arm64`、`win32-x64`……）与 git 怎么补。Windows 上 git 从 npmmirror 的 git-for-windows 取，那一段这一轮先明确报「Windows 还没做（#210）」，不静默。
 - **CLI 的包名与布局归适配器**：`backends/claude_code.py`、`backends/codex.py` 各自声明 npm 上的包名、程序在包里的位置、要不要带上整个目录；下载、校验、解包是框架的一份通用代码。平台起 CLI 用哪一份程序（家里的或 PATH 上的）由框架定，交给适配器（`Link`）。
 - **`make up`** 的最后一步从「`ai4sci check` + `ai4sci serve`」换成 `ai4sci setup`，开发者装好的东西都跳过。
@@ -118,10 +118,12 @@ ai4science/dist/
   install.ps1                      Windows 的槽位
   <版本>/install.sh                钉版本装
   <版本>/ai4sci-<版本>-py3-none-any.whl  + .sha256      不可变、长缓存
-  uv/<uv 版本>/uv-<平台>.tar.gz     uv 官方发布包的原样副本（Windows 是 .zip）
+  uv/<uv 版本>/uv-<平台>.tar.gz     uv 官方发布包的原样副本（Windows 是 .zip）；每个平台的 sha256 发版时写进两份脚本
 ```
 
-- **发版流水线顺手传**：内仓 `release.yml` 出完 wheel 后跑 `.github/scripts/cdn.py` 把上面这些传上去、刷新 `install.sh` 的缓存；`--prefix` 可以先传到测试目录真验。凭据是只能写这个前缀、只能刷这个域名缓存的 CAM 子账号，密钥只在内仓 GitHub Actions secrets（主人 2026-10-07 定；建好当场正反例验过：写 `dist/` 成功、写别的前缀被拒）。
+桌面 App 另要的（签名的 `platform.json`、每一版的 `<版本>/platform.json`、`desktop/`）见 [desktop.md](desktop.md) §7。
+
+- **发版流水线顺手传**：内仓 `release.yml` 出完 wheel 后跑 `.github/scripts/cdn.py sign <tag> --work <目录>`（备齐、签 `platform.json`，只带更新器的 key）再 `cdn.py wheel <tag> --work <同一个目录>`（只带 COS 的凭据）把上面这些传上去、刷新最新那几份的缓存；`--prefix` 可以先传到测试目录真验。凭据是只能写这个前缀、只能刷这个域名缓存的 CAM 子账号，密钥只在内仓 GitHub Actions secrets（主人 2026-10-07 定；建好当场正反例验过：写 `dist/` 成功、写别的前缀被拒）。
 - **referer 白名单**已允许空 referer，`curl` 能下（上线前匿名 HEAD 验一次）。
 - **证书 2026-11-22 到期**（免费证 90 天）：到期一行命令就断，这一轮把续期写进待办，之后再看要不要自动化。
 
@@ -146,6 +148,6 @@ ai4science/dist/
 ## 8. 这一轮不做
 
 - Windows 的 `install.ps1` 实现与 Windows 上的 git：#210，Mac 这一轮做完接着做。
-- DMG / 桌面壳：Apple 开发者账号下来以后。
+- 桌面 App：另一份 spec [desktop.md](desktop.md)（#282）。
 - 发到 PyPI：主人 2026-10-07 定放自己的 CDN，PyPI 不发。
 - 官方订阅登录的引导：要外网，不在默认路径上；`ai4sci agent login <家>` 照旧。

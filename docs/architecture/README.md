@@ -130,7 +130,7 @@ flowchart LR
 
 协调层与执行层都是集成进来的 coding agent CLI，都不手搓，各自可换，两层各选一家、可以不同（P-25）：换一家就是加一个适配器文件，框架一行不改。指南只给协调层；两层装载同一套能力：本项目各工作区流程实例上挂的，加平台自带的常驻 skill（P-11、P-26）。模型走研究者自己的 agent 登录，或自己填的供应商 key（DeepSeek、Kimi 这类，P-25）；平台不要第三方 key 也能用，可选的 key 只让额度更大（P-27）。
 
-界面也是适配器：页面是 `ai4sci serve` 端点的客户端，换一种界面后端不改（workflow §5）。编辑台的画布编辑的是流程文件；照流程走的仍是项目里的研究助理，没有第二种运行器。
+界面也是适配器：页面是 `ai4sci serve` 端点的客户端，换一种界面后端不改（workflow §5）；桌面 App 只是给页面套一个窗口，外壳只认冻结的那几条约定（desktop spec §3）。编辑台的画布编辑的是流程文件；照流程走的仍是项目里的研究助理，没有第二种运行器。
 
 ## 3. 五层与四层的对应
 
@@ -226,3 +226,4 @@ spec 与 milestone 用产品版本命名且带 `platform` 前缀；外仓自己�
 | 2026-10-06 | P-25 加「页面上哪家、模型、深度只在设置里改，对话框里没有」，语义不变（新对话照设置、改设置只影响之后开的）（[#257](https://github.com/zephyr4123/TJU-AI4Science/issues/257)） | 主人：对话框上三枚片太乱，位置要留给别的 | 主人 + Claude |
 | 2026-10-06 | P-23 / P-25 / P-27 改到平台的家 `~/.ai4sci`：两份清单与 key 都在家里，平台不写 `~/.claude` `~/.codex`、一键清除；P-25 加供应商（官方登录、官方 API、DeepSeek、Kimi、自定义），对话记住供应商；P-27 可选的 key 不再走环境变量（[#263](https://github.com/zephyr4123/TJU-AI4Science/issues/263) [#264](https://github.com/zephyr4123/TJU-AI4Science/issues/264) [#265](https://github.com/zephyr4123/TJU-AI4Science/issues/265) [#266](https://github.com/zephyr4123/TJU-AI4Science/issues/266)） | 主人：想让人花十块钱用 DeepSeek 跑通端到端，不是人人有订阅；环境要隔离、能一把清干净；key 放环境变量不合理 | 主人 + Claude |
 | 2026-10-06 | P-14 加例外：供应商的接口不支持联网搜索的（Codex 接 DeepSeek）照实关掉、设置里标「不能联网」只提醒不拦（[#266](https://github.com/zephyr4123/TJU-AI4Science/issues/266)） | 实测 Codex + DeepSeek 搜不了：DeepSeek 的 Responses API 忽略内置搜索；主人选只标注提醒、不禁止它当助理 | 主人 + Claude |
+| 2026-10-07 | 界面适配加 `ui/desktop/`：桌面 App 是给页面套的窗口，外壳与后端之间单独一组冻结的约定（只加不改，不适用内测期例外）；服务只认本机来源的请求（[#282](https://github.com/zephyr4123/TJU-AI4Science/issues/282) [#283](https://github.com/zephyr4123/TJU-AI4Science/issues/283)） | 主人定做桌面 App（Tauri 薄包、四种装法共用一份后端）；摸底实测任何网页都能对本机服务发写请求 | 主人 + Claude |
