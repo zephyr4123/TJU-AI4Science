@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-10-08
+
 ### 新增
 - 评测脚本 `scripts/evals/guide_replay.py`：新旧两份内仓在同样的冻结决策点各开一段新对话，拆轨迹比命令错误、断点、读说明、工具次数与花费（DeepSeek 按官方价折算），助理指南做减法的验收用它（#287）
 - 桌面 App 的 spec `docs/specs/desktop.md`：Tauri 薄包、外壳与后端的约定、守进程树与退出语义、发版与 CDN；动手前四路对抗审查改了什么记在 §11（#282）
@@ -204,7 +206,8 @@
 - 变更日志与发布流水线：CHANGELOG 机器校验、`make release` 轮转、tag 触发 GitHub Release
 - ADR-0001 内外仓拓扑、ADR-0002 版本与发布策略
 
-[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.2...v1.8.0
 [1.7.2]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/zephyr4123/TJU-AI4Science/compare/v1.7.0...v1.7.1
