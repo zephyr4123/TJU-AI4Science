@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### 新增
+- 产品官网单独开仓（`site/`，登记进 `repos.json`，远端等推送时再建）：Next.js 静态页 + FastAPI 问答，Docker Compose 和个人网站共用一台服务器；素材上传脚本 `scripts/site/upload.py`（#293）
+
 ## [1.9.0] - 2026-10-08
 
 ### 新增
