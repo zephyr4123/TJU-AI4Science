@@ -9,10 +9,10 @@
       "_note": "生产代码 monorepo：前端 / 后端 / 不分端的核心库 / 执行端 / db / infra 都在这一个仓里。尚无线上部署，prod_version 等首次正式发布后再补。"
     },
     "site": {
-      "url": "TBD",
+      "url": "https://github.com/zephyr4123/aaai4s-site.git",
       "path": "site",
       "prod_branch": "main",
-      "_note": "产品官网（外层 #293）：Next.js 静态导出 + FastAPI 问答，Docker Compose 部署在个人网站那台服务器上、子域名 aaai4s.zephyrxiang.com。和产品各发各的版。公开仓 zephyr4123/aaai4s-site 等主人同意推送后再建，建好把 url 改成真地址。"
+      "_note": "产品官网（外层 #293）：Next.js 静态导出 + FastAPI 问答，Docker Compose 部署在个人网站那台服务器上、子域名 aaai4s.zephyrxiang.com（部署走 site/ops/site，经 SSH 推代码，服务器不连 GitHub）。和产品各发各的版。"
     }
   }
 }
