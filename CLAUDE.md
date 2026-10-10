@@ -5,7 +5,7 @@
 ## 拓扑
 
 - 本仓是**项目之家**：manifest、跨仓 CLI、文档、调研、案例卡、外部脚本。**不放业务代码。**
-- 生产代码在内仓 `platform/`（独立 git，远端见 `repos.json`），外层 `.gitignore` 整目录挡住，两层互不知情。
+- 生产代码在内仓 `platform/`（平台）与 `site/`（官网），各自独立 git，远端见 `repos.json`；外层 `.gitignore` 整目录挡住，两层互不知情。
 - 内仓坐标以 `repos.json` 为唯一真相源；加仓、改地址只改它，然后 `./repos remotes --fix`。
 - 承接：`git clone` 外层 → `./repos clone all` → `./repos status`；只用平台的人不 clone 这里，装内仓 Release 里的 wheel。
 - 真实科研案例与演练：原件（PDF、数据、代码 zip）放 `materials/`，整目录 gitignore；仓里只放 `docs/cases/` 的案例卡、学长原文、sha256 索引与演练留下的小证据（评分契约、账本、对话记录，2 MB 以内）。案例卡按任务类型描述，应用领域只留一个名词。

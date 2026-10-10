@@ -3,6 +3,7 @@
 <p align="center">科研全自动化 · 项目之家（协作仓）</p>
 
 <p align="center">
+  <a href="https://aaai4s.zephyrxiang.com"><img alt="官网" src="https://img.shields.io/badge/%E5%AE%98%E7%BD%91-aaai4s.zephyrxiang.com-2f4bc9"></a>
   <a href="https://github.com/zephyr4123/TJU-AI4Science/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/zephyr4123/TJU-AI4Science/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/zephyr4123/TJU-AI4Science/releases"><img alt="release" src="https://img.shields.io/github/v/release/zephyr4123/tju-ai4science?include_prereleases&label=release"></a>
   <a href="CHANGELOG.md"><img alt="changelog" src="https://img.shields.io/badge/changelog-keep%20a%20changelog-blue"></a>
@@ -11,7 +12,9 @@
 
 ## 这是什么
 
-面向天津大学课题组的科研全自动化平台：研究者在页面上跟助理说清课题、确认需求，助理照流程调用平台的能力做设计、实验、分析、验证，人只在断点上确认；数能拿去用，因为每个数都能回溯到产物文件。本仓是**项目之家**：存放纲领、决策、案例、调研、外部脚本，以及指向生产代码仓的坐标。生产代码在独立的内仓 [TJU-AI4Science-Platform](https://github.com/zephyr4123/TJU-AI4Science-Platform)（公开，坐标以 `repos.json` 为准），clone 后落在本仓的 `platform/` 目录下，但对本仓的 git 完全不可见。
+面向天津大学课题组的科研全自动化平台：研究者在页面上跟助理说清课题、确认需求，助理照流程调用平台的能力做设计、实验、分析、验证，人只在断点上确认；数能拿去用，因为每个数都能回溯到产物文件。本仓是**项目之家**：存放纲领、决策、案例、调研、外部脚本，以及指向生产代码仓的坐标。生产代码在独立的内仓（都公开，坐标以 `repos.json` 为准）：平台 [TJU-AI4Science-Platform](https://github.com/zephyr4123/TJU-AI4Science-Platform) 落在 `platform/`，官网 [aaai4s-site](https://github.com/zephyr4123/aaai4s-site) 落在 `site/`；clone 后在本仓目录下，但对本仓的 git 完全不可见。
+
+产品官网：<https://aaai4s.zephyrxiang.com>（介绍、安装包下载、常驻问答助理）。
 
 ## 产品一眼看
 
@@ -62,7 +65,7 @@ flowchart LR
 
 两种人两条路（[#138](https://github.com/zephyr4123/TJU-AI4Science/issues/138)）：
 
-**只用平台**：不用 clone 这里，什么都不用先装。三种装法共用同一份平台（都在 `~/.ai4sci`）：
+**只用平台**：不用 clone 这里，什么都不用先装，[官网](https://aaai4s.zephyrxiang.com)上就能下载。三种装法共用同一份平台（都在 `~/.ai4sci`）：
 
 - **桌面 App**：下载 [Mac 通用包](https://media.zephyrxiang.com/ai4science/dist/desktop/AAAI4S.dmg) 或 [Windows 安装包](https://media.zephyrxiang.com/ai4science/dist/desktop/AAAI4S-setup.exe)，第一次打开自己装好平台、在页面里问 DeepSeek 的 key；平台随 wheel 自动升级。设计在 `docs/specs/desktop.md`（#282）。
 - **一行命令**（全程国内源）：Mac / Linux `curl -fsSL https://media.zephyrxiang.com/ai4science/dist/install.sh | sh`，Windows PowerShell `irm https://media.zephyrxiang.com/ai4science/dist/install.ps1 | iex`。它装好平台、Claude Code 与 Codex，在终端里问 key，然后起服务、开浏览器；重跑就是升级。设计在 `docs/specs/onboarding.md`（#277）。
@@ -99,6 +102,7 @@ clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all`
 | 看已发版本当时定了什么 | [`docs/specs/`](docs/specs/) | 每版一份 PRD，发了就封存 |
 | 看对外文章 | [`docs/articles/`](docs/articles/) | 公众号等对外稿件，一篇一个目录：正文 `README.md` + 事实出处 `sources.md` + 配图清单 `figures.json`（图在 COS，不进仓库） |
 | 看调研依据 | [`research/`](research/README.md) | 行业调研、选型深读、演练评测；公开区 |
+| 改官网、部署官网 | 官网仓 [`site/README.md`](https://github.com/zephyr4123/aaai4s-site#readme) | 结构、本地运行、内容在哪改、部署与回滚；官网和产品各发各的版 |
 | **改代码** | 内仓 [`platform/CLAUDE.md`](https://github.com/zephyr4123/TJU-AI4Science-Platform/blob/main/CLAUDE.md) | 开发红线、编码标准、质量纪律、「改哪层先读哪份」；内仓 README 是代码侧的地图 |
 
 阅读顺序：**只用平台的人**读内仓 README「怎么跑 · 只用」就够；**新加入改代码的人**按 `CLAUDE.md` → `CONTRIBUTING.md` → `docs/handbook/` → `docs/vision.md` → `docs/architecture/README.md` → 最近一张演练卡 → 内仓 `CLAUDE.md` → 要改的那一层的 README；**agent** 开工时自动读到两仓 `CLAUDE.md`，其余按里面的路由。
@@ -118,7 +122,8 @@ tju-ai4science/
 ├── research/         调研：landscape/ selection/ literature/ domain/ evals/ —— 公开区，自动发布到 GitHub Pages
 ├── scripts/          外部脚本与一次性工具 —— 生产代码禁止依赖这里
 ├── materials/        案例原件（PDF / 数据 / 代码 zip），整目录 gitignore，索引与 sha256 在 docs/cases/
-└── platform/         内仓（独立 git，被 .gitignore 挡住）
+├── platform/         内仓：平台（独立 git，被 .gitignore 挡住）
+└── site/             内仓：官网（独立 git，被 .gitignore 挡住）
 ```
 
 ## 日常
@@ -131,6 +136,7 @@ tju-ai4science/
 | 提交前门禁 | `make check` |
 | 改了 `research/` 下的 md | `make html`，把生成的 html 一起提交 |
 | 发版 | `make release VERSION=x.y.z` 然后 `git push origin main --follow-tags` |
+| 部署官网 | `cd site && ./ops/site deploy`（首次配置见官网仓 README「部署」） |
 
 ## 公开阅读版
 
