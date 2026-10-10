@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### 新增
+- 产品官网上线 <https://aaai4s.zephyrxiang.com>，单独开仓 [zephyr4123/aaai4s-site](https://github.com/zephyr4123/aaai4s-site)（`site/`，登记进 `repos.json`）：Next.js 静态页 + FastAPI 问答，Docker Compose 和个人网站共用一台服务器；素材上传脚本 `scripts/site/upload.py`（#293）
+
 ## [1.9.0] - 2026-10-08
 
 ### 新增
