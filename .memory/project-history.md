@@ -5,10 +5,10 @@ metadata:
   node_type: memory
   type: project
   originSessionId: ecc4450e-06d2-447c-a0b1-2ca7efce5ea9
-  modified: 2026-10-12T03:03:02.031Z
+  modified: 2026-10-12T07:02:05.333Z
 ---
 
-一个月从零到 1.9.0（内仓 472 个提交、外层 249 个，2026-09-08 → 10-11）。节奏是主人 + Claude 每天几十个提交、一天发好几版。
+一个月从零到 1.9.0（内仓 472 个提交、外层 249 个，2026-09-08 → 10-11）。节奏是每天几十个提交、一天发好几版。
 
 1. **调研与定调（09-08 ~ 09-10）**：nested-git 拓扑落地；深读 InternAgent、autoresearch、AutoResearchClaw 三个开源项目后定下两条：底座用现成 coding agent、评审上下文隔离。纲领从「三箱」改成「四层」，加了协调层（人 + 助理），框架不做编排。内仓定栈 Python，第一个端口 `Runner` + Claude Code 适配器靠 spike 实测定隔离位。实验内环（棘轮、账本、六类失败、笔记）先做出来。
 2. **真任务与页面（09-15 ~ 09-17）**：能力描述符、分析、验证；第一个真任务 boehm-nll（学长案例）跑出第一个 keep；协调 agent 服务化（`Chat` 端口、SSE），页面第一版。v0.2.0。
