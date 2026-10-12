@@ -14,7 +14,7 @@
 | `domain/` | 课题组学科的领域知识 |
 | `evals/` | 方案评测、benchmark 结论 |
 | `retros/` | 工程复盘：一件事怎么做成的、撞了哪些坑、带得走的做法 |
-| `reports/` | 阶段汇报页：单文件 HTML 直接放、不经 md 渲染。[2026-09-23 平台现状、方法与分工](reports/2026-0923-platform-status.html) |
+| `reports/` | 阶段汇报页：单文件 HTML 直接放、不经 md 渲染。[2026-09-23 平台现状、方法与分工](reports/2026-0923-platform-status.html)、[2026-10-12 十月进展：15 个版本，从能跑到装得上](reports/2026-1012-progress.html) |
 
 ## 一篇调研长什么样
 
