@@ -1,6 +1,6 @@
 ---
 name: project-status
-description: 截至 2026-10-11 的进展：发到哪一版、能做什么不能做什么、手上悬着的活与待拍板的决策、下一步候选
+description: 截至 2026-10-12 的进展：发到哪一版、总目标、能做什么不能做什么、手上悬着的活与待拍板的决策
 metadata:
   node_type: memory
   type: project
@@ -8,7 +8,9 @@ metadata:
   modified: 2026-10-12T07:02:04.139Z
 ---
 
-**版本**（2026-10-11）：产品 platform v1.9.0（10-08，桌面 App 首发）；外层文档 v1.9.0。三个仓当前分支：外层 `release/1.10`、内仓 `release/1.10`、官网 `main`。milestone `platform 1.10.0` 已开但还是空的，下一版要做什么没定。官网 10-10 上线，独立发版。
+**版本**（2026-10-11）：产品 platform v1.9.0（10-08，桌面 App 首发）；外层文档 v1.9.0。三个仓当前分支：外层 `release/1.10`、内仓 `release/1.10`、官网 `main`。milestone `platform 1.10.0` 已开但还是空的。官网 10-10 上线，独立发版。
+
+**总目标**（主人 2026-10-12 定）：端到端跑通「一句话（一个 idea）→ 一篇论文」。接下来的工作由它牵引，界面与各处细节的完善从它派生；怎么拆成具体的活主人还在想，1.10 的内容等这一步。
 
 **能做的**：页面上一个项目一位助理；出厂流程三条（research 改进、reproduce 论文复现、literature-survey 文献调研）；八个步骤（文献检索/精读、设计、原码复现、AutoResearch、分析、复现性分析、数字核对）+ 2 个平台自带 skill + 200 个收录 skill；Claude Code / Codex × 官方登录、DeepSeek、Kimi 等供应商；本机或 SSH 算力；Mac / Linux / Windows 一行命令装，Mac / Windows 桌面 App。
 
@@ -21,4 +23,4 @@ metadata:
 - 待拍板：#288 作业中断后产出一直显示「运行中」；#126 失败的下游该不该冻住上游；#125 AutoResearch 棘轮丢掉「方向对但没过门」的小改进；纲领未决 Q-3 验收（#10）、Q-4 评测（#11）、Q-7 无人值守通知、Q-12 写作形态（#32）、Q-14 声明式能力
 
 **Why:** 新会话第一件事是知道站在哪、下一步候选是什么；issue 列表太散，这里给压缩视图。
-**How to apply:** 动手前用 `gh issue list` 与 `./repos status` 核对这里是否过时，过时先改这条记忆；发版、关大 issue、开新 milestone 后更新这条。相关：[[project-history]] [[literature-search]]
+**How to apply:** 动手前用 `gh issue list` 与 `./repos status` 核对这里是否过时，过时先改这条记忆；发版、关大 issue、开新 milestone 后更新这条。相关：[[project-history]] [[literature-search]] [[report-page-workflow]]
