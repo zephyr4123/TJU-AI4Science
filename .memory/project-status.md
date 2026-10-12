@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: ecc4450e-06d2-447c-a0b1-2ca7efce5ea9
-  modified: 2026-10-12T03:05:30.477Z
+  modified: 2026-10-12T07:02:04.139Z
 ---
 
 **版本**（2026-10-11）：产品 platform v1.9.0（10-08，桌面 App 首发）；外层文档 v1.9.0。三个仓当前分支：外层 `release/1.10`、内仓 `release/1.10`、官网 `main`。milestone `platform 1.10.0` 已开但还是空的，下一版要做什么没定。官网 10-10 上线，独立发版。
@@ -21,4 +21,4 @@ metadata:
 - 待拍板：#288 作业中断后产出一直显示「运行中」；#126 失败的下游该不该冻住上游；#125 AutoResearch 棘轮丢掉「方向对但没过门」的小改进；纲领未决 Q-3 验收（#10）、Q-4 评测（#11）、Q-7 无人值守通知、Q-12 写作形态（#32）、Q-14 声明式能力
 
 **Why:** 新会话第一件事是知道站在哪、下一步候选是什么；issue 列表太散，这里给压缩视图。
-**How to apply:** 动手前用 `gh issue list` 与 `./repos status` 核对这里是否过时，过时先改这条记忆；发版、关大 issue、开新 milestone 后更新这条。相关：[[project-history]] [[team-roles]] [[literature-search]]
+**How to apply:** 动手前用 `gh issue list` 与 `./repos status` 核对这里是否过时，过时先改这条记忆；发版、关大 issue、开新 milestone 后更新这条。相关：[[project-history]] [[literature-search]]
