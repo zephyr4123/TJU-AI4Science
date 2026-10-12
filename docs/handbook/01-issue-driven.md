@@ -26,4 +26,4 @@
 - 母 issue 与 sub-issue：[#130](https://github.com/zephyr4123/TJU-AI4Science/issues/130)「底座归人」是 umbrella，下面挂 [#131](https://github.com/zephyr4123/TJU-AI4Science/issues/131)–[#135](https://github.com/zephyr4123/TJU-AI4Science/issues/135) 五条叶子（Codex 适配器、agents.yaml、设置页、删除、演练）；用 `gh api repos/zephyr4123/TJU-AI4Science/issues/130/sub_issues` 能列出来。
 - 一条 bug 从发现到关：[#144](https://github.com/zephyr4123/TJU-AI4Science/issues/144)。写手册这天发现内仓 CI 从 `7a4638b` 起三次全红，本地却是绿的。先开 issue 写清现象、根因（uv 建的 venv 没有 pip，`python -m pip freeze` 直接失败）、修法、怎么验；再改代码，commit 引 `（#144）`，CHANGELOG 加一行，PR 上 CI 绿了才关。
 - 跨仓一条锚：[#142](https://github.com/zephyr4123/TJU-AI4Science/issues/142) 发 1.0.0 的流程改动同时改了两个仓（CONTRIBUTING、脚本、CI），两边的 commit 都引 #142；问「这件事改了哪些仓」查 issue，不翻 git log。
-- 规矩本身：[`CLAUDE.md`「协作方式」](../../CLAUDE.md#协作方式issue-drivenspec-coding)。
+- 规矩本身：[`AGENTS.md`「协作方式」](../../AGENTS.md#协作方式issue-drivenspec-coding)。

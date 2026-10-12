@@ -1,6 +1,6 @@
 # 怎么协作
 
-这份讲流程：一件事怎么从 issue 走到发布。规矩（红线、协作纪律、写代码与验收的标准）在 [`CLAUDE.md`](CLAUDE.md)，代码层面的细则在内仓各模块的 README，为什么这么定在 [ADR-0004](docs/adr/0004-branching-versioning-1.0.md)。两个仓（本仓、内仓 `platform/`）同一套流程。
+这份讲流程：一件事怎么从 issue 走到发布。规矩（红线、协作纪律、写代码与验收的标准）在 [`AGENTS.md`](AGENTS.md)，代码层面的细则在内仓各模块的 README，为什么这么定在 [ADR-0004](docs/adr/0004-branching-versioning-1.0.md)。两个仓（本仓、内仓 `platform/`）同一套流程。
 
 ## 分支模型
 
@@ -102,7 +102,7 @@ agent（Claude Code、Codex）参与也走同一套：它开的分支、提的 P
 
 ## 给新人的最短路径
 
-1. 读本仓 `README.md` 的文档地图，再读 `CLAUDE.md`。
+1. 读本仓 `README.md` 的文档地图，再读 `AGENTS.md`。
 2. 承接：`git clone` 本仓 → `./repos clone all` → `cd platform && make up`。
 3. 领一条 issue（分工在 milestone 里），从 `release/X.Y` 切分支，照上面走。
 4. 卡住就在 issue 里写清卡在哪、试了什么、看到什么，别憋着。

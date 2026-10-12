@@ -90,7 +90,8 @@ clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all`
 
 | 你要 | 读 | 讲什么 |
 |---|---|---|
-| 知道规矩 | [`CLAUDE.md`](CLAUDE.md) | 拓扑、红线、issue driven 的纪律、写代码与验收的标准（给人也给 agent） |
+| 知道规矩 | [`AGENTS.md`](AGENTS.md) | 拓扑、红线、issue driven 的纪律、写代码与验收的标准（给人也给 agent；`CLAUDE.md` 只引用它） |
+| 知道项目眼下在哪、为什么长这样 | [`.memory/`](.memory/MEMORY.md) | 会变的项目上下文：进展与悬着的活、架构心智模型、技术栈、演进脉络、演练教训（agent 的记忆，随 git 走） |
 | 怎么协作：分支、PR、发版 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | 分支模型、一件事的生命周期、1.x 版本策略与冻结的契约、CHANGELOG 写法 |
 | 知道产品为什么这样 | [`docs/vision.md`](docs/vision.md) | 目标、给谁用、凭什么、定位、不做什么、今天离它多远 |
 | 知道产品的边界与原则 | [`docs/architecture/README.md`](docs/architecture/README.md) | 纲领：四层、项目与工作区、可替换性、P-1 到 P-27 每条规则 + 机器判据 |
@@ -105,7 +106,7 @@ clone 下来没有代码是预期不是故障：代码仓由 `./repos clone all`
 | 改官网、部署官网 | 官网仓 [`site/README.md`](https://github.com/zephyr4123/aaai4s-site#readme) | 结构、本地运行、内容在哪改、部署与回滚；官网和产品各发各的版 |
 | **改代码** | 内仓 [`platform/CLAUDE.md`](https://github.com/zephyr4123/TJU-AI4Science-Platform/blob/main/CLAUDE.md) | 开发红线、编码标准、质量纪律、「改哪层先读哪份」；内仓 README 是代码侧的地图 |
 
-阅读顺序：**只用平台的人**读内仓 README「怎么跑 · 只用」就够；**新加入改代码的人**按 `CLAUDE.md` → `CONTRIBUTING.md` → `docs/handbook/` → `docs/vision.md` → `docs/architecture/README.md` → 最近一张演练卡 → 内仓 `CLAUDE.md` → 要改的那一层的 README；**agent** 开工时自动读到两仓 `CLAUDE.md`，其余按里面的路由。
+阅读顺序：**只用平台的人**读内仓 README「怎么跑 · 只用」就够；**新加入改代码的人**按 `AGENTS.md` → `CONTRIBUTING.md` → `docs/handbook/` → `docs/vision.md` → `docs/architecture/README.md` → 最近一张演练卡 → 内仓 `CLAUDE.md` → 要改的那一层的 README；**agent** 开工时自动读到规矩（外层 `AGENTS.md`、内仓 `CLAUDE.md`）与 `.memory/` 的索引，其余按里面的路由。
 
 ## 目录
 
@@ -115,8 +116,10 @@ tju-ai4science/
 ├── repos             跨仓 CLI：doctor · clone · status · sync · fetch · pull · push · remotes
 ├── Makefile          check / release / html 入口，本地与 CI 共用
 ├── CHANGELOG.md      变更日志
-├── CLAUDE.md         规矩；AGENTS.md 是它的符号链接（Codex 的入口）
+├── AGENTS.md         规矩：拓扑、红线、协作与验收标准（Codex 直接读）
+├── CLAUDE.md         只有一行 @AGENTS.md（Claude Code 的入口）
 ├── CONTRIBUTING.md   流程：分支、PR、发版、CHANGELOG
+├── .memory/          项目记忆：进展、架构、技术栈这类会变的上下文，MEMORY.md 是索引
 ├── docs/             vision、architecture/（纲领、细则、未决项）、handbook/（协作手册）、specs/（每版一份 PRD）、adr/（仓库基础设施决定）、meetings/（纪要）、articles/（对外文章）
 │                     cases/（真实科研案例与演练：案例卡 + 学长原文 + 小证据，原件在 materials/）
 ├── research/         调研：landscape/ selection/ literature/ domain/ evals/ —— 公开区，自动发布到 GitHub Pages

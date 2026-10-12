@@ -184,7 +184,8 @@ flowchart LR
 
 ```
 外层
-  CLAUDE.md            红线与协作纪律（给人也给 agent）
+  AGENTS.md            红线与协作纪律（给人也给 agent；CLAUDE.md 只引用它）
+  .memory/             会变的项目上下文：进展、架构心智模型、技术栈（agent 读写，随 git 走）
   CONTRIBUTING.md      流程：分支模型、PR、发版、CHANGELOG 写法
   docs/handbook/       协作手册：规矩背后的做法与真实例子（教程，按场景一章）
   research/            依据（调研得出什么）             ──▶ 纲领引用它
@@ -227,3 +228,4 @@ spec 与 milestone 用产品版本命名且带 `platform` 前缀；外仓自己�
 | 2026-10-06 | P-23 / P-25 / P-27 改到平台的家 `~/.ai4sci`：两份清单与 key 都在家里，平台不写 `~/.claude` `~/.codex`、一键清除；P-25 加供应商（官方登录、官方 API、DeepSeek、Kimi、自定义），对话记住供应商；P-27 可选的 key 不再走环境变量（[#263](https://github.com/zephyr4123/TJU-AI4Science/issues/263) [#264](https://github.com/zephyr4123/TJU-AI4Science/issues/264) [#265](https://github.com/zephyr4123/TJU-AI4Science/issues/265) [#266](https://github.com/zephyr4123/TJU-AI4Science/issues/266)） | 主人：想让人花十块钱用 DeepSeek 跑通端到端，不是人人有订阅；环境要隔离、能一把清干净；key 放环境变量不合理 | 主人 + Claude |
 | 2026-10-06 | P-14 加例外：供应商的接口不支持联网搜索的（Codex 接 DeepSeek）照实关掉、设置里标「不能联网」只提醒不拦（[#266](https://github.com/zephyr4123/TJU-AI4Science/issues/266)） | 实测 Codex + DeepSeek 搜不了：DeepSeek 的 Responses API 忽略内置搜索；主人选只标注提醒、不禁止它当助理 | 主人 + Claude |
 | 2026-10-07 | 界面适配加 `ui/desktop/`：桌面 App 是给页面套的窗口，外壳与后端之间单独一组冻结的约定（只加不改，不适用内测期例外）；服务只认本机来源的请求（[#282](https://github.com/zephyr4123/TJU-AI4Science/issues/282) [#283](https://github.com/zephyr4123/TJU-AI4Science/issues/283)） | 主人定做桌面 App（Tauri 薄包、四种装法共用一份后端）；摸底实测任何网页都能对本机服务发写请求 | 主人 + Claude |
+| 2026-10-11 | §6 外层规矩改放 `AGENTS.md`（`CLAUDE.md` 只引用它），加 `.memory/` 项目记忆（[#295](https://github.com/zephyr4123/TJU-AI4Science/issues/295)） | 脚手架的红线与项目规矩合成一份、两个引擎读同一个文件；会变的项目上下文与不大会变的规矩分开放 | 主人 + Claude |

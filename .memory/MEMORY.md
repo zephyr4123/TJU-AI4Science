@@ -1,3 +1,14 @@
+- [项目现状](project-status.md) — 截至 2026-10-11 发到哪版、能做与不能做、悬着的活与待拍板（含 CDN 证书 10-23 卡发版）
+- [产品主张](product-thesis.md) — 给谁用、凭什么不是直接用 Claude Code、复用与自研的唯一判据
+- [架构心智模型](architecture-model.md) — 四层、项目/工作区/阶段/产出、步骤与 skill、流程与断点、端口与适配器
+- [技术栈](tech-stack.md) — 后端、页面、桌面外壳、官网、分发各用什么与为什么，改动时的约束
+- [演进脉络](project-history.md) — 09-08 到现在的六个阶段与关键转向，为什么现在长这样
+- [团队与分工](team-roles.md) — 主人 + 三位成员的角色与约束，派活怎么收放
+- [发版与分发](release-and-distribution.md) — 两条版本线、CDN 产物、流水线硬约束、证书与签名私钥风险
+- [两家 CLI 接入](agent-cli-integration.md) — Claude Code / Codex 的隔离、key、续接、联网、成本、Windows 实测坑
+- [文献检索](literature-search.md) — 检索与精读的现状、八题评测 SOP、已验证的规律与下一步
+- [演练教训](drill-lessons.md) — 真任务演练的固定做法与反复撞到的几类坑
+- [记忆怎么写](feedback-memory-scope.md) — 只记有泛化性、推动项目的上下文；记忆、AGENTS.md、仓内文档怎么分工
 - [MCP 工具](mcp-tools.md) — 浏览器、图标、配图、设计 prompt（仅 Claude Code）
 - [个人 skill 库总览](skill-library.md) — skill 装在哪、⚙️CC 含义、缺了怎么补
 - [前端 skill 路由](skill-routing-frontend.md) — 网页 UI、动效、手势交互用哪个 skill（impeccable 主导）
