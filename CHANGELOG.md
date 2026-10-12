@@ -11,6 +11,7 @@
 ### 新增
 - `.memory/` 加 10 条项目记忆：现状、产品主张、架构心智模型、技术栈、演进脉络、发版与分发、两家 CLI 接入、文献检索、演练教训，随 git 走、Claude Code 与 Codex 共用（#295）
 - 产品官网上线 <https://aaai4s.zephyrxiang.com>，单独开仓 [zephyr4123/aaai4s-site](https://github.com/zephyr4123/aaai4s-site)（`site/`，登记进 `repos.json`）：Next.js 静态页 + FastAPI 问答，Docker Compose 和个人网站共用一台服务器；素材上传脚本 `scripts/site/upload.py`（#293）
+- 汇报页 `research/reports/2026-1012-progress.html`「十月进展：15 个版本，从能跑到装得上」：09-28 到 10-12 三个仓的提交与版本数据、做完的六块东西、下一步的总目标；图与视频走 CDN，上传脚本 `scripts/reports/upload.py`（#298）
 
 ### 变更
 - 规矩并进 `AGENTS.md`：脚手架的红线与项目规矩合成一份、去掉重复，`CLAUDE.md` 只剩 `@AGENTS.md`；README、CONTRIBUTING、纲领 §6 与手册里规矩的出处跟着改（#295）

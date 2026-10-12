@@ -1,4 +1,4 @@
-- [项目现状](project-status.md) — 截至 2026-10-11 发到哪版、能做与不能做、悬着的活与待拍板（含 CDN 证书 10-23 卡发版）
+- [项目现状](project-status.md) — 截至 2026-10-12 发到哪版、总目标（一句话到一篇论文）、能做与不能做、悬着的活（含 CDN 证书 10-23 卡发版）
 - [产品主张](product-thesis.md) — 给谁用、凭什么不是直接用 Claude Code、复用与自研的唯一判据
 - [架构心智模型](architecture-model.md) — 四层、项目/工作区/阶段/产出、步骤与 skill、流程与断点、端口与适配器
 - [技术栈](tech-stack.md) — 后端、页面、桌面外壳、官网、分发各用什么与为什么，改动时的约束
@@ -7,6 +7,7 @@
 - [两家 CLI 接入](agent-cli-integration.md) — Claude Code / Codex 的隔离、key、续接、联网、成本、Windows 实测坑
 - [文献检索](literature-search.md) — 检索与精读的现状、八题评测 SOP、已验证的规律与下一步
 - [演练教训](drill-lessons.md) — 真任务演练的固定做法与反复撞到的几类坑
+- [汇报页怎么做](report-page-workflow.md) — 内容口径、图与视频上 CDN、Pages 只认 main、防盗链与长任务回放
 - [记忆怎么写](feedback-memory-scope.md) — 只记有泛化性、推动项目的上下文，不写人名与谁负责什么；记忆、AGENTS.md、仓内文档各放什么
 - [MCP 工具](mcp-tools.md) — 浏览器、图标、配图、设计 prompt（仅 Claude Code）
 - [个人 skill 库总览](skill-library.md) — skill 装在哪、⚙️CC 含义、缺了怎么补
