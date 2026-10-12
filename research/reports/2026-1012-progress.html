@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AAAI4S 十月进展</title>
+<meta name="referrer" content="no-referrer">
+<style>:root{color-scheme:light dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg:#FAFAF7; --card:#FFFFFF; --ink:#1F2421; --muted:#6B7268; --line:#E3E4DD;
+  --accent:#0F6B62; --accent-soft:#E3EFED; --warn-bg:#FDF6E7; --warn-ink:#8A6D1F;
+  --ok:#2E7D4F; --code-bg:#F1F2EC;
+  --serif:"Fraunces","Songti SC","STSong",serif; --sans:"IBM Plex Sans","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+  --mono:"IBM Plex Mono","SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#141715; --card:#1C201D; --ink:#E8EAE4; --muted:#9AA096; --line:#2A2F2B;
+  --accent:#4FB3A6; --accent-soft:#1E2E2B; --warn-bg:#2A2416; --warn-ink:#D9B45B;
+  --ok:#6CC08B; --code-bg:#222623; color-scheme:dark;
+} }
+:root[data-theme="dark"] {
+  --bg:#141715; --card:#1C201D; --ink:#E8EAE4; --muted:#9AA096; --line:#2A2F2B;
+  --accent:#4FB3A6; --accent-soft:#1E2E2B; --warn-bg:#2A2416; --warn-ink:#D9B45B;
+  --ok:#6CC08B; --code-bg:#222623; color-scheme:dark;
+}
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--ink); font-family:var(--sans); margin:0; font-size:15px; line-height:1.6; }
+a { color:var(--accent); text-decoration:none; }
+a:hover, a:focus-visible { text-decoration:underline; outline:none; }
+.wrap { max-width:1080px; margin:0 auto; padding-inline:24px; }
+header.top { padding-block:36px 18px; }
+.repos { font-family:var(--mono); font-size:13px; color:var(--muted); margin:0 0 22px; display:flex; flex-wrap:wrap; gap:4px 22px; }
+.repos a { color:var(--accent); }
+.kicker { color:var(--muted); font-size:13px; letter-spacing:.04em; }
+h1 { font-family:var(--serif); font-weight:650; font-size:38px; line-height:1.2; margin:8px 0 12px; text-wrap:balance; max-width:22ch; }
+.lede { font-size:16.5px; max-width:64ch; margin:0 0 6px; }
+nav.jump { position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--bg); border-bottom:1px solid var(--line); padding-block:10px; }
+nav.jump .wrap { display:flex; gap:4px 18px; flex-wrap:wrap; align-items:baseline; }
+nav.jump a { color:var(--muted); font-size:14px; padding:2px 0; border-bottom:2px solid transparent; }
+nav.jump a:hover, nav.jump a:focus-visible { color:var(--accent); text-decoration:none; border-color:var(--accent); }
+nav.jump .num { font-family:var(--serif); color:var(--accent); margin-right:4px; }
+main { padding-block:8px 90px; }
+section { padding-block:40px 10px; border-top:1px solid var(--line); margin-top:30px; }
+section:first-of-type { border-top:0; margin-top:0; }
+h2 { font-family:var(--serif); font-weight:650; font-size:28px; margin:0 0 18px; text-wrap:balance; }
+h2 .num { color:var(--accent); margin-right:10px; }
+h3 { font-family:var(--serif); font-weight:500; font-size:19px; margin:30px 0 10px; }
+h4 { font-size:15px; font-weight:600; margin:18px 0 6px; }
+p { margin:0 0 12px; max-width:72ch; }
+ul, ol { margin:0 0 14px; padding-left:22px; max-width:72ch; }
+li { margin-bottom:5px; }
+code, .cmd { font-family:var(--mono); font-size:.9em; background:var(--code-bg); padding:1px 5px; border-radius:4px; }
+pre.code { font-family:var(--mono); font-size:13px; background:var(--code-bg); padding:12px 14px; border-radius:6px; overflow-x:auto; line-height:1.55; }
+pre.code code { background:none; padding:0; }
+table { border-collapse:collapse; width:100%; margin:8px 0 18px; font-size:14px; }
+th, td { text-align:left; padding:8px 12px 8px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+th { color:var(--muted); font-weight:500; font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
+td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+.tablewrap { overflow-x:auto; }
+td:first-child, th:first-child { white-space:nowrap; }
+.inv td:nth-child(2), .inv th:nth-child(2), .inv td:last-child, .inv th:last-child { white-space:nowrap; }
+.inv tr:nth-child(2) td:last-child, .inv tr:nth-child(3) td:last-child { white-space:nowrap; }
+.inv td[colspan] { white-space:nowrap; }
+.callout { border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 16px; border-radius:0 6px 6px 0; max-width:76ch; margin:14px 0 20px; }
+.chip { display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; letter-spacing:.03em; background:var(--accent-soft); color:var(--accent); vertical-align:middle; }
+.chip.warn { background:var(--warn-bg); color:var(--warn-ink); }
+.chip.ok { background:var(--accent-soft); color:var(--ok); }
+.facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin:18px 0 24px; }
+.fact { border-top:2px solid var(--accent); padding-top:8px; }
+.fact .v { font-family:var(--serif); font-size:26px; font-weight:500; font-variant-numeric:tabular-nums; line-height:1.15; }
+.fact .k { color:var(--muted); font-size:13px; margin-top:4px; }
+.steps { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:16px 0 22px; }
+.step { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:8px 12px; font-size:14px; }
+.step.human { border-color:var(--accent); background:var(--accent-soft); }
+.step.gpu { border-style:dashed; }
+.arrow { color:var(--muted); }
+figure { margin:0; }
+figcaption { color:var(--muted); font-size:13px; margin-top:8px; line-height:1.5; }
+.shots { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:22px; margin:16px 0 10px; }
+.shots img { width:100%; height:auto; border-radius:6px; border:1px solid var(--line); background:var(--card); display:block; }
+pre.mermaid { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; overflow-x:auto; margin:12px 0 6px; }
+.diagcap { color:var(--muted); font-size:13px; margin:0 0 22px; max-width:76ch; }
+.two { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px 40px; }
+.principles { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:10px 36px; }
+.principles ul { font-size:14px; }
+.btn { display:inline-block; background:var(--accent); color:#fff; padding:9px 16px; border-radius:6px; font-weight:500; font-size:14px; }
+.btn:hover { text-decoration:none; opacity:.92; }
+.btn.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+.links { display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 8px; }
+.muted { color:var(--muted); }
+.small { font-size:13px; }
+@media (max-width:640px) { h1 { font-size:30px; } h2 { font-size:24px; } .wrap { padding-inline:16px; } }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior:smooth; } }
+</style>
+<style>
+.bar { display:block; height:10px; background:var(--accent-soft); border-radius:999px; overflow:hidden; min-width:120px; }
+.bar i { display:block; height:100%; background:var(--accent); border-radius:999px; }
+td.barcell { width:26%; vertical-align:middle; }
+tr.sum td { font-weight:600; border-bottom:0; }
+.media { margin:18px 0 26px; }
+.media video, .media img { width:100%; height:auto; display:block; border-radius:8px; border:1px solid var(--line); background:var(--card); }
+.shots.wide { grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); }
+.shots a { display:block; }
+.flow3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin:16px 0 22px; }
+.flow3 > div { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px 14px; font-size:14px; }
+.flow3 b { display:block; font-family:var(--serif); font-weight:500; font-size:17px; margin-bottom:4px; }
+code { overflow-wrap:anywhere; }
+header.top h1 { max-width:none; }
+.shots.wide figure.full { grid-column:1 / -1; }
+.flow3 .v { color:var(--accent); font-size:12px; font-weight:600; letter-spacing:.03em; }
+@media (max-width:640px) { .shots.wide { grid-template-columns:1fr; } td.barcell { display:none; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <p class="repos">
+    <span>协作仓 <a href="https://github.com/zephyr4123/TJU-AI4Science">github.com/zephyr4123/TJU-AI4Science</a></span>
+    <span>平台代码仓 <a href="https://github.com/zephyr4123/TJU-AI4Science-Platform">github.com/zephyr4123/TJU-AI4Science-Platform</a></span>
+    <span>官网 <a href="https://aaai4s.zephyrxiang.com">aaai4s.zephyrxiang.com</a></span>
+  </p>
+  <div class="kicker">TJU AI for Science · 2026-10-12</div>
+  <h1>十月进展<br>15 个版本，从能跑到装得上</h1>
+  <p class="lede">上次汇报之后的两周，平台从 1.0.1 发到 1.9.0。这一页两部分：先看提交与版本的数据，再看做完的东西：桌面 App 与官网、重做的界面、步骤专属的进度面板、供应商切换与花费统计、199 个收录的社区 skill、第一轮评测设施。</p>
+  <p class="muted small">统计口径：2026-09-28 至 2026-10-12，三个仓的 git 记录与 GitHub；提交数不含 merge。</p>
+</div></header>
+
+<nav class="jump"><div class="wrap">
+  <a href="#data"><span class="num">1</span>提交与版本</a>
+  <a href="#ship"><span class="num">2</span>装得上</a>
+  <a href="#ui"><span class="num">3</span>界面</a>
+  <a href="#panel"><span class="num">4</span>进度面板</a>
+  <a href="#provider"><span class="num">5</span>供应商与花费</a>
+  <a href="#skills"><span class="num">6</span>收录 skill</a>
+  <a href="#evals"><span class="num">7</span>评测设施</a>
+  <a href="#next"><span class="num">8</span>下一步</a>
+</div></nav>
+
+<main class="wrap">
+
+<section id="data">
+  <h2><span class="num">1</span>提交与版本</h2>
+  <div class="facts">
+    <div class="fact"><div class="v">15 个</div><div class="k">正式版，1.0.1 → 1.9.0（另有 3 个 rc）</div></div>
+    <div class="fact"><div class="v">342 个</div><div class="k">提交：平台 233、协作仓 101、官网 8</div></div>
+    <div class="fact"><div class="v">61 个</div><div class="k">合并的 PR：平台 30、协作仓 31</div></div>
+    <div class="fact"><div class="v">107 条</div><div class="k">关闭的 issue（同期新开 75 条）</div></div>
+    <div class="fact"><div class="v">+68%</div><div class="k">平台代码行：3.5 万 → 5.9 万</div></div>
+    <div class="fact"><div class="v">1,001 条</div><div class="k">测试用例（两周前 574 条）</div></div>
+  </div>
+
+  <h3>每个版本带了多少提交</h3>
+  <p>平台的 233 个提交全部落在 6 个工作日里，分 15 个版本发出去，平均一版 15.5 个；最大的一版 1.9.0 带了 83 个。</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>版本</th><th>日期</th><th class="num">提交</th><th></th><th>这一版带了什么</th></tr></thead>
+    <tbody>
+      <tr><td><code>1.1.0</code></td><td>10-01</td><td class="num">18</td><td class="barcell"><span class="bar"><i style="width:22%"></i></span></td><td>收录社区 skill 库：三个整合包按阶段分拣；能力按项目装载</td></tr>
+      <tr><td><code>1.1.1</code></td><td>10-01</td><td class="num">2</td><td class="barcell"><span class="bar"><i style="width:2%"></i></span></td><td>修复</td></tr>
+      <tr><td><code>1.2.0</code></td><td>10-01</td><td class="num">3</td><td class="barcell"><span class="bar"><i style="width:4%"></i></span></td><td>skill 接口按阶段与标签整理</td></tr>
+      <tr><td><code>1.3.0</code></td><td>10-04</td><td class="num">8</td><td class="barcell"><span class="bar"><i style="width:10%"></i></span></td><td>文献检索步骤上线：四家学术库，顺着引用扩 2 跳</td></tr>
+      <tr><td><code>1.3.1</code></td><td>10-04</td><td class="num">8</td><td class="barcell"><span class="bar"><i style="width:10%"></i></span></td><td>检索降本（一次 0.78 → 0.60 美元），补执行层的隔离</td></tr>
+      <tr><td><code>1.4.0</code></td><td>10-05</td><td class="num">16</td><td class="barcell"><span class="bar"><i style="width:19%"></i></span></td><td>出厂流程「文献调研」；原文并行下载</td></tr>
+      <tr><td><code>1.5.0</code></td><td>10-05</td><td class="num">15</td><td class="barcell"><span class="bar"><i style="width:18%"></i></span></td><td>文献检索与精读的进度面板；对话上方「运行中」</td></tr>
+      <tr><td><code>1.5.1</code></td><td>10-06</td><td class="num">7</td><td class="barcell"><span class="bar"><i style="width:8%"></i></span></td><td>界面与看板修整</td></tr>
+      <tr><td><code>1.6.0</code></td><td>10-06</td><td class="num">21</td><td class="barcell"><span class="bar"><i style="width:25%"></i></span></td><td>首页重做：花费统计、待你确认、运行中；看板改竖向时间线；改名 AAAI4S</td></tr>
+      <tr><td><code>1.6.1</code></td><td>10-06</td><td class="num">2</td><td class="barcell"><span class="bar"><i style="width:2%"></i></span></td><td>换新的标</td></tr>
+      <tr><td><code>1.7.0</code></td><td>10-06</td><td class="num">12</td><td class="barcell"><span class="bar"><i style="width:14%"></i></span></td><td>平台的家 ~/.ai4sci；两家 CLI 可切供应商；设置重做</td></tr>
+      <tr><td><code>1.7.1</code></td><td>10-06</td><td class="num">2</td><td class="barcell"><span class="bar"><i style="width:2%"></i></span></td><td>供应商能不能联网逐家登记</td></tr>
+      <tr><td><code>1.7.2</code></td><td>10-07</td><td class="num">2</td><td class="barcell"><span class="bar"><i style="width:2%"></i></span></td><td>登录与升级的说明修正</td></tr>
+      <tr><td><code>1.8.0</code></td><td>10-07</td><td class="num">34</td><td class="barcell"><span class="bar"><i style="width:41%"></i></span></td><td>一行命令安装，全程国内源；Windows 原生支持</td></tr>
+      <tr><td><code>1.9.0</code></td><td>10-08</td><td class="num">83</td><td class="barcell"><span class="bar"><i style="width:100%"></i></span></td><td>桌面 App（Mac、Windows）；本机服务安全加固；助理指南做减法</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="two">
+    <div>
+      <h3>按天</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>日期</th><th class="num">提交</th><th></th></tr></thead>
+        <tbody>
+      <tr><td>10-01</td><td class="num">23</td><td class="barcell"><span class="bar"><i style="width:23%"></i></span></td></tr>
+      <tr><td>10-04</td><td class="num">16</td><td class="barcell"><span class="bar"><i style="width:16%"></i></span></td></tr>
+      <tr><td>10-05</td><td class="num">31</td><td class="barcell"><span class="bar"><i style="width:31%"></i></span></td></tr>
+      <tr><td>10-06</td><td class="num">44</td><td class="barcell"><span class="bar"><i style="width:44%"></i></span></td></tr>
+      <tr><td>10-07</td><td class="num">101</td><td class="barcell"><span class="bar"><i style="width:100%"></i></span></td></tr>
+      <tr><td>10-08</td><td class="num">18</td><td class="barcell"><span class="bar"><i style="width:18%"></i></span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="muted small">平台仓。单日最多是 10-07 的 101 个：当天做完 Windows 适配并发了 1.8.0。</p>
+    </div>
+    <div>
+      <h3>三个仓</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>仓</th><th class="num">提交</th><th class="num">PR</th><th class="num">正式版</th></tr></thead>
+        <tbody>
+          <tr><td>平台 <code>platform/</code></td><td class="num">233</td><td class="num">30</td><td class="num">15</td></tr>
+          <tr><td>协作仓（文档、调研、脚本）</td><td class="num">101</td><td class="num">31</td><td class="num">15</td></tr>
+          <tr><td>官网 <code>site/</code>（10-10 新开）</td><td class="num">8</td><td class="num">—</td><td class="num">独立发版</td></tr>
+        </tbody>
+      </table></div>
+      <p class="muted small">更新日志 125 条：新增 27、变更 49、修复 44、安全 3、移除 2。CI 跑了 107 次（99 次通过），发版流水线 18 次（16 次通过）。</p>
+    </div>
+  </div>
+
+  <h3>代码长在哪</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>模块</th><th class="num">09-23（1.0.1）</th><th class="num">10-08（1.9.0）</th><th class="num">净增（行）</th></tr></thead>
+    <tbody>
+      <tr><td>框架 framework/</td><td class="num">11,936</td><td class="num">17,543</td><td class="num">+5,607</td></tr>
+      <tr><td>测试 tests/</td><td class="num">9,736</td><td class="num">16,819</td><td class="num">+7,083</td></tr>
+      <tr><td>页面 ui/web/</td><td class="num">10,563</td><td class="num">14,553</td><td class="num">+3,990</td></tr>
+      <tr><td>桌面外壳 ui/desktop/</td><td class="num">0</td><td class="num">5,107</td><td class="num">+5,107</td></tr>
+      <tr><td>CLI 适配器 backends/</td><td class="num">1,581</td><td class="num">2,313</td><td class="num">+732</td></tr>
+      <tr><td>进程树 procs/</td><td class="num">0</td><td class="num">759</td><td class="num">+759</td></tr>
+      <tr><td>安装脚本 install/</td><td class="num">0</td><td class="num">493</td><td class="num">+493</td></tr>
+      <tr><td>其余（算力、自带 skill）</td><td class="num">1,314</td><td class="num">1,368</td><td class="num">+54</td></tr>
+      <tr class="sum"><td>合计</td><td class="num">35,130</td><td class="num">58,955</td><td class="num">+23,825</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted small">只数进 git 的源码（py、ts、tsx、rs、sh、ps1、css）。收录的 199 个社区 skill 原文另有约 69 万行，不计在内。测试用例：pytest 490 → 797，页面单测 84 → 158，桌面外壳的 Rust 测试 0 → 46。</p>
+</section>
+
+<section id="ship">
+  <h2><span class="num">2</span>装得上：供应商、一行命令、Windows、桌面 App、官网</h2>
+  <p>两周前要用平台得会 clone 仓库、配 venv、自己装两家 CLI。现在的路径是打开官网、下载、双击。五步是连着做的：</p>
+  <div class="flow3">
+    <div><span class="v">1.7.0 · 10-06</span><b>供应商可切</b>填一把 DeepSeek 的 key 就能用，不需要海外账号</div>
+    <div><span class="v">1.8.0 · 10-07</span><b>一行命令安装</b>Python、两家 CLI、依赖全程走国内源</div>
+    <div><span class="v">1.8.0 · 10-07</span><b>Windows 原生</b>PowerShell 一行装好，不需要 WSL</div>
+    <div><span class="v">1.9.0 · 10-08</span><b>桌面 App</b>Mac 通用包与 Windows 安装包，自动更新</div>
+    <div><span class="v">10-10</span><b>官网</b>下载入口、功能介绍与问答助理</div>
+  </div>
+  <div class="facts">
+    <div class="fact"><div class="v">40 MB</div><div class="k">Mac 通用包（Apple 芯片与 Intel），已签名并公证</div></div>
+    <div class="fact"><div class="v">15 MB</div><div class="k">Windows 安装包（10 / 11），按用户安装</div></div>
+    <div class="fact"><div class="v">33 秒</div><div class="k">Windows 真机粘一行命令到装完</div></div>
+    <div class="fact"><div class="v">747 / 0</div><div class="k">Windows 真机全量 pytest 通过 / 失败（适配前 546 过、152 失败）</div></div>
+    <div class="fact"><div class="v">1.4 秒</div><div class="k">桌面 App 退出后 10 秒内重开，进到页面</div></div>
+    <div class="fact"><div class="v">12 秒</div><div class="k">桌面 App 打开时自动升级后端</div></div>
+  </div>
+
+  <h3>官网</h3>
+  <div class="shots wide">
+    <figure class="full"><a href="https://aaai4s.zephyrxiang.com"><img loading="lazy" src="https://media.zephyrxiang.com/ai4science/v1/reports/2026-1012-progress/site-hero.74d5c567.jpg" alt="官网首屏：AAAI4S，可编排、可追溯的自动化科研；问答输入框与 Mac、Windows 两个下载键"></a><figcaption>首屏：两个下载键，输入框接的是一个能回答产品问题的助理。</figcaption></figure>
+    <figure><a href="https://aaai4s.zephyrxiang.com/#download"><img loading="lazy" src="https://media.zephyrxiang.com/ai4science/v1/reports/2026-1012-progress/site-download.14753621.jpg" alt="官网下载区：Mac 版 40 MB、Windows 版 15 MB，首次启动自动部署约两分钟"></a><figcaption>下载区：版本号运行时从 CDN 读，平台发版不用改网站。</figcaption></figure>
+  </div>
+
+  <h3>分发</h3>
+  <ul>
+    <li><strong>CDN</strong>：安装包、wheel、两份安装脚本与签名的版本清单都在腾讯云 COS + CDN 上，今天实测全部可取，版本清单是 1.9.0。</li>
+    <li><strong>一行命令</strong>：Mac / Linux <code>curl -fsSL https://media.zephyrxiang.com/ai4science/dist/install.sh | sh</code>；Windows <code>irm https://media.zephyrxiang.com/ai4science/dist/install.ps1 | iex</code>。</li>
+    <li><strong>国内源</strong>：Python 包走清华 PyPI，两家 CLI 的原生程序与 Git for Windows 走 npmmirror，模型文件走 hf-mirror。</li>
+    <li><strong>发版流水线</strong>：推一个 tag 出 wheel 与两个平台的桌面包并传到 CDN；1.9.0 正式版五个作业全部通过。</li>
+  </ul>
+
+  <h3>在真机上走过的</h3>
+  <div class="two">
+    <div>
+      <h4>Mac 本机</h4>
+      <ul>
+        <li>空的家目录第一次打开：90 秒进页面，启动页逐行出进度</li>
+        <li>填 key 弹窗：空 key 点不了，错 key 有报错，真 key 试通后关窗；日志里没有 key</li>
+        <li>退出时起着后台作业：只剩作业那棵进程树，端口没人监听；作业跑完，重开续上</li>
+        <li>10 秒内重开：1.4 秒进页面，端口不变</li>
+        <li>单实例：连开两次只有一个窗口、一个服务</li>
+        <li>后端升级：12 秒升到新版</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Windows 11 真机（经 SSH 操作）</h4>
+      <ul>
+        <li>一行命令：33 秒装完，问 key，试通，起服务</li>
+        <li>桌面 App 第一次打开：约 55 秒进页面</li>
+        <li>WebView2 里渲染与中文输入正常；输入法组字时回车不发送；拖进一个 <code>.bat</code> 不运行</li>
+        <li>App 退出后后台作业照跑、跑完叫醒助理；重开续上</li>
+        <li>升级途中断网：装失败后照常起旧版，网络恢复后重开升到新版</li>
+        <li>全量 pytest：747 通过、0 失败、12 跳过</li>
+      </ul>
+    </div>
+  </div>
+  <p class="muted small">出处：<a href="https://github.com/zephyr4123/TJU-AI4Science/issues/282">#282</a> 的端到端记录、<a href="https://zephyr4123.github.io/TJU-AI4Science/retros/2026-1007-windows-adaptation/">Windows 适配复盘</a>。</p>
+</section>
+
+<section id="ui">
+  <h2><span class="num">3</span>界面重做</h2>
+  <p>页面在 1.5.0 到 1.7.0 之间整体重做了一遍：首页改两栏，工作区看板改成竖向时间线，产出与需求改成居中的玻璃悬浮窗，设置改成分栏弹窗，全站统一一张底图，前端改名 AAAI4S。下面四张是官网上放的实机图，点开看原图。</p>
+  <div class="shots wide">
+    <figure class="full"><a href="https://media.zephyrxiang.com/ai4science/v1/site/image/home.d9716032.jpg"><img loading="lazy" src="https://media.zephyrxiang.com/ai4science/v1/site/image/home.d9716032.jpg" alt="首页：左边项目清单，右边待你确认、运行中与花费统计"></a><figcaption>首页：项目清单；右边是待你确认、运行中、花费。</figcaption></figure>
+    <figure><a href="https://media.zephyrxiang.com/ai4science/v1/site/image/project.5c5ba560.jpg"><img loading="lazy" src="https://media.zephyrxiang.com/ai4science/v1/site/image/project.5c5ba560.jpg" alt="项目页：一个项目下的工作区与对话"></a><figcaption>项目页：一个项目一位助理，下面是各个工作区。</figcaption></figure>
+    <figure><a href="https://media.zephyrxiang.com/ai4science/v1/site/image/workspace.cb7b90ee.jpg"><img loading="lazy" src="https://media.zephyrxiang.com/ai4science/v1/site/image/workspace.cb7b90ee.jpg" alt="工作区看板：流程的阶段、断点与每次产出排成竖向时间线，右边是对话"></a><figcaption>工作区看板：流程的阶段、断点、每次产出排成时间线；右边是和助理的对话。</figcaption></figure>
+    <figure><a href="https://media.zephyrxiang.com/ai4science/v1/site/image/studio.eb181b39.jpg"><img loading="lazy" src="https://media.zephyrxiang.com/ai4science/v1/site/image/studio.eb181b39.jpg" alt="编辑台：编排流程的画布"></a><figcaption>编辑台：在画布上编排自己的流程。</figcaption></figure>
+  </div>
+</section>
+
+<section id="panel">
+  <h2><span class="num">4</span>步骤专属的进度面板</h2>
+  <p>一次文献检索要跑近十分钟，精读要二十分钟。以前这段时间页面上只有「运行中」三个字。1.5.0 起，步骤边跑边往产出目录写进度事件，页面按步骤画各自的面板：每个步骤一块定制的，不做通用进度条。跑完后面板停在最后的样子，当这次产出的摘要。</p>
+  <div class="callout">下面两段是本机 10-05 一次真实运行的记录按倍速回放的：页面是真页面，数据是那次运行写下的进度文件，只把时间加快了。画面上的计时是真实用时。</div>
+
+  <h3>文献检索：流水线与收录蜂巢</h3>
+  <div class="media"><video src="https://media.zephyrxiang.com/ai4science/v1/reports/2026-1012-progress/panel-search.b8595519.mp4" poster="https://media.zephyrxiang.com/ai4science/v1/reports/2026-1012-progress/panel-search-poster.534d6c87.jpg" controls muted loop playsinline preload="metadata"></video></div>
+  <div class="facts">
+    <div class="fact"><div class="v">9 分钟</div><div class="k">实际用时（回放 12 倍速）</div></div>
+    <div class="fact"><div class="v">13 → 289</div><div class="k">种子论文 → 四家学术库汇集去重</div></div>
+    <div class="fact"><div class="v">77 / 111</div><div class="k">收录 / 筛过（顺着引用扩了 2 跳）</div></div>
+    <div class="fact"><div class="v">45 篇</div><div class="k">下到原文</div></div>
+  </div>
+  <p>蜂巢里一格是一篇筛过的论文：空心是没收，浅色是收了，深色是收了并且下到了原文。</p>
+
+  <h3>文献精读：原文流成笔记</h3>
+  <div class="media"><video src="https://media.zephyrxiang.com/ai4science/v1/reports/2026-1012-progress/panel-read.b5c628d7.mp4" poster="https://media.zephyrxiang.com/ai4science/v1/reports/2026-1012-progress/panel-read-poster.0024a8fb.jpg" controls muted loop playsinline preload="metadata"></video></div>
+  <div class="facts">
+    <div class="fact"><div class="v">20 分钟</div><div class="k">实际用时（回放 30 倍速）</div></div>
+    <div class="fact"><div class="v">4 篇</div><div class="k">同时在读</div></div>
+    <div class="fact"><div class="v">44 / 45</div><div class="k">读成笔记 / 原文</div></div>
+    <div class="fact"><div class="v">93%</div><div class="k">笔记里引的原句核对得上（240 / 257 条）</div></div>
+  </div>
+  <p>每篇笔记里引的原句，框架会回到原文里逐条核对有没有这句话；核对不上的不算数。</p>
+</section>
+
+<section id="provider">
+  <h2><span class="num">5</span>供应商切换与花费统计</h2>
+  <h3>Claude Code 与 Codex 都能换供应商（1.7.0）</h3>
+  <p>平台不调模型，模型只在 Claude Code 或 Codex 的会话里。以前这两家只能用官方账号。现在每家都能在设置里选供应商：官方订阅或登录、官方 API、DeepSeek、Kimi、自定义接口；模型与思考深度跟着供应商走。官方订阅与 DeepSeek 两条路已在真机上跑通。</p>
+  <div class="shots wide">
+    <figure><img loading="lazy" src="https://media.zephyrxiang.com/ai4science/v1/reports/2026-1012-progress/settings-provider.31a33ce1.jpg" alt="设置里 Claude Code 的供应商下拉：Claude 订阅、Anthropic API、DeepSeek、Kimi、自定义"><figcaption>设置 → Claude Code：供应商、key、模型、思考深度。key 只存在本机，页面只显示末四位，不进环境变量。</figcaption></figure>
+    <figure><img loading="lazy" src="https://media.zephyrxiang.com/ai4science/v1/reports/2026-1012-progress/spending-pricing.7ddb3316.jpg" alt="首页花费面板的定价表：各模型每百万 token 的输入、命中缓存、输出价格"><figcaption>首页 → 花费 → 定价：每个模型每百万 token 的公开价。</figcaption></figure>
+  </div>
+
+  <h3>便宜多少（按公开价）</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>模型</th><th class="num">输入</th><th class="num">命中缓存</th><th class="num">输出</th><th>相对 DeepSeek V4.1 Flash</th></tr></thead>
+    <tbody>
+      <tr><td>DeepSeek V4.1 Flash</td><td class="num">$0.30</td><td class="num">$0.006</td><td class="num">$1.20</td><td>—</td></tr>
+      <tr><td>DeepSeek V4 Pro</td><td class="num">$1.32</td><td class="num">$0.044</td><td class="num">$3.96</td><td>输入 4.4 倍、输出 3.3 倍</td></tr>
+      <tr><td>Claude Sonnet 5</td><td class="num">$2.00</td><td class="num">$0.20</td><td class="num">$10.00</td><td>输入 6.7 倍、输出 8.3 倍</td></tr>
+      <tr><td>GPT-5.6 Terra</td><td class="num">$2.00</td><td class="num">$0.20</td><td class="num">$12.00</td><td>输入 6.7 倍、输出 10 倍</td></tr>
+      <tr><td>Claude Opus 5</td><td class="num">$5.00</td><td class="num">$0.50</td><td class="num">$25.00</td><td>输入 16.7 倍、输出 20.8 倍</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted small">每百万 token 的美元价，取自平台里那张定价表（照 cc-switch 的内置表，共 15 行）。这是单价的差，不是同一个任务的实测花费。</p>
+
+  <h3>花费统计（1.6.0）</h3>
+  <p>首页右边一块花费面板：近 7 / 30 / 90 天的成本、调用次数、token、缓存命中四个数，按天的柱子，再按项目、模型、会话拆成表。Codex 不报成本，照定价表折算；算不出来的记「未知」，不记 0。</p>
+  <div class="facts">
+    <div class="fact"><div class="v">$92.89</div><div class="k">近 30 天折算成本（开发机，10-10 截图）</div></div>
+    <div class="fact"><div class="v">379 次</div><div class="k">调用：对话 118、运行 261</div></div>
+    <div class="fact"><div class="v">1.45 亿</div><div class="k">token</div></div>
+    <div class="fact"><div class="v">90%</div><div class="k">缓存命中</div></div>
+  </div>
+</section>
+
+<section id="skills">
+  <h2><span class="num">6</span>收录 199 个社区 skill</h2>
+  <p>9 月底交回的一份调研列了 18 个科研 AI 开源项目，其中 13 个做了代码级深读（<a href="https://zephyr4123.github.io/TJU-AI4Science/selection/2026-0927-scientific-ai-capabilities/">调研报告</a>）。读完的结论是：自己调模型的那些项目接不进来，而几个 skill 库的做法和平台一致（写给 agent 的说明加确定性脚本），可以直接收。10-01 把三个整合包的 284 个 skill 逐个过了一遍（<a href="https://github.com/zephyr4123/TJU-AI4Science/issues/198">#198</a>），每个看五件事：许可证、要不要另配 key、平台里用不用得上、有没有重名、有没有夹带给 agent 的指令。</p>
+  <div class="facts">
+    <div class="fact"><div class="v">284 个</div><div class="k">逐个过筛</div></div>
+    <div class="fact"><div class="v">199 个</div><div class="k">收录，已按阶段分好类</div></div>
+    <div class="fact"><div class="v">85 个</div><div class="k">不收，每个记了原因</div></div>
+    <div class="fact"><div class="v">3 个</div><div class="k">来源，许可证 MIT 与 Apache-2.0</div></div>
+  </div>
+  <div class="two">
+    <div>
+      <h3>按阶段</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>阶段</th><th class="num">个数</th><th></th></tr></thead>
+        <tbody>
+      <tr><td>实验</td><td class="num">132</td><td class="barcell"><span class="bar"><i style="width:100%"></i></span></td></tr>
+      <tr><td>写作</td><td class="num">20</td><td class="barcell"><span class="bar"><i style="width:15%"></i></span></td></tr>
+      <tr><td>分析</td><td class="num">16</td><td class="barcell"><span class="bar"><i style="width:12%"></i></span></td></tr>
+      <tr><td>通用</td><td class="num">9</td><td class="barcell"><span class="bar"><i style="width:7%"></i></span></td></tr>
+      <tr><td>文献</td><td class="num">7</td><td class="barcell"><span class="bar"><i style="width:5%"></i></span></td></tr>
+      <tr><td>假设</td><td class="num">6</td><td class="barcell"><span class="bar"><i style="width:5%"></i></span></td></tr>
+      <tr><td>设计</td><td class="num">5</td><td class="barcell"><span class="bar"><i style="width:4%"></i></span></td></tr>
+      <tr><td>验证</td><td class="num">4</td><td class="barcell"><span class="bar"><i style="width:3%"></i></span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div>
+      <h3>按来源</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>来源</th><th class="num">收</th><th class="num">不收</th><th>许可证</th></tr></thead>
+        <tbody>
+          <tr><td>K-Dense Scientific Agent Skills</td><td class="num">110</td><td class="num">56</td><td>MIT</td></tr>
+          <tr><td>AI Research SKILLs</td><td class="num">74</td><td class="num">24</td><td>MIT</td></tr>
+          <tr><td>Nature Skills</td><td class="num">15</td><td class="num">5</td><td>Apache-2.0</td></tr>
+        </tbody>
+      </table></div>
+      <ul class="small">
+        <li>每个来源钉在上游的一个 commit，许可证原文随仓保存。</li>
+        <li>一本台账：收的每个 skill 一行，改了什么逐条写；不收的也一行，带原因（平台里用不了、许可证不清、必须另配 key 等）。</li>
+        <li>门禁对账：目录与台账一一对得上、许可证在可收的范围里，才给合并。</li>
+        <li>能力按项目装载：一个项目只装它用得上的，不是 199 个全塞给助理。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>分好类之后又对齐了两轮</h3>
+  <ul>
+    <li><strong>归位</strong>（10-01，1.2.0，<a href="https://github.com/zephyr4123/TJU-AI4Science/issues/205">#205</a>）：平台自带、收录、领域包三处 skill 库统一按「阶段 / 标签」摆放，分类表只在一处定义；同时把收录内容修干净：写死的 python 起法、死链、指向没收的 skill 的段落。</li>
+    <li><strong>换源</strong>（10-07，1.8.0，<a href="https://github.com/zephyr4123/TJU-AI4Science/issues/277">#277</a>）：每个 skill 脚本的依赖锁文件改成对着清华镜像，门禁查；国内网络下拿来就能跑。</li>
+  </ul>
+</section>
+
+<section id="evals">
+  <h2><span class="num">7</span>第一轮评测设施</h2>
+  <p>改一个步骤之后它是变好了还是变差了，以前靠看一两次运行的结果。这两周在文献检索这一步上搭起了第一套评测：有题、有判对标准、有评分模型、有检查评分模型本身的办法，以后每次改检索都照同一套流程跑。</p>
+  <div class="steps">
+    <span class="step">出题：四类八道，每道自带判对标准</span><span class="arrow">→</span>
+    <span class="step">跑检索：每题至少两次</span><span class="arrow">→</span>
+    <span class="step">评分：评分模型逐篇判对不对</span><span class="arrow">→</span>
+    <span class="step human">检查评分模型：过关才采信</span><span class="arrow">→</span>
+    <span class="step">打三个分，拆过程</span>
+  </div>
+  <div class="facts">
+    <div class="fact"><div class="v">8 道题</div><div class="k">专、广、平行、串行各两道</div></div>
+    <div class="fact"><div class="v">87 次</div><div class="k">检索运行已留档</div></div>
+    <div class="fact"><div class="v">38 份</div><div class="k">评分结果</div></div>
+    <div class="fact"><div class="v">40 / 40</div><div class="k">混进去的无关论文，八道题全部判为不对</div></div>
+    <div class="fact"><div class="v">0.70 – 0.98</div><div class="k">两家评分模型的一致程度（0.6 以上算高）</div></div>
+  </div>
+
+  <h3>题与分数</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>类型</th><th>用户要什么</th><th>两道题</th></tr></thead>
+    <tbody>
+      <tr><td>专</td><td>某个方法用在某个很窄的领域，要干净的清单</td><td>PINN 用于生理信号；机器学习势模拟固态电解质</td></tr>
+      <tr><td>广</td><td>一个方向的大综述，宁可多</td><td>PINN 方法改进；深度学习用于天气与气候预报</td></tr>
+      <tr><td>平行</td><td>几个并列的子方向，每一类都要有</td><td>物理信息机器学习用于五类设备的健康管理；扩散模型用于小分子、蛋白质、晶体</td></tr>
+      <tr><td>串行</td><td>先找 A，再找在 A 上做过的 B</td><td>PDE 机器学习基准 → 在上面评测过的方法；单细胞图谱 → 在上面训练的基础模型</td></tr>
+    </tbody>
+  </table></div>
+  <p>每次打三个分：<strong>收得准不准</strong>（收进清单的论文对不对）、<strong>看得准不准</strong>（挑去给模型看的对不对）、<strong>找得全不全</strong>（该找的找回了几成）。主评用 Opus，再换 Codex 判同一批论文做对照。</p>
+
+  <h3>用它做成的第一件事</h3>
+  <div class="facts">
+    <div class="fact"><div class="v">87% / 61% / 47%</div><div class="k">现在的基线：收得准 / 看得准 / 找得全</div></div>
+    <div class="fact"><div class="v">$0.78 → $0.60</div><div class="k">一次检索的花费，降 23%；三个分从 89 / 61 / 48 到 87 / 61 / 47，在波动范围内</div></div>
+  </div>
+  <ul>
+    <li><strong>每跳筛选不能砍</strong>：它决定往外扩的方向，不筛的话「收得准」从 89% 掉到 53%。降本只能让筛选本身变便宜：砍输入有效，换小模型会让收错的论文翻倍。</li>
+    <li><strong>一次运行分不清改动和波动</strong>：同一设置跑两次，单题分数能差近 10 个点。所以每题至少两次、先量噪声。</li>
+    <li><strong>查出一个隔离漏洞</strong>：执行层的会话带着用户的自动记忆，已修。</li>
+  </ul>
+  <p class="muted small">脚本在协作仓 <code>scripts/evals/</code>（5 个，1,235 行）：<code>literature_recall.py</code> 跑检索、<code>literature_judge.py</code> 评分、<code>literature_rescreen.py</code> 只改筛选时重放、<code>guide_replay.py</code> 拿新旧两版助理指南在同一批决策点上回放对比。流程写在 <code>docs/specs/literature-search.md</code> 第 6 节。</p>
+</section>
+
+<section id="next">
+  <h2><span class="num">8</span>下一步</h2>
+  <div class="callout"><strong>总目标：从一句话到一篇论文，端到端跑通。</strong>研究者给出一个想法，平台走完文献、假设、设计、实验、分析、验证、写作，交出一篇论文。</div>
+  <p>接下来的工作都由这个目标牵引，界面与各处细节的完善从它派生。现在离它还差的：</p>
+  <ul>
+    <li>假设、写作两个阶段还没有步骤。</li>
+    <li>文献阶段做到检索与精读为止，还没有综述。</li>
+    <li>已有步骤的阶段各自跑通过；从一句话一路到论文的完整运行还没有做过。</li>
+  </ul>
+</section>
+
+</main>
+</body>
+</html>
