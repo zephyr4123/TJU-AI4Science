@@ -52,7 +52,7 @@ gh run list --branch main --workflow ci.yml --limit 3 --json conclusion,headSha 
 
 ## agent 用 gh 的守则
 
-这几条在 [`CLAUDE.md`](../../CLAUDE.md) 里是红线，这里说清楚落到 gh 上是什么：
+这几条在 [`AGENTS.md`](../../AGENTS.md) 里是红线，这里说清楚落到 gh 上是什么：
 
 - **动之前看账号**：`gh auth status`，活跃账号不对先 `gh auth switch`。
 - **合并 PR、push 受保护分支、改写历史，每次都要人确认。** `gh pr merge` 是出分支的动作；ruleset 允许管理员绕过 review，不等于 agent 可以自己绕。

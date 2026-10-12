@@ -24,4 +24,4 @@
 
 - 一次全量文档盘点 → [#140](https://github.com/zephyr4123/TJU-AI4Science/issues/140)：两仓所有文档切块派读者（只读、便宜的模型），每个读者交「文档说的 vs 代码实际」的清单；回来先核，再决定：结构保留，只改内容；规矩按仓级 / `framework/` / `tests/` / `ui/` 分层落到各自的 README，不堆成一份大文档；主要做减法。同一轮修掉了盘出来的真 bug：助理会话里 `requirement confirm` 与 `sign` 一律拒（只有人能确认）、助理的本子搬出产出 hash、两条永远跳过的测试改对路径、schema 与注释里指向已不存在文件的说法清掉（内仓 CHANGELOG「修复」一节）。
 - 盘完才决定「地图」：[#141](https://github.com/zephyr4123/TJU-AI4Science/issues/141) 两仓 README 做成文档索引 + Mermaid 架构图，是盘点之后发现「文档都在、但互相不连」才做的，不是先画图再找内容。
-- 派读者的规矩：读者盘出来的东西是「待验证输出」，见 [`CLAUDE.md`「写代码与验收的标准」](../../CLAUDE.md#写代码与验收的标准)「agent 或工具报的 finding 是待验证输出，逐条核实才采信」。
+- 派读者的规矩：读者盘出来的东西是「待验证输出」，见 [`AGENTS.md`「验证与排查」](../../AGENTS.md#验证与排查质量不由写的人自证)「agent 或工具报的 finding 是待验证输出，逐条核实才采信」。
